@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16000"
+  },
+  "includeCoAuthoredBy": true,
+  "permissions": {
+    "allow": [],
+    "deny": [],
+    "defaultMode": "bypassPermissions"
+  },
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "deno run --allow-env --allow-run --allow-read $GHQ_ROOT/github.com/skanehira/dotfiles/claude/hooks/notify.ts --type stop"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "deno run --allow-env --allow-run --allow-read $GHQ_ROOT/github.com/skanehira/dotfiles/claude/hooks/notify.ts --type notify"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "deno run --allow-env --allow-run --allow-read --allow-write $GHQ_ROOT/github.com/skanehira/dotfiles/claude/hooks/format.ts"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "example-skills@anthropic-agent-skills": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "lua-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "claude-mem@thedotmack": false,
+    "gopls-lsp@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "thedotmack": {
+      "source": {
+        "source": "github",
+        "repo": "thedotmack/claude-mem"
+      }
+    }
+  },
+  "language": "Japanese",
+  "spinnerTipsEnabled": false,
+  "alwaysThinkingEnabled": true
+}
