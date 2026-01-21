@@ -1,11 +1,21 @@
 ---
-description: Reactテスト規約。React Testing Libraryを使用。
+description: Reactテスト規約。React Testing Libraryを使用（TDDワークフロー向け）。
 globs:
   - "**/*.test.tsx"
   - "**/*.spec.tsx"
 ---
 
 # Reactテスト規約
+
+> **注意**: この規約は**TDDワークフロー**でのユニットテスト/コンポーネントテスト向けです。
+> UIの視覚的検証は**PLANワークフロー**で agent-browser を使用します（`plan-cycle.md` 参照）。
+
+## 対象
+
+- ロジックを含むコンポーネント（フォームバリデーション、状態管理等）
+- カスタムHooks
+- ユーティリティ関数
+- イベントハンドラの動作
 
 ## テストフレームワーク
 
