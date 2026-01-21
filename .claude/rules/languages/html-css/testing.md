@@ -1,5 +1,5 @@
 ---
-description: HTML/CSSテスト規約。視覚的回帰テストとアクセシビリティテスト。
+description: HTML/CSSテスト規約。agent-browserによる視覚的検証とアクセシビリティテスト。
 globs:
   - "**/*.html"
   - "**/*.css"
@@ -11,25 +11,86 @@ globs:
 
 | テスト種類 | ツール | 目的 |
 |-----------|--------|------|
-| 視覚的回帰 | Playwright/Storybook | UIの予期しない変更を検出 |
-| アクセシビリティ | axe-core/Lighthouse | WCAG準拠を確認 |
+| 視覚的検証 | agent-browser | UIの表示確認、操作検証 |
+| アクセシビリティ | axe-core / agent-browser | WCAG準拠を確認 |
 | レスポンシブ | agent-browser | 各デバイスサイズで表示確認 |
 
-## アクセシビリティテスト
+## 視覚的検証（agent-browser）
 
-### axe-core（自動テスト）
+### 基本フロー
 
 ```javascript
-import { test, expect } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
+// 1. タブコンテキスト取得
+mcp__claude-in-chrome__tabs_context_mcp({ createIfEmpty: true })
 
-test('アクセシビリティ違反がない', async ({ page }) => {
-  await page.goto('/');
+// 2. ページに遷移
+mcp__claude-in-chrome__navigate({ url: "http://localhost:3000", tabId })
 
-  const results = await new AxeBuilder({ page }).analyze();
+// 3. スクリーンショット取得
+mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
 
-  expect(results.violations).toEqual([]);
-});
+// 4. 要素検索（自然言語）
+mcp__claude-in-chrome__find({ query: "ログインボタン", tabId })
+
+// 5. 操作実行
+mcp__claude-in-chrome__computer({ action: "left_click", ref: "ref_1", tabId })
+
+// 6. 結果確認
+mcp__claude-in-chrome__read_page({ tabId })
+```
+
+### 検証項目
+
+| カテゴリ | 確認内容 |
+|----------|----------|
+| レイアウト | 要素の配置、余白、整列 |
+| タイポグラフィ | フォントサイズ、行間、色 |
+| インタラクション | ホバー、フォーカス、クリック反応 |
+| 状態表示 | ローディング、エラー、空状態 |
+
+## レスポンシブ検証
+
+### ブレイクポイント
+
+| デバイス | 幅 | テスト項目 |
+|----------|-----|----------|
+| モバイル | 375px | ハンバーガーメニュー、1カラム |
+| タブレット | 768px | サイドバー折りたたみ、2カラム |
+| デスクトップ | 1024px | フルレイアウト、3カラム |
+
+### 検証手順
+
+```javascript
+// モバイルサイズで検証
+mcp__claude-in-chrome__resize_window({ width: 375, height: 667, tabId })
+mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
+
+// 確認項目
+// - ナビゲーションがハンバーガーメニューになっている
+// - コンテンツが1カラムで表示
+// - タッチターゲットが44px以上
+
+// タブレットサイズで検証
+mcp__claude-in-chrome__resize_window({ width: 768, height: 1024, tabId })
+mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
+
+// デスクトップサイズで検証
+mcp__claude-in-chrome__resize_window({ width: 1024, height: 768, tabId })
+mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
+```
+
+## アクセシビリティ検証
+
+### agent-browserでの確認
+
+```javascript
+// インタラクティブ要素のみ取得
+mcp__claude-in-chrome__read_page({ filter: "interactive", tabId })
+
+// 確認項目
+// - ボタンに適切なラベルがある
+// - フォーム要素にlabelが関連付けられている
+// - aria属性が適切に設定されている
 ```
 
 ### 手動チェックリスト
@@ -43,70 +104,21 @@ test('アクセシビリティ違反がない', async ({ page }) => {
 | 見出し | h1-h6が正しい階層 |
 | フォーム | labelがinputに関連付け |
 
-## 視覚的回帰テスト
-
-### Playwright
+## フォーム検証
 
 ```javascript
-import { test, expect } from '@playwright/test';
+// 入力フィールドを検索
+mcp__claude-in-chrome__find({ query: "メールアドレス入力欄", tabId })
 
-test('ログインページのスナップショット', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page).toHaveScreenshot('login.png');
-});
+// 値を入力
+mcp__claude-in-chrome__form_input({ ref: "ref_1", value: "test@example.com", tabId })
 
-test('モバイル表示のスナップショット', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 667 });
-  await page.goto('/');
-  await expect(page).toHaveScreenshot('home-mobile.png');
-});
-```
+// 送信ボタンをクリック
+mcp__claude-in-chrome__find({ query: "送信ボタン", tabId })
+mcp__claude-in-chrome__computer({ action: "left_click", ref: "ref_2", tabId })
 
-### Storybook
-
-```javascript
-// Button.stories.ts
-export default {
-  title: 'Components/Button',
-  component: Button,
-};
-
-export const Primary = {
-  args: {
-    variant: 'primary',
-    label: 'Button',
-  },
-};
-
-export const Disabled = {
-  args: {
-    disabled: true,
-    label: 'Disabled',
-  },
-};
-```
-
-## レスポンシブテスト（agent-browser）
-
-### ブレイクポイント
-
-| デバイス | 幅 | テスト項目 |
-|----------|-----|----------|
-| モバイル | 375px | ハンバーガーメニュー、1カラム |
-| タブレット | 768px | サイドバー折りたたみ、2カラム |
-| デスクトップ | 1024px | フルレイアウト、3カラム |
-
-### 検証手順
-
-```javascript
-// agent-browser検証
-mcp__claude-in-chrome__resize_window({ width: 375, height: 667, tabId })
-mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
-
-// 確認項目
-// - ナビゲーションがハンバーガーメニューになっている
-// - コンテンツが1カラムで表示
-// - タッチターゲットが44px以上
+// 結果を確認
+mcp__claude-in-chrome__read_page({ tabId })
 ```
 
 ## CSSの品質チェック
@@ -126,12 +138,19 @@ mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
 
 ## テスト優先度
 
-1. **必須**: アクセシビリティ（axe-core）
-2. **推奨**: 主要ページのスナップショット
-3. **オプション**: 全コンポーネントのStorybook
+1. **必須**: 主要ページの視覚的検証（agent-browser）
+2. **必須**: レスポンシブ検証（3ブレイクポイント）
+3. **推奨**: アクセシビリティ検証
+4. **オプション**: エッジケース（長いテキスト、空データ等）
 
 ## 禁止事項
 
-- ❌ スナップショットの無条件更新
+- ❌ 視覚的確認なしでのUI変更マージ
 - ❌ アクセシビリティ違反の無視
-- ❌ 特定ブラウザのみでテスト
+- ❌ モバイル検証のスキップ
+
+## エラー時の対応
+
+1. **検証失敗**: 実装を修正 → 再検証
+2. **3回失敗**: 問題を報告、ユーザーに確認
+3. **ツールエラー**: 開発サーバー確認、再試行
