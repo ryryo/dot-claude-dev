@@ -458,77 +458,77 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 
 ### Phase 1: skill-creatorコピー＆カスタマイズ
 
-- [ ] `docs/SAMPLE/dev/meta-skill-creator/skills/skill-creator/` → `.claude/skills/meta-skill-creator/` コピー
-- [ ] meta-skill-creatorのパス参照を修正（`.claude/skills/meta-skill-creator/`に合わせる）
-- [ ] meta-skill-creatorの動作確認
+- [x] `docs/SAMPLE/dev/meta-skill-creator/skills/skill-creator/` → `.claude/skills/meta-skill-creator/` コピー
+- [x] meta-skill-creatorのパス参照を修正（`.claude/skills/meta-skill-creator/`に合わせる）
+- [x] meta-skill-creatorの動作確認
 
 ### Phase 2: 新規スキル作成（Big 3）
 
 #### story-to-tasks
-- [ ] `.claude/skills/dev/story-to-tasks/SKILL.md` 作成
-- [ ] `.claude/skills/dev/story-to-tasks/agents/analyze-story.md` 作成
-- [ ] `.claude/skills/dev/story-to-tasks/agents/decompose-tasks.md` 作成
-- [ ] `.claude/skills/dev/story-to-tasks/agents/classify-tdd-plan.md` 作成
-- [ ] `.claude/skills/dev/story-to-tasks/references/tdd-criteria.md` 作成
-- [ ] `.claude/skills/dev/story-to-tasks/references/plan-criteria.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/SKILL.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/agents/analyze-story.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/agents/decompose-tasks.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/agents/classify-tdd-plan.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/references/tdd-criteria.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/references/plan-criteria.md` 作成
 
 #### developing
-- [ ] `.claude/skills/dev/developing/SKILL.md` 作成（impl.mdを参照してTDD/PLAN両対応）
-- [ ] `.claude/skills/dev/developing/agents/tdd-write-test.md` 作成
-- [ ] `.claude/skills/dev/developing/agents/tdd-implement.md` 作成
-- [ ] `.claude/skills/dev/developing/agents/tdd-refactor.md` 作成
-- [ ] `.claude/skills/dev/developing/agents/plan-implement.md` 作成
-- [ ] `.claude/skills/dev/developing/agents/plan-verify.md` 作成（agent-browser操作フロー検証）
-- [ ] `.claude/skills/dev/developing/references/tdd-flow.md` 作成（impl.mdベース）
-- [ ] `.claude/skills/dev/developing/references/plan-flow.md` 作成（agent-browser検証フロー）
+- [x] `.claude/skills/dev/developing/SKILL.md` 作成（impl.mdを参照してTDD/PLAN両対応）
+- [x] `.claude/skills/dev/developing/agents/tdd-write-test.md` 作成
+- [x] `.claude/skills/dev/developing/agents/tdd-implement.md` 作成
+- [x] `.claude/skills/dev/developing/agents/tdd-refactor.md` 作成
+- [x] `.claude/skills/dev/developing/agents/plan-implement.md` 作成
+- [x] `.claude/skills/dev/developing/agents/plan-verify.md` 作成（agent-browser操作フロー検証）
+- [x] `.claude/skills/dev/developing/references/tdd-flow.md` 作成（impl.mdベース）
+- [x] `.claude/skills/dev/developing/references/plan-flow.md` 作成（agent-browser検証フロー）
 
 #### feedback
-- [ ] `.claude/skills/dev/feedback/SKILL.md` 作成（skill-creator連携機能含む）
-- [ ] `.claude/skills/dev/feedback/agents/analyze-changes.md` 作成
-- [ ] `.claude/skills/dev/feedback/agents/update-design.md` 作成
-- [ ] `.claude/skills/dev/feedback/agents/detect-patterns.md` 作成
-- [ ] `.claude/skills/dev/feedback/agents/propose-improvement.md` 作成
-- [ ] `.claude/skills/dev/feedback/references/design-template.md` コピー＆拡張（PLANセクション追加）
-- [ ] `.claude/skills/dev/feedback/references/update-format.md` 作成
-- [ ] `.claude/skills/dev/feedback/references/improvement-patterns.md` 作成
-- [ ] `.claude/skills/dev/feedback/references/feedback-loop.md` コピー（skill-creatorから）
+- [x] `.claude/skills/dev/feedback/SKILL.md` 作成（skill-creator連携機能含む）
+- [x] `.claude/skills/dev/feedback/agents/analyze-changes.md` 作成
+- [x] `.claude/skills/dev/feedback/agents/update-design.md` 作成
+- [x] `.claude/skills/dev/feedback/agents/detect-patterns.md` 作成
+- [x] `.claude/skills/dev/feedback/agents/propose-improvement.md` 作成
+- [x] `.claude/skills/dev/feedback/references/design-template.md` コピー＆拡張（PLANセクション追加）
+- [x] `.claude/skills/dev/feedback/references/update-format.md` 作成
+- [x] `.claude/skills/dev/feedback/references/improvement-patterns.md` 作成
+- [x] `.claude/skills/dev/feedback/references/feedback-loop.md` コピー（skill-creatorから）
 
 ### Phase 3: ルール作成
 
-- [ ] `.claude/rules/workflow/tdd-workflow.md` 作成（TDD 5ステップ）
-- [ ] `.claude/rules/workflow/plan-cycle.md` 作成
-- [ ] `.claude/rules/workflow/tdd-plan-branching.md` 作成
+- [x] `.claude/rules/workflow/tdd-workflow.md` 作成（TDD 5ステップ）
+- [x] `.claude/rules/workflow/plan-cycle.md` 作成
+- [x] `.claude/rules/workflow/tdd-plan-branching.md` 作成
 
 ### Phase 4: コマンド作成
 
-- [ ] `.claude/commands/dev/story.md` 作成（/dev:story）
-- [ ] `.claude/commands/dev/feedback.md` 作成（/dev:feedback）
+- [x] `.claude/commands/dev/story.md` 作成（/dev:story）
+- [x] `.claude/commands/dev/feedback.md` 作成（/dev:feedback）
 
 ### Phase 5: 言語別ルール作成（並列可能）
 
 #### HTML/CSS
-- [ ] `.claude/rules/languages/html-css/coding.md`
-- [ ] `.claude/rules/languages/html-css/testing.md`
-- [ ] `.claude/rules/languages/html-css/design.md`
+- [x] `.claude/rules/languages/html-css/coding.md`
+- [x] `.claude/rules/languages/html-css/testing.md`
+- [x] `.claude/rules/languages/html-css/design.md`
 
 #### TypeScript/React
-- [ ] `.claude/rules/languages/typescript/coding.md`
-- [ ] `.claude/rules/languages/typescript/testing.md`
-- [ ] `.claude/rules/languages/react/coding.md`
-- [ ] `.claude/rules/languages/react/testing.md`
-- [ ] `.claude/rules/languages/react/design.md`
+- [x] `.claude/rules/languages/typescript/coding.md`
+- [x] `.claude/rules/languages/typescript/testing.md`
+- [x] `.claude/rules/languages/react/coding.md`
+- [x] `.claude/rules/languages/react/testing.md`
+- [x] `.claude/rules/languages/react/design.md`
 
 #### JavaScript
-- [ ] `.claude/rules/languages/javascript/coding.md`
-- [ ] `.claude/rules/languages/javascript/testing.md`
+- [x] `.claude/rules/languages/javascript/coding.md`
+- [x] `.claude/rules/languages/javascript/testing.md`
 
 #### PHP
-- [ ] `.claude/rules/languages/php/coding.md`
-- [ ] `.claude/rules/languages/php/testing.md`
+- [x] `.claude/rules/languages/php/coding.md`
+- [x] `.claude/rules/languages/php/testing.md`
 
 #### Python
-- [ ] `.claude/rules/languages/python/coding.md`
-- [ ] `.claude/rules/languages/python/testing.md`
+- [x] `.claude/rules/languages/python/coding.md`
+- [x] `.claude/rules/languages/python/testing.md`
 
 ### Phase 6: 統合テスト
 
@@ -547,7 +547,7 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 
 ### Phase 7: ドキュメント
 
-- [ ] CLAUDE.md更新（Available Skills）
+- [x] CLAUDE.md更新（Available Skills）
 
 ## 既存スキルとの関係
 
