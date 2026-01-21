@@ -1,111 +1,111 @@
 # dot-claude-dev
 
-Story-Driven Development workflow for Claude Code. A collection of skills, rules, and commands that enable TDD/PLAN-based development with automatic task classification.
+Claude Codeのためのストーリー駆動開発ワークフロー。TDD/PLANベースの開発と自動タスク分類を可能にするスキル、ルール、コマンドのコレクション。
 
-## Overview
+## 概要
 
-This repository provides a structured development workflow that:
+このリポジトリは以下の構造化された開発ワークフローを提供します：
 
-1. **Converts user stories to tasks** with automatic TDD/PLAN classification
-2. **Executes tasks** using the appropriate workflow (TDD for logic, PLAN for UI)
-3. **Captures learnings** and proposes skill/rule improvements
+1. **ユーザーストーリーをタスクに変換** - TDD/PLAN自動分類付き
+2. **タスクを実行** - 適切なワークフローを使用（ロジックにはTDD、UIにはPLAN）
+3. **学びを蓄積** - スキル/ルールの改善を提案
 
-## Installation
+## インストール
 
-Copy the `.claude` directory to your project:
+`.claude` ディレクトリをプロジェクトにコピーします：
 
 ```bash
-# Clone this repository
+# このリポジトリをクローン
 git clone https://github.com/ryryo/dot-claude-dev.git
 
-# Copy .claude to your project
+# .claudeをプロジェクトにコピー
 cp -r dot-claude-dev/.claude /path/to/your-project/
 
-# Or symlink for automatic updates
+# または自動更新のためにシンボリックリンクを作成
 ln -s /path/to/dot-claude-dev/.claude /path/to/your-project/.claude
 ```
 
-## Usage
+## 使い方
 
-### 1. Start with a User Story
+### 1. ユーザーストーリーから始める
 
 ```bash
-# In your project directory with Claude Code
+# Claude Codeでプロジェクトディレクトリにて
 /dev:story
 ```
 
-Enter your user story when prompted. The skill will:
-- Analyze the story
-- Decompose it into tasks
-- Classify each task as TDD or PLAN
-- Generate `TODO.md` with labeled tasks
+プロンプトが表示されたらユーザーストーリーを入力します。スキルは以下を実行します：
+- ストーリーを分析
+- タスクに分解
+- 各タスクをTDDまたはPLANに分類
+- ラベル付きタスクで `TODO.md` を生成
 
-### 2. Execute Tasks
+### 2. タスクを実行
 
-The `dev:developing` skill automatically selects the appropriate workflow:
+`dev:developing` スキルが適切なワークフローを自動選択します：
 
-**TDD Workflow** (for business logic, APIs, data processing):
+**TDDワークフロー**（ビジネスロジック、API、データ処理向け）：
 ```
 RED → GREEN → REFACTOR → REVIEW → CHECK → COMMIT
 ```
 
-**PLAN Workflow** (for UI/UX, visual elements):
+**PLANワークフロー**（UI/UX、視覚的要素向け）：
 ```
-IMPL → AUTO (agent-browser verification) → CHECK → COMMIT
+IMPL → AUTO（agent-browser検証） → CHECK → COMMIT
 ```
 
-### 3. Capture Feedback
+### 3. フィードバックを記録
 
 ```bash
 /dev:feedback
 ```
 
-After implementation, this skill:
-- Updates `DESIGN.md` with learnings
-- Detects recurring patterns
-- Proposes skill/rule improvements
+実装後、このスキルは以下を実行します：
+- 学びで `DESIGN.md` を更新
+- 繰り返しパターンを検出
+- スキル/ルールの改善を提案
 
-## Workflow Diagram
+## ワークフロー図
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  Story-Driven Development                    │
+│                  ストーリー駆動開発                           │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  1. /dev:story                                              │
-│     └── Story → TODO.md (with [TDD]/[PLAN] labels)         │
+│     └── ストーリー → TODO.md（[TDD]/[PLAN]ラベル付き）        │
 │                                                             │
 │  2. dev:developing                                          │
 │     ├── [TDD] RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT       │
 │     └── [PLAN] IMPL→AUTO→CHECK→COMMIT                      │
 │                                                             │
 │  3. /dev:feedback                                           │
-│     └── DESIGN.md update → Pattern detection → Improvement │
+│     └── DESIGN.md更新 → パターン検出 → 改善提案              │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Structure
+## 構造
 
 ```
 .claude/
 ├── skills/
 │   ├── dev/
-│   │   ├── story-to-tasks/   # Story → TODO.md conversion
-│   │   ├── developing/       # Task execution (TDD/PLAN)
-│   │   └── feedback/         # Learning capture
-│   └── meta-skill-creator/   # Skill creation/improvement
+│   │   ├── story-to-tasks/   # ストーリー → TODO.md変換
+│   │   ├── developing/       # タスク実行（TDD/PLAN）
+│   │   └── feedback/         # 学びの記録
+│   └── meta-skill-creator/   # スキル作成/改善
 ├── rules/
-│   ├── workflow/             # TDD/PLAN workflow rules
-│   └── languages/            # Language-specific coding rules
+│   ├── workflow/             # TDD/PLANワークフロールール
+│   └── languages/            # 言語別コーディングルール
 └── commands/
-    └── dev/                  # Shortcut commands
+    └── dev/                  # ショートカットコマンド
 ```
 
-## Supported Languages
+## 対応言語
 
-| Language | Coding | Testing | Design |
-|----------|--------|---------|--------|
+| 言語 | コーディング | テスト | デザイン |
+|------|------------|--------|----------|
 | TypeScript | ✅ | ✅ | - |
 | React | ✅ | ✅ | ✅ |
 | JavaScript | ✅ | ✅ | - |
@@ -113,26 +113,26 @@ After implementation, this skill:
 | PHP | ✅ | ✅ | - |
 | HTML/CSS | ✅ | ✅ | ✅ |
 
-## Key Concepts
+## 主要コンセプト
 
-### TDD Classification
-Tasks are classified as TDD when:
-- Input/output is clearly definable
-- Can be verified with assertions
-- Logic layer (validation, calculation, transformation)
+### TDD分類
+以下の場合にタスクはTDDに分類されます：
+- 入出力が明確に定義できる
+- アサーションで検証可能
+- ロジック層（バリデーション、計算、変換）
 
-### PLAN Classification
-Tasks are classified as PLAN when:
-- Visual confirmation is needed
-- UX/UI judgment is involved
-- Presentation layer (components, layouts, animations)
+### PLAN分類
+以下の場合にタスクはPLANに分類されます：
+- 視覚的確認が必要
+- UX/UI判断が含まれる
+- プレゼンテーション層（コンポーネント、レイアウト、アニメーション）
 
 ### DESIGN.md
-A feature-specific specification document that accumulates:
-- Implementation decisions
-- Learnings from development
-- Patterns discovered
+以下を蓄積する機能別仕様書：
+- 実装の決定事項
+- 開発からの学び
+- 発見されたパターン
 
-## License
+## ライセンス
 
 MIT

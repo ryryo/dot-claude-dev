@@ -1,29 +1,29 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルはClaude Code (claude.ai/code) がこのリポジトリで作業する際のガイダンスを提供します。
 
-## Rules and Skills Structure
+## ルールとスキルの構造
 
-This repository provides a structured approach for Story-Driven Development with Claude Code:
+このリポジトリはClaude Codeによるストーリー駆動開発のための構造化されたアプローチを提供します：
 
-- **Rules**: Located at `.claude/rules/`, these are automatically loaded based on file paths. Source of truth for project conventions.
-- **Skills**: Located at `.claude/skills/`, these are manually invoked for specific workflows.
-- **Commands**: Located at `.claude/commands/`, these are shortcuts to invoke skills.
+- **ルール**: `.claude/rules/` に配置。ファイルパスに基づいて自動的に読み込まれます。プロジェクト規約の情報源。
+- **スキル**: `.claude/skills/` に配置。特定のワークフローで手動で呼び出します。
+- **コマンド**: `.claude/commands/` に配置。スキルを呼び出すためのショートカット。
 
-## Available Rules
+## 利用可能なルール
 
-### Workflow Rules
+### ワークフロールール
 
-| Rule | Applies To | Description |
-|------|------------|-------------|
+| ルール | 適用対象 | 説明 |
+|--------|----------|------|
 | **tdd-workflow** | `**/*.test.ts`, `**/*.spec.ts`, `**/*.test.tsx`, `**/*.spec.tsx` | TDD 6ステップワークフロー（RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT） |
 | **plan-cycle** | `**/components/**/*.tsx`, `**/pages/**/*.tsx`, `**/views/**/*.php` | PLANサイクル（UI実装→agent-browser検証→品質チェック→コミット） |
 | **tdd-plan-branching** | `**/TODO.md` | TDD/PLAN分岐判定ルール |
 
-### Language Rules
+### 言語別ルール
 
-| Rule | Applies To | Description |
-|------|------------|-------------|
+| ルール | 適用対象 | 説明 |
+|--------|----------|------|
 | **typescript/coding** | `**/*.ts`, `**/*.tsx` | TypeScriptコーディング規約。strict mode、Zod連携、Result型パターン |
 | **typescript/testing** | `**/*.test.ts`, `**/*.spec.ts` | TypeScriptテスト規約。Vitest/Jest、Given-When-Then形式 |
 | **react/coding** | `**/*.tsx`, `**/*.jsx` | Reactコーディング規約。関数コンポーネント、Hooks、React Hook Form + Zod |
@@ -39,32 +39,32 @@ This repository provides a structured approach for Story-Driven Development with
 | **html-css/testing** | `**/*.html`, `**/*.css` | HTML/CSSテスト規約。axe-core、Playwright視覚的回帰 |
 | **html-css/design** | `**/*.html`, `**/*.css`, `**/components/**/*` | HTML/CSSデザイン規約。デザイントークン、アクセシビリティ |
 
-## Available Skills
+## 利用可能なスキル
 
-### Development Workflow (Big 3)
+### 開発ワークフロー（Big 3）
 
-| Skill | Use Case |
-|-------|----------|
+| スキル | 用途 |
+|--------|------|
 | **dev:story-to-tasks** | ストーリーからTDD/PLAN分岐付きタスクリスト（TODO.md）を生成。Worktree作成後、最初に実行するスキル。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
 | **dev:developing** | TODO.mdのタスクを実行。TDD/PLANラベルに応じたワークフローで実装。TDDは6ステップ（RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT）、PLANはagent-browser検証付き |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
-### Meta Skill
+### メタスキル
 
-| Skill | Use Case |
-|-------|----------|
+| スキル | 用途 |
+|--------|------|
 | **meta-skill-creator** | スキルを作成・更新・プロンプト改善するためのメタスキル。collaborativeモードでユーザーと対話しながら共創し、orchestrateモードでタスクの実行エンジンを選択。Triggers: スキル作成, スキル更新, プロンプト改善 |
 
-## Available Commands
+## 利用可能なコマンド
 
-| Command | Description |
-|---------|-------------|
+| コマンド | 説明 |
+|----------|------|
 | `/dev:story` | ストーリーからタスクリスト生成。dev:story-to-tasksスキルを起動 |
 | `/dev:feedback` | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案 |
 
-## Development Workflow
+## 開発ワークフロー
 
-### Story-Driven Development Flow
+### ストーリー駆動開発フロー
 
 ```
 1. Worktree作成
@@ -83,7 +83,7 @@ This repository provides a structured approach for Story-Driven Development with
 5. PR作成 & マージ
 ```
 
-### Key Concepts
+### 主要コンセプト
 
 - **TDD判定**: ビジネスロジック、API、データ処理 → 自動テスト可能
 - **PLAN判定**: UI/UX、視覚的要素、ユーザー操作フロー → agent-browser検証
