@@ -45,14 +45,14 @@
   - テストを通す最小限の実装
   - `src/Controllers/HealthCheckController.php`を作成
   - ルーティングに追加
-- [ ] [TDD][REFACTOR] ヘルスチェックエンドポイント実装のリファクタリング
+- [x] [TDD][REFACTOR] ヘルスチェックエンドポイント実装のリファクタリング
   - コードの重複排除
   - 命名改善
   - 複雑度低減
-- [ ] [TDD][REVIEW] ヘルスチェックエンドポイント実装のセルフレビュー
+- [x] [TDD][REVIEW] ヘルスチェックエンドポイント実装のセルフレビュー
   - テストが成功しているか再確認
   - PSR-12準拠か確認
-- [ ] [TDD][CHECK] ヘルスチェックエンドポイント実装のlint/format/build確認
+- [x] [TDD][CHECK] ヘルスチェックエンドポイント実装のlint/format/build確認
   - Pestでテスト実行
   - PHPコードのチェック
 
