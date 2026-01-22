@@ -45,9 +45,9 @@
 
 | スキル | 用途 |
 |--------|------|
-| **dev:story-to-tasks** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。Worktree作成後、最初に実行するスキル。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
+| **dev:story-to-tasks** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。Worktree作成も粒度に応じて自動判定。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
 | **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは6ステップ、E2Eはagent-browser検証付き、TASKはEXEC→VERIFY→COMMIT |
-| **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。Triggers: /dev:feedback, 実装振り返り, フィードバック |
+| **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成・Worktreeクリーンアップまで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
 ### メタスキル
 
@@ -87,21 +87,21 @@
 ### ストーリー駆動開発フロー
 
 ```
-1. Worktree作成
-   └── git worktree add -b feature/xxx
-
-2. /dev:story 実行
+1. /dev:story 実行
+   ├── Worktree判定・作成（粒度に応じて自動判定）
+   │   ├── 大きい変更 → Worktree作成
+   │   └── 小さい変更 → スキップ
    └── ストーリー入力 → TODO.md生成（TDD/E2E/TASKラベル付き）
 
-3. dev:developing でタスク実行
+2. dev:developing でタスク実行
    ├── [TASK] EXEC → VERIFY → COMMIT
    ├── [TDD] RED → GREEN → REFACTOR → REVIEW → CHECK → COMMIT
    └── [E2E] UI実装 → agent-browser検証 → 品質チェック → COMMIT
 
-4. /dev:feedback 実行
-   └── DESIGN.md更新 → パターン検出 → スキル/ルール改善提案
-
-5. PR作成 & マージ
+3. /dev:feedback 実行
+   ├── DESIGN.md更新 → パターン検出 → スキル/ルール改善提案
+   ├── PR作成（gh pr create）
+   └── マージ後、Worktreeクリーンアップ
 ```
 
 ### 主要コンセプト

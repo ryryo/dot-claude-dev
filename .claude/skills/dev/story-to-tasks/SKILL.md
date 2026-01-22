@@ -2,7 +2,7 @@
 name: dev:story-to-tasks
 description: |
   ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。
-  Worktree作成後、最初に実行するスキル。
+  ストーリー駆動開発の起点となるスキル。
   「タスクを作成」「/dev:story」で起動。
 
   Trigger:
@@ -51,6 +51,11 @@ allowed-tools:
 ## ワークフロー
 
 ```
+Phase 0: Worktree判定・作成（条件付き）
+    → ストーリーの粒度を判定
+    → 大きい変更 → Worktree作成
+    → 小さい変更 → スキップ
+        ↓
 Phase 1: ストーリー理解・slug確定
     → agents/analyze-story.md [opus]
     → AskUserQuestionでslug確定
@@ -67,6 +72,68 @@ Phase 3: TDD/E2E/TASK分類
 Phase 4: ユーザー確認
     → AskUserQuestion で確認・承認
 ```
+
+---
+
+## Phase 0: Worktree判定・作成
+
+### 0.1 粒度判定
+
+ストーリーの粒度を判定し、Worktree作成の要否を決定する。
+
+**Worktree作成が必要なケース**:
+- 新機能開発（複数ファイル/ディレクトリにまたがる）
+- リファクタリング（複数コンポーネント影響）
+- アーキテクチャ変更
+
+**スキップしてよいケース**:
+- 単一バグ修正（1-2ファイル変更）
+- ドキュメント更新
+- 小さなスタイル調整
+- 設定ファイルの微調整
+
+### 0.2 ユーザー確認
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "Worktreeを作成しますか？",
+    header: "Worktree",
+    options: [
+      { label: "作成する", description: "feature/xxx ブランチで独立した開発環境を作成" },
+      { label: "スキップ", description: "現在のブランチで直接作業（小規模変更向け）" }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+### 0.3 Worktree作成（選択時）
+
+```javascript
+// ブランチ名をユーザーに確認
+AskUserQuestion({
+  questions: [{
+    question: "ブランチ名を入力してください（例: feature/user-auth）",
+    header: "ブランチ名",
+    options: [
+      { label: "feature/{story-slug}", description: "ストーリー名からブランチを自動生成" },
+      { label: "fix/{story-slug}", description: "バグ修正用ブランチ" }
+    ],
+    multiSelect: false
+  }]
+})
+
+// Worktree作成
+Bash({
+  command: "git worktree add -b {branch-name} ../{branch-name}",
+  description: "Worktreeを作成"
+})
+```
+
+**作成後**:
+- 新しいWorktreeディレクトリに移動して作業を継続
+- ユーザーに新しいパスを通知
 
 ---
 
