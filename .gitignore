@@ -24,3 +24,7 @@ logs/
 
 package-lock.json
 node_modules/
+
+# PHP
+vendor/
+composer.lock

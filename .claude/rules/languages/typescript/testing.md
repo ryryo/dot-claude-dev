@@ -11,6 +11,30 @@ globs:
 
 **Vitest** を使用。
 
+## テストファイル配置（コロケーション）
+
+テストファイルは対象ファイルと**同じディレクトリ**に配置する。
+
+```
+src/
+├── utils/
+│   ├── validation.ts
+│   └── validation.test.ts   ← 同じ場所
+├── services/
+│   ├── api.ts
+│   └── api.test.ts          ← 同じ場所
+└── hooks/
+    ├── useAuth.ts
+    └── useAuth.test.ts      ← 同じ場所
+```
+
+### 命名規則
+
+| パターン | 例 |
+|----------|-----|
+| `*.test.ts`（推奨） | `validation.test.ts` |
+| `*.spec.ts` | `api.spec.ts` |
+
 ## テスト構造
 
 ### describe/it パターン

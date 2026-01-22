@@ -1,5 +1,5 @@
 ---
-description: PHPテスト規約。PHPUnit/Pestを使用。
+description: PHPテスト規約。Pestを使用。
 globs:
   - "**/tests/**/*.php"
   - "**/*Test.php"
@@ -9,63 +9,49 @@ globs:
 
 ## テストフレームワーク
 
-PHPUnit または Pest を使用。
+**Pest** を使用。
 
-## PHPUnit テスト構造
+## テストファイル配置（tests/ディレクトリ）
 
-```php
-<?php
+テストファイルは**tests/ディレクトリ**に配置し、app/の構造をミラーリングする。
 
-declare(strict_types=1);
+```
+app/
+├── Services/
+│   └── UserService.php
+├── Models/
+│   └── User.php
+└── Http/
+    └── Controllers/
+        └── UserController.php
 
-namespace Tests\Unit;
-
-use App\Services\UserService;
-use App\Repositories\UserRepository;
-use PHPUnit\Framework\TestCase;
-
-class UserServiceTest extends TestCase
-{
-    private UserService $service;
-    private UserRepository $repository;
-
-    protected function setUp(): void
-    {
-        $this->repository = $this->createMock(UserRepository::class);
-        $this->service = new UserService($this->repository);
-    }
-
-    public function testFindByIdReturnsUser(): void
-    {
-        // Given
-        $expectedUser = new User(1, 'John', 'john@example.com');
-        $this->repository
-            ->expects($this->once())
-            ->method('find')
-            ->with(1)
-            ->willReturn($expectedUser);
-
-        // When
-        $result = $this->service->findById(1);
-
-        // Then
-        $this->assertSame($expectedUser, $result);
-    }
-
-    public function testFindByIdReturnsNullWhenNotFound(): void
-    {
-        $this->repository
-            ->method('find')
-            ->willReturn(null);
-
-        $result = $this->service->findById(999);
-
-        $this->assertNull($result);
-    }
-}
+tests/
+├── Unit/                              ← 単体テスト
+│   ├── Services/
+│   │   └── UserServiceTest.php        ← app構造をミラー
+│   └── Models/
+│       └── UserTest.php
+└── Feature/                           ← 結合テスト
+    └── Http/
+        └── Controllers/
+            └── UserControllerTest.php
 ```
 
-## Pest テスト構造
+### 命名規則
+
+| パターン | 例 | 配置 |
+|----------|-----|------|
+| `*Test.php` | `UserServiceTest.php` | `tests/Unit/Services/` |
+| `*Test.php` | `UserControllerTest.php` | `tests/Feature/Http/Controllers/` |
+
+### テスト種別
+
+| ディレクトリ | 用途 |
+|-------------|------|
+| `tests/Unit/` | 単一クラス/メソッドのテスト、外部依存はモック |
+| `tests/Feature/` | 複数クラスの結合、HTTP/DBを含むテスト |
+
+## テスト構造
 
 ```php
 <?php
@@ -79,11 +65,14 @@ describe('UserService', function () {
     });
 
     it('finds user by id', function () {
+        // Given
         $user = new User(1, 'John', 'john@example.com');
         $this->repository->shouldReceive('find')->with(1)->andReturn($user);
 
+        // When
         $result = $this->service->findById(1);
 
+        // Then
         expect($result)->toBe($user);
     });
 
@@ -100,38 +89,18 @@ describe('UserService', function () {
 ## アサーション
 
 ```php
-// PHPUnit
-$this->assertEquals($expected, $actual);
-$this->assertSame($expected, $actual);
-$this->assertTrue($condition);
-$this->assertNull($value);
-$this->assertCount(3, $array);
-$this->assertContains($item, $array);
-$this->assertInstanceOf(User::class, $object);
-
-// Pest
-expect($value)->toBe($expected);
-expect($value)->toEqual($expected);
-expect($value)->toBeTrue();
-expect($value)->toBeNull();
-expect($array)->toHaveCount(3);
-expect($array)->toContain($item);
-expect($object)->toBeInstanceOf(User::class);
+expect($value)->toBe($expected);              // 厳密等価
+expect($value)->toEqual($expected);           // 構造等価
+expect($value)->toBeTrue();                   // 真値
+expect($value)->toBeFalse();                  // 偽値
+expect($value)->toBeNull();                   // null
+expect($array)->toHaveCount(3);               // 配列長
+expect($array)->toContain($item);             // 配列に含む
+expect($object)->toBeInstanceOf(User::class); // インスタンス
+expect($string)->toMatch('/pattern/');        // 正規表現
 ```
 
-## モック
-
-### PHPUnit
-
-```php
-$mock = $this->createMock(Repository::class);
-$mock->expects($this->once())
-    ->method('save')
-    ->with($this->equalTo($entity))
-    ->willReturn(true);
-```
-
-### Mockery
+## モック（Mockery）
 
 ```php
 $mock = Mockery::mock(Repository::class);
@@ -144,23 +113,14 @@ $mock->shouldReceive('save')
 ## データプロバイダー
 
 ```php
-/**
- * @dataProvider emailProvider
- */
-public function testValidateEmail(string $email, bool $expected): void
-{
-    $result = $this->validator->validateEmail($email);
-    $this->assertSame($expected, $result);
-}
-
-public static function emailProvider(): array
-{
-    return [
-        'valid email' => ['user@example.com', true],
-        'invalid email' => ['invalid', false],
-        'empty string' => ['', false],
-    ];
-}
+it('validates email format', function (string $email, bool $expected) {
+    $result = validateEmail($email);
+    expect($result)->toBe($expected);
+})->with([
+    ['user@example.com', true],
+    ['invalid', false],
+    ['', false],
+]);
 ```
 
 ## 禁止事項

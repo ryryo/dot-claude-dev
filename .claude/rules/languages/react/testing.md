@@ -8,7 +8,7 @@ globs:
 # Reactテスト規約
 
 > **注意**: この規約は**TDDワークフロー**でのユニットテスト/コンポーネントテスト向けです。
-> UIの視覚的検証は**PLANワークフロー**で agent-browser を使用します（`plan-cycle.md` 参照）。
+> UIの視覚的検証は**E2Eワークフロー**で agent-browser を使用します（`e2e-cycle.md` 参照）。
 
 ## 対象
 
@@ -22,6 +22,35 @@ globs:
 - **Vitest**
 - **React Testing Library**
 - **@testing-library/user-event**
+
+## テストファイル配置（コロケーション）
+
+テストファイルはコンポーネントと**同じディレクトリ**に配置する。
+
+```
+src/
+├── components/
+│   ├── Button/
+│   │   ├── Button.tsx
+│   │   ├── Button.test.tsx      ← 同じ場所
+│   │   └── Button.module.css
+│   └── Modal/
+│       ├── Modal.tsx
+│       └── Modal.test.tsx       ← 同じ場所
+├── hooks/
+│   ├── useAuth.ts
+│   └── useAuth.test.ts          ← 同じ場所
+└── pages/
+    ├── Home.tsx
+    └── Home.test.tsx            ← 同じ場所
+```
+
+### 命名規則
+
+| パターン | 例 |
+|----------|-----|
+| `*.test.tsx`（推奨） | `Button.test.tsx` |
+| `*.spec.tsx` | `Modal.spec.tsx` |
 
 ## テスト構造
 

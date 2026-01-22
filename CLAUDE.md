@@ -25,14 +25,14 @@
 | ルール | 適用対象 | 説明 |
 |--------|----------|------|
 | **typescript/coding** | `**/*.ts`, `**/*.tsx` | TypeScriptコーディング規約。strict mode、Zod連携、Result型パターン |
-| **typescript/testing** | `**/*.test.ts`, `**/*.spec.ts` | TypeScriptテスト規約。Vitest/Jest、Given-When-Then形式 |
+| **typescript/testing** | `**/*.test.ts`, `**/*.spec.ts` | TypeScriptテスト規約。Vitest、Given-When-Then形式 |
 | **react/coding** | `**/*.tsx`, `**/*.jsx` | Reactコーディング規約。関数コンポーネント、Hooks、React Hook Form + Zod |
-| **react/testing** | `**/*.test.tsx`, `**/*.spec.tsx` | Reactテスト規約。React Testing Library、ユーザー視点テスト |
+| **react/testing** | `**/*.test.tsx`, `**/*.spec.tsx` | Reactテスト規約。Vitest、React Testing Library、ユーザー視点テスト |
 | **react/design** | `**/components/**/*.tsx` | Reactデザイン規約。Compound Components、アクセシビリティ |
 | **javascript/coding** | `**/*.js`, `**/*.mjs` | JavaScriptコーディング規約。ES6+、async/await |
-| **javascript/testing** | `**/*.test.js`, `**/*.spec.js` | JavaScriptテスト規約。Jest/Vitest |
+| **javascript/testing** | `**/*.test.js`, `**/*.spec.js` | JavaScriptテスト規約。Vitest |
 | **php/coding** | `**/*.php` | PHPコーディング規約。PSR-12、strict_types |
-| **php/testing** | `**/tests/**/*.php`, `**/*Test.php` | PHPテスト規約。PHPUnit/Pest |
+| **php/testing** | `**/tests/**/*.php`, `**/*Test.php` | PHPテスト規約。Pest |
 | **python/coding** | `**/*.py` | Pythonコーディング規約。PEP 8、型ヒント、Pydantic |
 | **python/testing** | `**/test_*.py`, `**/*_test.py` | Pythonテスト規約。pytest |
 | **html-css/coding** | `**/*.html`, `**/*.css`, `**/*.scss` | HTML/CSSコーディング規約。セマンティックHTML、CSS変数、BEM |
@@ -66,14 +66,19 @@
 
 ### テストフレームワーク
 
-このプロジェクトでは **Vitest** を使用します。
+| 言語/FW | テストフレームワーク | 理由 |
+|---------|---------------------|------|
+| **TypeScript/JavaScript** | Vitest | 高速、ESM/TypeScriptネイティブ対応、Vite統合 |
+| **React** | Vitest + React Testing Library | ユーザー視点のテスト、アクセシビリティ重視 |
+| **PHP** | Pest | describe/it/expect構文でVitest/Jestと統一、モダンDX |
+
 
 ### テストファイル命名規則
 
 テストファイルは必ず以下の命名規則に従うこと:
 
-- `*.test.ts` / `*.test.tsx`
-- `*.spec.ts` / `*.spec.tsx`
+- TypeScript/JavaScript: `*.test.ts` / `*.test.tsx` / `*.spec.ts` / `*.spec.tsx`
+- PHP: `tests/**/*Test.php`
 
 この命名規則により、TDDワークフロールール（`tdd-workflow.md`）が自動適用されます。
 
