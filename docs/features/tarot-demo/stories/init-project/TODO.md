@@ -36,7 +36,7 @@
 
 ### TDDタスク
 
-- [ ] [TDD][RED] ヘルスチェックエンドポイント実装のテスト作成
+- [x] [TDD][RED] ヘルスチェックエンドポイント実装のテスト作成
   - `tests/Feature/HealthCheckTest.php`を作成
   - `/api/health`エンドポイントが存在するか
   - ステータスコード200が返されるか
