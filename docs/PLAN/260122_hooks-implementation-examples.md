@@ -1,6 +1,6 @@
-# Hooks 実装サンプル集（コア3機能版）
+# Hooks 実装サンプル集（コア2機能版）
 
-> **対象**: セッションメモリ永続化 + 継続学習システム + 戦略的コンパクション
+> **対象**: セッションメモリ永続化 + 戦略的コンパクション
 > **参照**: 著者の実装パターンをストーリー駆動開発に統合
 > **出典**: `docs/SAMPLE/dot-claude-dev/everything-claude-code/`
 
@@ -13,7 +13,6 @@
 | **SessionStart** | `session-start.sh` | ストーリーセッション or グローバルセッション読み込み |
 | **PreCompact** | `pre-compact.sh` | コンパクション前に状態保存 |
 | **Stop** | `session-end.sh` | セッション終了時に状態保存 |
-| **Stop** | `evaluate-session.sh` | 継続学習：パターン検出と提案 |
 | **PreToolUse** | `suggest-compact.sh` | 戦略的コンパクション：50ツール呼び出しで提案 |
 
 ---
@@ -42,7 +41,7 @@
 #!/bin/bash
 # SessionStart Hook - Load story session or global session
 
-LEARNED_DIR="${HOME}/.claude/skills/learned"
+LEARNED_DIR="${HOME}/.claude/skills/learned"  # dev:feedback Phase 4 で使用
 
 # ストーリーディレクトリの検出（TODO.md の存在確認）
 if [ -f "TODO.md" ] && [ -f "SESSION.md" ]; then
@@ -207,47 +206,7 @@ fi
 
 ---
 
-### パターン4: Stop（継続学習評価）
-
-**hooks.json**:
-```json
-{
-  "matcher": "*",
-  "hooks": [{
-    "type": "command",
-    "command": "~/.claude/hooks/continuous-learning/evaluate-session.sh"
-  }],
-  "description": "Evaluate session for learning patterns"
-}
-```
-
-**スクリプト**: `~/.claude/hooks/continuous-learning/evaluate-session.sh`
-
-```bash
-#!/bin/bash
-# Stop Hook - Evaluate session for patterns to learn
-
-# ストーリー内でのみ評価
-if [ ! -f "SESSION.md" ]; then
-  exit 0
-fi
-
-# SESSION.md から "Notes for /learn Evaluation" セクションを抽出
-if grep -q "Notes for /learn Evaluation" SESSION.md; then
-  echo "" >&2
-  echo "💡 Learning Opportunity Detected" >&2
-  echo "   Check SESSION.md for patterns that could be saved as skills" >&2
-  echo "   Run /learn to capture reusable patterns" >&2
-fi
-```
-
-**ポイント**:
-- SESSION.mdに `/learn` 評価ノートがあれば通知
-- 実際の学習は `/learn` コマンドで手動実行
-
----
-
-### パターン5: 状態追跡（戦略的コンパクション）
+### パターン4: 状態追跡（戦略的コンパクション）
 
 **用途**: ツール呼び出し回数をカウントし、50回で /compact を提案
 
@@ -344,14 +303,6 @@ fi
           "command": "~/.claude/hooks/memory-persistence/session-end.sh"
         }],
         "description": "Persist session state on exit"
-      },
-      {
-        "matcher": "*",
-        "hooks": [{
-          "type": "command",
-          "command": "~/.claude/hooks/continuous-learning/evaluate-session.sh"
-        }],
-        "description": "Evaluate session for learning patterns"
       }
     ]
   }
@@ -454,18 +405,6 @@ src/utils/validation.ts
 src/utils/validation.test.ts
 docs/features/user-auth/stories/implement-email-validation/TODO.md
 ```
-
----
-
-## Notes for /learn Evaluation
-
-このセッションで**繰り返し使用した手法**:
-- Result型パターン（3回目の使用 → スキル化検討）
-- TDDサイクルの厳密な遵守（効果実感）
-- expect.objectContaining パターン（2回目 → 定着）
-
-**推奨アクション**:
-- Result型パターンを `learned/result-type-pattern.md` として保存
 ```
 
 **配置**: ストーリーディレクトリ内に配置され、Git管理される
@@ -474,12 +413,9 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 - タスク完了時に "Completed Tasks" セクションを更新
 - /compact 実行前に PreCompact hook が状態を保存
 
-**このセッションから学習可能なパターン**:
-- Result型パターンの実装と使い方
-- Vitest での構造比較テスト
-- TDDサイクルの実践ノウハウ
-
-→ `/learn` コマンドで `learned/result-type-pattern.md` として保存可能
+**パターンの学習**:
+- 繰り返しパターンは dev:feedback Phase 4 で検出・スキル化
+- ストーリー完了時に DESIGN.md へ記録
 
 ---
 
@@ -564,7 +500,7 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 - [ ] `.claude/hooks/hooks.json` 作成
 - [ ] SessionStart hook 実装（ストーリー検出対応）
 - [ ] PreCompact hook 実装（ストーリー検出対応）
-- [ ] Stop hook 実装（session-end.sh + evaluate-session.sh）
+- [ ] Stop hook 実装（session-end.sh）
 - [ ] PreToolUse hook 実装（suggest-compact.sh）
 - [ ] 全スクリプトに実行権限付与 (`chmod +x`)
 
@@ -573,17 +509,11 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 - [ ] グローバルセッションディレクトリ作成 (`~/.claude/sessions/`)
 - [ ] .gitignore に `.claude/sessions/*.tmp` 追加（グローバルセッションのみ）
 - [ ] ストーリーディレクトリの SESSION.md は Git 管理対象（.gitignore 不要）
-- [ ] 継続学習ディレクトリ作成 (`~/.claude/skills/learned/`)
 
 ### dev:story スキル更新
 
 - [ ] `.claude/skills/dev/story/SKILL.md` に Phase 4.2 追加
 - [ ] SESSION.md テンプレートを追加
-
-### /learn コマンド作成
-
-- [ ] `.claude/commands/learn.md` 作成
-- [ ] パターン抽出と learned/ への保存機能
 
 ### テスト実行
 

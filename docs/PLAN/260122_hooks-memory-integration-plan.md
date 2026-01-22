@@ -14,10 +14,11 @@
 著者の実装パターンを、**現在のストーリー駆動開発フレームワークに最適化**して統合:
 
 - ✅ **ストーリー単位のセッションメモリ**: `SESSION.md` を TODO.md, DESIGN.md と同じ場所で管理
-- ✅ **継続学習システム**: 繰り返しパターンを自動抽出・スキル化
 - ✅ **戦略的コンパクション**: 論理的なタイミングでのcompact提案
 
-**コア3機能の実装で、10ヶ月の実戦で証明された開発効率化を実現する。**
+**コア2機能の実装で、10ヶ月の実戦で証明された開発効率化を実現する。**
+
+**注**: 継続学習システムは dev:feedback Phase 4 と重複するため、今回は実装しない。
 
 ---
 
@@ -32,15 +33,14 @@
 | Progressive Disclosure | ✅ 必要時のみリソース読み込み |
 | Worktree統合 | ✅ dev:story Phase 0 で自動判定・作成 |
 
-### 統合対象（新規実装 - コア3機能のみ）
+### 統合対象（新規実装 - コア2機能のみ）
 
 | 機能 | 実装内容 | 実装時間 |
 |------|---------|---------|
 | **セッションメモリ永続化** | ストーリー単位のSESSION.md | 1-2時間 |
-| **継続学習システム** | /learn + evaluate-session.sh | 2-3時間 |
 | **戦略的コンパクション** | suggest-compact.sh | 30分 |
 
-**合計**: 4-6時間で完了
+**合計**: 2-3時間で完了
 
 ---
 
@@ -139,9 +139,8 @@ src/utils/validation.test.ts
 │   │   ├── session-start.sh         # ストーリー検出 + SESSION.md読み込み
 │   │   ├── pre-compact.sh           # コンパクション前の記録
 │   │   └── session-end.sh           # SESSION.md更新
-│   └── continuous-learning/          # Phase 2で実装
-│       ├── evaluate-session.sh
-│       └── config.json
+│   └── strategic-compact/            # 戦略的コンパクション（新規）
+│       └── suggest-compact.sh       # 50ツール呼び出しで提案
 ├── sessions/                         # グローバルセッション（補助）
 │   └── YYYY-MM-DD-global.tmp
 └── (existing structure...)
@@ -502,37 +501,49 @@ Write({
 
 ---
 
-## Phase 2: 継続学習システム
+## Phase 2: 戦略的コンパクション
 
-### 2.1 /learn コマンド実装
-
-**ファイル**: `.claude/commands/learn.md`
-
-（内容は既存計画書と同じ - 省略）
-
-**実装タスク**:
-- [ ] learn.md コマンド作成
-- [ ] .claude/skills/learned/ ディレクトリ作成
-
-### 2.2 evaluate-session.sh (Stop Hook)
-
-**ファイル**: `.claude/hooks/continuous-learning/evaluate-session.sh`
-
-（内容は既存計画書と同じ - 省略）
-
-**実装タスク**:
-- [ ] evaluate-session.sh 作成
-- [ ] config.json 作成
-- [ ] hooks.json に Stop hook として追加
-
-### 2.3 戦略的コンパクション
+### 2.1 suggest-compact.sh (PreToolUse Hook)
 
 **ファイル**: `.claude/hooks/strategic-compact/suggest-compact.sh`
 
-（内容は既存計画書と同じ - 省略）
+```bash
+#!/bin/bash
+# PreToolUse Hook - Suggest compact at logical checkpoints
+
+COUNTER_FILE="/tmp/claude-tool-count-$$"
+THRESHOLD=${COMPACT_THRESHOLD:-50}
+
+# カウンターを読み込み・更新
+if [ -f "$COUNTER_FILE" ]; then
+  count=$(cat "$COUNTER_FILE")
+  count=$((count + 1))
+  echo "$count" > "$COUNTER_FILE"
+else
+  echo "1" > "$COUNTER_FILE"
+  count=1
+fi
+
+# 50回目で提案
+if [ "$count" -eq "$THRESHOLD" ]; then
+  echo "💡 $THRESHOLD tool calls reached - consider /compact if transitioning phases" >&2
+fi
+
+# その後25回ごとに再提案
+if [ "$count" -gt "$THRESHOLD" ] && [ $((count % 25)) -eq 0 ]; then
+  echo "💡 $count tool calls - checkpoint for /compact if context is stale" >&2
+fi
+```
+
+**ポイント**:
+- `/tmp/claude-tool-count-$$` でプロセス固有のカウンター
+- 環境変数 `COMPACT_THRESHOLD` でカスタマイズ可能
+- 50回目 + 以降25回ごとに提案
 
 **実装タスク**:
+- [ ] `.claude/hooks/strategic-compact/` ディレクトリ作成
 - [ ] suggest-compact.sh 作成
+- [ ] 実行権限付与 (`chmod +x`)
 - [ ] hooks.json に PreToolUse hook として追加
 
 ---
@@ -557,9 +568,19 @@ Write({
 - [ ] Stop hook で SESSION.md が更新される
 - [ ] dev:story で SESSION.md が自動作成される
 
-### Phase 2（2-3時間） - 継続学習 + コンパクション
+### Phase 2（30分） - 戦略的コンパクション
 
-（既存計画書と同じ）
+| タスク | 成果物 | 所要時間 |
+|--------|--------|---------|
+| ディレクトリ作成 | `.claude/hooks/strategic-compact/` | 5分 |
+| suggest-compact.sh 実装 | PreToolUse hook | 15分 |
+| hooks.json 更新 | PreToolUse hook追加 | 5分 |
+| **テスト実行** | 50ツール呼び出しで提案確認 | 5分 |
+
+**チェックポイント**:
+- [ ] 50ツール呼び出し時に compact 提案が表示される
+- [ ] 75, 100, 125... で再提案が表示される
+- [ ] 環境変数 `COMPACT_THRESHOLD` でカスタマイズ可能
 
 ---
 
@@ -628,9 +649,9 @@ Write({
 
 ### Phase 2 完了時
 
-- [ ] /learn でパターン保存成功
-- [ ] Stop hook でパターン抽出提案
-- [ ] 戦略的コンパクション提案が機能
+- [ ] 50ツール呼び出し時に compact 提案が表示される
+- [ ] 75, 100, 125... で再提案が表示される
+- [ ] 環境変数でしきい値をカスタマイズ可能
 
 ---
 
@@ -648,8 +669,8 @@ Write({
 
 1. **Phase 1 実装開始**: hooks基盤とセッションメモリ（ストーリー統合版）
 2. **動作確認**: 実際のストーリーで検証
-3. **フィードバック収集**: 使用感の評価
-4. **Phase 2 移行判断**: Phase 1 が安定したら継続学習実装
+3. **Phase 2 実装**: 戦略的コンパクション（30分）
+4. **フィードバック収集**: 使用感の評価と改善
 
 ---
 
