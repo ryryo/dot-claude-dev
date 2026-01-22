@@ -19,11 +19,11 @@
 - [x] [TASK][VERIFY] Pestテストフレームワーク導入の確認
   - `vendor/bin/pest`コマンドでサンプルテストが成功するか確認
 
-- [ ] [TASK][EXEC] PHPバックエンド基本設定
+- [x] [TASK][EXEC] PHPバックエンド基本設定
   - エントリーポイント（`public/index.php`）を作成
   - 基本的なルーティングとCORS設定を追加
   - 基本Router実装（`src/Router.php`）を作成
-- [ ] [TASK][VERIFY] PHPバックエンド基本設定の確認
+- [x] [TASK][VERIFY] PHPバックエンド基本設定の確認
   - 必要なファイルが生成されたか確認
 
 - [ ] [TASK][EXEC] PHP開発サーバー起動確認
