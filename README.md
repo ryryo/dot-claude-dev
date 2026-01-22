@@ -91,7 +91,7 @@ IMPL → AUTO（agent-browser検証） → CHECK → COMMIT
 .claude/
 ├── skills/
 │   ├── dev/
-│   │   ├── story-to-tasks/   # ストーリー → TODO.md変換
+│   │   ├── story/            # ストーリー → TODO.md変換
 │   │   ├── developing/       # タスク実行（TDD/PLAN）
 │   │   └── feedback/         # 学びの記録
 │   └── meta-skill-creator/   # スキル作成/改善

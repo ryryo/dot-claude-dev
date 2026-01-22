@@ -364,7 +364,7 @@ AskUserQuestion({
 
 ## 関連スキル
 
-- **dev:story-to-tasks**: タスクリスト生成（TDD/E2E/TASK分類）
+- **dev:story**: タスクリスト生成（TDD/E2E/TASK分類）
 - **dev:feedback**: 実装後のフィードバック
 
 ## 参照ルール

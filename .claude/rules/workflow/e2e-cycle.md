@@ -102,4 +102,4 @@ mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
 ## 関連スキル
 
 - **dev:developing**: E2Eタスクの実装
-- **dev:story-to-tasks**: E2Eタスクの生成
+- **dev:story**: E2Eタスクの生成

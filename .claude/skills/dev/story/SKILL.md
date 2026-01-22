@@ -1,5 +1,5 @@
 ---
-name: dev:story-to-tasks
+name: dev:story
 description: |
   ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。
   ストーリー駆動開発の起点となるスキル。
@@ -18,7 +18,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# ストーリー → タスク生成（dev:story-to-tasks）
+# ストーリー → タスク生成（dev:story）
 
 ## 概要
 
@@ -167,7 +167,7 @@ Task({
 })
 ```
 
-→ 詳細: [agents/analyze-story.md](.claude/skills/dev/story-to-tasks/agents/analyze-story.md)
+→ 詳細: [agents/analyze-story.md](.claude/skills/dev/story/agents/analyze-story.md)
 
 ### 1.3 slug確定
 
@@ -243,7 +243,7 @@ Task({
 })
 ```
 
-→ 詳細: [agents/decompose-tasks.md](.claude/skills/dev/story-to-tasks/agents/decompose-tasks.md)
+→ 詳細: [agents/decompose-tasks.md](.claude/skills/dev/story/agents/decompose-tasks.md)
 
 ### 出力: task-list.json
 
@@ -275,8 +275,8 @@ Task({
 })
 ```
 
-→ 詳細: [agents/assign-workflow.md](.claude/skills/dev/story-to-tasks/agents/assign-workflow.md)
-→ 判定基準: [references/tdd-criteria.md](.claude/skills/dev/story-to-tasks/references/tdd-criteria.md) | [references/e2e-criteria.md](.claude/skills/dev/story-to-tasks/references/e2e-criteria.md) | [references/task-criteria.md](.claude/skills/dev/story-to-tasks/references/task-criteria.md)
+→ 詳細: [agents/assign-workflow.md](.claude/skills/dev/story/agents/assign-workflow.md)
+→ 判定基準: [references/tdd-criteria.md](.claude/skills/dev/story/references/tdd-criteria.md) | [references/e2e-criteria.md](.claude/skills/dev/story/references/e2e-criteria.md) | [references/task-criteria.md](.claude/skills/dev/story/references/task-criteria.md)
 
 ### 出力: TODO.md
 

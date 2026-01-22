@@ -128,4 +128,4 @@ Bash({
 ## 関連ドキュメント
 
 - [TASKワークフロー詳細](../references/task-flow.md)
-- [TASK判定基準](../../story-to-tasks/references/task-criteria.md)
+- [TASK判定基準](../../story/references/task-criteria.md)

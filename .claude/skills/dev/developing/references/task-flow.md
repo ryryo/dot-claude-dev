@@ -145,4 +145,4 @@ git commit -m "docs: add README.md"
 
 - [TDDワークフロー](./tdd-flow.md)
 - [E2Eワークフロー](./e2e-flow.md)
-- [TASK判定基準](../../story-to-tasks/references/task-criteria.md)
+- [TASK判定基準](../../story/references/task-criteria.md)

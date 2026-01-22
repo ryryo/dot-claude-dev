@@ -7,7 +7,7 @@ TASK / PHP TDD / TypeScript TDD / E2E の全ワークフローを検証できる
 
 ## 目的
 
-- **スキル検証**: dev:story-to-tasks によるTDD/E2E/TASK分岐の自動判定
+- **スキル検証**: dev:story によるTDD/E2E/TASK分岐の自動判定
 - **ワークフロー検証**:
   - TASK（EXEC→VERIFY→COMMIT）
   - PHP TDD（Pest: RED→GREEN→REFACTOR）
@@ -333,7 +333,7 @@ tarot-demo/
 
 | スキル | 検証内容 |
 |--------|----------|
-| dev:story-to-tasks | ストーリーからTDD/E2E/TASKラベル付きタスクが正しく生成されるか |
+| dev:story | ストーリーからTDD/E2E/TASKラベル付きタスクが正しく生成されるか |
 | dev:developing (TASK) | EXEC→VERIFY→COMMITサイクルで環境構築が完了するか |
 | dev:developing (PHP TDD) | Pest で RED→GREEN→REFACTORサイクルが回るか |
 | dev:developing (TS TDD) | Vitest で RED→GREEN→REFACTORサイクルが回るか |

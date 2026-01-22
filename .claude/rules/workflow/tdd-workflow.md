@@ -93,4 +93,4 @@ npm test
 ## 関連スキル
 
 - **dev:developing**: TDDタスクの実装
-- **dev:story-to-tasks**: TDDタスクの生成
+- **dev:story**: TDDタスクの生成

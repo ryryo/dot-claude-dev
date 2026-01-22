@@ -332,7 +332,7 @@ AskUserQuestion({
 
 ## 関連スキル
 
-- **dev:story-to-tasks**: 次のストーリーのタスク生成
+- **dev:story**: 次のストーリーのタスク生成
 - **meta-skill-creator**: スキル/ルール作成（改善提案時に連携）
 
 ## 参照

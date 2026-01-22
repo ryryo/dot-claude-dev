@@ -37,7 +37,7 @@ meta-skill-creatorの機構を活用したフィードバック記録。
 ```json
 {
   "skills": {
-    "dev:story-to-tasks": {
+    "dev:story": {
       "totalRuns": 5,
       "successCount": 5,
       "failureCount": 0,

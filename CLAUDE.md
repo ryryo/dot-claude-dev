@@ -45,7 +45,7 @@
 
 | スキル | 用途 |
 |--------|------|
-| **dev:story-to-tasks** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。Worktree作成も粒度に応じて自動判定。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
+| **dev:story** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。Worktree作成も粒度に応じて自動判定。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
 | **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは6ステップ、E2Eはagent-browser検証付き、TASKはEXEC→VERIFY→COMMIT |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成・Worktreeクリーンアップまで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
@@ -59,7 +59,7 @@
 
 | コマンド | 説明 |
 |----------|------|
-| `/dev:story` | ストーリーからタスクリスト生成。dev:story-to-tasksスキルを起動 |
+| `/dev:story` | ストーリーからタスクリスト生成。dev:storyスキルを起動 |
 | `/dev:feedback` | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案 |
 
 ## テスト環境

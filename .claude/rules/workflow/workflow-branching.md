@@ -1,5 +1,5 @@
 ---
-description: タスクをTDD/E2E/TASKに分岐する判定ルール。story-to-tasksスキルで使用。
+description: タスクをTDD/E2E/TASKに分岐する判定ルール。dev:storyスキルで使用。
 globs:
   - "**/TODO.md"
   - "**/task-list.json"
@@ -177,5 +177,5 @@ API結果の表示UI → E2E（視覚的確認）
 
 ## 関連スキル
 
-- **dev:story-to-tasks**: TDD/E2E/TASK分類を実行
+- **dev:story**: TDD/E2E/TASK分類を実行
 - **dev:developing**: 分類に基づいて実装
