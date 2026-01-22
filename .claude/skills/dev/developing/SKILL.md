@@ -1,7 +1,7 @@
 ---
 name: dev:developing
 description: |
-  TODO.mdのタスクを実行。TDD/PLANラベルに応じたワークフローで実装。
+  TODO.mdのタスクを実行。TDD/E2Eラベルに応じたワークフローで実装。
   Worktree内での独立した開発を支援。
 
   Trigger:
@@ -29,7 +29,7 @@ allowed-tools:
 
 ## 概要
 
-TODO.mdのタスクを実行する。タスクのラベルに応じてTDDまたはPLANワークフローを適用。
+TODO.mdのタスクを実行する。タスクのラベルに応じてTDDまたはE2Eワークフローを適用。
 
 ## 入力
 
@@ -51,7 +51,7 @@ TODO.mdを読み込み
     ↓
 タスクのラベルを確認
     ├─ [TDD] → TDDワークフロー
-    └─ [PLAN] → PLANワークフロー
+    └─ [E2E] → E2Eワークフロー
 ```
 
 ---
@@ -85,7 +85,7 @@ TODO.mdを読み込み
 [6/6] コミット
 ```
 
-→ 詳細: [references/tdd-flow.md](.claude/skills/dev/developing/references/tdd-flow.md)
+→ 詳細: [references/tdd-flow.md]
 
 ### TDDタスク実行
 
@@ -143,17 +143,17 @@ Task({
 
 ---
 
-## PLANワークフロー
+## E2Eワークフロー
 
-`[PLAN]` ラベル付きタスクに適用。agent-browserで操作フロー検証。
+`[E2E]` ラベル付きタスクに適用。agent-browserで操作フロー検証。
 
 ```
 [1/4] UI実装
-    → agents/plan-implement.md [sonnet]
+    → agents/e2e-implement.md [sonnet]
     → コンポーネント作成
         ↓
 [2/4] agent-browser検証（ループ）
-    → agents/plan-verify.md [haiku]
+    → agents/e2e-verify.md [haiku]
     → 操作フロー検証
     → 問題あれば修正→再検証
         ↓
@@ -163,9 +163,9 @@ Task({
 [4/4] コミット
 ```
 
-→ 詳細: [references/plan-flow.md](.claude/skills/dev/developing/references/plan-flow.md)
+→ 詳細: [references/e2e-flow.md]
 
-### PLANタスク実行
+### E2Eタスク実行
 
 ```javascript
 // [IMPL] UI実装
@@ -300,7 +300,7 @@ AskUserQuestion({
 ## 完了条件
 
 - [ ] すべてのTDDタスクが完了（RED→GREEN→REFACTOR）
-- [ ] すべてのPLANタスクが完了（IMPL→AUTO）
+- [ ] すべてのE2Eタスクが完了（IMPL→AUTO）
 - [ ] 全テストが成功
 - [ ] 品質チェックが通過
 - [ ] TODO.mdが全て完了マーク
@@ -313,4 +313,4 @@ AskUserQuestion({
 ## 参照ルール
 
 - TDDワークフロー: `.claude/rules/workflow/tdd-workflow.md`
-- PLANサイクル: `.claude/rules/workflow/plan-cycle.md`
+- E2Eサイクル: `.claude/rules/workflow/e2e-cycle.md`

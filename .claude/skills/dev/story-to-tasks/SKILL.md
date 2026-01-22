@@ -1,7 +1,7 @@
 ---
 name: dev:story-to-tasks
 description: |
-  ストーリーからTDD/PLAN分岐付きタスクリスト（TODO.md）を生成。
+  ストーリーからTDD/E2E分岐付きタスクリスト（TODO.md）を生成。
   Worktree作成後、最初に実行するスキル。
   「タスクを作成」「/dev:story」で起動。
 
@@ -23,7 +23,7 @@ allowed-tools:
 ## 概要
 
 ユーザーストーリーから実装可能なタスクリスト（TODO.md）を生成する。
-各タスクにはTDD/PLANラベルを自動付与し、Worktree内での独立した開発を支援する。
+各タスクにはTDD/E2Eラベルを自動付与し、Worktree内での独立した開発を支援する。
 
 ## 入力
 
@@ -36,7 +36,7 @@ allowed-tools:
 `docs/features/{feature-slug}/stories/{story-slug}/` に以下を保存:
 - `story-analysis.json` - ストーリー分析結果
 - `task-list.json` - タスクリスト
-- `TODO.md` - TDD/PLANラベル付きタスク
+- `TODO.md` - TDD/E2Eラベル付きタスク
 
 ---
 
@@ -52,8 +52,8 @@ Phase 2: タスク分解
     → agents/decompose-tasks.md [sonnet]
     → task-list.json 出力
         ↓
-Phase 3: TDD/PLAN分類
-    → agents/classify-tdd-plan.md [haiku]
+Phase 3: TDD/E2E分類
+    → agents/classify-tdd-e2e.md [haiku]
     → TODO.md 出力
         ↓
 Phase 4: ユーザー確認
@@ -181,16 +181,16 @@ Write({
 
 ---
 
-## Phase 3: TDD/PLAN分類
+## Phase 3: TDD/E2E分類
 
 ```javascript
 Task({
-  description: "TDD/PLAN分類",
-  prompt: `task-list.jsonを読み込み、各タスクをTDD/PLANに分類してください。
+  description: "TDD/E2E分類",
+  prompt: `task-list.jsonを読み込み、各タスクをTDD/E2Eに分類してください。
 
 判定基準:
 - TDD: 入出力が明確、アサーションで検証可能、ロジック層
-- PLAN: 視覚的確認が必要、UX判断、プレゼンテーション層
+- E2E: 視覚的確認が必要、UX判断、プレゼンテーション層
 
 出力形式: Markdown（TODO.md形式）
 `,
@@ -199,8 +199,8 @@ Task({
 })
 ```
 
-→ 詳細: [agents/classify-tdd-plan.md](.claude/skills/dev/story-to-tasks/agents/classify-tdd-plan.md)
-→ 判定基準: [references/tdd-criteria.md](.claude/skills/dev/story-to-tasks/references/tdd-criteria.md) | [references/plan-criteria.md](.claude/skills/dev/story-to-tasks/references/plan-criteria.md)
+→ 詳細: [agents/classify-tdd-e2e.md](.claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md)
+→ 判定基準: [references/tdd-criteria.md](.claude/skills/dev/story-to-tasks/references/tdd-criteria.md) | [references/e2e-criteria.md](.claude/skills/dev/story-to-tasks/references/e2e-criteria.md)
 
 ### 出力: TODO.md
 
@@ -214,9 +214,9 @@ Task({
 - [ ] [TDD][GREEN] validateEmail の実装
 - [ ] [TDD][REFACTOR] リファクタリング
 
-### PLANタスク
-- [ ] [PLAN][IMPL] LoginForm UIコンポーネント
-- [ ] [PLAN][AUTO] agent-browser検証
+### E2Eタスク
+- [ ] [E2E][IMPL] LoginForm UIコンポーネント
+- [ ] [E2E][AUTO] agent-browser検証
 
 ### 共通
 - [ ] [CHECK] lint/format/build
@@ -254,14 +254,14 @@ AskUserQuestion({
 - [ ] story-analysis.jsonが生成された
 - [ ] task-list.jsonが生成された
 - [ ] TODO.mdが生成された
-- [ ] 各タスクにTDD/PLANラベルが付与された
+- [ ] 各タスクにTDD/E2Eラベルが付与された
 - [ ] ユーザーが承認した
 
 ## 関連スキル
 
-- **dev:developing**: TDD/PLANタスクの実装
+- **dev:developing**: TDD/E2Eタスクの実装
 - **dev:feedback**: 実装後のフィードバック
 
 ## 参照ルール
 
-実装時は `.claude/rules/workflow/tdd-plan-branching.md` が自動適用される。
+実装時は `.claude/rules/workflow/tdd-e2e-branching.md` が自動適用される。

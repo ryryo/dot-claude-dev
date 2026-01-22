@@ -1,11 +1,11 @@
 ---
-description: タスクをTDD/PLANに分岐する判定ルール。story-to-tasksスキルで使用。
+description: タスクをTDD/E2Eに分岐する判定ルール。story-to-tasksスキルで使用。
 globs:
   - "**/TODO.md"
   - "**/task-list.json"
 ---
 
-# TDD/PLAN分岐判定ルール
+# TDD/E2E分岐判定ルール
 
 ## 判定フロー
 
@@ -15,7 +15,7 @@ globs:
 入出力が明確に定義できる？
     ├─ YES → TDD
     └─ NO → 視覚的確認が必要？
-              ├─ YES → PLAN
+              ├─ YES → E2E
               └─ NO → 再分析（タスクを分解）
 ```
 
@@ -47,7 +47,7 @@ globs:
 | ビジネスロジック | checkPermission, applyRules |
 | ユーティリティ | slugify, debounce |
 
-## PLAN判定基準
+## E2E判定基準
 
 ### 必須条件（いずれかを満たす）
 
@@ -64,7 +64,7 @@ globs:
    - レイアウト
    - アニメーション
 
-### PLAN対象の例
+### E2E対象の例
 
 | カテゴリ | 例 |
 |----------|-----|
@@ -86,12 +86,12 @@ globs:
 - [ ] [TDD][CHECK] lint/format/build
 ```
 
-### PLANタスク
+### E2Eタスク
 
 ```markdown
-- [ ] [PLAN][IMPL] {タスク名} 実装
-- [ ] [PLAN][AUTO] {タスク名} agent-browser検証
-- [ ] [PLAN][CHECK] lint/format/build
+- [ ] [E2E][IMPL] {タスク名} 実装
+- [ ] [E2E][AUTO] {タスク名} agent-browser検証
+- [ ] [E2E][CHECK] lint/format/build
 ```
 
 ## 曖昧なケースの判断
@@ -100,21 +100,21 @@ globs:
 
 ```
 API呼び出しロジック → TDD（モックで検証）
-API結果の表示UI → PLAN（視覚的確認）
+API結果の表示UI → E2E（視覚的確認）
 ```
 
 ### フォーム
 
 ```
 バリデーションロジック → TDD
-フォームUI → PLAN
+フォームUI → E2E
 ```
 
 ### 状態管理
 
 ```
 状態更新ロジック → TDD
-状態に基づくUI表示 → PLAN
+状態に基づくUI表示 → E2E
 ```
 
 ## 分解のヒント
@@ -127,10 +127,10 @@ API結果の表示UI → PLAN（視覚的確認）
 ├─ [TDD] validateEmail
 ├─ [TDD] validatePassword
 ├─ [TDD] handleLogin（APIロジック）
-└─ [PLAN] LoginForm（UI）
+└─ [E2E] LoginForm（UI）
 ```
 
 ## 関連スキル
 
-- **dev:story-to-tasks**: TDD/PLAN分類を実行
+- **dev:story-to-tasks**: TDD/E2E分類を実行
 - **dev:developing**: 分類に基づいて実装

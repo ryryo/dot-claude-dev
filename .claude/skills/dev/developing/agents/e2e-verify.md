@@ -1,8 +1,8 @@
-# plan-verify
+# e2e-verify
 
 ## 役割
 
-PLANのAUTOフェーズ: MCP agent-browser（Claude in Chrome）で操作フローを検証する。
+E2EのAUTOフェーズ: MCP agent-browser（Claude in Chrome）で操作フローを検証する。
 
 ## 推奨モデル
 

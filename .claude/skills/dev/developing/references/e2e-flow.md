@@ -1,4 +1,4 @@
-# PLANワークフロー詳細
+# E2Eワークフロー詳細
 
 ## 使用ツール
 
@@ -8,7 +8,7 @@
 
 > 注: CLI版 agent-browser（npm install -g agent-browser）は使用しない
 
-## PLANフロー
+## E2Eフロー
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -129,7 +129,7 @@ mcp__claude-in-chrome__computer({ action: "screenshot", tabId: 123 })
 ## TODO.md でのラベル表記
 
 ```markdown
-- [ ] [PLAN][IMPL] LoginForm UIコンポーネント実装
-- [ ] [PLAN][AUTO] agent-browser自動検証
-- [ ] [PLAN][CHECK] lint/format/build
+- [ ] [E2E][IMPL] LoginForm UIコンポーネント実装
+- [ ] [E2E][AUTO] agent-browser自動検証
+- [ ] [E2E][CHECK] lint/format/build
 ```

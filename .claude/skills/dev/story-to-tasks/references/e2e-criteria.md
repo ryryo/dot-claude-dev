@@ -1,8 +1,8 @@
-# PLAN判定基準
+# E2E判定基準
 
-## PLAN対象の特徴
+## E2E対象の特徴
 
-以下の特徴を持つタスクはPLANサイクルで実装する。
+以下の特徴を持つタスクはE2Eサイクルで実装する。
 
 ### 1. 視覚的確認が必要
 
@@ -39,7 +39,7 @@
 - 状態変化の視覚的フィードバック
 - トランジション
 
-## PLAN対象の例
+## E2E対象の例
 
 | タスク種別 | 例 |
 |-----------|-----|
@@ -49,9 +49,9 @@
 | ナビゲーション | Navbar, Breadcrumb, Pagination |
 | フィードバック | Toast, Alert, LoadingSpinner |
 
-## PLAN非対象の例
+## E2E非対象の例
 
-以下はPLANではなくTDDで実装する。
+以下はE2EではなくTDDで実装する。
 
 | タスク種別 | 理由 |
 |-----------|------|
@@ -60,9 +60,9 @@
 | API呼び出しロジック | モックで検証可能 |
 | 計算処理 | 純粋関数 |
 
-## PLANワークフロー
+## E2Eワークフロー
 
-PLANタスクは以下のサイクルで実装する:
+E2Eタスクは以下のサイクルで実装する:
 
 ```
 [IMPL] UI実装
@@ -87,4 +87,4 @@ MCP版 agent-browser（Claude in Chrome）で以下を検証:
 | 状態変化 | read_page + スクリーンショット比較 |
 | レスポンシブ | resize_window + スクリーンショット |
 
-→ 詳細: `.claude/rules/workflow/plan-cycle.md`
+→ 詳細: `.claude/rules/workflow/e2e-cycle.md`

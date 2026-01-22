@@ -1,5 +1,5 @@
 ---
-description: PLAN開発（UI実装）時に自動適用されるルール。agent-browserによる操作フロー検証。
+description: E2E開発（UI実装）時に自動適用されるルール。agent-browserによる操作フロー検証。
 globs:
   - "**/components/**/*.tsx"
   - "**/components/**/*.jsx"
@@ -7,7 +7,7 @@ globs:
   - "**/views/**/*.vue"
 ---
 
-# PLANサイクルルール
+# E2Eサイクルルール
 
 ## 基本原則
 
@@ -15,7 +15,7 @@ globs:
 2. **操作フロー重視**: 見た目だけでなく操作の動作を確認
 3. **自動化優先**: 可能な限り自動検証、必要な場合のみ目視
 
-## PLANサイクル
+## E2Eサイクル
 
 ### IMPL（UI実装）
 
@@ -101,5 +101,5 @@ mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
 
 ## 関連スキル
 
-- **dev:developing**: PLANタスクの実装
-- **dev:story-to-tasks**: PLANタスクの生成
+- **dev:developing**: E2Eタスクの実装
+- **dev:story-to-tasks**: E2Eタスクの生成

@@ -1,8 +1,8 @@
-# plan-implement
+# e2e-implement
 
 ## 役割
 
-PLANのIMPLフェーズ: UIコンポーネントを実装する。
+E2EのIMPLフェーズ: UIコンポーネントを実装する。
 
 ## 推奨モデル
 
