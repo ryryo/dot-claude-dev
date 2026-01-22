@@ -67,6 +67,10 @@ Phase 5: テスト資産の整理（TDDタスクがあった場合）
 Phase 6: PR作成・Worktreeクリーンアップ
     → PR作成（gh pr create）
     → マージ後、Worktree削除
+        ↓
+Phase 7: 進行中ストーリー一覧の更新
+    → in-progress-stories.tmp再生成
+    → 完了したストーリーを一覧から削除
 ```
 
 ---
@@ -381,6 +385,62 @@ AskUserQuestion({
 
 ---
 
+## Phase 7: 進行中ストーリー一覧の更新
+
+### 7.1 in-progress-stories.tmp更新
+
+ストーリー完了後、進行中ストーリー一覧から削除してセッションメモリを更新する。
+
+```bash
+# プロジェクトルートを検出
+if [ -f "CLAUDE.md" ]; then
+  PROJECT_ROOT=$(pwd)
+elif git rev-parse --show-toplevel > /dev/null 2>&1; then
+  PROJECT_ROOT=$(git rev-parse --show-toplevel)
+else
+  PROJECT_ROOT=$(pwd)
+fi
+
+# 進行中ストーリー一覧を再生成（完了したストーリーを除外）
+STORIES_LIST="$HOME/.claude/sessions/in-progress-stories.tmp"
+: > "$STORIES_LIST"  # ファイルを空にする
+
+find "$PROJECT_ROOT" -name "TODO.md" -type f | while read -r todo_file; do
+  # 未完了タスクが存在するかチェック
+  if grep -q "^- \[ \]" "$todo_file" || grep -q "^- \[~\]" "$todo_file"; then
+    STORY_DIR=$(dirname "$todo_file")
+    REL_PATH=${STORY_DIR#$PROJECT_ROOT/}
+
+    # 進捗情報を取得
+    TOTAL=$(grep -c "^- \[" "$todo_file")
+    COMPLETED=$(grep -c "^- \[x\]" "$todo_file")
+    PROGRESS="$COMPLETED/$TOTAL"
+
+    # Last Updatedを取得
+    LAST_UPDATED=$(grep -m 1 "^\*\*Last Updated\*\*:" "$todo_file" | sed 's/^\*\*Last Updated\*\*: //')
+    if [ -z "$LAST_UPDATED" ]; then
+      LAST_UPDATED="unknown"
+    fi
+
+    echo "- $REL_PATH ($PROGRESS completed, updated: $LAST_UPDATED)" >> "$STORIES_LIST"
+  fi
+done
+
+if [ -s "$STORIES_LIST" ]; then
+  echo "[dev:feedback] Updated in-progress stories list (removed completed story)"
+else
+  echo "[dev:feedback] No in-progress stories remaining"
+fi
+```
+
+### 目的
+
+- 完了したストーリーをセッションメモリから削除
+- 次回セッション開始時に正確な進行中ストーリー一覧を表示
+- SessionStart hookでの表示精度を向上
+
+---
+
 ## 完了条件
 
 - [ ] 変更内容が分析された
@@ -390,6 +450,7 @@ AskUserQuestion({
 - [ ] テスト資産の整理が実行された（TDDタスクがあった場合）
 - [ ] PR作成が完了した（または手動作成を選択）
 - [ ] Worktreeクリーンアップ手順を案内した
+- [ ] in-progress-stories.tmpが更新された（完了したストーリーを除外）
 
 ## 関連スキル
 
