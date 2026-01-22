@@ -1,24 +1,29 @@
-# Hooks & Memory Integration 実装計画書（ストーリー統合版）
+# Hooks & Memory Integration 実装計画書（TODO.md拡張版）
 
-> **目的**: 「Everything Claude Code」の実装パターンを**ストーリー駆動開発フレームワーク**に統合
+> **目的**: セッションメモリを**既存TODO.md拡張**で実装し、最小コストで効率化
 
 **作成日**: 2026-01-22
 **更新日**: 2026-01-23
 **対象**: dot-claude-dev プロジェクト
-**参照**: `docs/SAMPLE/dot-claude-dev/everything-claude-code/`
 
 ---
 
 ## エグゼクティブサマリー
 
-著者の実装パターンを、**現在のストーリー駆動開発フレームワークに最適化**して統合:
+**目的**: セッション間でストーリー進捗を自動的に引き継ぎ、作業再開を高速化
 
-- ✅ **ストーリー単位のセッションメモリ**: `SESSION.md` を TODO.md, DESIGN.md と同じ場所で管理
-- ✅ **戦略的コンパクション**: 論理的なタイミングでのcompact提案
+**実現内容**:
+- ✅ セッション再開時に前回の続きから作業可能（Last Updated表示）
+- ✅ プロジェクトルートから進行中ストーリーを選択して再開
+- ✅ 長時間セッションでのコンテキスト枯渇を防止（50回で提案）
+- ✅ ストーリー完了時に自動的に進行中一覧から削除
 
-**コア2機能の実装で、10ヶ月の実戦で証明された開発効率化を実現する。**
+**実装方針**:
+- 既存TODO.mdにメタデータを追加（新規ファイル不要）
+- セッション開始時は高速（ファイル検索なし）
+- 既存ワークフロー（dev:story/dev:feedback）に統合
 
-**注**: 継続学習システムは dev:feedback Phase 4 と重複するため、今回は実装しない。
+**実装時間**: 1時間5分
 
 ---
 
@@ -29,483 +34,350 @@
 | 領域 | 実装状況 |
 |------|----------|
 | ストーリー駆動開発 | ✅ dev:story → dev:developing → dev:feedback |
-| TDD/E2E/TASK分類 | ✅ workflow-branching.md で判定ロジック定義 |
-| Progressive Disclosure | ✅ 必要時のみリソース読み込み |
-| Worktree統合 | ✅ dev:story Phase 0 で自動判定・作成 |
+| TODO.md | ✅ タスク管理、進捗追跡 |
+| DESIGN.md | ✅ 設計記録（dev:feedback） |
 
-### 統合対象（新規実装 - コア2機能のみ）
+### 統合対象（最小構成）
 
 | 機能 | 実装内容 | 実装時間 |
 |------|---------|---------|
-| **セッションメモリ永続化** | ストーリー単位のSESSION.md | 1-2時間 |
+| **TODO.md拡張** | Last Updated + メタデータ追加 | 30分 |
 | **戦略的コンパクション** | suggest-compact.sh | 30分 |
+| **スキル統合** | dev:story + dev:feedback | 5分 |
 
-**合計**: 2-3時間で完了
+**合計**: 1時間5分で完了
 
 ---
 
-## セッションメモリの設計（ストーリー統合）
+## TODO.md 拡張仕様
 
-### 基本方針
-
-```
-主: docs/features/{feature-slug}/stories/{story-slug}/SESSION.md
-   → ストーリー固有の状態を記録（Git管理）
-
-補: .claude/sessions/YYYY-MM-DD-global.tmp
-   → ストーリー外の作業のみ（緊急バグ修正等）
-```
-
-### ストーリーディレクトリ構造
-
-```
-docs/features/{feature-slug}/stories/{story-slug}/
-├── story-analysis.json    # ストーリー分析（dev:story Phase 1）
-├── task-list.json         # タスクリスト（dev:story Phase 2）
-├── TODO.md                # 進捗管理（dev:story Phase 3）
-├── SESSION.md             # セッション記録（新規 - dev:story Phase 4）
-└── DESIGN.md              # 設計記録（dev:feedback）
-```
-
-### SESSION.md のフォーマット
+### 拡張前（現在）
 
 ```markdown
-# Session Log: {story-slug}
+# TODO: implement-email-validation
 
-**Feature**: {feature-slug}
-**Story**: {story-slug}
-**Started**: 2026-01-22
-**Last Updated**: 2026-01-23 15:30
-
----
-
-## Current State
-
-ストーリーの現在の状態を記述。
-
-### Completed Tasks
-- [x] [TDD][RED] validateEmail のテスト作成
-- [x] [TDD][GREEN] validateEmail の実装
-- [x] [TDD][REFACTOR] リファクタリング完了
-
-### In Progress
-- [ ] [TDD][RED] validatePassword のテスト作成
-
-### Blockers
-- バリデーションライブラリの選定が未定
-- パスワードポリシーの仕様確認待ち
-
-### Notes for Next Session
-- validatePassword: 最低8文字、大文字小文字数字を含む
-- 参考: docs/features/user-auth/references/password-policy.md
-- Zod でのバリデーション実装を検討
-
-### Context to Load
-\`\`\`
-src/utils/validation.ts
-src/utils/validation.test.ts
-\`\`\`
-
----
-
-## Session History
-
-### 2026-01-23 15:30 - Session 3
-- validateEmail の REFACTOR 完了
-- ヘルパー関数 isValidDomain() を抽出
-- 全テスト通過
-
-### 2026-01-22 18:00 - Session 2
-- validateEmail の GREEN フェーズ
-- 正規表現パターンを実装
-- エッジケース対応
-
-### 2026-01-22 10:00 - Session 1 (Story Start)
-- dev:story でストーリー開始
-- TODO.md, SESSION.md 作成
+- [ ] [TDD][RED] validateEmail のテスト作成
+- [ ] [TDD][GREEN] validateEmail の実装
+- [ ] [TDD][REFACTOR] リファクタリング
 ```
 
+### 拡張後
+
+```markdown
+# TODO: implement-email-validation
+
+**Last Updated**: 2026-01-22 16:45
+
+## Blockers
+- パスワードポリシー仕様確認待ち
+
+## Tasks
+
+- [x] [TDD][RED] validateEmail のテスト作成
+- [x] [TDD][GREEN] validateEmail の実装
+- [ ] [TDD][RED] validatePassword のテスト作成
+  <!-- 注: 最低8文字、大文字小文字数字を含む -->
+  <!-- 参考: docs/features/user-auth/references/password-policy.md -->
+
+## Context Files
+<!-- セッション再開時に読み込むべきファイル -->
+- src/utils/validation.ts
+- src/utils/validation.test.ts
+```
+
+### セクション定義
+
+| セクション | 必須 | 用途 |
+|-----------|------|------|
+| **Last Updated** | ✅ | hooks が自動更新 |
+| **## Blockers** | ⚪ | 作業を止めている問題 |
+| **## Tasks** | ✅ | タスクリスト（既存） |
+| **## Context Files** | ⚪ | セッション再開時に読むファイル |
+
 ---
 
-## Phase 1: Hooks基盤 + セッションメモリ永続化
+## Hooks 実装
 
-### 1.1 ディレクトリ構造構築
+### 実装するHooks（4つ）+ dev:feedback統合
+
+| Hook/スキル | スクリプト | 機能 |
+|------|-----------|------|
+| **SessionStart** | `session-start.sh` | TODO.md または保存済みストーリー一覧を表示 |
+| **PreCompact** | `pre-compact.sh` | TODO.md の Last Updated を更新 + ストーリー一覧保存 |
+| **Stop** | `session-end.sh` | TODO.md の Last Updated を更新 + ストーリー一覧保存 |
+| **PreToolUse** | `suggest-compact.sh` | 50ツール呼び出しで compact 提案 |
+| **dev:feedback** | Phase 5 追加 | ストーリー完了時に in-progress-stories.tmp を更新 |
+
+---
+
+## Phase 1: TODO.md拡張 + SessionStart hook
+
+### 1.1 ディレクトリ構造
 
 ```bash
 .claude/
 ├── hooks/
-│   ├── hooks.json                    # hooks設定ファイル（新規）
-│   ├── memory-persistence/           # セッションメモリ（新規）
-│   │   ├── session-start.sh         # ストーリー検出 + SESSION.md読み込み
-│   │   ├── pre-compact.sh           # コンパクション前の記録
-│   │   └── session-end.sh           # SESSION.md更新
-│   └── strategic-compact/            # 戦略的コンパクション（新規）
-│       └── suggest-compact.sh       # 50ツール呼び出しで提案
-├── sessions/                         # グローバルセッション（補助）
-│   └── YYYY-MM-DD-global.tmp
-└── (existing structure...)
+│   ├── hooks.json
+│   ├── memory-persistence/
+│   │   ├── session-start.sh
+│   │   ├── pre-compact.sh
+│   │   └── session-end.sh
+│   └── strategic-compact/
+│       └── suggest-compact.sh
+└── sessions/
+    └── in-progress-stories.tmp  # 進行中ストーリー一覧キャッシュ
 ```
 
-### 1.2 hooks.json 実装
+**注**: `~/.claude/sessions/` にストーリー一覧キャッシュを保存（セッション開始時の高速化）
 
-**ファイル**: `.claude/hooks/hooks.json`
+### 1.2 session-start.sh (SessionStart Hook)
+
+```bash
+#!/bin/bash
+# SessionStart Hook - Load TODO.md metadata or cached stories
+
+SESSIONS_DIR="${HOME}/.claude/sessions"
+STORIES_FILE="$SESSIONS_DIR/in-progress-stories.tmp"
+
+if [ -f "TODO.md" ]; then
+  # ストーリー内 - 現在のTODO.mdを表示
+  LAST_UPDATED=$(grep "^\*\*Last Updated\*\*:" TODO.md | sed 's/\*\*Last Updated\*\*: //' || echo "unknown")
+
+  echo "📝 Story Session Found" >&2
+  echo "  Last Updated: $LAST_UPDATED" >&2
+
+  # タスク進捗をカウント
+  COMPLETED=$(grep -c "^- \[x\]" TODO.md 2>/dev/null || echo "0")
+  IN_PROGRESS=$(grep -c "^- \[ \]" TODO.md 2>/dev/null || echo "0")
+  echo "  Progress: $COMPLETED completed, $IN_PROGRESS remaining" >&2
+
+  # Blockers セクションがあれば通知
+  if grep -q "^## Blockers" TODO.md; then
+    echo "  ⚠️  Blockers section exists - check TODO.md" >&2
+  fi
+
+elif [ -f "$STORIES_FILE" ]; then
+  # プロジェクトルート - 保存されたストーリー一覧を表示
+  echo "📋 Recent In-Progress Stories:" >&2
+  tail -n +4 "$STORIES_FILE" | head -5 >&2  # ヘッダー3行スキップ、最初の5件
+  echo "" >&2
+  echo "💡 Tip: Say 'resume story' to choose and continue a story" >&2
+
+else
+  echo "ℹ️  No TODO.md found (outside story context)" >&2
+fi
+```
+
+**ポイント**:
+- **ストーリー内**: TODO.mdの進捗を表示（0.001秒以下）
+- **プロジェクトルート**: 保存済みストーリー一覧を表示 + ストーリー再開のヒント
+- **その他**: 何もしない
+
+**Claudeの自動応答**:
+- SessionStart hookでストーリー一覧が表示された場合、Claudeは自動的にAskUserQuestionでストーリー選択を促す
+
+### 1.3 pre-compact.sh (PreCompact Hook)
+
+```bash
+#!/bin/bash
+# PreCompact Hook - Update TODO.md Last Updated + Save stories list
+
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+SESSIONS_DIR="${HOME}/.claude/sessions"
+mkdir -p "$SESSIONS_DIR"
+
+# 現在のストーリーのTODO.md更新
+if [ -f "TODO.md" ]; then
+  # "Last Updated" 行を更新
+  if grep -q "^\*\*Last Updated\*\*:" TODO.md; then
+    sed -i '' "s/^\*\*Last Updated\*\*:.*/\*\*Last Updated\*\*: $TIMESTAMP/" TODO.md
+  else
+    # Last Updated が存在しない場合は追加
+    sed -i '' "1a\\
+\\
+\*\*Last Updated\*\*: $TIMESTAMP\\
+" TODO.md
+  fi
+
+  echo "[PreCompact] Updated TODO.md Last Updated: $TIMESTAMP" >&2
+fi
+
+# 進行中ストーリー一覧を保存（次回SessionStart用）
+{
+  echo "# In-Progress Stories"
+  echo "**Updated**: $TIMESTAMP"
+  echo ""
+
+  find docs/features -name "TODO.md" -type f 2>/dev/null | while read todo; do
+    if grep -q "^- \[ \]" "$todo"; then
+      STORY_PATH=$(dirname "$todo")
+      LAST_UPDATED=$(grep "^\*\*Last Updated\*\*:" "$todo" | sed 's/\*\*Last Updated\*\*: //' || echo "unknown")
+      COMPLETED=$(grep -c "^- \[x\]" "$todo" 2>/dev/null || echo "0")
+      IN_PROGRESS=$(grep -c "^- \[ \]" "$todo" 2>/dev/null || echo "0")
+
+      echo "- $STORY_PATH | Updated: $LAST_UPDATED | Progress: $COMPLETED/$((COMPLETED + IN_PROGRESS))"
+    fi
+  done
+} > "$SESSIONS_DIR/in-progress-stories.tmp"
+
+echo "[PreCompact] Saved in-progress stories list" >&2
+```
+
+### 1.4 session-end.sh (Stop Hook)
+
+```bash
+#!/bin/bash
+# Stop Hook - Update TODO.md Last Updated + Save stories list on exit
+
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+SESSIONS_DIR="${HOME}/.claude/sessions"
+mkdir -p "$SESSIONS_DIR"
+
+# 現在のストーリーのTODO.md更新
+if [ -f "TODO.md" ]; then
+  if grep -q "^\*\*Last Updated\*\*:" TODO.md; then
+    sed -i '' "s/^\*\*Last Updated\*\*:.*/\*\*Last Updated\*\*: $TIMESTAMP/" TODO.md
+  else
+    sed -i '' "1a\\
+\\
+\*\*Last Updated\*\*: $TIMESTAMP\\
+" TODO.md
+  fi
+
+  echo "[Stop] Updated TODO.md Last Updated: $TIMESTAMP" >&2
+fi
+
+# 進行中ストーリー一覧を保存（次回SessionStart用）
+{
+  echo "# In-Progress Stories"
+  echo "**Updated**: $TIMESTAMP"
+  echo ""
+
+  find docs/features -name "TODO.md" -type f 2>/dev/null | while read todo; do
+    if grep -q "^- \[ \]" "$todo"; then
+      STORY_PATH=$(dirname "$todo")
+      LAST_UPDATED=$(grep "^\*\*Last Updated\*\*:" "$todo" | sed 's/\*\*Last Updated\*\*: //' || echo "unknown")
+      COMPLETED=$(grep -c "^- \[x\]" "$todo" 2>/dev/null || echo "0")
+      IN_PROGRESS=$(grep -c "^- \[ \]" "$todo" 2>/dev/null || echo "0")
+
+      echo "- $STORY_PATH | Updated: $LAST_UPDATED | Progress: $COMPLETED/$((COMPLETED + IN_PROGRESS))"
+    fi
+  done
+} > "$SESSIONS_DIR/in-progress-stories.tmp"
+
+echo "[Stop] Saved in-progress stories list" >&2
+```
+
+### 1.5 hooks.json
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
     "SessionStart": [
       {
         "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/memory-persistence/session-start.sh"
-          }
-        ],
-        "description": "Load story session or global session"
+        "hooks": [{
+          "type": "command",
+          "command": "~/.claude/hooks/memory-persistence/session-start.sh"
+        }],
+        "description": "Load TODO.md metadata"
       }
     ],
     "PreCompact": [
       {
         "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/memory-persistence/pre-compact.sh"
-          }
-        ],
-        "description": "Save state before compaction"
+        "hooks": [{
+          "type": "command",
+          "command": "~/.claude/hooks/memory-persistence/pre-compact.sh"
+        }],
+        "description": "Update TODO.md timestamp"
       }
     ],
     "Stop": [
       {
         "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/memory-persistence/session-end.sh"
-          }
-        ],
-        "description": "Update SESSION.md or global session"
+        "hooks": [{
+          "type": "command",
+          "command": "~/.claude/hooks/memory-persistence/session-end.sh"
+        }],
+        "description": "Update TODO.md timestamp on exit"
       }
     ]
   }
 }
 ```
 
-**実装タスク**:
-- [ ] hooks.json 作成
-- [ ] settings.json に hooks 設定を統合（または hooks.json を参照）
-
-### 1.3 session-start.sh 実装（ストーリー検出版）
-
-**ファイル**: `.claude/hooks/memory-persistence/session-start.sh`
-
-**機能**:
-1. 現在のディレクトリから TODO.md を検出（ストーリー内か判定）
-2. SESSION.md があれば読み込んで通知
-3. なければグローバルセッションを確認
-
-**実装**:
-
-```bash
-#!/bin/bash
-# SessionStart Hook - Load story session or global session
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📚 Session Context Loader"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-
-# ストーリーディレクトリの検出（TODO.md の存在確認）
-if [ -f "TODO.md" ] && [ -f "SESSION.md" ]; then
-  # ストーリー内のセッション
-  FEATURE=$(grep -m1 "^# " SESSION.md | sed 's/# Session Log: //' || echo "unknown")
-  LAST_UPDATED=$(grep "Last Updated" SESSION.md | sed 's/\*\*Last Updated:\*\* //' || echo "unknown")
-
-  echo "📝 Story Session Found"
-  echo "  Story: $FEATURE"
-  echo "  Last Updated: $LAST_UPDATED"
-  echo "  File: SESSION.md"
-  echo ""
-  echo "💡 Load context with: @SESSION.md"
-
-  # Completed Tasks をカウント
-  COMPLETED=$(grep -c "^- \[x\]" SESSION.md 2>/dev/null || echo "0")
-  IN_PROGRESS=$(grep -c "^- \[ \]" SESSION.md 2>/dev/null || echo "0")
-
-  echo ""
-  echo "📊 Progress:"
-  echo "  ✓ Completed: $COMPLETED tasks"
-  echo "  ⧗ In Progress: $IN_PROGRESS tasks"
-
-elif [ -f "TODO.md" ] && [ ! -f "SESSION.md" ]; then
-  # ストーリー内だがSESSION.mdがない（新規ストーリー）
-  echo "🆕 New Story Detected (SESSION.md not found)"
-  echo "  SESSION.md will be created when dev:story completes"
-
-else
-  # ストーリー外 - グローバルセッション確認
-  SESSIONS_DIR=".claude/sessions"
-  TODAY=$(date '+%Y-%m-%d')
-  GLOBAL_SESSION="$SESSIONS_DIR/$TODAY-global.tmp"
-
-  if [ -f "$GLOBAL_SESSION" ]; then
-    echo "🌐 Global Session Found"
-    echo "  File: $GLOBAL_SESSION"
-    echo ""
-    echo "💡 Load context with: @$GLOBAL_SESSION"
-  else
-    echo "ℹ️  No active session found"
-    echo ""
-    echo "To start a story-driven workflow:"
-    echo "  Use /dev:story command"
-  fi
-fi
-
-# 学習済みスキルの確認
-LEARNED_DIR=".claude/skills/learned"
-if [ -d "$LEARNED_DIR" ]; then
-  learned_count=$(find "$LEARNED_DIR" -name "*.md" -type f 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$learned_count" -gt 0 ]; then
-    echo ""
-    echo "🧠 Learned Skills Available: $learned_count"
-    echo "  Location: $LEARNED_DIR/"
-  fi
-fi
-
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-```
-
-**実装タスク**:
-- [ ] session-start.sh 作成
-- [ ] 実行権限付与 (`chmod +x`)
-- [ ] ストーリー検出ロジックのテスト
-- [ ] グローバルセッションのフォールバック確認
-
-### 1.4 pre-compact.sh 実装（ストーリー対応版）
-
-**ファイル**: `.claude/hooks/memory-persistence/pre-compact.sh`
-
-**機能**:
-1. コンパクション発生時にタイムスタンプをログ
-2. SESSION.md または global.tmp に記録
-
-**実装**:
-
-```bash
-#!/bin/bash
-# PreCompact Hook - Save state before compaction
-
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-
-# ストーリー内ならSESSION.mdに記録
-if [ -f "SESSION.md" ]; then
-  echo "" >> SESSION.md
-  echo "**Compaction Event:** $TIMESTAMP" >> SESSION.md
-  echo "" >> SESSION.md
-  echo "[PreCompact] State saved to SESSION.md" >&2
-
-# ストーリー外ならグローバルセッションに記録
-else
-  SESSIONS_DIR=".claude/sessions"
-  TODAY=$(date '+%Y-%m-%d')
-  GLOBAL_SESSION="$SESSIONS_DIR/$TODAY-global.tmp"
-  COMPACTION_LOG="$SESSIONS_DIR/compaction-log.txt"
-
-  mkdir -p "$SESSIONS_DIR"
-
-  echo "[$TIMESTAMP] Context compaction triggered" >> "$COMPACTION_LOG"
-
-  if [ -f "$GLOBAL_SESSION" ]; then
-    echo "" >> "$GLOBAL_SESSION"
-    echo "**Compaction Event:** $TIMESTAMP" >> "$GLOBAL_SESSION"
-    echo "" >> "$GLOBAL_SESSION"
-  fi
-
-  echo "[PreCompact] State saved to global session" >&2
-fi
-```
-
-**実装タスク**:
-- [ ] pre-compact.sh 作成
-- [ ] 実行権限付与
-- [ ] コンパクションログのテスト
-
-### 1.5 session-end.sh 実装（ストーリー対応版）
-
-**ファイル**: `.claude/hooks/memory-persistence/session-end.sh`
-
-**機能**:
-1. ストーリー内なら SESSION.md を更新
-2. ストーリー外ならグローバルセッションを更新
-
-**実装**:
-
-```bash
-#!/bin/bash
-# Stop Hook - Update SESSION.md or global session
-
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
-
-# ストーリー内ならSESSION.mdを更新
-if [ -f "SESSION.md" ]; then
-  # Last Updated を更新（macOS対応）
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/\*\*Last Updated:\*\*.*/\*\*Last Updated:\*\* $TIMESTAMP/" SESSION.md
-  else
-    sed -i "s/\*\*Last Updated:\*\*.*/\*\*Last Updated:\*\* $TIMESTAMP/" SESSION.md
-  fi
-
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-  echo "📝 Story session updated: SESSION.md" >&2
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-
-# ストーリー外ならグローバルセッション
-else
-  SESSIONS_DIR=".claude/sessions"
-  TODAY=$(date '+%Y-%m-%d')
-  GLOBAL_SESSION="$SESSIONS_DIR/$TODAY-global.tmp"
-
-  mkdir -p "$SESSIONS_DIR"
-
-  # 新規作成の場合はテンプレート適用
-  if [ ! -f "$GLOBAL_SESSION" ]; then
-    cat > "$GLOBAL_SESSION" << EOF
-# Global Session: $TODAY
-
-**Date:** $TODAY
-**Started:** $TIMESTAMP
-**Last Updated:** $TIMESTAMP
-
----
-
-## Activities
-
-[Non-story work goes here]
-
-### Completed
-- [ ]
-
-### Notes
--
-
-EOF
-  else
-    # 既存の場合は Last Updated のみ更新
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' "s/\*\*Last Updated:\*\*.*/\*\*Last Updated:\*\* $TIMESTAMP/" "$GLOBAL_SESSION"
-    else
-      sed -i "s/\*\*Last Updated:\*\*.*/\*\*Last Updated:\*\* $TIMESTAMP/" "$GLOBAL_SESSION"
-    fi
-  fi
-
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-  echo "📝 Global session updated: $GLOBAL_SESSION" >&2
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-fi
-```
-
-**実装タスク**:
-- [ ] session-end.sh 作成
-- [ ] 実行権限付与
-- [ ] macOS/Linux 両対応確認
-- [ ] テスト実行
-
----
-
-## Phase 1.5: dev:story との統合
-
-### dev:story の Phase 4 を拡張
+### 1.6 dev:story 統合（Phase 4.2 追加）
 
 **ファイル**: `.claude/skills/dev/story/SKILL.md`
 
-**Phase 4 に SESSION.md 作成を追加**:
+**Phase 4.2**: TODO.md に Last Updated メタデータを追加
 
-```markdown
-## Phase 4: ユーザー確認 + SESSION.md 作成
+```javascript
+// TODO.md 生成時に Last Updated を追加
+const todoContent = `# TODO: ${storySlug}
 
-### 4.1 TODO.md 確認
+**Last Updated**: ${new Date().toISOString().slice(0, 16).replace('T', ' ')}
 
-（既存のAskUserQuestion）
+## Tasks
 
-### 4.2 SESSION.md 作成（新規）
-
-**⚠️ 必ずWriteツールで作成すること**
-
-\`\`\`javascript
-Write({
-  file_path: "docs/features/{feature-slug}/stories/{story-slug}/SESSION.md",
-  content: `# Session Log: ${storySlug}
-
-**Feature**: ${featureSlug}
-**Story**: ${storySlug}
-**Started**: ${TODAY}
-**Last Updated**: ${TODAY} ${TIME}
-
----
-
-## Current State
-
-ストーリー実装開始。TODO.md を参照して進める。
-
-### Completed Tasks
-- [ ]
-
-### In Progress
-- [ ] ${TODO.mdの最初のタスク}
-
-### Blockers
-なし
-
-### Notes for Next Session
-- TODO.md を参照して実装を進める
-- ${acceptanceCriteriaから抽出した重要ポイント}
-
-### Context to Load
-\`\`\`
-（該当するファイルパス）
-\`\`\`
-
----
-
-## Session History
-
-### ${TODAY} ${TIME} - Session 1 (Story Start)
-- dev:story でストーリー開始
-- story-analysis.json, task-list.json, TODO.md, SESSION.md 作成
-- 次: ${最初のタスク}
-\`
-})
-\`\`\`
-
-### 4.3 完了条件の更新
-
-**旧**:
-- [ ] story-analysis.json 作成
-- [ ] task-list.json 作成
-- [ ] TODO.md 作成
-
-**新**:
-- [ ] story-analysis.json 作成
-- [ ] task-list.json 作成
-- [ ] TODO.md 作成
-- [ ] SESSION.md 作成 ← 追加
+${tasks.map(t => `- [ ] ${t}`).join('\n')}
+`;
 ```
 
 **実装タスク**:
-- [ ] dev:story SKILL.md に Phase 4.2 追加
-- [ ] SESSION.md テンプレート定義
-- [ ] 完了条件の更新
+- [ ] dev:story SKILL.md の Phase 4 で TODO.md に `**Last Updated**` を追加
+- [ ] 既存のタスクリスト生成ロジックは変更なし
+
+### 1.7 dev:feedback 統合（Phase 5 追加）
+
+**ファイル**: `.claude/skills/dev/feedback/SKILL.md`
+
+**Phase 5**: ストーリー完了時に in-progress-stories.tmp を更新
+
+**目的**: ストーリー完了直後に進行中ストーリー一覧から削除し、確実に反映
+
+```bash
+# dev:feedback の最終フェーズで実行
+SESSIONS_DIR="${HOME}/.claude/sessions"
+STORIES_FILE="$SESSIONS_DIR/in-progress-stories.tmp"
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+
+# 進行中ストーリー一覧を再生成（完了したストーリーを除外）
+{
+  echo "# In-Progress Stories"
+  echo "**Updated**: $TIMESTAMP"
+  echo ""
+
+  find docs/features -name "TODO.md" -type f 2>/dev/null | while read todo; do
+    if grep -q "^- \[ \]" "$todo"; then
+      STORY_PATH=$(dirname "$todo")
+      LAST_UPDATED=$(grep "^\*\*Last Updated\*\*:" "$todo" | sed 's/\*\*Last Updated\*\*: //' || echo "unknown")
+      COMPLETED=$(grep -c "^- \[x\]" "$todo" 2>/dev/null || echo "0")
+      IN_PROGRESS=$(grep -c "^- \[ \]" "$todo" 2>/dev/null || echo "0")
+
+      echo "- $STORY_PATH | Updated: $LAST_UPDATED | Progress: $COMPLETED/$((COMPLETED + IN_PROGRESS))"
+    fi
+  done
+} > "$STORIES_FILE"
+
+echo "[dev:feedback] Updated in-progress stories list (removed completed story)" >&2
+```
+
+**実装タスク**:
+- [ ] dev:feedback SKILL.md の Phase 5 に in-progress-stories.tmp 更新処理を追加
+- [ ] PR作成・Worktreeクリーンアップの後に実行
+
+**メリット**:
+- ✅ ストーリー完了直後に一覧から削除（PreCompact/Stopを待たない）
+- ✅ 次回SessionStartで完了済みストーリーが表示されない
 
 ---
 
 ## Phase 2: 戦略的コンパクション
 
 ### 2.1 suggest-compact.sh (PreToolUse Hook)
-
-**ファイル**: `.claude/hooks/strategic-compact/suggest-compact.sh`
 
 ```bash
 #!/bin/bash
@@ -535,141 +407,166 @@ if [ "$count" -gt "$THRESHOLD" ] && [ $((count % 25)) -eq 0 ]; then
 fi
 ```
 
-**ポイント**:
-- `/tmp/claude-tool-count-$$` でプロセス固有のカウンター
-- 環境変数 `COMPACT_THRESHOLD` でカスタマイズ可能
-- 50回目 + 以降25回ごとに提案
+### 2.2 hooks.json 更新
 
-**実装タスク**:
-- [ ] `.claude/hooks/strategic-compact/` ディレクトリ作成
-- [ ] suggest-compact.sh 作成
-- [ ] 実行権限付与 (`chmod +x`)
-- [ ] hooks.json に PreToolUse hook として追加
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [{
+          "type": "command",
+          "command": "~/.claude/hooks/strategic-compact/suggest-compact.sh"
+        }],
+        "description": "Suggest /compact at logical checkpoints"
+      }
+    ]
+  }
+}
+```
 
 ---
 
-## 実装ロードマップ（更新版）
+## 実装ロードマップ
 
-### Phase 1（2-3時間） - セッションメモリ基盤
+### Phase 1（30分） - TODO.md拡張 + hooks基盤
 
 | タスク | 成果物 | 所要時間 |
 |--------|--------|---------|
-| ディレクトリ構造作成 | `.claude/hooks/`, `.claude/sessions/` | 10分 |
-| hooks.json 作成 | hooks設定ファイル | 20分 |
-| session-start.sh 実装 | ストーリー検出版SessionStart hook | 45分 |
-| pre-compact.sh 実装 | ストーリー対応PreCompact hook | 20分 |
-| session-end.sh 実装 | ストーリー対応Stop hook | 45分 |
-| dev:story 統合 | Phase 4.2 SESSION.md作成 | 30分 |
-| **テスト実行** | 全hooks動作確認 | 30分 |
+| ディレクトリ作成 | `.claude/hooks/memory-persistence/` | 5分 |
+| session-start.sh 実装 | SessionStart hook | 10分 |
+| pre-compact.sh 実装 | PreCompact hook | 5分 |
+| session-end.sh 実装 | Stop hook | 5分 |
+| hooks.json 作成 | hooks設定 | 5分 |
 
 **チェックポイント**:
-- [ ] ストーリー内で SessionStart hook が SESSION.md を検出
-- [ ] ストーリー外で グローバルセッションにフォールバック
-- [ ] Stop hook で SESSION.md が更新される
-- [ ] dev:story で SESSION.md が自動作成される
+- [ ] ストーリー内で SessionStart hook が TODO.md を検出
+- [ ] Last Updated が表示される
+- [ ] Stop/PreCompact hook で Last Updated が更新される
 
-### Phase 2（30分） - 戦略的コンパクション
+### Phase 2（35分） - 戦略的コンパクション + スキル統合
 
 | タスク | 成果物 | 所要時間 |
 |--------|--------|---------|
 | ディレクトリ作成 | `.claude/hooks/strategic-compact/` | 5分 |
-| suggest-compact.sh 実装 | PreToolUse hook | 15分 |
+| suggest-compact.sh 実装 | PreToolUse hook | 10分 |
 | hooks.json 更新 | PreToolUse hook追加 | 5分 |
-| **テスト実行** | 50ツール呼び出しで提案確認 | 5分 |
+| dev:story 統合 | Phase 4.2 Last Updated追加 | 10分 |
+| dev:feedback 統合 | Phase 5 ストーリー一覧更新追加 | 5分 |
 
 **チェックポイント**:
 - [ ] 50ツール呼び出し時に compact 提案が表示される
-- [ ] 75, 100, 125... で再提案が表示される
-- [ ] 環境変数 `COMPACT_THRESHOLD` でカスタマイズ可能
+- [ ] dev:story で TODO.md に Last Updated が自動追加される
+- [ ] dev:feedback で in-progress-stories.tmp が更新される
 
 ---
 
 ## 統合後の開発フロー
 
+### ストーリー内での開発
+
 ```
-┌────────────────────────────────────────────────────────────┐
-│                  /dev:story 実行                            │
-└───────────────────┬────────────────────────────────────────┘
-                    │
-                    ▼
-         ┌──────────────────────┐
-         │  Phase 0-3: 既存処理  │
-         │  - story-analysis.json │
-         │  - task-list.json     │
-         │  - TODO.md            │
-         └──────────┬───────────┘
-                    │
-                    ▼
-         ┌──────────────────────┐
-         │  Phase 4: 新規追加    │
-         │  - SESSION.md 作成   │
-         └──────────┬───────────┘
-                    │
-                    ▼
-         ┌──────────────────────┐
-         │   開発作業開始        │
-         │  (dev:developing)    │
-         └──────────┬───────────┘
-                    │
-              [セッション終了]
-                    │
-                    ▼
-         ┌──────────────────────┐
-         │   Stop Hook 実行     │
-         │  - SESSION.md 更新   │
-         │  - Last Updated更新  │
-         └──────────┬───────────┘
-                    │
-         [翌日セッション開始]
-                    │
-                    ▼
-         ┌──────────────────────┐
-         │ SessionStart Hook    │
-         │ - SESSION.md 検出    │
-         │ - 前回状態を通知     │
-         └──────────┬───────────┘
-                    │
-                    ▼
-         ┌──────────────────────┐
-         │  作業継続            │
-         │  (前回の続きから)     │
-         └──────────────────────┘
+/dev:story 実行
+    ↓
+TODO.md 生成（Last Updated 付き）
+    ↓
+開発作業開始
+    ↓
+[セッション終了]
+    ↓
+Stop Hook → TODO.md の Last Updated 更新 + ストーリー一覧保存
+    ↓
+[次回セッション開始（ストーリー内）]
+    ↓
+SessionStart Hook → TODO.md の Last Updated を読んで通知
 ```
+
+### プロジェクトルートからの開始
+
+```
+[セッション開始（プロジェクトルート）]
+    ↓
+SessionStart Hook → 保存済みストーリー一覧を表示
+    ↓
+Claude が AskUserQuestion で「どのストーリーを再開しますか？」
+    ↓
+ユーザーが選択 → 選択したストーリーディレクトリに移動
+    ↓
+開発作業開始
+    ↓
+[セッション終了]
+    ↓
+Stop Hook → TODO.md + ストーリー一覧を更新保存
+```
+
+### ストーリー完了時
+
+```
+開発作業完了
+    ↓
+/dev:feedback 実行
+    ↓
+Phase 5: in-progress-stories.tmp を更新（完了したストーリーを削除）
+    ↓
+PR作成・Worktreeクリーンアップ
+```
+
+**ポイント**:
+- ✅ SessionStartは常に高速（find検索なし）
+- ✅ find検索はセッション終了時のみ（ユーザー体感なし）
+- ✅ ストーリー完了時に即座に一覧から削除（dev:feedback Phase 5）
+- ✅ プロジェクトルートからストーリー選択が対話的に可能
 
 ---
 
-## 成功指標
+## SESSION.md方式との比較
+
+| 項目 | SESSION.md方式 | TODO.md拡張方式 |
+|------|---------------|----------------|
+| **ファイル数** | TODO.md + SESSION.md | TODO.mdのみ |
+| **実装時間** | 1-2時間 | **1時間** |
+| **メンテナンス** | 2ファイルの同期必要 | 1ファイルのみ |
+| **Session History** | あり | **不要**（git履歴で代替） |
+| **グローバルセッション** | .tmpファイル管理 | **キャッシュのみ**（in-progress-stories.tmp） |
+| **可読性** | 分散 | **集中** |
+
+---
+
+## 完了条件
 
 ### Phase 1 完了時
 
-- [ ] ストーリー内で SESSION.md が自動作成される
-- [ ] SessionStart hook で前回の状態が通知される
-- [ ] Stop hook で SESSION.md が更新される
-- [ ] グローバルセッションへのフォールバックが機能する
+- [ ] ストーリー内で TODO.md が検出される
+- [ ] SessionStart hook で Last Updated が通知される
+- [ ] Stop/PreCompact hook で Last Updated が更新される
+- [ ] Blockers セクションがあれば警告される
 
 ### Phase 2 完了時
 
 - [ ] 50ツール呼び出し時に compact 提案が表示される
-- [ ] 75, 100, 125... で再提案が表示される
-- [ ] 環境変数でしきい値をカスタマイズ可能
+- [ ] dev:story で TODO.md に Last Updated が自動追加される
+- [ ] dev:feedback で in-progress-stories.tmp が更新される
+- [ ] プロジェクトルートで進行中ストーリー一覧が表示される
+- [ ] Claudeが自動的にストーリー選択を促す
 
 ---
 
-## リスク と対策
+## リスクと対策
 
 | リスク | 影響 | 対策 |
 |--------|------|------|
-| SESSION.md のコミット漏れ | チームで状態共有できない | pre-commit hook で警告 |
-| 複数ストーリー同時作業 | どのSESSION.mdか混乱 | ディレクトリ構造で明確化 |
-| グローバルセッションの肥大化 | ファイルサイズ増大 | 30日自動削除 |
+| TODO.mdのフォーマット崩れ | hooks が動作しない | sed の正規表現を厳密に |
+| Last Updated の重複追加 | 見た目が悪い | 存在チェックを必ず行う |
+| ストーリー外での誤動作 | 不要な警告 | TODO.md 存在チェックで回避 |
 
 ---
 
 ## 次のステップ
 
-1. **Phase 1 実装開始**: hooks基盤とセッションメモリ（ストーリー統合版）
+1. **Phase 1 実装開始**: TODO.md拡張 + hooks基盤（30分）
 2. **動作確認**: 実際のストーリーで検証
-3. **Phase 2 実装**: 戦略的コンパクション（30分）
+3. **Phase 2 実装**: 戦略的コンパクション + dev:story統合（30分）
 4. **フィードバック収集**: 使用感の評価と改善
 
 ---
@@ -677,6 +574,4 @@ fi
 ## 参照
 
 - **著者リポジトリ**: `docs/SAMPLE/dot-claude-dev/everything-claude-code/`
-- **Longform Guide**: `docs/SAMPLE/dot-claude-dev/The Longform Guide to Everything Claude Code.md`
-- **初期分析**: `docs/analysis/longform-guide-integration-analysis.md`
-- **手法一覧**: `docs/analysis/implementation-techniques-overview.md`
+- **既存 TODO.md**: `.claude/skills/dev/story/SKILL.md` Phase 4
