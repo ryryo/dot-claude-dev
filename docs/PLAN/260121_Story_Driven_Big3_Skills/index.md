@@ -97,8 +97,8 @@ slug確定 → 以降の処理で使用
 
 | Big 3 名称 | 役割 | スキル名 |
 |------------|------|----------|
-| タスク仕様書作成 | ストーリー → TODO.md（TDD/PLAN分岐付き） | dev:story-to-tasks |
-| 実装 | TDD or PLANフローで実装 | dev:developing（既存活用） |
+| タスク仕様書作成 | ストーリー → TODO.md（TDD/E2E/TASK分岐付き） | dev:story-to-tasks |
+| 実装 | TDD or E2E or TASKフローで実装 | dev:developing（既存活用） |
 | フィードバック | 実装結果 → DESIGN.md蓄積＋スキル自己改善 | dev:feedback |
 
 ### Big 3 の循環フロー
@@ -129,7 +129,7 @@ docs/
 │   │       └── {story-slug}/          # ストーリー単位
 │   │           ├── story-analysis.json  # analyze-story.mdの出力
 │   │           ├── task-list.json       # decompose-tasks.mdの出力
-│   │           ├── TODO.md              # classify-tdd-plan.mdの出力
+│   │           ├── TODO.md              # assign-workflow.mdの出力
 │   │           └── output/              # ストーリーの成果物
 │   │
 │   └── user-auth/                     # 例: user-auth機能
@@ -154,9 +154,9 @@ analyze-story.md
     ↓ story-analysis.json
 decompose-tasks.md
     ↓ task-list.json
-classify-tdd-plan.md
+assign-workflow.md
     ↓ TODO.md
-developing（TDD/PLAN）
+developing（TDD/E2E/TASK）
     ↓
 feedback
     ↓ features/{feature-slug}/DESIGN.md に追記
@@ -177,7 +177,7 @@ widgets ───────┼─→ features/dashboard/DESIGN.md ──┘
 |----------|----------|----------------|
 | stories/{story-slug}/story-analysis.json | ストーリー | analyze-story実行時 |
 | stories/{story-slug}/task-list.json | ストーリー | decompose-tasks実行時 |
-| stories/{story-slug}/TODO.md | ストーリー | classify-tdd-plan実行時 |
+| stories/{story-slug}/TODO.md | ストーリー | assign-workflow実行時 |
 | features/{feature-slug}/DESIGN.md | 機能単位 | feedback実行時 |
 | features/DESIGN.md | プロジェクト全体 | feedback実行時（または定期統合） |
 
@@ -258,7 +258,7 @@ Worktree作成後、最初に実行するスキル。
 **出力**（`docs/features/{feature-slug}/stories/{story-slug}/`に保存）:
 - `story-analysis.json` - ストーリー分析結果
 - `task-list.json` - タスクリスト
-- `TODO.md` - TDD/PLANラベル付きタスク
+- `TODO.md` - TDD/E2E/TASKラベル付きタスク
 
 **Task仕様書（agents/）**:
 
@@ -266,9 +266,9 @@ Worktree作成後、最初に実行するスキル。
 |-------|------|----------|-----------|------|
 | 1 | ストーリー分析 | `analyze-story.md` | **opus** | ストーリーの目的・スコープ・受入条件を抽出 |
 | 2 | タスク分解 | `decompose-tasks.md` | sonnet | ストーリーを実装可能なタスクに分解 |
-| 3 | TDD/PLAN分類 | `classify-tdd-plan.md` | haiku | 各タスクをTDD/PLANに分類・ラベル付与 |
+| 3 | TDD/E2E/TASK分類 | `assign-workflow.md` | haiku | 各タスクをTDD/E2E/TASKに分類・ラベル付与 |
 
-→ 詳細: [TDD/PLAN判定基準](reference/tdd-plan-criteria.md)
+→ 詳細: [TDD/E2E/TASK判定基準](reference/tdd-e2e-task-criteria.md)
 → 実行環境: [Worktree運用](#worktree運用1ストーリー--1-worktree)
 
 ### 2. developing（実装）
@@ -276,7 +276,8 @@ Worktree作成後、最初に実行するスキル。
 TODO.mdのタスクを実行。Worktree内で独立した環境で開発する。
 
 - `[TDD]` ラベル → TDDワークフロー（impl.mdベース）
-- `[PLAN]` ラベル → PLANワークフロー（agent-browser操作検証）
+- `[E2E]` ラベル → E2Eワークフロー（agent-browser操作検証）
+- `[TASK]` ラベル → TASKワークフロー（セットアップ/設定）
 
 **Task仕様書（agents/）**:
 
@@ -285,10 +286,11 @@ TODO.mdのタスクを実行。Worktree内で独立した環境で開発する�
 | TDD | テスト作成 | `tdd-write-test.md` | sonnet | RED: 失敗するテストを書く |
 | TDD | 実装 | `tdd-implement.md` | sonnet | GREEN: テストを通す最小実装 |
 | TDD | リファクタ | `tdd-refactor.md` | **opus** | REFACTOR: コード品質改善 |
-| PLAN | UI実装 | `plan-implement.md` | sonnet | UIコンポーネント実装 |
-| PLAN | 検証 | `plan-verify.md` | haiku | agent-browser操作フロー検証 |
+| E2E | UI実装 | `e2e-implement.md` | sonnet | UIコンポーネント実装 |
+| E2E | 検証 | `e2e-verify.md` | haiku | agent-browser操作フロー検証 |
+| TASK | 実行 | `task-execute.md` | sonnet | 設定/セットアップ実行 |
 
-→ 詳細: [TDDワークフロー](reference/tdd-workflow.md) | [PLANサイクル](reference/plan-cycle.md)
+→ 詳細: [TDDワークフロー](reference/tdd-workflow.md) | [E2Eサイクル](reference/e2e-cycle.md) | [TASKワークフロー](reference/task-workflow.md)
 → 実行環境: [Worktree運用](#worktree運用1ストーリー--1-worktree)
 
 ### 3. feedback（フィードバック）
@@ -355,7 +357,7 @@ Big 3の外側に配置するメタスキル。feedbackからの呼び出しで�
 
 → 詳細: [skill-creator参照](reference/skill-creator-overview.md)
 
-## TDD/PLANフロー概要
+## TDD/E2E/TASKフロー概要
 
 ### TDDフロー（Claude Code推奨ワークフロー準拠）
 
@@ -365,23 +367,32 @@ Big 3の外側に配置するメタスキル。feedbackからの呼び出しで�
 
 → 詳細: [TDDワークフロー](reference/tdd-workflow.md)
 
-### PLANフロー（agent-browser + 目視確認）
+### E2Eフロー（agent-browser + 目視確認）
 
 ```
 UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意）→ 品質チェック → コミット
 ```
 
-→ 詳細: [PLANサイクル](reference/plan-cycle.md)
+→ 詳細: [E2Eサイクル](reference/e2e-cycle.md)
 
-### TDD/PLAN 適用判断
+### TASKフロー（セットアップ/設定）
 
-| 基準 | TDD | PLAN |
-|------|-----|------|
-| 入出力 | 明確に定義可能 | 見た目やUXで判断 |
-| 検証方法 | アサーション | 視覚的確認 |
-| レイヤー | ロジック層 | プレゼンテーション層 |
+```
+実行（EXEC）→ 検証（VERIFY）→ コミット
+```
 
-→ 詳細: [TDD/PLAN判定基準](reference/tdd-plan-criteria.md)
+→ 詳細: [TASKワークフロー](reference/task-workflow.md)
+
+### TDD/E2E/TASK 適用判断
+
+| 基準 | TDD | E2E | TASK |
+|------|-----|-----|------|
+| 入出力 | 明確に定義可能 | 見た目やUXで判断 | コマンド実行結果で判断 |
+| 検証方法 | アサーション | 視覚的確認 | 実行結果・ファイル存在確認 |
+| レイヤー | ロジック層 | プレゼンテーション層 | インフラ/設定層 |
+| 対象 | バリデーション、計算、API | UIコンポーネント、レイアウト | 環境構築、設定ファイル、CI/CD |
+
+→ 詳細: [TDD/E2E/TASK判定基準](reference/tdd-e2e-task-criteria.md)
 
 ## ファイル構成
 
@@ -392,14 +403,15 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 ├── skills/
 │   ├── dev/                            # 開発関連スキル（Big 3）
 │   │   ├── story-to-tasks/
-│   │   │   ├── SKILL.md                # タスク仕様書作成（TDD/PLAN分岐）
+│   │   │   ├── SKILL.md                # タスク仕様書作成（TDD/E2E/TASK分岐）
 │   │   │   ├── agents/                 # Task仕様書
 │   │   │   │   ├── analyze-story.md    # ストーリー分析
 │   │   │   │   ├── decompose-tasks.md  # タスク分解
-│   │   │   │   └── classify-tdd-plan.md # TDD/PLAN分類
+│   │   │   │   └── assign-workflow.md  # TDD/E2E/TASK分類
 │   │   │   └── references/
 │   │   │       ├── tdd-criteria.md     # TDD判定基準
-│   │   │       └── plan-criteria.md    # PLAN判定基準
+│   │   │       ├── e2e-criteria.md     # E2E判定基準
+│   │   │       └── task-criteria.md    # TASK判定基準
 │   │   │
 │   │   ├── developing/                 # （既存からコピー＋拡張）
 │   │   │   ├── SKILL.md
@@ -407,8 +419,9 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 │   │   │       ├── tdd-write-test.md   # TDD: テスト作成（RED）
 │   │   │       ├── tdd-implement.md    # TDD: 実装（GREEN）
 │   │   │       ├── tdd-refactor.md     # TDD: リファクタ
-│   │   │       ├── plan-implement.md   # PLAN: UI実装
-│   │   │       └── plan-verify.md      # PLAN: agent-browser検証
+│   │   │       ├── e2e-implement.md    # E2E: UI実装
+│   │   │       ├── e2e-verify.md       # E2E: agent-browser検証
+│   │   │       └── task-execute.md     # TASK: セットアップ実行
 │   │   │
 │   │   └── feedback/
 │   │       ├── SKILL.md                # フィードバック＋自己改善
@@ -436,9 +449,9 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 │
 ├── rules/
 │   └── workflow/
-│       ├── tdd-workflow.md             # TDD 5ステップワークフロー
-│       ├── plan-cycle.md               # PLANサイクルルール
-│       └── tdd-plan-branching.md       # TDD/PLAN分岐判定ルール
+│       ├── tdd-workflow.md             # TDD 6ステップワークフロー
+│       ├── e2e-cycle.md                # E2Eサイクルルール
+│       └── workflow-branching.md       # TDD/E2E/TASK分岐判定ルール
 │
 └── commands/
     └── dev/                            # 開発関連コマンド
@@ -468,19 +481,19 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 - [x] `.claude/skills/dev/story-to-tasks/SKILL.md` 作成
 - [x] `.claude/skills/dev/story-to-tasks/agents/analyze-story.md` 作成
 - [x] `.claude/skills/dev/story-to-tasks/agents/decompose-tasks.md` 作成
-- [x] `.claude/skills/dev/story-to-tasks/agents/classify-tdd-plan.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md` 作成（後にassign-workflow.mdにリネーム）
 - [x] `.claude/skills/dev/story-to-tasks/references/tdd-criteria.md` 作成
-- [x] `.claude/skills/dev/story-to-tasks/references/plan-criteria.md` 作成
+- [x] `.claude/skills/dev/story-to-tasks/references/e2e-criteria.md` 作成
 
 #### developing
-- [x] `.claude/skills/dev/developing/SKILL.md` 作成（impl.mdを参照してTDD/PLAN両対応）
+- [x] `.claude/skills/dev/developing/SKILL.md` 作成（impl.mdを参照してTDD/E2E/TASK対応）
 - [x] `.claude/skills/dev/developing/agents/tdd-write-test.md` 作成
 - [x] `.claude/skills/dev/developing/agents/tdd-implement.md` 作成
 - [x] `.claude/skills/dev/developing/agents/tdd-refactor.md` 作成
-- [x] `.claude/skills/dev/developing/agents/plan-implement.md` 作成
-- [x] `.claude/skills/dev/developing/agents/plan-verify.md` 作成（agent-browser操作フロー検証）
+- [x] `.claude/skills/dev/developing/agents/e2e-implement.md` 作成
+- [x] `.claude/skills/dev/developing/agents/e2e-verify.md` 作成（agent-browser操作フロー検証）
 - [x] `.claude/skills/dev/developing/references/tdd-flow.md` 作成（impl.mdベース）
-- [x] `.claude/skills/dev/developing/references/plan-flow.md` 作成（agent-browser検証フロー）
+- [x] `.claude/skills/dev/developing/references/e2e-flow.md` 作成（agent-browser検証フロー）
 
 #### feedback
 - [x] `.claude/skills/dev/feedback/SKILL.md` 作成（skill-creator連携機能含む）
@@ -493,11 +506,21 @@ UI実装 → agent-browser自動検証（ループ）→ 目視確認（任意�
 - [x] `.claude/skills/dev/feedback/references/improvement-patterns.md` 作成
 - [x] `.claude/skills/dev/feedback/references/feedback-loop.md` コピー（skill-creatorから）
 
-### Phase 3: ルール作成
+### Phase 3: ルール作成・TASK対応
 
-- [x] `.claude/rules/workflow/tdd-workflow.md` 作成（TDD 5ステップ）
-- [x] `.claude/rules/workflow/plan-cycle.md` 作成
-- [x] `.claude/rules/workflow/tdd-plan-branching.md` 作成
+- [x] `.claude/rules/workflow/tdd-workflow.md` 作成（TDD 6ステップ）
+- [x] `.claude/rules/workflow/e2e-cycle.md` 作成
+- [x] `.claude/rules/workflow/workflow-branching.md` 作成
+
+#### Phase 3追加: TASK分類対応
+- [x] `.claude/skills/dev/story-to-tasks/references/task-criteria.md` 作成
+- [x] `.claude/rules/workflow/workflow-branching.md` 修正（TASK判定基準追加）
+- [x] `.claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md` → `assign-workflow.md` リネーム・修正
+- [x] `.claude/skills/dev/story-to-tasks/SKILL.md` 修正（3分類対応）
+- [x] `.claude/skills/dev/developing/references/task-flow.md` 作成
+- [x] `.claude/skills/dev/developing/agents/task-execute.md` 作成
+- [x] `.claude/skills/dev/developing/SKILL.md` 修正（TASKワークフロー追加）
+- [x] `CLAUDE.md` 修正（3分類コンセプト）
 
 ### Phase 4: コマンド作成
 
@@ -557,13 +580,14 @@ planning-tasksを参考に、ストーリーから直接タスク生成。
 
 **特徴**:
 1. DESIGN.mdを経由せず、ストーリーから直接TODO.md生成
-2. タスクに`[TDD]`/`[PLAN]`ラベルを自動付与
-3. TDDタスクとPLANタスクをグループ化
+2. タスクに`[TDD]`/`[E2E]`/`[TASK]`ラベルを自動付与
+3. TDDタスク、E2Eタスク、TASKタスクをグループ化
 
 ### developing（既存活用）
 
 既存のTDDスキルをコピーして活用。`[TDD]`ラベル付きタスクに適用。
-`[PLAN]`ラベルはPLANサイクル（agent-browser）で実装。
+`[E2E]`ラベルはE2Eサイクル（agent-browser）で実装。
+`[TASK]`ラベルはTASKワークフロー（EXEC→VERIFY→COMMIT）で実装。
 
 ### feedback（新規）
 

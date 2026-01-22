@@ -1,5 +1,5 @@
 ---
-description: JavaScriptテスト規約。Jest/Vitestを使用。
+description: JavaScriptテスト規約。Vitestを使用。
 globs:
   - "**/*.test.js"
   - "**/*.spec.js"
@@ -9,7 +9,7 @@ globs:
 
 ## テストフレームワーク
 
-Jest または Vitest を使用。
+**Vitest** を使用。
 
 ## テスト構造
 
@@ -74,7 +74,9 @@ expect(() => fn()).toThrow('error message');
 ### 関数モック
 
 ```javascript
-const mockFn = jest.fn();
+import { vi } from 'vitest';
+
+const mockFn = vi.fn();
 mockFn.mockReturnValue(42);
 mockFn.mockResolvedValue({ data: 'test' });
 
@@ -87,25 +89,27 @@ expect(mockFn).toHaveBeenCalledTimes(2);
 ### モジュールモック
 
 ```javascript
-jest.mock('./api', () => ({
-  fetchData: jest.fn().mockResolvedValue({ data: 'test' }),
+vi.mock('./api', () => ({
+  fetchData: vi.fn().mockResolvedValue({ data: 'test' }),
 }));
 ```
 
 ### タイマーモック
 
 ```javascript
-jest.useFakeTimers();
+import { vi, test } from 'vitest';
+
+vi.useFakeTimers();
 
 test('debounce', () => {
-  const fn = jest.fn();
+  const fn = vi.fn();
   const debounced = debounce(fn, 100);
 
   debounced();
   debounced();
   debounced();
 
-  jest.advanceTimersByTime(100);
+  vi.advanceTimersByTime(100);
 
   expect(fn).toHaveBeenCalledTimes(1);
 });
@@ -145,7 +149,7 @@ describe('Database', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 });
 ```

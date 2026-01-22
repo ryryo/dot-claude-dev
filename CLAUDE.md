@@ -18,7 +18,7 @@
 |--------|----------|------|
 | **tdd-workflow** | `**/*.test.ts`, `**/*.spec.ts`, `**/*.test.tsx`, `**/*.spec.tsx` | TDD 6ステップワークフロー（RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT） |
 | **e2e-cycle** | `**/components/**/*.tsx`, `**/pages/**/*.tsx`, `**/views/**/*.php` | E2Eサイクル（UI実装→agent-browser検証→品質チェック→コミット） |
-| **tdd-e2e-branching** | `**/TODO.md` | TDD/E2E分岐判定ルール |
+| **workflow-branching** | `**/TODO.md` | TDD/E2E/TASK分岐判定ルール |
 
 ### 言語別ルール
 
@@ -45,8 +45,8 @@
 
 | スキル | 用途 |
 |--------|------|
-| **dev:story-to-tasks** | ストーリーからTDD/E2E分岐付きタスクリスト（TODO.md）を生成。Worktree作成後、最初に実行するスキル。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
-| **dev:developing** | TODO.mdのタスクを実行。TDD/E2Eラベルに応じたワークフローで実装。TDDは6ステップ（RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT）、E2Eはagent-browser検証付き |
+| **dev:story-to-tasks** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。Worktree作成後、最初に実行するスキル。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
+| **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは6ステップ、E2Eはagent-browser検証付き、TASKはEXEC→VERIFY→COMMIT |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
 ### メタスキル
@@ -68,6 +68,15 @@
 
 このプロジェクトでは **Vitest** を使用します。
 
+### テストファイル命名規則
+
+テストファイルは必ず以下の命名規則に従うこと:
+
+- `*.test.ts` / `*.test.tsx`
+- `*.spec.ts` / `*.spec.tsx`
+
+この命名規則により、TDDワークフロールール（`tdd-workflow.md`）が自動適用されます。
+
 ## 開発ワークフロー
 
 ### ストーリー駆動開発フロー
@@ -77,9 +86,10 @@
    └── git worktree add -b feature/xxx
 
 2. /dev:story 実行
-   └── ストーリー入力 → TODO.md生成（TDD/E2Eラベル付き）
+   └── ストーリー入力 → TODO.md生成（TDD/E2E/TASKラベル付き）
 
 3. dev:developing でタスク実行
+   ├── [TASK] EXEC → VERIFY → COMMIT
    ├── [TDD] RED → GREEN → REFACTOR → REVIEW → CHECK → COMMIT
    └── [E2E] UI実装 → agent-browser検証 → 品質チェック → COMMIT
 
@@ -93,5 +103,14 @@
 
 - **TDD判定**: ビジネスロジック、API、データ処理 → 自動テスト可能
 - **E2E判定**: UI/UX、視覚的要素、ユーザー操作フロー → agent-browser検証
+- **TASK判定**: 設定、セットアップ、インフラ、ドキュメント → テスト不要・UI検証不要
 - **DESIGN.md**: 機能別仕様書。実装で得た知見を蓄積
 - **フィードバックループ**: 3回以上同じパターンが現れたらスキル/ルール化を検討
+
+### 3分類の定義
+
+| カテゴリ | 対象 | ワークフロー |
+|----------|------|--------------|
+| **TDD** | ロジック、バリデーション、計算 | RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT |
+| **E2E** | UIコンポーネント、レイアウト | IMPL→AUTO→CHECK→COMMIT |
+| **TASK** | 設定、セットアップ、インフラ | EXEC→VERIFY→COMMIT |

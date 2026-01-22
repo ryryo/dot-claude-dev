@@ -60,7 +60,7 @@
 | 現在のパス | 新しいパス |
 |-----------|-----------|
 | `.claude/rules/workflow/plan-cycle.md` | `.claude/rules/workflow/e2e-cycle.md` |
-| `.claude/rules/workflow/tdd-plan-branching.md` | `.claude/rules/workflow/tdd-e2e-branching.md` |
+| `.claude/rules/workflow/tdd-plan-branching.md` | `.claude/rules/workflow/workflow-branching.md` |
 | `.claude/skills/dev/story-to-tasks/agents/classify-tdd-plan.md` | `.claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md` |
 | `.claude/skills/dev/story-to-tasks/references/plan-criteria.md` | `.claude/skills/dev/story-to-tasks/references/e2e-criteria.md` |
 | `.claude/skills/dev/developing/agents/plan-implement.md` | `.claude/skills/dev/developing/agents/e2e-implement.md` |
@@ -164,7 +164,7 @@ EXEC（実行）→ VERIFY（動作確認）→ COMMIT
 ```bash
 # rules
 git mv .claude/rules/workflow/plan-cycle.md .claude/rules/workflow/e2e-cycle.md
-git mv .claude/rules/workflow/tdd-plan-branching.md .claude/rules/workflow/tdd-e2e-branching.md
+git mv .claude/rules/workflow/tdd-plan-branching.md .claude/rules/workflow/workflow-branching.md
 
 # story-to-tasks
 git mv .claude/skills/dev/story-to-tasks/agents/classify-tdd-plan.md .claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md
@@ -180,9 +180,9 @@ git mv .claude/skills/dev/developing/references/plan-flow.md .claude/skills/dev/
 
 | ファイル | 置換内容 |
 |----------|----------|
-| `CLAUDE.md` | `PLAN` → `E2E`, `plan-cycle` → `e2e-cycle`, `tdd-plan-branching` → `tdd-e2e-branching` |
+| `CLAUDE.md` | `PLAN` → `E2E`, `plan-cycle` → `e2e-cycle`, `tdd-plan-branching` → `workflow-branching` |
 | `.claude/rules/workflow/e2e-cycle.md` | タイトル・内容中のPLAN→E2E |
-| `.claude/rules/workflow/tdd-e2e-branching.md` | 内容中のPLAN→E2E |
+| `.claude/rules/workflow/workflow-branching.md` | 内容中のPLAN→E2E |
 | `.claude/skills/dev/story-to-tasks/SKILL.md` | PLAN参照→E2E |
 | `.claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md` | 内容中のPLAN→E2E |
 | `.claude/skills/dev/story-to-tasks/references/e2e-criteria.md` | 内容中のPLAN→E2E |
@@ -195,7 +195,7 @@ git mv .claude/skills/dev/developing/references/plan-flow.md .claude/skills/dev/
 
 | ファイル | 変更内容 |
 |----------|----------|
-| `.claude/rules/workflow/tdd-e2e-branching.md` | TASK分類の追加 |
+| `.claude/rules/workflow/workflow-branching.md` | TASK分類の追加 |
 | `.claude/skills/dev/story-to-tasks/SKILL.md` | TASKラベル生成対応 |
 | `.claude/skills/dev/story-to-tasks/agents/classify-tdd-e2e.md` | TASK分類ロジック追加 |
 | `.claude/skills/dev/story-to-tasks/references/task-criteria.md` | **新規作成** |

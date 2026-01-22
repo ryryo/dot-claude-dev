@@ -3,7 +3,6 @@ description: TDD開発時に自動適用されるルール。RED→GREEN→REFAC
 globs:
   - "**/*.test.ts"
   - "**/*.spec.ts"
-  - "**/*_test.go"
   - "**/test_*.py"
 ---
 

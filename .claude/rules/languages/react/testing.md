@@ -19,9 +19,9 @@ globs:
 
 ## テストフレームワーク
 
-- Vitest または Jest
-- React Testing Library
-- @testing-library/user-event
+- **Vitest**
+- **React Testing Library**
+- **@testing-library/user-event**
 
 ## テスト構造
 

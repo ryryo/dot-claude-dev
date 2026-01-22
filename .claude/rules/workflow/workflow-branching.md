@@ -1,11 +1,11 @@
 ---
-description: タスクをTDD/E2Eに分岐する判定ルール。story-to-tasksスキルで使用。
+description: タスクをTDD/E2E/TASKに分岐する判定ルール。story-to-tasksスキルで使用。
 globs:
   - "**/TODO.md"
   - "**/task-list.json"
 ---
 
-# TDD/E2E分岐判定ルール
+# ワークフロー分岐判定ルール（TDD/E2E/TASK）
 
 ## 判定フロー
 
@@ -16,7 +16,9 @@ globs:
     ├─ YES → TDD
     └─ NO → 視覚的確認が必要？
               ├─ YES → E2E
-              └─ NO → 再分析（タスクを分解）
+              └─ NO → セットアップ/設定タスク？
+                        ├─ YES → TASK
+                        └─ NO → 再分析（タスクを分解）
 ```
 
 ## TDD判定基準
@@ -74,6 +76,32 @@ globs:
 | ナビゲーション | Navbar, Breadcrumb |
 | フィードバック | Toast, Alert, Spinner |
 
+## TASK判定基準
+
+### 必須条件（いずれかを満たす）
+
+1. **テスト不要**
+   - 設定ファイルの作成・変更
+   - 環境構築コマンドの実行
+
+2. **UI検証不要**
+   - コマンドの実行結果で検証可能
+   - ファイルの存在確認で検証可能
+
+3. **一回限りのセットアップ**
+   - プロジェクト初期化
+   - 環境構築
+
+### TASK対象の例
+
+| カテゴリ | 例 |
+|----------|-----|
+| 環境構築 | npm init, Docker環境構築 |
+| 設定 | ESLint, Prettier, TypeScript設定 |
+| CI/CD | GitHub Actions, デプロイスクリプト |
+| ドキュメント | README, CHANGELOG |
+| 依存関係 | npm install, パッケージ追加 |
+
 ## TODO.mdラベル形式
 
 ### TDDタスク
@@ -92,6 +120,13 @@ globs:
 - [ ] [E2E][IMPL] {タスク名} 実装
 - [ ] [E2E][AUTO] {タスク名} agent-browser検証
 - [ ] [E2E][CHECK] lint/format/build
+```
+
+### TASKタスク
+
+```markdown
+- [ ] [TASK][EXEC] {タスク名} 実行
+- [ ] [TASK][VERIFY] {タスク名} 検証
 ```
 
 ## 曖昧なケースの判断
@@ -130,7 +165,17 @@ API結果の表示UI → E2E（視覚的確認）
 └─ [E2E] LoginForm（UI）
 ```
 
+```
+「TypeScriptプロジェクト初期化 + ユーザー認証機能」
+    ↓ 分解
+├─ [TASK] TypeScript設定
+├─ [TASK] ESLint/Prettier設定
+├─ [TDD] validateEmail
+├─ [TDD] validatePassword
+└─ [E2E] LoginForm
+```
+
 ## 関連スキル
 
-- **dev:story-to-tasks**: TDD/E2E分類を実行
+- **dev:story-to-tasks**: TDD/E2E/TASK分類を実行
 - **dev:developing**: 分類に基づいて実装

@@ -1,8 +1,8 @@
-# classify-tdd-e2e
+# assign-workflow
 
 ## 役割
 
-タスクリストをTDD/E2Eに分類し、TODO.mdを生成する。
+タスクリストをTDD/E2E/TASKに分類し、TODO.mdを生成する。
 
 ## 推奨モデル
 
@@ -30,12 +30,17 @@
 - プレゼンテーション層
 - レスポンシブ対応、アニメーション
 
-→ 詳細: [../references/tdd-criteria.md] | [../references/e2e-criteria.md]
+### TASK対象
+- テスト不要（設定ファイル、環境構築）
+- UI検証不要（コマンド実行結果で検証可能）
+- 一回限りのセットアップ
+
+→ 詳細: [../references/tdd-criteria.md] | [../references/e2e-criteria.md] | [../references/task-criteria.md]
 
 ## プロンプト
 
 ```
-task-list.jsonを読み込み、各タスクをTDD/E2Eに分類してください。
+task-list.jsonを読み込み、各タスクをTDD/E2E/TASKに分類してください。
 
 ## タスクリスト
 {task_list}
@@ -56,12 +61,23 @@ task-list.jsonを読み込み、各タスクをTDD/E2Eに分類してくださ�
 
 例: LoginForm, Dashboard, Modal
 
+### TASK（セットアップ/設定）
+- テスト不要
+- UI検証不要
+- 一回限りのセットアップ
+
+例: npm init, ESLint設定, Docker環境構築
+
 ## 出力形式（TODO.md）
 
 ```markdown
 # TODO
 
 ## フェーズ1: {フェーズ名}
+
+### TASKタスク
+- [ ] [TASK][EXEC] {タスク名} 実行
+- [ ] [TASK][VERIFY] {タスク名} 検証
 
 ### TDDタスク
 - [ ] [TDD][RED] {タスク名} のテスト作成
@@ -82,6 +98,8 @@ task-list.jsonを読み込み、各タスクをTDD/E2Eに分類してくださ�
 
 | ラベル | 意味 |
 |--------|------|
+| [TASK][EXEC] | タスク実行（設定/セットアップ） |
+| [TASK][VERIFY] | 検証（ファイル存在/ビルド確認） |
 | [TDD][RED] | テスト作成（失敗するテスト） |
 | [TDD][GREEN] | 実装（テストを通す最小実装） |
 | [TDD][REFACTOR] | リファクタリング |
@@ -93,6 +111,8 @@ task-list.jsonを読み込み、各タスクをTDD/E2Eに分類してくださ�
 
 ## 注意事項
 
+- TASKタスクは最初に実行（環境構築が必要なため）
+- TASKタスクはEXEC→VERIFYの順序
 - TDDタスクは必ずRED→GREEN→REFACTORの順序
 - E2EタスクはIMPL→AUTOの順序
 - 各フェーズの最後にCHECKを入れる

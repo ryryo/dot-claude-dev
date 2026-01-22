@@ -1,7 +1,7 @@
 ---
 name: dev:developing
 description: |
-  TODO.mdのタスクを実行。TDD/E2Eラベルに応じたワークフローで実装。
+  TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。
   Worktree内での独立した開発を支援。
 
   Trigger:
@@ -50,8 +50,64 @@ TODO.mdのタスクを実行する。タスクのラベルに応じてTDDまた�
 TODO.mdを読み込み
     ↓
 タスクのラベルを確認
+    ├─ [TASK] → TASKワークフロー
     ├─ [TDD] → TDDワークフロー
     └─ [E2E] → E2Eワークフロー
+```
+
+**実行順序**: TASKタスクは通常、最初に実行（環境構築が必要なため）
+
+---
+
+## TASKワークフロー
+
+`[TASK]` ラベル付きタスクに適用。設定/セットアップ/インフラ構築を実行。
+
+```
+[1/3] 実行（EXEC）
+    → agents/task-execute.md [sonnet]
+    → 設定ファイル作成、コマンド実行
+        ↓
+[2/3] 検証（VERIFY）
+    → ファイル存在確認、ビルド確認
+        ↓
+[3/3] コミット
+```
+
+→ 詳細: [references/task-flow.md]
+
+### TASKタスク実行
+
+```javascript
+// [EXEC] タスク実行
+Task({
+  description: "TASKタスク実行",
+  prompt: `以下のTASKタスクを実行してください。
+タスク: {task_name}
+説明: {task_description}
+
+1. 必要な設定ファイルを作成/編集
+2. 必要なコマンドを実行
+3. 結果を報告`,
+  subagent_type: "general-purpose",
+  model: "sonnet"
+})
+```
+
+```javascript
+// [VERIFY] 検証
+Task({
+  description: "TASK検証",
+  prompt: `以下のTASKタスクの検証を行ってください。
+タスク: {task_name}
+
+検証内容:
+- ファイル存在確認
+- ビルド/コンパイル確認
+- サービス起動確認（該当する場合）`,
+  subagent_type: "general-purpose",
+  model: "haiku"
+})
 ```
 
 ---
@@ -299,6 +355,7 @@ AskUserQuestion({
 
 ## 完了条件
 
+- [ ] すべてのTASKタスクが完了（EXEC→VERIFY）
 - [ ] すべてのTDDタスクが完了（RED→GREEN→REFACTOR）
 - [ ] すべてのE2Eタスクが完了（IMPL→AUTO）
 - [ ] 全テストが成功
@@ -307,10 +364,11 @@ AskUserQuestion({
 
 ## 関連スキル
 
-- **dev:story-to-tasks**: タスクリスト生成
+- **dev:story-to-tasks**: タスクリスト生成（TDD/E2E/TASK分類）
 - **dev:feedback**: 実装後のフィードバック
 
 ## 参照ルール
 
+- TDD/E2E/TASK分岐: `.claude/rules/workflow/workflow-branching.md`
 - TDDワークフロー: `.claude/rules/workflow/tdd-workflow.md`
 - E2Eサイクル: `.claude/rules/workflow/e2e-cycle.md`

@@ -1,5 +1,5 @@
 ---
-description: TypeScriptテスト規約。Vitest/Jestを使用したTDDを前提。
+description: TypeScriptテスト規約。Vitestを使用したTDDを前提。
 globs:
   - "**/*.test.ts"
   - "**/*.spec.ts"
@@ -9,7 +9,7 @@ globs:
 
 ## テストフレームワーク
 
-Vitest または Jest を使用。
+**Vitest** を使用。
 
 ## テスト構造
 
