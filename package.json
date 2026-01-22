@@ -18,6 +18,7 @@
   "license": "MIT",
   "devDependencies": {
     "@vitest/ui": "^4.0.17",
+    "puppeteer-core": "^24.35.0",
     "vitest": "^4.0.17"
   }
 }
