@@ -5,7 +5,7 @@ description: |
   Worktree内での独立した開発を支援。
 
   Trigger:
-  実装, 開発, /dev:impl, implementing, develop
+  dev:developing, /dev:developing, 実装, 開発, implementing, develop
 allowed-tools:
   - Read
   - Write
@@ -15,14 +15,6 @@ allowed-tools:
   - Grep
   - Task
   - AskUserQuestion
-  - mcp__claude-in-chrome__tabs_context_mcp
-  - mcp__claude-in-chrome__tabs_create_mcp
-  - mcp__claude-in-chrome__navigate
-  - mcp__claude-in-chrome__find
-  - mcp__claude-in-chrome__computer
-  - mcp__claude-in-chrome__form_input
-  - mcp__claude-in-chrome__read_page
-  - mcp__claude-in-chrome__resize_window
 ---
 
 # 実装（dev:developing）
@@ -41,6 +33,67 @@ TODO.mdのタスクを実行する。タスクのラベルに応じてTDDまた�
 - 実装コード
 - テストコード（TDDタスク）
 - コミット
+
+---
+
+## Phase 0: ブランチ/Worktree チェック
+
+実装開始前に、作業ブランチの状態を確認する。
+
+```
+現在のブランチを確認
+    ├─ master/main → Worktree作成を促す
+    └─ feature/* 等 → そのまま続行
+```
+
+### 0.1 ブランチ確認
+
+```bash
+git branch --show-current
+```
+
+### 0.2 master/main の場合: Worktree作成
+
+```javascript
+AskUserQuestion({
+  questions: [{
+    question: "現在 master/main ブランチです。Worktreeを作成しますか？",
+    header: "Worktree",
+    options: [
+      { label: "作成する（推奨）", description: "Worktree（別ディレクトリ）で独立した開発環境を作成" },
+      { label: "このまま続行", description: "master/main で直接作業（非推奨）" }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+**「作成する」を選択された場合**:
+
+```javascript
+// Worktreeのブランチ名をユーザーに確認
+AskUserQuestion({
+  questions: [{
+    question: "Worktreeのブランチ名を入力してください（例: feature/user-auth）",
+    header: "Worktree名",
+    options: [
+      { label: "feature/{story-slug}", description: "Worktree: ../feature/{story-slug}/ に作成" },
+      { label: "fix/{story-slug}", description: "Worktree: ../fix/{story-slug}/ に作成" }
+    ],
+    multiSelect: false
+  }]
+})
+
+// Worktree作成
+Bash({
+  command: "git worktree add -b {branch-name} ../{branch-name}",
+  description: "Worktreeを作成"
+})
+```
+
+**作成後**:
+- 新しいWorktreeディレクトリに移動して作業を継続
+- ユーザーに新しいパスを通知
 
 ---
 
