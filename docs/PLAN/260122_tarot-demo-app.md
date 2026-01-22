@@ -3,92 +3,212 @@
 ## 概要
 
 dev:story / dev:developing / dev:feedback スキルの統合テスト用デモプロジェクト。
-TDDワークフローとPLANワークフローの両方を検証できる構成。
+TASK / PHP TDD / TypeScript TDD / E2E の全ワークフローを検証できる構成。
 
 ## 目的
 
-- **スキル検証**: dev:story-to-tasks によるTDD/PLAN分岐の自動判定
-- **ワークフロー検証**: TDD（RED→GREEN→REFACTOR）とPLAN（agent-browser検証）の実践
+- **スキル検証**: dev:story-to-tasks によるTDD/E2E/TASK分岐の自動判定
+- **ワークフロー検証**:
+  - TASK（EXEC→VERIFY→COMMIT）
+  - PHP TDD（Pest: RED→GREEN→REFACTOR）
+  - TypeScript TDD（Vitest: RED→GREEN→REFACTOR）
+  - E2E（agent-browser検証）
 - **フィードバック検証**: dev:feedback によるDESIGN.md蓄積と改善提案
+- **言語別ルール検証**: PHP/TypeScript/Reactルールの自動適用
 
 ## 技術スタック（想定）
 
+### フロントエンド
 - TypeScript
-- React（またはVanilla JS）
+- React
 - Vitest（テスト）
 - CSS Modules / Tailwind
+
+### バックエンド
+- PHP 8.x
+- Pest（テスト）
+- JSON API（RESTful）
 
 ---
 
 ## ストーリー一覧
 
-### TDDストーリー（3件）
+### TASKストーリー（環境構築）
 
-#### Story 1: デッキ生成・シャッフル
+#### Story 0-1: PHPバックエンド環境構築
 
 ```
-ユーザーとして、占いを始めるときに
-78枚のタロットカードがシャッフルされた状態で用意されてほしい
-それによって、毎回異なる占い結果を得られる
+開発者として、PHPバックエンドの開発環境を構築したい
+それによって、APIの実装を開始できる
+```
+
+**完了条件**:
+- [ ] backend/ ディレクトリ作成
+- [ ] composer.json 作成（autoload設定含む）
+- [ ] Pest インストール・設定（pest.php）
+- [ ] ディレクトリ構造作成（app/Services, app/Models, tests/Unit）
+- [ ] APIエントリーポイント（public/index.php）作成
+- [ ] `composer test` でPestが実行できる
+
+---
+
+#### Story 0-2: Reactフロントエンド環境構築
+
+```
+開発者として、Reactフロントエンドの開発環境を構築したい
+それによって、UIの実装を開始できる
+```
+
+**完了条件**:
+- [ ] Vite + React + TypeScript でプロジェクト作成
+- [ ] Vitest インストール・設定（vitest.config.ts）
+- [ ] React Testing Library インストール
+- [ ] `npm test` でVitestが実行できる
+- [ ] `npm run dev` で開発サーバーが起動できる
+
+---
+
+#### Story 0-3: Tailwind CSS導入
+
+```
+開発者として、Tailwind CSSを導入したい
+それによって、効率的にUIスタイリングができる
+```
+
+**完了条件**:
+- [ ] Tailwind CSS インストール
+- [ ] tailwind.config.js 作成
+- [ ] postcss.config.js 作成
+- [ ] src/index.css にTailwindディレクティブ追加
+- [ ] サンプルコンポーネントでTailwindクラスが適用される
+
+---
+
+#### Story 0-4: API連携設定
+
+```
+開発者として、フロントエンドからバックエンドAPIを呼び出せるようにしたい
+それによって、フルスタック開発ができる
+```
+
+**完了条件**:
+- [ ] Vite proxy設定（vite.config.ts）
+- [ ] 環境変数設定（.env, .env.example）
+- [ ] CORS設定（PHP側）
+- [ ] APIベースURL設定（フロントエンド側）
+
+---
+
+### PHP TDDストーリー（バックエンドAPI）
+
+#### Story 1: デッキ生成・シャッフルAPI
+
+```
+バックエンドとして、占い開始時に
+78枚のタロットカードをシャッフルしてAPIで提供したい
+それによって、フロントエンドに占いデータを供給できる
 ```
 
 **受け入れ条件**:
 - [ ] 大アルカナ22枚が含まれる（愚者〜世界）
 - [ ] 小アルカナ56枚が含まれる（4スート × 14枚）
 - [ ] シャッフル後、重複するカードがない
-- [ ] シャッフルのたびに順序が変わる（ランダム性）
+- [ ] GET /api/deck でシャッフル済みデッキを取得
 
-**TDDで検証するロジック**:
-- `createDeck()`: 78枚のカード配列を生成
-- `shuffleDeck(deck)`: Fisher-Yatesシャッフル
-- カードの型定義（id, name, suit, number, arcana）
+**TDD（Pest）で検証するロジック**:
+- `DeckService::createDeck()`: 78枚のカード配列を生成
+- `DeckService::shuffle(array $deck)`: Fisher-Yatesシャッフル
+- `Card` クラス（id, name, suit, number, arcana）
 
 ---
 
-#### Story 2: カード抽選ロジック
+#### Story 2: カード抽選API
 
 ```
-ユーザーとして、「3枚引き」を選んだときに
-過去・現在・未来のポジションに異なるカードが配置されてほしい
-それによって、時間軸に沿った運勢を知ることができる
+バックエンドとして、「3枚引き」リクエストを受けて
+過去・現在・未来のポジションにカードを配置して返したい
+それによって、フロントエンドで占い結果を表示できる
 ```
 
 **受け入れ条件**:
-- [ ] 指定枚数（1, 3, 10枚など）のカードを抽選できる
+- [ ] POST /api/draw で指定枚数のカードを抽選
 - [ ] 同じカードが複数回選ばれない
 - [ ] 各カードに正位置/逆位置がランダムに設定される
-- [ ] 各カードにポジション（過去/現在/未来など）が割り当てられる
+- [ ] 各カードにポジション（過去/現在/未来）が割り当てられる
 
-**TDDで検証するロジック**:
-- `drawCards(deck, count)`: N枚のカードを抽選
-- `determineOrientation()`: 正位置/逆位置をランダム判定
-- `assignPositions(cards, spread)`: スプレッドに応じたポジション割り当て
+**TDD（Pest）で検証するロジック**:
+- `DrawService::draw(array $deck, int $count)`: N枚のカードを抽選
+- `DrawService::determineOrientation()`: 正位置/逆位置判定
+- `DrawService::assignPositions(array $cards, string $spread)`: ポジション割り当て
 
 ---
 
-#### Story 3: 運勢メッセージ生成
+#### Story 3: 運勢メッセージ生成API
 
 ```
-ユーザーとして、引いたカードに応じた
-意味と総合的なアドバイスを見たい
-それによって、今日の行動指針を得られる
+バックエンドとして、引いたカードに応じた
+意味と総合アドバイスをAPIで返したい
+それによって、フロントエンドで結果を表示できる
 ```
 
 **受け入れ条件**:
-- [ ] カード×正逆の組み合わせで意味テキストを取得できる
+- [ ] POST /api/reading で運勢メッセージを生成
+- [ ] カード×正逆の組み合わせで意味テキストを返す
 - [ ] ポジションに応じた解釈が付与される
-- [ ] 複数カードから総合メッセージを生成できる
+- [ ] 総合メッセージが含まれる
 
-**TDDで検証するロジック**:
-- `getCardMeaning(card, orientation)`: カードの意味を取得
-- `interpretPosition(card, position)`: ポジション別の解釈
-- `generateSummary(readings)`: 総合運勢メッセージの生成
+**TDD（Pest）で検証するロジック**:
+- `ReadingService::getCardMeaning(Card $card, bool $reversed)`: カードの意味を取得
+- `ReadingService::interpretPosition(Card $card, string $position)`: ポジション別解釈
+- `ReadingService::generateSummary(array $readings)`: 総合運勢生成
 
 ---
 
-### PLANストーリー（3件）
+### TypeScript TDDストーリー（フロントエンドロジック）
 
-#### Story 4: カード表示・フリップ演出
+#### Story 4: APIクライアント
+
+```
+フロントエンドとして、バックエンドAPIを呼び出して
+占い結果を取得・管理したい
+それによって、UIにデータを供給できる
+```
+
+**受け入れ条件**:
+- [ ] API呼び出しが成功した場合、データを返す
+- [ ] API呼び出しが失敗した場合、エラーを返す
+- [ ] ローディング状態を管理できる
+
+**TDD（Vitest）で検証するロジック**:
+- `tarotApi.getDeck()`: デッキ取得（モック）
+- `tarotApi.drawCards(count)`: カード抽選（モック）
+- `tarotApi.getReading(cards)`: 運勢取得（モック）
+- エラーハンドリング
+
+---
+
+#### Story 5: 占い状態管理
+
+```
+フロントエンドとして、占いの進行状態を管理したい
+それによって、UIの表示を適切に制御できる
+```
+
+**受け入れ条件**:
+- [ ] 占いの状態（初期/抽選中/結果表示）を管理
+- [ ] 抽選結果のカードを保持
+- [ ] 「もう一度占う」で状態をリセット
+
+**TDD（Vitest）で検証するロジック**:
+- `useTarot()` カスタムHook
+- 状態遷移ロジック
+- リセット処理
+
+---
+
+### E2Eストーリー（UI検証）
+
+#### Story 6: カード表示・フリップ演出
 
 ```
 ユーザーとして、カードをタップすると
@@ -109,7 +229,7 @@ TDDワークフローとPLANワークフローの両方を検証できる構成�
 
 ---
 
-#### Story 5: スプレッドレイアウト
+#### Story 7: スプレッドレイアウト
 
 ```
 ユーザーとして、3枚引きのカードが
@@ -130,7 +250,7 @@ TDDワークフローとPLANワークフローの両方を検証できる構成�
 
 ---
 
-#### Story 6: 結果画面
+#### Story 8: 結果画面
 
 ```
 ユーザーとして、占い結果として
@@ -155,33 +275,57 @@ TDDワークフローとPLANワークフローの両方を検証できる構成�
 
 ```
 tarot-demo/
-├── src/
-│   ├── domain/
-│   │   ├── card.ts          # カードの型定義
-│   │   ├── deck.ts          # デッキ生成・シャッフル
-│   │   ├── draw.ts          # カード抽選
-│   │   └── reading.ts       # 運勢メッセージ
-│   ├── data/
-│   │   └── meanings.ts      # カードの意味データ
-│   ├── components/
-│   │   ├── Card/            # カード表示
-│   │   ├── Spread/          # スプレッドレイアウト
-│   │   └── Result/          # 結果画面
-│   └── App.tsx
-├── tests/
-│   ├── deck.test.ts
-│   ├── draw.test.ts
-│   └── reading.test.ts
-└── DESIGN.md                # 実装で得た知見
+├── backend/                      # PHP バックエンド
+│   ├── app/
+│   │   ├── Services/
+│   │   │   ├── DeckService.php   # デッキ生成・シャッフル
+│   │   │   ├── DrawService.php   # カード抽選
+│   │   │   └── ReadingService.php # 運勢メッセージ
+│   │   ├── Models/
+│   │   │   └── Card.php          # カードモデル
+│   │   └── Data/
+│   │       └── CardMeanings.php  # カードの意味データ
+│   ├── public/
+│   │   └── index.php             # APIエントリーポイント
+│   ├── tests/
+│   │   └── Unit/
+│   │       ├── Services/
+│   │       │   ├── DeckServiceTest.php
+│   │       │   ├── DrawServiceTest.php
+│   │       │   └── ReadingServiceTest.php
+│   │       └── Models/
+│   │           └── CardTest.php
+│   ├── composer.json
+│   └── phpunit.xml / pest.php
+│
+├── frontend/                     # React フロントエンド
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── tarotApi.ts       # APIクライアント
+│   │   │   └── tarotApi.test.ts  # APIクライアントテスト
+│   │   ├── hooks/
+│   │   │   ├── useTarot.ts       # 状態管理Hook
+│   │   │   └── useTarot.test.ts  # Hookテスト
+│   │   ├── components/
+│   │   │   ├── Card/             # カード表示
+│   │   │   ├── Spread/           # スプレッドレイアウト
+│   │   │   └── Result/           # 結果画面
+│   │   └── App.tsx
+│   ├── package.json
+│   └── vitest.config.ts
+│
+└── DESIGN.md                     # 実装で得た知見
 ```
 
 ---
 
 ## 実行順序
 
-1. **Story 1-3（TDD）**: ロジック層を先に実装
-2. **Story 4-6（PLAN）**: UI層をagent-browserで検証しながら実装
-3. **dev:feedback**: 実装完了後、DESIGN.mdに知見を蓄積
+1. **Story 0-1〜0-4（TASK）**: 環境構築・セットアップ
+2. **Story 1-3（PHP TDD）**: バックエンドAPIをPestでTDD実装
+3. **Story 4-5（TypeScript TDD）**: フロントエンドロジックをVitestでTDD実装
+4. **Story 6-8（E2E）**: UI層をagent-browserで検証しながら実装
+5. **dev:feedback**: 実装完了後、DESIGN.mdに知見を蓄積
 
 ---
 
@@ -189,10 +333,13 @@ tarot-demo/
 
 | スキル | 検証内容 |
 |--------|----------|
-| dev:story-to-tasks | ストーリーからTDD/PLANラベル付きタスクが正しく生成されるか |
-| dev:developing (TDD) | RED→GREEN→REFACTORサイクルが回るか |
-| dev:developing (PLAN) | agent-browser検証が正しく動作するか |
+| dev:story-to-tasks | ストーリーからTDD/E2E/TASKラベル付きタスクが正しく生成されるか |
+| dev:developing (TASK) | EXEC→VERIFY→COMMITサイクルで環境構築が完了するか |
+| dev:developing (PHP TDD) | Pest で RED→GREEN→REFACTORサイクルが回るか |
+| dev:developing (TS TDD) | Vitest で RED→GREEN→REFACTORサイクルが回るか |
+| dev:developing (E2E) | agent-browser検証が正しく動作するか |
 | dev:feedback | DESIGN.md更新と改善提案が生成されるか |
+| ルール自動適用 | PHP/TypeScript/React の言語別ルールが適用されるか |
 
 ---
 
