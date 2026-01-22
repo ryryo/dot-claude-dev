@@ -1,58 +1,42 @@
-# Hooks 実装サンプル集（ストーリー統合版）
+# Hooks 実装サンプル集（コア3機能版）
 
-> **参照**: 著者の実際の実装パターンから抽出し、ストーリー駆動開発に統合
+> **対象**: セッションメモリ永続化 + 継続学習システム + 戦略的コンパクション
+> **参照**: 著者の実装パターンをストーリー駆動開発に統合
 > **出典**: `docs/SAMPLE/dot-claude-dev/everything-claude-code/`
-> **統合**: ストーリーごとのセッション管理に対応
+
+---
+
+## 実装するHooks一覧
+
+| Hook | スクリプト | 機能 |
+|------|-----------|------|
+| **SessionStart** | `session-start.sh` | ストーリーセッション or グローバルセッション読み込み |
+| **PreCompact** | `pre-compact.sh` | コンパクション前に状態保存 |
+| **Stop** | `session-end.sh` | セッション終了時に状態保存 |
+| **Stop** | `evaluate-session.sh` | 継続学習：パターン検出と提案 |
+| **PreToolUse** | `suggest-compact.sh` | 戦略的コンパクション：50ツール呼び出しで提案 |
 
 ---
 
 ## 実装パターン
 
-### パターン1: インラインBashスクリプト
+### パターン1: 外部スクリプト参照（SessionStart）
 
-**用途**: シンプルで短いチェック処理
+**用途**: セッション開始時にストーリーコンテキストを読み込む
 
-**例**: console.log 警告
-
-```json
-{
-  "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\\\.(ts|tsx|js|jsx)$\"",
-  "hooks": [
-    {
-      "type": "command",
-      "command": "#!/bin/bash\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"')\n\nif [ -n \"$file_path\" ] && [ -f \"$file_path\" ]; then\n  console_logs=$(grep -n \"console\\\\.log\" \"$file_path\" 2>/dev/null || true)\n  \n  if [ -n \"$console_logs\" ]; then\n    echo \"[Hook] WARNING: console.log found in $file_path\" >&2\n    echo \"$console_logs\" | head -5 >&2\n  fi\nfi\n\necho \"$input\""
-    }
-  ]
-}
-```
-
-**ポイント**:
-- `input=$(cat)` でstdinから入力を受け取る
-- `jq -r '.tool_input.file_path'` でパラメータを抽出
-- `>&2` でエラー出力（ユーザーに表示）
-- `echo "$input"` でパススルー（必須）
-
----
-
-### パターン2: 外部スクリプト参照
-
-**用途**: 複雑な処理、再利用可能なロジック
-
-**例**: セッション開始
-
+**hooks.json**:
 ```json
 {
   "matcher": "*",
-  "hooks": [
-    {
-      "type": "command",
-      "command": "~/.claude/hooks/memory-persistence/session-start.sh"
-    }
-  ]
+  "hooks": [{
+    "type": "command",
+    "command": "~/.claude/hooks/memory-persistence/session-start.sh"
+  }],
+  "description": "Load story or global session"
 }
 ```
 
-**スクリプト**: `session-start.sh` (ストーリー対応版)
+**スクリプト**: `~/.claude/hooks/memory-persistence/session-start.sh`
 
 ```bash
 #!/bin/bash
@@ -105,96 +89,190 @@ fi
 - **ストーリー検出**: TODO.mdの存在でストーリーコンテキストを判定
 - **二重管理**: ストーリー内SESSION.md + グローバル.tmp
 - **進捗表示**: ストーリー内ではTODO.mdの進捗も表示
-- `>&2` でユーザーへの通知
 - パススルー不要（SessionStart hookはツール呼び出しなし）
 
 ---
 
-### パターン3: 処理ブロック（ツール呼び出し中断）
+### パターン2: PreCompact（状態保存）
 
-**用途**: 危険な操作を防止
+**用途**: コンパクション前に現在の状態を保存
 
-**例**: dev server tmux 強制
-
+**hooks.json**:
 ```json
 {
-  "matcher": "tool == \"Bash\" && tool_input.command matches \"(npm run dev|pnpm( run)? dev|yarn dev|bun run dev)\"",
-  "hooks": [
-    {
-      "type": "command",
-      "command": "#!/bin/bash\ninput=$(cat)\necho '[Hook] BLOCKED: Dev server must run in tmux for log access' >&2\necho '[Hook] Use: tmux new-session -d -s dev \"npm run dev\"' >&2\nexit 1"
-    }
-  ]
+  "matcher": "*",
+  "hooks": [{
+    "type": "command",
+    "command": "~/.claude/hooks/memory-persistence/pre-compact.sh"
+  }],
+  "description": "Save state before compaction"
 }
 ```
 
-**ポイント**:
-- `exit 1` でツール呼び出しを中断
-- エラーメッセージで代替コマンドを提案
-
----
-
-### パターン4: 条件付き処理
-
-**用途**: 環境やコンテキストに応じた処理
-
-**例**: tmux推奨（強制ではない）
+**スクリプト**: `~/.claude/hooks/memory-persistence/pre-compact.sh`
 
 ```bash
 #!/bin/bash
-input=$(cat)
+# PreCompact Hook - Save current state before compaction
 
-if [ -z "$TMUX" ]; then
-  echo '[Hook] Consider running in tmux for session persistence' >&2
-  echo '[Hook] tmux new -s dev  |  tmux attach -t dev' >&2
-fi
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
 
-echo "$input"  # パススルー継続
-```
+if [ -f "TODO.md" ] && [ -f "SESSION.md" ]; then
+  # ストーリー内セッション - SESSION.md を更新
 
-**ポイント**:
-- `if [ -z "$TMUX" ]` で環境チェック
-- `exit 1` せず推奨のみ
-
----
-
-### パターン5: PostToolUse 処理
-
-**用途**: ツール実行後のクリーンアップや追加処理
-
-**例**: Prettier自動フォーマット
-
-```bash
-#!/bin/bash
-input=$(cat)
-file_path=$(echo "$input" | jq -r '.tool_input.file_path // ""')
-
-if [ -n "$file_path" ] && [ -f "$file_path" ]; then
-  if command -v prettier >/dev/null 2>&1; then
-    prettier --write "$file_path" 2>&1 | head -5 >&2
+  # "Last Updated" 行を更新
+  if grep -q "Last Updated" SESSION.md; then
+    # macOS対応: -i '' が必要
+    sed -i '' "s/\*\*Last Updated:\*\*.*/\*\*Last Updated:\*\* $TIMESTAMP/" SESSION.md
   fi
-fi
 
-echo "$input"
+  echo "[PreCompact] Saved story session state to SESSION.md" >&2
+
+else
+  # グローバルセッション - .tmp ファイルに保存
+  SESSIONS_DIR="${HOME}/.claude/sessions"
+  mkdir -p "$SESSIONS_DIR"
+
+  TODAY=$(date '+%Y-%m-%d')
+  SESSION_FILE="$SESSIONS_DIR/$TODAY-global.tmp"
+
+  {
+    echo "# Global Session: $TODAY"
+    echo "**Last Updated**: $TIMESTAMP"
+    echo ""
+    echo "## State Snapshot"
+    echo "Session compacted at $TIMESTAMP"
+    echo ""
+    pwd
+  } > "$SESSION_FILE"
+
+  echo "[PreCompact] Saved global session state to $SESSION_FILE" >&2
+fi
 ```
 
 **ポイント**:
-- `tool_input` と `tool_output` 両方がstdinに含まれる
-- ツール実行後なのでファイルが存在することが保証される
+- ストーリー内：SESSION.mdのタイムスタンプを更新
+- ストーリー外：グローバル.tmpに状態を保存
 
 ---
 
-### パターン6: 状態追跡（カウンター）
+### パターン3: Stop（セッション終了時の保存）
 
-**用途**: 頻度ベースの提案
+**hooks.json**:
+```json
+{
+  "matcher": "*",
+  "hooks": [{
+    "type": "command",
+    "command": "~/.claude/hooks/memory-persistence/session-end.sh"
+  }],
+  "description": "Persist session state on exit"
+}
+```
 
-**例**: 戦略的コンパクション
+**スクリプト**: `~/.claude/hooks/memory-persistence/session-end.sh`
 
 ```bash
 #!/bin/bash
+# Stop Hook - Persist session state on exit
+
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M')
+
+if [ -f "TODO.md" ] && [ -f "SESSION.md" ]; then
+  # ストーリー内セッション
+
+  # Last Updated を更新
+  if grep -q "Last Updated" SESSION.md; then
+    sed -i '' "s/\*\*Last Updated:\*\*.*/\*\*Last Updated:\*\* $TIMESTAMP/" SESSION.md
+  fi
+
+  echo "[Stop] Session saved to SESSION.md" >&2
+
+else
+  # グローバルセッション
+  SESSIONS_DIR="${HOME}/.claude/sessions"
+  mkdir -p "$SESSIONS_DIR"
+
+  TODAY=$(date '+%Y-%m-%d')
+  SESSION_FILE="$SESSIONS_DIR/$TODAY-global.tmp"
+
+  {
+    echo "# Global Session: $TODAY"
+    echo "**Ended**: $TIMESTAMP"
+  } > "$SESSION_FILE"
+
+  echo "[Stop] Global session saved to $SESSION_FILE" >&2
+fi
+```
+
+---
+
+### パターン4: Stop（継続学習評価）
+
+**hooks.json**:
+```json
+{
+  "matcher": "*",
+  "hooks": [{
+    "type": "command",
+    "command": "~/.claude/hooks/continuous-learning/evaluate-session.sh"
+  }],
+  "description": "Evaluate session for learning patterns"
+}
+```
+
+**スクリプト**: `~/.claude/hooks/continuous-learning/evaluate-session.sh`
+
+```bash
+#!/bin/bash
+# Stop Hook - Evaluate session for patterns to learn
+
+# ストーリー内でのみ評価
+if [ ! -f "SESSION.md" ]; then
+  exit 0
+fi
+
+# SESSION.md から "Notes for /learn Evaluation" セクションを抽出
+if grep -q "Notes for /learn Evaluation" SESSION.md; then
+  echo "" >&2
+  echo "💡 Learning Opportunity Detected" >&2
+  echo "   Check SESSION.md for patterns that could be saved as skills" >&2
+  echo "   Run /learn to capture reusable patterns" >&2
+fi
+```
+
+**ポイント**:
+- SESSION.mdに `/learn` 評価ノートがあれば通知
+- 実際の学習は `/learn` コマンドで手動実行
+
+---
+
+### パターン5: 状態追跡（戦略的コンパクション）
+
+**用途**: ツール呼び出し回数をカウントし、50回で /compact を提案
+
+**hooks.json**:
+```json
+{
+  "matcher": "*",
+  "hooks": [{
+    "type": "command",
+    "command": "~/.claude/hooks/strategic-compact/suggest-compact.sh"
+  }],
+  "description": "Suggest /compact at logical checkpoints"
+}
+```
+
+**スクリプト**: `~/.claude/hooks/strategic-compact/suggest-compact.sh`
+
+```bash
+#!/bin/bash
+# PreToolUse Hook - Suggest compact at logical checkpoints
+
 COUNTER_FILE="/tmp/claude-tool-count-$$"
 THRESHOLD=${COMPACT_THRESHOLD:-50}
 
+# カウンターを読み込み・更新
 if [ -f "$COUNTER_FILE" ]; then
   count=$(cat "$COUNTER_FILE")
   count=$((count + 1))
@@ -204,19 +282,21 @@ else
   count=1
 fi
 
+# 50回目で提案
 if [ "$count" -eq "$THRESHOLD" ]; then
-  echo "[StrategicCompact] $THRESHOLD tool calls - consider /compact" >&2
+  echo "💡 $THRESHOLD tool calls reached - consider /compact if transitioning phases" >&2
 fi
 
+# その後25回ごとに再提案
 if [ "$count" -gt "$THRESHOLD" ] && [ $((count % 25)) -eq 0 ]; then
-  echo "[StrategicCompact] $count tool calls - checkpoint for /compact" >&2
+  echo "💡 $count tool calls - checkpoint for /compact if context is stale" >&2
 fi
 ```
 
 **ポイント**:
-- `/tmp/` でセッション固有のカウンター（`$$` はプロセスID）
+- `/tmp/claude-tool-count-$$` でプロセス固有のカウンター
 - 環境変数 `COMPACT_THRESHOLD` でカスタマイズ可能
-- モジュロ演算 `%` で定期的な通知
+- 50回目 + 以降25回ごとに提案
 
 ---
 
@@ -226,32 +306,24 @@ fi
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "hooks": {
-    "PreToolUse": [
+    "SessionStart": [
       {
-        "matcher": "tool == \"Bash\" && tool_input.command matches \"git push\"",
+        "matcher": "*",
         "hooks": [{
           "type": "command",
-          "command": "#!/bin/bash\necho '[Hook] Review changes before push...' >&2\nread -r"
+          "command": "~/.claude/hooks/memory-persistence/session-start.sh"
         }],
-        "description": "Pause before git push"
-      },
-      {
-        "matcher": "tool == \"Write\" && tool_input.file_path matches \"\\\\.(md|txt)$\" && !(tool_input.file_path matches \"README|CLAUDE|AGENTS\")",
-        "hooks": [{
-          "type": "command",
-          "command": "#!/bin/bash\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path')\necho \"[Hook] BLOCKED: Unnecessary doc file: $file_path\" >&2\nexit 1"
-        }],
-        "description": "Block random .md files"
+        "description": "Load story or global session"
       }
     ],
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\\\.(ts|tsx)$\"",
+        "matcher": "*",
         "hooks": [{
           "type": "command",
-          "command": "#!/bin/bash\ninput=$(cat)\nfile_path=$(echo \"$input\" | jq -r '.tool_input.file_path')\nif [ -f \"$file_path\" ]; then\n  prettier --write \"$file_path\" 2>&1 | head -5 >&2\nfi\necho \"$input\""
+          "command": "~/.claude/hooks/strategic-compact/suggest-compact.sh"
         }],
-        "description": "Auto-format with Prettier"
+        "description": "Suggest /compact at logical checkpoints"
       }
     ],
     "PreCompact": [
@@ -264,16 +336,6 @@ fi
         "description": "Save state before compaction"
       }
     ],
-    "SessionStart": [
-      {
-        "matcher": "*",
-        "hooks": [{
-          "type": "command",
-          "command": "~/.claude/hooks/memory-persistence/session-start.sh"
-        }],
-        "description": "Load previous context"
-      }
-    ],
     "Stop": [
       {
         "matcher": "*",
@@ -281,15 +343,15 @@ fi
           "type": "command",
           "command": "~/.claude/hooks/memory-persistence/session-end.sh"
         }],
-        "description": "Persist session state"
+        "description": "Persist session state on exit"
       },
       {
         "matcher": "*",
         "hooks": [{
           "type": "command",
-          "command": "~/.claude/skills/continuous-learning/evaluate-session.sh"
+          "command": "~/.claude/hooks/continuous-learning/evaluate-session.sh"
         }],
-        "description": "Evaluate for patterns"
+        "description": "Evaluate session for learning patterns"
       }
     ]
   }
@@ -346,7 +408,7 @@ RED → GREEN → REFACTOR の第2サイクル完了。
 **テストカバレッジ**:
 - 正常系: 標準的なメールアドレス 5パターン
 - 異常系: 不正形式 8パターン
-- 境界値: 空文字、null、undefined
+- 境界値: 空文字、null, undefined
 
 ### 学んだこと
 
@@ -467,21 +529,6 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 "tool == \"Read\""
 ```
 
-### パラメータでマッチ（正規表現）
-
-```json
-"tool_input.command matches \"git push\""
-"tool_input.file_path matches \"\\\\.(ts|tsx)$\""
-"tool_input.file_path matches \"src/.*\\\\.test\\\\.ts$\""
-```
-
-### 複合条件
-
-```json
-"tool == \"Bash\" && tool_input.command matches \"npm (install|test)\""
-"tool == \"Write\" && !(tool_input.file_path matches \"README\")"
-```
-
 ### ワイルドカード
 
 ```json
@@ -494,29 +541,18 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 
 ### hookが実行されない場合
 
-1. **matcher構文を確認**
-   ```bash
-   # テスト: Bashツールでコマンド実行時の入力
-   echo '{"tool":"Bash","tool_input":{"command":"git push"}}' | jq .
-   ```
-
-2. **スクリプトの実行権限を確認**
+1. **スクリプトの実行権限を確認**
    ```bash
    chmod +x ~/.claude/hooks/**/*.sh
    ```
 
-3. **エラー出力を確認**
+2. **エラー出力を確認**
    - hookは `>&2` でエラー出力に書き込む
    - Claude Codeのターミナルで確認可能
 
-### hookがツール呼び出しをブロックする場合
-
-- `exit 1` を使用している場合、ツール呼び出しは中断される
-- 意図しないブロックの場合は `exit 1` を削除
-
 ### パススルー忘れ
 
-- PreToolUse / PostToolUse hookは必ず `echo "$input"` でパススルー
+- PreToolUse hookは必ず `echo "$input"` でパススルー
 - SessionStart / Stop hookはパススルー不要（ツール呼び出しなし）
 
 ---
@@ -528,7 +564,8 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 - [ ] `.claude/hooks/hooks.json` 作成
 - [ ] SessionStart hook 実装（ストーリー検出対応）
 - [ ] PreCompact hook 実装（ストーリー検出対応）
-- [ ] Stop hook 実装（ストーリー検出対応）
+- [ ] Stop hook 実装（session-end.sh + evaluate-session.sh）
+- [ ] PreToolUse hook 実装（suggest-compact.sh）
 - [ ] 全スクリプトに実行権限付与 (`chmod +x`)
 
 ### ディレクトリ構成
@@ -536,11 +573,17 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 - [ ] グローバルセッションディレクトリ作成 (`~/.claude/sessions/`)
 - [ ] .gitignore に `.claude/sessions/*.tmp` 追加（グローバルセッションのみ）
 - [ ] ストーリーディレクトリの SESSION.md は Git 管理対象（.gitignore 不要）
+- [ ] 継続学習ディレクトリ作成 (`~/.claude/skills/learned/`)
 
 ### dev:story スキル更新
 
 - [ ] `.claude/skills/dev/story/SKILL.md` に Phase 4.2 追加
 - [ ] SESSION.md テンプレートを追加
+
+### /learn コマンド作成
+
+- [ ] `.claude/commands/learn.md` 作成
+- [ ] パターン抽出と learned/ への保存機能
 
 ### テスト実行
 
@@ -549,3 +592,4 @@ docs/features/user-auth/stories/implement-email-validation/TODO.md
 - [ ] ストーリー内で新規セッション開始 → ストーリーセッション読み込み確認
 - [ ] /compact 実行 → PreCompact hook で状態保存確認
 - [ ] セッション終了 → Stop hook で SESSION.md 更新確認
+- [ ] 50ツール呼び出し → 戦略的コンパクション提案確認
