@@ -1,0 +1,23 @@
+{
+  "name": "dot-claude-dev",
+  "version": "1.0.0",
+  "description": "Claude Code Story-Driven Development Framework",
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "claude-code",
+    "tdd",
+    "e2e",
+    "story-driven-development"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/ui": "^4.0.17",
+    "vitest": "^4.0.17"
+  }
+}
