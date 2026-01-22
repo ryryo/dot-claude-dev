@@ -41,7 +41,7 @@
   - `/api/health`エンドポイントが存在するか
   - ステータスコード200が返されるか
   - レスポンスボディに`status: ok`が含まれるか
-- [ ] [TDD][GREEN] ヘルスチェックエンドポイント実装
+- [x] [TDD][GREEN] ヘルスチェックエンドポイント実装
   - テストを通す最小限の実装
   - `src/Controllers/HealthCheckController.php`を作成
   - ルーティングに追加

@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use TarotDemo\Router;
+use TarotDemo\Controllers\HealthCheckController;
 
 // CORS設定
 header('Access-Control-Allow-Origin: *');
@@ -22,7 +23,9 @@ $router = new Router();
 
 // ルート定義
 $router->get('/api/health', function () {
-    echo json_encode(['status' => 'ok']);
+    $controller = new HealthCheckController();
+    $response = $controller->handle();
+    echo json_encode($response);
 });
 
 // リクエストのディスパッチ
