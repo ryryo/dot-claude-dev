@@ -77,23 +77,32 @@ AskUserQuestion({
     question: "Worktreeのブランチ名を入力してください（例: feature/user-auth）",
     header: "Worktree名",
     options: [
-      { label: "feature/{story-slug}", description: "Worktree: ../feature/{story-slug}/ に作成" },
-      { label: "fix/{story-slug}", description: "Worktree: ../fix/{story-slug}/ に作成" }
+      { label: "feature/{story-slug}", description: "ストーリー名から機能ブランチを作成" },
+      { label: "fix/{story-slug}", description: "ストーリー名から修正ブランチを作成" }
     ],
     multiSelect: false
   }]
 })
 
 // Worktree作成
+// 配置: ../.worktrees/{project}/{branch}
+// 例: ../.worktrees/dot-claude-dev/feature-user-auth
 Bash({
-  command: "git worktree add -b {branch-name} ../{branch-name}",
+  command: `
+PROJECT_NAME=$(basename $(pwd))
+BRANCH_NAME="{branch-name}"
+WORKTREE_DIR="../.worktrees/$PROJECT_NAME/${BRANCH_NAME//\//-}"
+mkdir -p $(dirname "$WORKTREE_DIR")
+git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR"
+`,
   description: "Worktreeを作成"
 })
 ```
 
 **作成後**:
-- 新しいWorktreeディレクトリに移動して作業を継続
+- 新しいWorktreeディレクトリ（`../.worktrees/{project}/{branch}/`）に移動して作業を継続
 - ユーザーに新しいパスを通知
+- 例: `cd ../.worktrees/dot-claude-dev/feature-user-auth`
 
 ---
 
