@@ -39,12 +39,17 @@ allowed-tools:
 - または docs/USER_STORIES.md
 - feature-slug, story-slug（AskUserQuestionで確定）
 
-## 出力
+## 出力 【3ファイル必須】
 
-`docs/features/{feature-slug}/stories/{story-slug}/` に以下を保存:
-- `story-analysis.json` - ストーリー分析結果
-- `task-list.json` - タスクリスト
-- `TODO.md` - TDD/E2E/TASKラベル付きタスク
+**⚠️ 以下の3ファイルは必ずWriteツールで保存すること**
+
+`docs/features/{feature-slug}/stories/{story-slug}/` に保存:
+
+| ファイル | 内容 | 保存タイミング |
+|----------|------|---------------|
+| `story-analysis.json` | ストーリー分析結果 | Phase 1完了時 |
+| `task-list.json` | タスクリスト（分類前） | Phase 2完了時 |
+| `TODO.md` | TDD/E2E/TASKラベル付きタスク | Phase 3完了時 |
 
 ---
 
@@ -59,15 +64,15 @@ Phase 0: Worktree判定・作成（条件付き）
 Phase 1: ストーリー理解・slug確定
     → agents/analyze-story.md [opus]
     → AskUserQuestionでslug確定
-    → story-analysis.json 出力
+    → 【Write】story-analysis.json 保存
         ↓
 Phase 2: タスク分解
     → agents/decompose-tasks.md [sonnet]
-    → task-list.json 出力
+    → 【Write】task-list.json 保存
         ↓
 Phase 3: TDD/E2E/TASK分類
     → agents/assign-workflow.md [haiku]
-    → TODO.md 出力
+    → 【Write】TODO.md 保存
         ↓
 Phase 4: ユーザー確認
     → AskUserQuestion で確認・承認
@@ -212,14 +217,24 @@ AskUserQuestion({
 mkdir -p docs/features/{feature-slug}/stories/{story-slug}
 ```
 
-### 1.5 story-analysis.json 保存
+### 1.5 story-analysis.json 保存 【必須】
+
+**⚠️ 必ずWriteツールで保存すること**
 
 ```javascript
 Write({
   file_path: "docs/features/{feature-slug}/stories/{story-slug}/story-analysis.json",
-  content: JSON.stringify(analysisResult, null, 2)
+  content: JSON.stringify({
+    goal: "目的",
+    scope: "スコープ",
+    acceptanceCriteria: ["受入条件1", "受入条件2"],
+    featureSlug: "feature-slug",
+    storySlug: "story-slug"
+  }, null, 2)
 })
 ```
+
+**チェックポイント**: ファイルが存在することを確認してから次のPhaseへ進む。
 
 ---
 
@@ -245,14 +260,22 @@ Task({
 
 → 詳細: [agents/decompose-tasks.md](.claude/skills/dev/story/agents/decompose-tasks.md)
 
-### 出力: task-list.json
+### 出力: task-list.json 【必須】
+
+**⚠️ 必ずWriteツールで保存すること**
 
 ```javascript
 Write({
   file_path: "docs/features/{feature-slug}/stories/{story-slug}/task-list.json",
-  content: JSON.stringify(taskList, null, 2)
+  content: JSON.stringify({
+    tasks: [
+      { id: 1, name: "タスク名", description: "説明", dependencies: [] }
+    ]
+  }, null, 2)
 })
 ```
+
+**チェックポイント**: ファイルが存在することを確認してから次のPhaseへ進む。
 
 ---
 
@@ -278,10 +301,14 @@ Task({
 → 詳細: [agents/assign-workflow.md](.claude/skills/dev/story/agents/assign-workflow.md)
 → 判定基準: [references/tdd-criteria.md](.claude/skills/dev/story/references/tdd-criteria.md) | [references/e2e-criteria.md](.claude/skills/dev/story/references/e2e-criteria.md) | [references/task-criteria.md](.claude/skills/dev/story/references/task-criteria.md)
 
-### 出力: TODO.md
+### 出力: TODO.md 【必須】
 
-```markdown
-# TODO
+**⚠️ 必ずWriteツールで保存すること**
+
+```javascript
+Write({
+  file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md",
+  content: `# TODO
 
 ## フェーズ1: 環境セットアップ
 
@@ -302,7 +329,11 @@ Task({
 
 ### 共通
 - [ ] [CHECK] lint/format/build
+`
+})
 ```
+
+**チェックポイント**: 3ファイルすべてが保存されていることを確認。
 
 ---
 
@@ -333,9 +364,21 @@ AskUserQuestion({
 
 ## 完了条件
 
-- [ ] story-analysis.jsonが生成された
-- [ ] task-list.jsonが生成された
-- [ ] TODO.mdが生成された
+### 必須出力ファイル（3点セット）
+
+以下のファイルがすべて `docs/features/{feature-slug}/stories/{story-slug}/` に保存されていること：
+
+| ファイル | 内容 | Phase |
+|----------|------|-------|
+| `story-analysis.json` | ストーリー分析結果（目的、スコープ、受入条件） | Phase 1 |
+| `task-list.json` | タスクリスト（分類前） | Phase 2 |
+| `TODO.md` | TDD/E2E/TASKラベル付きタスクリスト | Phase 3 |
+
+### チェックリスト
+
+- [ ] story-analysis.json がWriteツールで保存された
+- [ ] task-list.json がWriteツールで保存された
+- [ ] TODO.md がWriteツールで保存された
 - [ ] 各タスクにTDD/E2E/TASKラベルが付与された
 - [ ] ユーザーが承認した
 

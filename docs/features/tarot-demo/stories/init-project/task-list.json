@@ -1,0 +1,129 @@
+{
+  "phases": [
+    {
+      "name": "フェーズ1: PHPバックエンド環境構築",
+      "tasks": [
+        {
+          "name": "PHPプロジェクト初期化",
+          "description": "demo/tarot/backend/ にPHPプロジェクトを初期化し、composer.json を作成する。PSR-12準拠の基本設定を含める。",
+          "inputs": "プロジェクトルート: demo/tarot/backend/",
+          "outputs": "composer.json, ディレクトリ構造（src/, tests/, public/）",
+          "dependencies": []
+        },
+        {
+          "name": "Pestテストフレームワーク導入",
+          "description": "Pestとその依存パッケージをインストールし、pest.php設定ファイルを作成する。テストディレクトリをセットアップし、サンプルテストで動作確認する。",
+          "inputs": "composer.json",
+          "outputs": "pest.php, tests/Pest.php, tests/ExampleTest.php, 更新されたcomposer.json",
+          "dependencies": ["PHPプロジェクト初期化"]
+        },
+        {
+          "name": "PHPバックエンド基本設定",
+          "description": "PHP開発サーバー用のエントリーポイント（public/index.php）を作成し、基本的なルーティングとCORS設定を追加する。ヘルスチェックエンドポイント（/api/health）を作成する。",
+          "inputs": "プロジェクト構造",
+          "outputs": "public/index.php, .htaccess（必要に応じて）, src/Router.php（基本ルーティング）",
+          "dependencies": ["PHPプロジェクト初期化"]
+        },
+        {
+          "name": "PHP開発サーバー起動確認",
+          "description": "PHP組み込みサーバーを起動し、ヘルスチェックエンドポイントにアクセスして正常動作を確認する。",
+          "inputs": "public/index.php, CORS設定",
+          "outputs": "起動コマンド確認（README記載）、動作確認結果",
+          "dependencies": ["PHPバックエンド基本設定"]
+        },
+        {
+          "name": "Pestテスト実行確認",
+          "description": "vendor/bin/pest コマンドでテストを実行し、サンプルテストが成功することを確認する。",
+          "inputs": "Pest設定、サンプルテスト",
+          "outputs": "テスト実行結果",
+          "dependencies": ["Pestテストフレームワーク導入"]
+        }
+      ]
+    },
+    {
+      "name": "フェーズ2: Reactフロントエンド環境構築",
+      "tasks": [
+        {
+          "name": "Reactプロジェクト初期化",
+          "description": "demo/tarot/frontend/ にVite + React + TypeScriptプロジェクトを初期化する（npm create vite@latest）。",
+          "inputs": "プロジェクトルート: demo/tarot/frontend/",
+          "outputs": "package.json, vite.config.ts, tsconfig.json, src/ディレクトリ構造",
+          "dependencies": []
+        },
+        {
+          "name": "Vitestテストフレームワーク導入",
+          "description": "Vitest、React Testing Library、@testing-library/user-event をインストールし、vitest.config.ts を設定する。サンプルテストで動作確認する。",
+          "inputs": "package.json",
+          "outputs": "vitest.config.ts, src/App.test.tsx（サンプル）, 更新されたpackage.json",
+          "dependencies": ["Reactプロジェクト初期化"]
+        },
+        {
+          "name": "Tailwind CSS導入",
+          "description": "Tailwind CSS、PostCSS、Autoprefixerをインストールし、tailwind.config.js と postcss.config.js を設定する。src/index.css にTailwindディレクティブを追加する。",
+          "inputs": "package.json",
+          "outputs": "tailwind.config.js, postcss.config.js, 更新されたsrc/index.css, 更新されたpackage.json",
+          "dependencies": ["Reactプロジェクト初期化"]
+        },
+        {
+          "name": "React開発サーバー起動確認",
+          "description": "npm run dev でReact開発サーバーを起動し、ブラウザでアクセスして表示を確認する。",
+          "inputs": "vite.config.ts, src/App.tsx",
+          "outputs": "起動コマンド確認（README記載）、動作確認結果",
+          "dependencies": ["Reactプロジェクト初期化"]
+        },
+        {
+          "name": "Vitestテスト実行確認",
+          "description": "npm test コマンドでVitestテストを実行し、サンプルテストが成功することを確認する。",
+          "inputs": "vitest.config.ts, サンプルテスト",
+          "outputs": "テスト実行結果",
+          "dependencies": ["Vitestテストフレームワーク導入"]
+        },
+        {
+          "name": "Tailwind CSS動作確認",
+          "description": "src/App.tsx にTailwindクラスを適用したサンプルコンポーネントを作成し、スタイルが正しく適用されることを確認する。",
+          "inputs": "Tailwind設定、src/App.tsx",
+          "outputs": "Tailwindクラスが適用されたサンプルUI",
+          "dependencies": ["Tailwind CSS導入", "React開発サーバー起動確認"]
+        }
+      ]
+    },
+    {
+      "name": "フェーズ3: フロントエンド・バックエンド連携",
+      "tasks": [
+        {
+          "name": "APIクライアント実装",
+          "description": "フロントエンドにAPIクライアント（src/lib/api.ts）を作成し、バックエンドのベースURLを環境変数で管理する。fetchラッパー関数を実装する。",
+          "inputs": "バックエンドベースURL",
+          "outputs": "src/lib/api.ts, .env.development",
+          "dependencies": ["Reactプロジェクト初期化"]
+        },
+        {
+          "name": "ヘルスチェックAPI呼び出し実装",
+          "description": "フロントエンドのApp.tsxでバックエンドの /api/health エンドポイントを呼び出し、レスポンスを表示する機能を実装する。",
+          "inputs": "APIクライアント、バックエンドヘルスチェックエンドポイント",
+          "outputs": "更新されたsrc/App.tsx",
+          "dependencies": ["APIクライアント実装", "PHPバックエンド基本設定"]
+        },
+        {
+          "name": "フロントエンド→バックエンドAPI呼び出し確認",
+          "description": "両方のサーバーを起動し、フロントエンドからバックエンドAPIを呼び出してレスポンスが正しく表示されることを確認する。CORS設定が正しく動作することも確認する。",
+          "inputs": "起動中のPHPサーバー、起動中のReactサーバー、API呼び出し実装",
+          "outputs": "動作確認結果、スクリーンショット（任意）",
+          "dependencies": ["ヘルスチェックAPI呼び出し実装", "PHP開発サーバー起動確認", "React開発サーバー起動確認"]
+        }
+      ]
+    },
+    {
+      "name": "フェーズ4: ドキュメント整備",
+      "tasks": [
+        {
+          "name": "README作成",
+          "description": "demo/tarot/README.md を作成し、環境構築手順、開発サーバー起動方法、テスト実行方法、プロジェクト構造を記載する。",
+          "inputs": "全フェーズの成果物",
+          "outputs": "demo/tarot/README.md",
+          "dependencies": ["フロントエンド→バックエンドAPI呼び出し確認"]
+        }
+      ]
+    }
+  ]
+}

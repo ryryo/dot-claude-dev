@@ -1,0 +1,36 @@
+{
+  "story": {
+    "title": "環境構築",
+    "description": "開発者として、PHPバックエンドとReactフロントエンドの開発環境を構築したい。Tailwind CSSも導入して、フロントエンドからAPIを呼び出せるようにしたい。"
+  },
+  "goal": "PHPバックエンドとReactフロントエンドが連携可能な開発環境を構築し、フロントエンドからバックエンドAPIを呼び出せる状態にする",
+  "scope": {
+    "included": [
+      "PHP 8.x バックエンド環境のセットアップ（demo/tarot/backend/）",
+      "Pest テストフレームワークの導入",
+      "React + TypeScript フロントエンド環境のセットアップ（demo/tarot/frontend/）",
+      "Vitest テストフレームワークの導入",
+      "Tailwind CSS の導入と設定",
+      "フロントエンドからバックエンドAPIを呼び出すための基本設定（CORS等）",
+      "開発サーバーの起動確認"
+    ],
+    "excluded": [
+      "具体的なビジネスロジックの実装",
+      "タロット占い機能の実装",
+      "本番環境へのデプロイ設定",
+      "データベース設計・接続",
+      "認証・認可機能",
+      "CI/CD パイプラインの構築"
+    ]
+  },
+  "acceptanceCriteria": [
+    "demo/tarot/backend/ でPHP開発サーバーが起動できる",
+    "demo/tarot/backend/ でPestテストが実行できる",
+    "demo/tarot/frontend/ でReact開発サーバーが起動できる",
+    "demo/tarot/frontend/ でVitestテストが実行できる",
+    "Tailwind CSS のクラスがフロントエンドで適用される",
+    "フロントエンドからバックエンドのAPIエンドポイントを呼び出してレスポンスを受け取れる"
+  ],
+  "featureSlug": "tarot-demo",
+  "storySlug": "init-project"
+}
