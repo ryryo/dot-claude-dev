@@ -1,0 +1,58 @@
+{
+  "story": "Story 4: 運勢メッセージ生成API (reading-api)",
+  "purpose": "引いたカードに応じた意味と総合的なアドバイスをAPIで返す。ポジションに応じた解釈も付ける。",
+  "goal": "タロットカードの読み取り結果を構造化されたデータとして提供するAPIエンドポイントを実装する",
+  "scope": {
+    "in_scope": [
+      "カードデータとその意味の管理",
+      "ポジション別の解釈ロジック",
+      "複数カードに基づく総合的なアドバイス生成",
+      "APIエンドポイントの実装",
+      "入力バリデーション",
+      "エラーハンドリング"
+    ],
+    "out_of_scope": [
+      "フロントエンド実装",
+      "カード画像の生成",
+      "ユーザー認証",
+      "データベース永続化",
+      "AI/機械学習による解釈生成"
+    ]
+  },
+  "acceptance_criteria": [
+    "カードIDと引いた順番（ポジション）を受け取り、各カードの意味を返すことができる",
+    "ポジションに応じた解釈（過去・現在・未来など）を付与できる",
+    "複数カードの組み合わせから総合的なアドバイスメッセージを生成できる",
+    "不正なカードIDやポジションに対して適切なエラーを返す",
+    "APIレスポンスが構造化されたJSON形式である",
+    "タロットカード78枚（メジャーアルカナ22枚 + マイナーアルカナ56枚）のデータが定義されている"
+  ],
+  "technical_context": {
+    "api_endpoint": "POST /api/tarot/reading",
+    "request_format": {
+      "cards": [
+        {
+          "cardId": "string (e.g., 'major-0', 'wands-1')",
+          "position": "string (e.g., 'past', 'present', 'future')"
+        }
+      ]
+    },
+    "response_format": {
+      "cards": [
+        {
+          "cardId": "string",
+          "name": "string",
+          "meaning": "string",
+          "positionInterpretation": "string"
+        }
+      ],
+      "overallAdvice": "string"
+    }
+  },
+  "dependencies": [],
+  "risks": [
+    "カードデータの管理方法（ハードコード vs ファイル読み込み）",
+    "ポジション解釈ロジックの複雑度",
+    "総合アドバイス生成ロジックの品質"
+  ]
+}

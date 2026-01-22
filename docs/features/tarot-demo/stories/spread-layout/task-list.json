@@ -1,0 +1,135 @@
+{
+  "story_id": "spread-layout",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "スプレッドレイアウトコンポーネントの構造定義",
+      "description": "3枚スプレッド用のコンテナコンポーネント（ThreeCardSpread）の型定義とProps構造を作成",
+      "estimated_effort": "小",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "ThreeCardSpreadProps型が定義されている",
+        "3枚のカード情報を受け取るインターフェースが定義されている",
+        "各カードの位置情報（past, present, future）が型で表現されている"
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "デスクトップレイアウトのCSS実装",
+      "description": "1024px以上の画面で3枚のカードを横並びで表示するFlexbox/Gridレイアウト",
+      "estimated_effort": "小",
+      "dependencies": ["T1"],
+      "acceptance_criteria": [
+        "1024px以上で3枚のカードが横並び（1行）",
+        "カード間のgapが適切（例: 2rem）",
+        "コンテナが中央配置されている"
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "タブレットレイアウトのCSS実装",
+      "description": "768px～1024pxの画面で適切なレイアウト（2列または3列）",
+      "estimated_effort": "小",
+      "dependencies": ["T2"],
+      "acceptance_criteria": [
+        "768px～1024pxで適切にカードが配置される",
+        "カードサイズが画面に最適化されている"
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "モバイルレイアウトのCSS実装",
+      "description": "375px～768pxの画面で縦並びまたは小さいカードで横並びレイアウト",
+      "estimated_effort": "中",
+      "dependencies": ["T3"],
+      "acceptance_criteria": [
+        "375pxでカードが見やすく表示される",
+        "スクロールなしで全体が把握できる",
+        "カードが小さすぎず、大きすぎない"
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "位置ラベル（過去・現在・未来）の実装",
+      "description": "各カードの下に位置を示すラベルを表示",
+      "estimated_effort": "小",
+      "dependencies": ["T1"],
+      "acceptance_criteria": [
+        "各カードの下に正しいラベルが表示される",
+        "ラベルのスタイルが統一されている",
+        "ラベルとカードが視覚的にグループ化されている"
+      ]
+    },
+    {
+      "id": "T6",
+      "title": "アクセシビリティ対応",
+      "description": "スクリーンリーダー、キーボードナビゲーション、aria属性の実装",
+      "estimated_effort": "小",
+      "dependencies": ["T5"],
+      "acceptance_criteria": [
+        "各カードにaria-labelまたはaria-describedbyで位置情報が付与されている",
+        "セマンティックHTML（section, figure/figcaption等）を使用",
+        "キーボードでの順序が「過去→現在→未来」の順"
+      ]
+    },
+    {
+      "id": "T7",
+      "title": "レスポンシブ検証（デスクトップ）",
+      "description": "1024px以上でのレイアウトをagent-browserで検証",
+      "estimated_effort": "小",
+      "dependencies": ["T2", "T5", "T6"],
+      "acceptance_criteria": [
+        "1024pxで3枚のカードが横並び",
+        "ラベルが正しく表示される",
+        "スペーシングが適切"
+      ]
+    },
+    {
+      "id": "T8",
+      "title": "レスポンシブ検証（タブレット）",
+      "description": "768pxでのレイアウトをagent-browserで検証",
+      "estimated_effort": "小",
+      "dependencies": ["T3", "T5", "T6"],
+      "acceptance_criteria": [
+        "768pxで適切にカードが配置される",
+        "ラベルが読みやすい"
+      ]
+    },
+    {
+      "id": "T9",
+      "title": "レスポンシブ検証（モバイル）",
+      "description": "375pxでのレイアウトをagent-browserで検証",
+      "estimated_effort": "小",
+      "dependencies": ["T4", "T5", "T6"],
+      "acceptance_criteria": [
+        "375pxでカードが見やすい",
+        "スクロールなしで全体が見える",
+        "ラベルが読みやすい"
+      ]
+    },
+    {
+      "id": "T10",
+      "title": "アクセシビリティ検証",
+      "description": "agent-browserでアクセシビリティ要件を検証",
+      "estimated_effort": "小",
+      "dependencies": ["T6", "T7", "T8", "T9"],
+      "acceptance_criteria": [
+        "インタラクティブ要素が正しく認識される",
+        "aria属性が適切に設定されている",
+        "キーボードナビゲーションが正しく動作"
+      ]
+    }
+  ],
+  "task_order": [
+    "T1",
+    "T5",
+    "T2",
+    "T3",
+    "T4",
+    "T6",
+    "T7",
+    "T8",
+    "T9",
+    "T10"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "story": "カード抽選API (card-draw-api)",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "APIレスポンス型定義",
+      "description": "3枚引きAPIのレスポンス型をTypeScriptで定義する（Card, Position, Orientation, DrawResponse等）",
+      "dependencies": [],
+      "estimate": "small"
+    },
+    {
+      "id": "T2",
+      "title": "カード抽選ロジック実装（重複なし3枚）",
+      "description": "カードの配列から重複なしで3枚をランダムに選択するロジックを実装する",
+      "dependencies": ["T1"],
+      "estimate": "small"
+    },
+    {
+      "id": "T3",
+      "title": "正位置/逆位置ランダム設定ロジック",
+      "description": "各カードに対してupright/reversedをランダムに設定するロジックを実装する",
+      "dependencies": ["T1"],
+      "estimate": "small"
+    },
+    {
+      "id": "T4",
+      "title": "ポジション割り当てロジック",
+      "description": "3枚のカードにpast/present/futureのポジションを順に割り当てるロジックを実装する",
+      "dependencies": ["T1"],
+      "estimate": "small"
+    },
+    {
+      "id": "T5",
+      "title": "カード抽選サービス統合",
+      "description": "T2, T3, T4のロジックを組み合わせて、完全な抽選結果を生成するサービス関数を実装する",
+      "dependencies": ["T2", "T3", "T4"],
+      "estimate": "small"
+    },
+    {
+      "id": "T6",
+      "title": "3枚引きAPIエンドポイント実装",
+      "description": "POST /api/tarot/draw エンドポイントを実装し、抽選サービスを呼び出してレスポンスを返す",
+      "dependencies": ["T5"],
+      "estimate": "medium"
+    },
+    {
+      "id": "T7",
+      "title": "エラーハンドリング実装",
+      "description": "不正なリクエストや内部エラー時のエラーレスポンスを実装する（400, 500等）",
+      "dependencies": ["T6"],
+      "estimate": "small"
+    },
+    {
+      "id": "T8",
+      "title": "APIドキュメント作成",
+      "description": "エンドポイント仕様、リクエスト/レスポンス形式をドキュメント化する",
+      "dependencies": ["T6", "T7"],
+      "estimate": "small"
+    }
+  ],
+  "notes": [
+    "カードマスターデータは別タスク/ストーリーで用意されている前提",
+    "T1-T5はロジック層のためTDD適用可能",
+    "T6はAPIエンドポイントのため、実装後にE2E検証が推奨される",
+    "T7, T8は設定・ドキュメントタスク"
+  ]
+}

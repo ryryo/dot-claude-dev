@@ -1,0 +1,79 @@
+{
+  "story": "card-flip-animation",
+  "tasks": [
+    {
+      "id": "TASK-1",
+      "title": "カードフリップロジックの実装",
+      "description": "カードのフリップ状態を管理し、アニメーション中の二重実行を防止するロジックを実装する",
+      "category": "logic",
+      "estimatedComplexity": "low",
+      "dependencies": [],
+      "acceptanceCriteria": ["AC-3"],
+      "technicalDetails": {
+        "files": ["src/components/TarotCard/useCardFlip.ts"],
+        "approach": "カスタムフックでisFlipped、isFlipping状態を管理し、フリップ開始・完了メソッドを提供"
+      }
+    },
+    {
+      "id": "TASK-2",
+      "title": "フリップアニメーションCSS実装",
+      "description": "CSS 3D Transformを使用したカードフリップアニメーションのスタイルを実装する",
+      "category": "style",
+      "estimatedComplexity": "medium",
+      "dependencies": [],
+      "acceptanceCriteria": ["AC-2"],
+      "technicalDetails": {
+        "files": ["src/components/TarotCard/TarotCard.module.css"],
+        "approach": "perspective、transform-style、rotateY transitionを使用して3D回転を実装"
+      }
+    },
+    {
+      "id": "TASK-3",
+      "title": "TarotCardコンポーネント統合",
+      "description": "フリップロジックとCSSをTarotCardコンポーネントに統合し、タップイベントでアニメーションを発火させる",
+      "category": "ui",
+      "estimatedComplexity": "medium",
+      "dependencies": ["TASK-1", "TASK-2"],
+      "acceptanceCriteria": ["AC-1", "AC-4"],
+      "technicalDetails": {
+        "files": ["src/components/TarotCard/TarotCard.tsx"],
+        "approach": "useCardFlipフックを使用し、onClick/onTouchStartでフリップ実行、アニメーション完了をonTransitionEndで検知"
+      }
+    },
+    {
+      "id": "TASK-4",
+      "title": "レスポンシブ対応とアクセシビリティ",
+      "description": "各デバイスサイズでのアニメーション調整と、キーボード操作・スクリーンリーダー対応を実装する",
+      "category": "ui",
+      "estimatedComplexity": "low",
+      "dependencies": ["TASK-3"],
+      "acceptanceCriteria": ["AC-5"],
+      "technicalDetails": {
+        "files": ["src/components/TarotCard/TarotCard.tsx", "src/components/TarotCard/TarotCard.module.css"],
+        "approach": "メディアクエリでカードサイズ調整、role=button、aria-label、tabIndex、onKeyDown追加"
+      }
+    },
+    {
+      "id": "TASK-5",
+      "title": "agent-browserによるフリップアニメーション検証",
+      "description": "実際のブラウザでカードフリップアニメーションの動作と見た目を検証する",
+      "category": "verification",
+      "estimatedComplexity": "low",
+      "dependencies": ["TASK-4"],
+      "acceptanceCriteria": ["AC-1", "AC-2", "AC-4", "AC-5"],
+      "technicalDetails": {
+        "approach": "agent-browserでカードタップ、アニメーション確認、レスポンシブ検証（モバイル/タブレット/デスクトップ）"
+      }
+    }
+  ],
+  "summary": {
+    "totalTasks": 5,
+    "estimatedEffort": "medium",
+    "criticalPath": ["TASK-1", "TASK-2", "TASK-3", "TASK-4", "TASK-5"],
+    "technicalRisks": [
+      "3D Transformのブラウザ互換性",
+      "タッチデバイスでのパフォーマンス",
+      "アニメーション中の状態管理の複雑さ"
+    ]
+  }
+}

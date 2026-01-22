@@ -1,0 +1,91 @@
+{
+  "story": {
+    "id": "frontend-api-integration",
+    "title": "APIクライアント",
+    "description": "フロントエンドとして、バックエンドAPIを呼び出して占い結果を取得・管理したい。エラーハンドリングとローディング状態も管理できるように。"
+  },
+  "analysis": {
+    "purpose_and_goals": {
+      "primary_goal": "バックエンドAPIとの通信を行うフロントエンドAPIクライアントを実装する",
+      "user_value": "ユーザーが占い結果を取得する際の通信処理を適切に管理し、エラーやローディング状態を適切にハンドリングする",
+      "technical_objectives": [
+        "型安全なAPIクライアントの実装",
+        "エラーハンドリングの実装",
+        "ローディング状態の管理",
+        "Result型パターンの活用"
+      ]
+    },
+    "scope": {
+      "in_scope": [
+        "占い結果取得APIの呼び出し（POST /api/tarot/reading）",
+        "エラーレスポンスの型定義とハンドリング",
+        "ローディング状態の管理ロジック",
+        "HTTPクライアント（fetch）のラッパー実装",
+        "レスポンス・リクエストの型定義"
+      ],
+      "out_of_scope": [
+        "UIコンポーネントの実装（別ストーリー）",
+        "状態管理ライブラリの選定と導入",
+        "リトライロジックの実装",
+        "キャッシュ機構の実装",
+        "WebSocket等のリアルタイム通信"
+      ]
+    },
+    "acceptance_criteria": [
+      {
+        "criterion": "占い結果取得APIを呼び出せる",
+        "verification": "POST /api/tarot/readingに正しいリクエストボディを送信し、レスポンスを取得できる"
+      },
+      {
+        "criterion": "エラーレスポンスを適切にハンドリングできる",
+        "verification": "HTTPエラー（4xx, 5xx）やネットワークエラーをキャッチし、Result型のfailureとして返す"
+      },
+      {
+        "criterion": "ローディング状態を管理できる",
+        "verification": "API呼び出し中のローディング状態を追跡し、UIに反映できる"
+      },
+      {
+        "criterion": "型安全なAPIクライアントである",
+        "verification": "リクエスト・レスポンスの型が厳密に定義され、TypeScriptの型チェックが通る"
+      },
+      {
+        "criterion": "Zodスキーマでバリデーションできる",
+        "verification": "APIレスポンスをZodスキーマで検証し、不正なデータを弾く"
+      }
+    ],
+    "technical_decisions": {
+      "architecture": "layered",
+      "layers": [
+        "API型定義層（types）",
+        "HTTPクライアント層（fetch wrapper）",
+        "APIクライアント層（tarotApi）",
+        "カスタムHooks層（useTarotReading）"
+      ],
+      "error_handling": "Result型パターン",
+      "validation": "Zodスキーマ",
+      "http_client": "fetch（ブラウザ標準API）"
+    },
+    "dependencies": {
+      "internal": [
+        "backend API実装（/api/tarot/reading エンドポイント）"
+      ],
+      "external": [
+        "zod（バリデーション）"
+      ]
+    },
+    "risks_and_concerns": [
+      {
+        "risk": "バックエンドAPIとの型の不一致",
+        "mitigation": "Zodスキーマでランタイムバリデーションを実施"
+      },
+      {
+        "risk": "ネットワークエラーの扱い",
+        "mitigation": "Result型でエラーを明示的に扱う"
+      },
+      {
+        "risk": "APIエンドポイントの変更",
+        "mitigation": "APIクライアントを1箇所に集約し、変更箇所を最小化"
+      }
+    ]
+  }
+}

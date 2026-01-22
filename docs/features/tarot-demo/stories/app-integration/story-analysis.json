@@ -1,0 +1,95 @@
+{
+  "storyId": "story-11-app-integration",
+  "title": "メインアプリ統合 (app-integration)",
+  "description": "開発者として、すべてのコンポーネントとロジックを統合したメインアプリケーションを実装したい。状態に応じて適切な画面（スタート画面、カード表示、結果画面）を表示し、ユーザーが占いを楽しめるようにしたい。",
+  "purpose": {
+    "goal": "すべてのコンポーネント（StartScreen、CardFlipAnimation、SpreadLayout、ResultScreen）とロジック（useTarotState、useTarotReading）を統合し、状態管理に基づいて適切な画面を表示するメインアプリケーションを実装する",
+    "userValue": "ユーザーがスタートから結果表示までの一連の占い体験をスムーズに楽しめる",
+    "businessValue": "完全に動作するタロット占いデモアプリケーションの完成"
+  },
+  "scope": {
+    "inScope": [
+      "全コンポーネントの統合（StartScreen、CardFlipAnimation、SpreadLayout、ResultScreen）",
+      "useTarotStateフックを使った状態管理の実装",
+      "useTarotReadingフックを使ったAPI呼び出しの実装",
+      "状態（idle、drawing、flipping、reading、result）に応じた画面切り替え",
+      "エラーハンドリングとローディング状態の表示",
+      "App.tsxまたはTarotApp.tsxのメインコンポーネント実装"
+    ],
+    "outOfScope": [
+      "新しいコンポーネントの作成",
+      "APIエンドポイントの実装",
+      "デザインシステムの変更",
+      "認証・ユーザー管理機能",
+      "多言語対応"
+    ]
+  },
+  "acceptanceCriteria": [
+    {
+      "given": "アプリケーションが初期状態（idle）",
+      "when": "ページを読み込む",
+      "then": "StartScreenが表示される"
+    },
+    {
+      "given": "StartScreenが表示されている",
+      "when": "「占いを始める」ボタンをクリックする",
+      "then": "カードドロー処理が開始され、状態がdrawingに変わる"
+    },
+    {
+      "given": "カードドロー処理が完了",
+      "when": "3枚のカードが選ばれる",
+      "then": "SpreadLayoutで3枚のカードが表示され、状態がflippingに変わる"
+    },
+    {
+      "given": "カードがフリップ表示されている",
+      "when": "すべてのカードのフリップアニメーションが完了する",
+      "then": "API呼び出しが実行され、状態がreadingに変わる"
+    },
+    {
+      "given": "API呼び出しが成功",
+      "when": "リーディング結果を受け取る",
+      "then": "ResultScreenが表示され、状態がresultに変わる"
+    },
+    {
+      "given": "ResultScreenが表示されている",
+      "when": "「もう一度占う」ボタンをクリックする",
+      "then": "状態がidleにリセットされ、StartScreenに戻る"
+    },
+    {
+      "given": "API呼び出し中",
+      "when": "ローディング状態",
+      "then": "適切なローディングインジケーターが表示される"
+    },
+    {
+      "given": "API呼び出しが失敗",
+      "when": "エラーが発生する",
+      "then": "エラーメッセージが表示され、ユーザーが再試行できる"
+    }
+  ],
+  "technicalContext": {
+    "frontend": "React + TypeScript",
+    "components": [
+      "StartScreen（Story 10）",
+      "CardFlipAnimation（Story 7）",
+      "SpreadLayout（Story 8）",
+      "ResultScreen（Story 9）"
+    ],
+    "hooks": [
+      "useTarotState（Story 6）",
+      "useTarotReading（Story 5）"
+    ],
+    "mainComponent": "App.tsx または TarotApp.tsx",
+    "stateFlow": "idle → drawing → flipping → reading → result → idle"
+  },
+  "dependencies": {
+    "requiredStories": [
+      "Story 5: useTarotReading（API呼び出し）",
+      "Story 6: useTarotState（状態管理）",
+      "Story 7: CardFlipAnimation（カードフリップ）",
+      "Story 8: SpreadLayout（3枚レイアウト）",
+      "Story 9: ResultScreen（結果画面）",
+      "Story 10: StartScreen（スタート画面）"
+    ],
+    "externalDependencies": []
+  }
+}

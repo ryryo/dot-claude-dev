@@ -1,0 +1,54 @@
+{
+  "story_id": "start-screen",
+  "story_title": "スタート画面 (start-screen)",
+  "story_description": "ユーザーとして、アプリを開いたときに最初に表示されるスタート画面がほしい。タイトル、説明文、「占う」ボタンがあり、ボタンをクリックすると占いが始まるようにしたい。",
+  "goal": "アプリ起動時に表示されるスタート画面を実装し、ユーザーが占いを開始できるようにする",
+  "scope": {
+    "in_scope": [
+      "スタート画面のUI実装（タイトル、説明文、ボタン）",
+      "「占う」ボタンのクリックイベント処理",
+      "useTarotStateフックとの統合（idle状態での表示、状態遷移）",
+      "レスポンシブ対応（モバイル・タブレット・デスクトップ）",
+      "アクセシビリティ対応（キーボード操作、aria属性）"
+    ],
+    "out_of_scope": [
+      "占いロジックの実装（別ストーリー）",
+      "結果表示画面（別ストーリー）",
+      "カード選択画面（別ストーリー）",
+      "バックエンドAPI連携"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "criterion": "idle状態でスタート画面が表示される",
+      "verification": "useTarotState().state === 'idle'のときに画面が表示されること"
+    },
+    {
+      "criterion": "タイトル、説明文、「占う」ボタンが表示される",
+      "verification": "各要素が視覚的に確認できること、適切なセマンティックHTMLが使用されていること"
+    },
+    {
+      "criterion": "「占う」ボタンをクリックすると状態が遷移する",
+      "verification": "ボタンクリック時にstartReading()が呼ばれ、stateが'selecting'に変わること"
+    },
+    {
+      "criterion": "レスポンシブデザインが適用される",
+      "verification": "モバイル(375px)、タブレット(768px)、デスクトップ(1024px)で適切に表示されること"
+    },
+    {
+      "criterion": "アクセシビリティ要件を満たす",
+      "verification": "キーボードでボタンにフォーカス可能、Enter/Spaceで操作可能、適切なaria属性が設定されていること"
+    }
+  ],
+  "dependencies": [
+    {
+      "story_id": "state-management",
+      "reason": "useTarotStateフックを使用して状態管理を行う"
+    }
+  ],
+  "technical_context": {
+    "frontend": "React + TypeScript + Tailwind CSS",
+    "state_management": "useTarotState フック（Story 6）",
+    "display_condition": "state === 'idle'"
+  }
+}

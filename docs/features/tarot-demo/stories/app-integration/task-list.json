@@ -1,0 +1,180 @@
+{
+  "storyId": "story-11-app-integration",
+  "tasks": [
+    {
+      "id": "task-11-1",
+      "title": "App.tsx（またはTarotApp.tsx）のコンポーネント構造設計",
+      "description": "メインアプリケーションのコンポーネント構造を設計し、必要なimportと基本的なJSX構造を定義する",
+      "details": [
+        "App.tsxまたはTarotApp.tsxファイルを作成",
+        "必要なコンポーネントをimport（StartScreen、SpreadLayout、ResultScreen等）",
+        "必要なフックをimport（useTarotState、useTarotReading）",
+        "Props型定義（必要に応じて）",
+        "基本的なコンポーネント構造の骨組みを作成"
+      ],
+      "acceptance": [
+        "ファイルが作成され、TypeScriptエラーがない",
+        "必要なimport文がすべて記述されている",
+        "コンポーネントの基本構造が定義されている"
+      ]
+    },
+    {
+      "id": "task-11-2",
+      "title": "状態管理フックの統合",
+      "description": "useTarotStateフックを使用して、アプリケーション全体の状態管理を実装する",
+      "details": [
+        "useTarotStateフックを呼び出し",
+        "state、selectedCards、setSelectedCards、resetなど必要な値と関数を取得",
+        "状態の初期化処理を実装",
+        "状態遷移のロジックを確認"
+      ],
+      "acceptance": [
+        "useTarotStateフックが正しく呼び出されている",
+        "必要な状態と関数がすべて取得されている",
+        "TypeScriptの型チェックが通る"
+      ]
+    },
+    {
+      "id": "task-11-3",
+      "title": "API呼び出しフックの統合",
+      "description": "useTarotReadingフックを使用して、カードリーディングAPIの呼び出しを実装する",
+      "details": [
+        "useTarotReadingフックを呼び出し",
+        "reading、loading、error、fetchReadingを取得",
+        "エラーハンドリングロジックの実装",
+        "ローディング状態の管理"
+      ],
+      "acceptance": [
+        "useTarotReadingフックが正しく呼び出されている",
+        "API呼び出しの成功・失敗・ローディング状態が正しく管理されている",
+        "エラー発生時の処理が実装されている"
+      ]
+    },
+    {
+      "id": "task-11-4",
+      "title": "StartScreen統合とカードドロー処理",
+      "description": "StartScreenコンポーネントを統合し、「占いを始める」ボタンのクリック処理を実装する",
+      "details": [
+        "state === 'idle'の条件でStartScreenを表示",
+        "onStartハンドラーを実装",
+        "カードドロー処理（3枚のランダムカード選択）を実装",
+        "setSelectedCardsで選択したカードを状態に保存",
+        "状態をdrawingからflippingへ遷移"
+      ],
+      "acceptance": [
+        "idleステートでStartScreenが表示される",
+        "「占いを始める」ボタンクリックでカードが選ばれる",
+        "3枚のカードがランダムに選択される",
+        "状態がflippingに正しく遷移する"
+      ]
+    },
+    {
+      "id": "task-11-5",
+      "title": "SpreadLayout統合とカードフリップ表示",
+      "description": "SpreadLayoutコンポーネントを統合し、選択された3枚のカードをフリップアニメーション付きで表示する",
+      "details": [
+        "state === 'flipping'の条件でSpreadLayoutを表示",
+        "selectedCardsをpropsとして渡す",
+        "CardFlipAnimationコンポーネントがSpreadLayout内で使用されていることを確認",
+        "すべてのカードのフリップ完了を検知する仕組みを実装",
+        "フリップ完了後にAPI呼び出しをトリガー"
+      ],
+      "acceptance": [
+        "flippingステートでSpreadLayoutが表示される",
+        "3枚のカードがフリップアニメーション付きで表示される",
+        "すべてのカードのフリップ完了後、次の処理に進む"
+      ]
+    },
+    {
+      "id": "task-11-6",
+      "title": "API呼び出しトリガーとreading状態の管理",
+      "description": "カードフリップ完了後にAPI呼び出しをトリガーし、reading状態を管理する",
+      "details": [
+        "フリップ完了後、fetchReading関数を呼び出し",
+        "selectedCardsをAPI呼び出しのパラメータとして渡す",
+        "状態をreadingに遷移",
+        "API呼び出し中のローディング表示を実装",
+        "API成功時に状態をresultに遷移"
+      ],
+      "acceptance": [
+        "フリップ完了後、自動的にAPI呼び出しが実行される",
+        "API呼び出し中、適切なローディング表示がされる",
+        "API成功時、状態がresultに遷移する"
+      ]
+    },
+    {
+      "id": "task-11-7",
+      "title": "ResultScreen統合と結果表示",
+      "description": "ResultScreenコンポーネントを統合し、API呼び出し結果を表示する",
+      "details": [
+        "state === 'result'の条件でResultScreenを表示",
+        "reading（APIレスポンス）とselectedCardsをpropsとして渡す",
+        "onResetハンドラーを実装",
+        "「もう一度占う」ボタンでreset関数を呼び出し",
+        "状態をidleにリセット"
+      ],
+      "acceptance": [
+        "resultステートでResultScreenが表示される",
+        "リーディング結果が正しく表示される",
+        "「もう一度占う」ボタンクリックで初期状態に戻る"
+      ]
+    },
+    {
+      "id": "task-11-8",
+      "title": "エラーハンドリングとエラー画面実装",
+      "description": "API呼び出し失敗時のエラーハンドリングとエラー表示を実装する",
+      "details": [
+        "error状態をチェック",
+        "エラー発生時のUI表示（エラーメッセージ、再試行ボタン）",
+        "再試行ボタンのハンドラー実装",
+        "エラー状態のクリア処理"
+      ],
+      "acceptance": [
+        "API失敗時、エラーメッセージが表示される",
+        "再試行ボタンが表示される",
+        "再試行ボタンクリックで再度API呼び出しが実行される"
+      ]
+    },
+    {
+      "id": "task-11-9",
+      "title": "ローディング状態の表示実装",
+      "description": "各処理のローディング状態を適切に表示する",
+      "details": [
+        "drawing状態のローディング表示",
+        "reading状態のローディング表示",
+        "ローディングインジケーターコンポーネントの作成または既存コンポーネント使用",
+        "ローディング中のユーザー操作制限"
+      ],
+      "acceptance": [
+        "カードドロー中、ローディング表示がされる",
+        "API呼び出し中、ローディング表示がされる",
+        "ローディング中、ユーザーが誤操作できない"
+      ]
+    },
+    {
+      "id": "task-11-10",
+      "title": "統合テストとデバッグ",
+      "description": "全体フローの統合テストを実施し、バグを修正する",
+      "details": [
+        "スタートからリザルトまでの全フローをテスト",
+        "状態遷移が正しく動作することを確認",
+        "エラーケースのテスト",
+        "リセット機能のテスト",
+        "ブラウザでの動作確認"
+      ],
+      "acceptance": [
+        "スタートから結果表示までスムーズに動作する",
+        "すべての状態遷移が正しく機能する",
+        "エラー処理が正しく動作する",
+        "リセット機能が正しく動作する"
+      ]
+    }
+  ],
+  "estimatedComplexity": "high",
+  "notes": [
+    "すべてのコンポーネントとフックが既に実装されていることが前提",
+    "状態管理のフローが複雑なため、状態遷移図を参照しながら実装することを推奨",
+    "エラーハンドリングとローディング表示は必須",
+    "ユーザー体験を重視し、各状態遷移がスムーズに行われるよう注意"
+  ]
+}

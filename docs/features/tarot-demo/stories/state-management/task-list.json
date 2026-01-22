@@ -1,0 +1,100 @@
+{
+  "storyId": "state-management",
+  "tasks": [
+    {
+      "id": "SM-1",
+      "title": "状態型定義を作成",
+      "description": "TarotState型とTarotStatus型を定義する（idle/drawing/result）",
+      "category": "types",
+      "estimatedEffort": "small",
+      "inputOutput": {
+        "input": "なし（型定義）",
+        "output": "TarotStatus = 'idle' | 'drawing' | 'result', TarotState = { status, selectedCard }"
+      }
+    },
+    {
+      "id": "SM-2",
+      "title": "useTarotState Hookを実装",
+      "description": "状態管理とロジックを含むカスタムHookを実装する",
+      "category": "hooks",
+      "estimatedEffort": "medium",
+      "inputOutput": {
+        "input": "初期状態（デフォルト: idle）",
+        "output": "{ status, selectedCard, startDrawing, showResult, reset }"
+      }
+    },
+    {
+      "id": "SM-3",
+      "title": "状態遷移関数（startDrawing）を実装",
+      "description": "idle→drawingへの状態遷移ロジック。idleでない場合は遷移しない",
+      "category": "logic",
+      "estimatedEffort": "small",
+      "inputOutput": {
+        "input": "現在の状態",
+        "output": "状態を'drawing'に更新"
+      }
+    },
+    {
+      "id": "SM-4",
+      "title": "状態遷移関数（showResult）を実装",
+      "description": "drawing→resultへの状態遷移ロジック。選択されたカードを保存",
+      "category": "logic",
+      "estimatedEffort": "small",
+      "inputOutput": {
+        "input": "選択されたカードID",
+        "output": "状態を'result'に更新し、selectedCardを設定"
+      }
+    },
+    {
+      "id": "SM-5",
+      "title": "状態リセット関数（reset）を実装",
+      "description": "状態をidleに戻し、selectedCardをクリアする",
+      "category": "logic",
+      "estimatedEffort": "small",
+      "inputOutput": {
+        "input": "なし",
+        "output": "状態を'idle'に、selectedCardをnullに更新"
+      }
+    },
+    {
+      "id": "SM-6",
+      "title": "状態に応じたUI条件分岐を実装",
+      "description": "status値に基づいて適切なUIコンポーネントを表示する",
+      "category": "ui",
+      "estimatedEffort": "medium",
+      "inputOutput": {
+        "input": "useTarotState()の戻り値",
+        "output": "idle: 「占う」ボタン, drawing: ローディング, result: 結果表示 + リセットボタン"
+      }
+    }
+  ],
+  "taskDependencies": [
+    {
+      "taskId": "SM-2",
+      "dependsOn": ["SM-1"],
+      "reason": "型定義が必要"
+    },
+    {
+      "taskId": "SM-3",
+      "dependsOn": ["SM-2"],
+      "reason": "Hookの基本構造が必要"
+    },
+    {
+      "taskId": "SM-4",
+      "dependsOn": ["SM-2"],
+      "reason": "Hookの基本構造が必要"
+    },
+    {
+      "taskId": "SM-5",
+      "dependsOn": ["SM-2"],
+      "reason": "Hookの基本構造が必要"
+    },
+    {
+      "taskId": "SM-6",
+      "dependsOn": ["SM-2", "SM-3", "SM-4", "SM-5"],
+      "reason": "すべての状態管理機能が必要"
+    }
+  ],
+  "totalTasks": 6,
+  "estimatedTotalEffort": "medium"
+}

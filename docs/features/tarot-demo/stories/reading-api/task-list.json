@@ -1,0 +1,105 @@
+{
+  "story": "Story 4: 運勢メッセージ生成API (reading-api)",
+  "tasks": [
+    {
+      "id": "reading-api-001",
+      "title": "タロットカードデータ型定義",
+      "description": "カード情報（ID、名前、意味、正位置/逆位置）を表すTypeScript型を定義する",
+      "acceptance_criteria": [
+        "Card型が定義されている",
+        "メジャーアルカナとマイナーアルカナの区別が型で表現されている",
+        "正位置・逆位置の意味を持つ構造になっている"
+      ],
+      "estimated_complexity": "small"
+    },
+    {
+      "id": "reading-api-002",
+      "title": "カードマスターデータ作成",
+      "description": "78枚のタロットカードのマスターデータ（ID、名前、意味）を定義する",
+      "acceptance_criteria": [
+        "メジャーアルカナ22枚のデータが定義されている",
+        "マイナーアルカナ56枚（4スート×14枚）のデータが定義されている",
+        "各カードに正位置・逆位置の意味が設定されている"
+      ],
+      "estimated_complexity": "medium"
+    },
+    {
+      "id": "reading-api-003",
+      "title": "カードIDからカード情報を取得する関数",
+      "description": "カードIDを受け取り、対応するカード情報を返す関数を実装する",
+      "acceptance_criteria": [
+        "有効なカードIDで正しいカード情報を返す",
+        "存在しないカードIDでnullまたはエラーを返す",
+        "型安全である"
+      ],
+      "estimated_complexity": "small"
+    },
+    {
+      "id": "reading-api-004",
+      "title": "ポジション別解釈生成ロジック",
+      "description": "カードとポジション（過去・現在・未来など）から、ポジション別の解釈メッセージを生成する関数を実装する",
+      "acceptance_criteria": [
+        "ポジション（past/present/future）に応じた解釈テンプレートが定義されている",
+        "カードの意味とポジションを組み合わせた自然な日本語メッセージを生成できる",
+        "未定義のポジションに対してエラーハンドリングができる"
+      ],
+      "estimated_complexity": "medium"
+    },
+    {
+      "id": "reading-api-005",
+      "title": "総合アドバイス生成ロジック",
+      "description": "複数カードの組み合わせから総合的なアドバイスメッセージを生成する関数を実装する",
+      "acceptance_criteria": [
+        "1枚以上のカードから総合アドバイスを生成できる",
+        "カードの組み合わせを考慮したメッセージになっている",
+        "自然な日本語でアドバイスが返される"
+      ],
+      "estimated_complexity": "medium"
+    },
+    {
+      "id": "reading-api-006",
+      "title": "リクエストバリデーション関数",
+      "description": "APIリクエストのバリデーション（カードID、ポジション）をZodスキーマで実装する",
+      "acceptance_criteria": [
+        "Zodスキーマが定義されている",
+        "カードIDの形式が正しいか検証できる",
+        "ポジションが許可されたリストに含まれるか検証できる",
+        "バリデーションエラー時に適切なエラーメッセージを返す"
+      ],
+      "estimated_complexity": "small"
+    },
+    {
+      "id": "reading-api-007",
+      "title": "運勢メッセージ生成APIエンドポイント実装",
+      "description": "POST /api/tarot/reading エンドポイントを実装し、リクエストを処理してレスポンスを返す",
+      "acceptance_criteria": [
+        "POST /api/tarot/reading でリクエストを受け付ける",
+        "リクエストボディをバリデーションする",
+        "各カードの情報とポジション解釈を返す",
+        "総合アドバイスを返す",
+        "エラー時に適切なHTTPステータスコードとエラーメッセージを返す"
+      ],
+      "estimated_complexity": "medium"
+    },
+    {
+      "id": "reading-api-008",
+      "title": "API統合テスト（E2E）",
+      "description": "実際のHTTPリクエストでAPIエンドポイントをテストする",
+      "acceptance_criteria": [
+        "正常系のリクエストで200 OKとデータが返ることを確認",
+        "不正なカードIDで400 Bad Requestが返ることを確認",
+        "不正なポジションで400 Bad Requestが返ることを確認",
+        "空のリクエストで400 Bad Requestが返ることを確認"
+      ],
+      "estimated_complexity": "small"
+    }
+  ],
+  "task_summary": {
+    "total_tasks": 8,
+    "complexity_breakdown": {
+      "small": 4,
+      "medium": 4,
+      "large": 0
+    }
+  }
+}

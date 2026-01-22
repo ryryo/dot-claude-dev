@@ -1,0 +1,150 @@
+{
+  "story_id": "deck-shuffle-api",
+  "tasks": [
+    {
+      "id": "task-01",
+      "title": "タロットカードの型定義",
+      "description": "タロットカードのデータ構造をTypeScriptの型とZodスキーマで定義する。大アルカナ、小アルカナの区別、スート、ランク、カード名などを含む。",
+      "rationale": "カードデータの型安全性を確保し、バリデーションの基盤を作る",
+      "subtasks": [
+        "大アルカナのカード名リテラル型を定義",
+        "小アルカナのスート・ランクのリテラル型を定義",
+        "Cardインターフェースを定義（種別、名前、スート、ランクなど）",
+        "ZodスキーマでCard型のバリデーションを定義"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": []
+    },
+    {
+      "id": "task-02",
+      "title": "タロットデッキ定数データの作成",
+      "description": "78枚のタロットカード（大アルカナ22枚、小アルカナ56枚）の定数データを作成する。",
+      "rationale": "シャッフル対象となる標準的なタロットデッキを定義する",
+      "subtasks": [
+        "大アルカナ22枚のカードデータを配列で定義（愚者、魔術師、...、世界）",
+        "小アルカナ56枚のカードデータを生成（4スート×14ランク）",
+        "各カードにダミー画像パスを追加（/images/cards/dummy-{id}.png）",
+        "全78枚を結合したDEFAULT_DECK定数を作成",
+        "デッキの枚数が78枚であることを検証するテストを作成"
+      ],
+      "note": "カード画像は実装時にダミーパスを設定。実際の画像ファイルは後で差し替え可能な構造にする。",
+      "estimated_complexity": "small",
+      "dependencies": ["task-01"]
+    },
+    {
+      "id": "task-03",
+      "title": "シャッフル関数の実装",
+      "description": "配列をランダムにシャッフルするユーティリティ関数を実装する。Fisher-Yatesアルゴリズムを使用し、公平性を保証する。",
+      "rationale": "デッキを偏りなくランダムにシャッフルする基盤ロジック",
+      "subtasks": [
+        "shuffleArray関数の型定義（ジェネリック型を使用）",
+        "Fisher-Yatesシャッフルアルゴリズムの実装",
+        "元の配列を変更せず、新しい配列を返すようにする"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": []
+    },
+    {
+      "id": "task-04",
+      "title": "シャッフル関数のテスト",
+      "description": "shuffleArray関数が正しく動作することをテストで検証する。すべての要素が含まれること、順序がランダムであることを確認。",
+      "rationale": "シャッフルロジックの正確性とランダム性を保証する",
+      "subtasks": [
+        "シャッフル後に要素数が変わらないことをテスト",
+        "すべての要素が含まれていることをテスト（重複・欠落なし）",
+        "複数回実行して異なる結果が得られることを統計的にテスト",
+        "空配列、1要素配列のエッジケースをテスト"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": ["task-03"]
+    },
+    {
+      "id": "task-05",
+      "title": "デッキ生成サービスの実装",
+      "description": "シャッフルされた新しいデッキを生成するサービス関数を実装する。",
+      "rationale": "APIから呼び出すビジネスロジック層を提供",
+      "subtasks": [
+        "createShuffledDeck関数を実装",
+        "DEFAULT_DECKをコピーしてシャッフル",
+        "Result型でラップして返す"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": ["task-02", "task-03"]
+    },
+    {
+      "id": "task-06",
+      "title": "デッキ生成サービスのテスト",
+      "description": "createShuffledDeck関数が正しく動作することをテストで検証する。",
+      "rationale": "サービス層の品質保証",
+      "subtasks": [
+        "成功時に78枚のカードが返されることをテスト",
+        "すべてのカードが含まれていることをテスト",
+        "複数回実行して異なる順序になることをテスト"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": ["task-05"]
+    },
+    {
+      "id": "task-07",
+      "title": "APIエンドポイントの実装",
+      "description": "Next.js API RoutesでGET /api/deck/shuffleエンドポイントを実装する。",
+      "rationale": "フロントエンドからアクセス可能なAPIを提供",
+      "subtasks": [
+        "pages/api/deck/shuffle.tsを作成",
+        "GETリクエストのハンドラを実装",
+        "createShuffledDeckを呼び出し",
+        "成功時は200とカード配列を返す",
+        "エラー時は500とエラーメッセージを返す"
+      ],
+      "estimated_complexity": "medium",
+      "dependencies": ["task-05"]
+    },
+    {
+      "id": "task-08",
+      "title": "APIエンドポイントのE2Eテスト",
+      "description": "開発サーバーを起動し、APIエンドポイントが正しく動作することを確認する。",
+      "rationale": "API全体の動作を保証",
+      "subtasks": [
+        "開発サーバーを起動（npm run dev）",
+        "curlまたはブラウザでGET /api/deck/shuffleを呼び出し",
+        "レスポンスが200で78枚のカードが返されることを確認",
+        "複数回呼び出して異なる順序になることを確認"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": ["task-07"]
+    },
+    {
+      "id": "task-09",
+      "title": "品質チェック（lint/format/build）",
+      "description": "コード品質チェックとビルド検証を実行する。",
+      "rationale": "リリース前の品質保証",
+      "subtasks": [
+        "npm run lintでESLintチェック",
+        "npm run formatでPrettier実行",
+        "npm run buildでビルド成功を確認",
+        "npm testで全テスト成功を確認"
+      ],
+      "estimated_complexity": "small",
+      "dependencies": ["task-08"]
+    }
+  ],
+  "task_flow": {
+    "parallel_groups": [
+      {
+        "group_id": "group-01",
+        "description": "型定義とシャッフルロジック（並列実行可能）",
+        "tasks": ["task-01", "task-03"]
+      }
+    ],
+    "sequential_flow": [
+      "group-01",
+      "task-02",
+      "task-04",
+      "task-05",
+      "task-06",
+      "task-07",
+      "task-08",
+      "task-09"
+    ]
+  }
+}

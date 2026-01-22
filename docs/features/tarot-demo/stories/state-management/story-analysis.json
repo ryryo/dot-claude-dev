@@ -1,0 +1,53 @@
+{
+  "storyId": "state-management",
+  "title": "占い状態管理",
+  "description": "フロントエンドとして、占いの進行状態（初期/抽選中/結果表示）を管理したい。「もう一度占う」で状態をリセットできるように。",
+  "actor": "フロントエンド",
+  "purpose": "占いの進行状態を適切に管理し、ユーザーが占い体験をスムーズに進められるようにする",
+  "goal": "状態遷移が明確で、リセット機能が正常に動作する状態管理システムを実装する",
+  "scope": {
+    "inScope": [
+      "占いの状態定義（idle/drawing/result）",
+      "状態遷移ロジック",
+      "状態リセット機能",
+      "状態に応じたUI表示制御",
+      "状態管理のカスタムHook"
+    ],
+    "outOfScope": [
+      "カード抽選ロジック（別ストーリー）",
+      "API連携（別ストーリー）",
+      "結果表示UI（別ストーリー）"
+    ]
+  },
+  "acceptanceCriteria": [
+    {
+      "criterion": "初期状態が'idle'である",
+      "verification": "ページ読み込み時、状態がidleで「占う」ボタンが表示される"
+    },
+    {
+      "criterion": "「占う」クリックで'drawing'状態に遷移する",
+      "verification": "ボタンクリック後、状態がdrawingに変わり、ローディング表示が出る"
+    },
+    {
+      "criterion": "抽選完了後'result'状態に遷移する",
+      "verification": "カード選択後、状態がresultに変わり、結果UIが表示される"
+    },
+    {
+      "criterion": "「もう一度占う」で状態がリセットされる",
+      "verification": "リセットボタンクリックで状態がidleに戻り、選択されたカードがクリアされる"
+    },
+    {
+      "criterion": "状態遷移が単方向である",
+      "verification": "idle→drawing→result→idle の順でのみ遷移し、不正な遷移はできない"
+    }
+  ],
+  "dependencies": [],
+  "technicalNotes": [
+    "Reactの状態管理（useState）を使用",
+    "カスタムHook (useTarotState) でロジックを分離",
+    "状態型を定義してType-safeにする",
+    "状態遷移関数を提供（startDrawing, showResult, reset）"
+  ],
+  "estimatedComplexity": "medium",
+  "priority": "high"
+}

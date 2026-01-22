@@ -1,0 +1,67 @@
+{
+  "story": {
+    "id": "card-flip-animation",
+    "title": "カード表示・フリップ演出",
+    "rawStory": "ユーザーとして、カードをタップすると裏から表にめくれるアニメーションを見たい。占いの神秘的な雰囲気を楽しめるように。"
+  },
+  "analysis": {
+    "purpose": "カードタップ時に裏から表にめくれるアニメーションを実装し、占いの神秘的な雰囲気を演出する",
+    "goal": "カードのフリップアニメーションによってユーザー体験を向上させ、占いの神秘性を表現する",
+    "scope": {
+      "included": [
+        "カードのフリップアニメーション実装",
+        "タップイベントによるアニメーション発火",
+        "裏面から表面への3D回転演出",
+        "アニメーション中の状態管理",
+        "CSS 3Dトランスフォームによる実装"
+      ],
+      "excluded": [
+        "カード選択ロジック",
+        "占い結果の表示",
+        "複数カードの同時アニメーション",
+        "音声エフェクト",
+        "カードデッキ全体の管理"
+      ]
+    },
+    "acceptanceCriteria": [
+      {
+        "id": "AC-1",
+        "description": "カードをタップすると裏から表にめくれるアニメーションが再生される",
+        "testable": true,
+        "type": "E2E"
+      },
+      {
+        "id": "AC-2",
+        "description": "アニメーションは3D回転で自然な「めくれ」を表現する",
+        "testable": true,
+        "type": "E2E"
+      },
+      {
+        "id": "AC-3",
+        "description": "アニメーション中はカードをタップできない（二重実行防止）",
+        "testable": true,
+        "type": "TDD"
+      },
+      {
+        "id": "AC-4",
+        "description": "アニメーション完了後はカードが表面のまま固定される",
+        "testable": true,
+        "type": "E2E"
+      },
+      {
+        "id": "AC-5",
+        "description": "レスポンシブデザインで各デバイスサイズに対応",
+        "testable": true,
+        "type": "E2E"
+      }
+    ],
+    "userValue": "神秘的なアニメーション演出により、占いの世界観への没入感が高まり、ユーザー体験が向上する",
+    "technicalConsiderations": [
+      "CSS 3D Transform（rotateY）を使用",
+      "perspective、transform-style: preserve-3d が必要",
+      "アニメーション中の状態管理（useState）",
+      "タッチデバイスでのイベント処理",
+      "パフォーマンス最適化（GPU加速）"
+    ]
+  }
+}

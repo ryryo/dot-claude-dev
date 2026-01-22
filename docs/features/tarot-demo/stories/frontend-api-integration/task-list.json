@@ -1,0 +1,136 @@
+{
+  "story_id": "frontend-api-integration",
+  "tasks": [
+    {
+      "id": "frontend-api-integration-001",
+      "title": "Result型の定義",
+      "description": "成功/失敗を表現するResult型をTypeScriptで定義する。ok: true/false で判別可能にする。",
+      "rationale": "エラーハンドリングを型安全に行うための基礎型",
+      "dependencies": [],
+      "estimated_complexity": "small",
+      "acceptance_criteria": [
+        "Result<T, E>型が定義されている",
+        "success()とfailure()のヘルパー関数が定義されている",
+        "型ガード関数（isSuccess, isFailure）が定義されている"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-002",
+      "title": "API型定義の作成",
+      "description": "占い結果取得APIのリクエスト・レスポンスの型定義とZodスキーマを作成する。",
+      "rationale": "型安全なAPI呼び出しとランタイムバリデーションの基礎",
+      "dependencies": [
+        "frontend-api-integration-001"
+      ],
+      "estimated_complexity": "small",
+      "acceptance_criteria": [
+        "TarotReadingRequestの型とZodスキーマが定義されている",
+        "TarotReadingResponseの型とZodスキーマが定義されている",
+        "APIErrorResponseの型とZodスキーマが定義されている",
+        "すべてのスキーマでバリデーションが正しく動作する"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-003",
+      "title": "HTTPクライアントの実装",
+      "description": "fetchをラップしたHTTPクライアントを実装する。JSONのパース、エラーハンドリング、Zodバリデーションを含む。",
+      "rationale": "再利用可能なHTTP通信の基盤を構築",
+      "dependencies": [
+        "frontend-api-integration-001",
+        "frontend-api-integration-002"
+      ],
+      "estimated_complexity": "medium",
+      "acceptance_criteria": [
+        "post()メソッドが実装されている",
+        "レスポンスをZodスキーマでバリデーションできる",
+        "HTTPエラー（4xx, 5xx）をResult型で返す",
+        "ネットワークエラーをResult型で返す",
+        "Content-Type: application/jsonが設定される"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-004",
+      "title": "占い結果取得APIクライアントの実装",
+      "description": "POST /api/tarot/readingを呼び出すAPIクライアント関数を実装する。",
+      "rationale": "占い機能の中核となるAPI呼び出しロジック",
+      "dependencies": [
+        "frontend-api-integration-003"
+      ],
+      "estimated_complexity": "small",
+      "acceptance_criteria": [
+        "fetchTarotReading()関数が実装されている",
+        "TarotReadingRequestを受け取りTarotReadingResponseを返す",
+        "Result型でエラーを扱う",
+        "正しいエンドポイント（/api/tarot/reading）に接続する"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-005",
+      "title": "ローディング状態管理フックの実装",
+      "description": "API呼び出し中のローディング状態を管理するカスタムHooks（useTarotReading）を実装する。",
+      "rationale": "UIからAPI呼び出しとローディング状態を簡単に扱えるようにする",
+      "dependencies": [
+        "frontend-api-integration-004"
+      ],
+      "estimated_complexity": "medium",
+      "acceptance_criteria": [
+        "useTarotReading()フックが実装されている",
+        "loading, error, data状態を返す",
+        "fetchReading()関数を提供する",
+        "呼び出し中はloadingがtrueになる",
+        "エラー時はerrorに値が設定される",
+        "成功時はdataに結果が設定される"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-006",
+      "title": "環境変数によるAPIベースURL設定",
+      "description": "開発環境と本番環境でAPIベースURLを切り替えられるように環境変数で設定する。",
+      "rationale": "環境ごとに異なるAPIエンドポイントに接続できるようにする",
+      "dependencies": [],
+      "estimated_complexity": "small",
+      "acceptance_criteria": [
+        "VITE_API_BASE_URL環境変数が設定できる",
+        "未設定時のデフォルト値が定義されている",
+        ".env.exampleファイルが作成されている"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-007",
+      "title": "ローディングスピナーコンポーネント",
+      "description": "API呼び出し中に表示するローディングスピナーUIコンポーネントを実装する。",
+      "rationale": "ユーザーにAPI呼び出し中であることを視覚的にフィードバックする",
+      "dependencies": [],
+      "estimated_complexity": "small",
+      "acceptance_criteria": [
+        "LoadingSpinner.tsxコンポーネントが実装されている",
+        "Tailwind CSSでアニメーションが実装されている",
+        "サイズprops（sm, md, lg）に対応している",
+        "aria-labelでアクセシビリティ対応されている"
+      ]
+    },
+    {
+      "id": "frontend-api-integration-008",
+      "title": "エラーメッセージコンポーネント",
+      "description": "APIエラー時に表示するエラーメッセージUIコンポーネントとリトライボタンを実装する。",
+      "rationale": "ユーザーにエラー内容を伝え、リトライ手段を提供する",
+      "dependencies": [],
+      "estimated_complexity": "small",
+      "acceptance_criteria": [
+        "ErrorMessage.tsxコンポーネントが実装されている",
+        "エラーメッセージを表示できる",
+        "リトライボタンが実装されている",
+        "role=\"alert\"でアクセシビリティ対応されている"
+      ]
+    }
+  ],
+  "task_summary": {
+    "total_tasks": 6,
+    "complexity_breakdown": {
+      "small": 4,
+      "medium": 2,
+      "large": 0
+    },
+    "estimated_effort": "medium"
+  }
+}

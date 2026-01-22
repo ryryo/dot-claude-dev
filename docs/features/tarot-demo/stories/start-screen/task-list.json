@@ -1,0 +1,66 @@
+{
+  "story_id": "start-screen",
+  "tasks": [
+    {
+      "task_id": "1",
+      "title": "StartScreenコンポーネントの基本構造作成",
+      "description": "タイトル、説明文、ボタンを含むStartScreenコンポーネントをReact + TypeScript + Tailwind CSSで実装する",
+      "details": [
+        "src/components/StartScreen/ディレクトリを作成",
+        "StartScreen.tsxに基本構造を実装（h1タイトル、p説明文、buttonボタン）",
+        "Tailwind CSSでスタイリング（中央配置、余白、フォントサイズ）",
+        "index.tsでエクスポート"
+      ],
+      "acceptance": "コンポーネントが単独でレンダリングでき、タイトル・説明文・ボタンが表示される"
+    },
+    {
+      "task_id": "2",
+      "title": "useTarotStateフックとの統合",
+      "description": "StartScreenコンポーネントでuseTarotStateフックを使用し、startReading関数をボタンに接続する",
+      "details": [
+        "useTarotStateフックをインポート",
+        "startReading関数を取得",
+        "ボタンのonClickイベントにstartReading関数を接続",
+        "state === 'idle'のときのみコンポーネントを表示する条件分岐を実装"
+      ],
+      "acceptance": "ボタンクリック時にstartReading()が呼ばれ、stateが'idle'から'selecting'に遷移する"
+    },
+    {
+      "task_id": "3",
+      "title": "レスポンシブデザインの実装",
+      "description": "モバイル・タブレット・デスクトップの各サイズで適切に表示されるようにスタイリングを調整する",
+      "details": [
+        "モバイル(375px): フォントサイズ小、余白小、1カラム",
+        "タブレット(768px): フォントサイズ中、余白中",
+        "デスクトップ(1024px): フォントサイズ大、余白大、最大幅設定",
+        "Tailwind CSSのブレイクポイント（sm:, md:, lg:）を使用"
+      ],
+      "acceptance": "各デバイスサイズで視覚的に適切に表示される"
+    },
+    {
+      "task_id": "4",
+      "title": "アクセシビリティ対応",
+      "description": "キーボード操作、aria属性、セマンティックHTMLを実装してアクセシビリティ要件を満たす",
+      "details": [
+        "セマンティックHTML要素を使用（h1, p, button）",
+        "ボタンにaria-label属性を追加（必要に応じて）",
+        "フォーカス状態のスタイリング（focus-visible）",
+        "キーボード操作の確認（Tab, Enter, Space）"
+      ],
+      "acceptance": "キーボードでボタンにフォーカスでき、Enter/Spaceで操作可能。適切なaria属性が設定されている"
+    },
+    {
+      "task_id": "5",
+      "title": "StartScreen E2E検証",
+      "description": "agent-browserを使用してスタート画面の表示と操作を検証する",
+      "details": [
+        "開発サーバーを起動（localhost:3000）",
+        "agent-browserでページに遷移",
+        "タイトル、説明文、「占う」ボタンの存在を確認",
+        "ボタンをクリックして状態遷移を確認",
+        "レスポンシブ表示を確認（3ブレイクポイント）"
+      ],
+      "acceptance": "すべての要素が表示され、ボタンクリックで状態が遷移することが確認できる"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "storyId": "result-screen",
+  "title": "結果画面",
+  "tasks": [
+    {
+      "id": "result-screen-1",
+      "title": "ResultCard コンポーネント作成",
+      "description": "1枚のカード結果を表示するコンポーネント（カード名、画像、正逆、意味）を作成する",
+      "details": [
+        "Props: cardName, imageUrl, isReversed, meaning",
+        "正位置/逆位置のバッジ表示",
+        "カード画像の表示（逆位置の場合は180度回転）",
+        "意味テキストの表示",
+        "レスポンシブデザイン"
+      ],
+      "estimatedComplexity": "small"
+    },
+    {
+      "id": "result-screen-2",
+      "title": "総合運勢生成ロジック作成",
+      "description": "3枚のカード情報から総合運勢のまとめテキストを生成する関数を作成する",
+      "details": [
+        "入力: 3枚のカード情報（名前、正逆、意味）",
+        "出力: 総合運勢のテキスト",
+        "簡易的なルールベースで生成（正位置が多い、逆位置が多いなど）",
+        "空データや不正データのハンドリング"
+      ],
+      "estimatedComplexity": "small"
+    },
+    {
+      "id": "result-screen-3",
+      "title": "TarotResult コンポーネント作成",
+      "description": "結果画面全体を統合するコンポーネントを作成する",
+      "details": [
+        "Props: selectedCards, onRetry",
+        "3枚のResultCardを表示",
+        "総合運勢を表示（generateFortuneSummary使用）",
+        "「もう一度占う」ボタン配置",
+        "レスポンシブレイアウト（モバイル: 縦並び、デスクトップ: 横並び）",
+        "アクセシビリティ対応（aria-label, role等）"
+      ],
+      "estimatedComplexity": "medium"
+    },
+    {
+      "id": "result-screen-4",
+      "title": "TarotResult コンポーネントのE2E検証",
+      "description": "agent-browserを使用してTarotResultコンポーネントの表示と操作を検証する",
+      "details": [
+        "3枚のカード情報が正しく表示されることを確認",
+        "正位置/逆位置バッジの表示確認",
+        "総合運勢が表示されることを確認",
+        "「もう一度占う」ボタンが動作することを確認",
+        "モバイル・デスクトップでレスポンシブ表示確認",
+        "キーボード操作の確認"
+      ],
+      "estimatedComplexity": "medium"
+    }
+  ],
+  "dependencies": [],
+  "totalEstimatedComplexity": "medium",
+  "createdAt": "2026-01-22"
+}
