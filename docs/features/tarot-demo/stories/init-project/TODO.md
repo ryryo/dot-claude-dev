@@ -4,19 +4,19 @@
 
 ### TASKタスク
 
-- [ ] [TASK][EXEC] PHPプロジェクト初期化
+- [x] [TASK][EXEC] PHPプロジェクト初期化
   - `demo/tarot/backend/`にPHPプロジェクトを初期化
   - `composer.json`を作成し、PSR-12準拠の基本設定を含める
   - ディレクトリ構造（`src/`, `tests/`, `public/`）を作成
-- [ ] [TASK][VERIFY] PHPプロジェクト初期化の確認
+- [x] [TASK][VERIFY] PHPプロジェクト初期化の確認
   - `composer.json`が存在し、プロジェクト構造が正しいか確認
 
-- [ ] [TASK][EXEC] Pestテストフレームワーク導入
+- [x] [TASK][EXEC] Pestテストフレームワーク導入
   - Pestとその依存パッケージをインストール
   - `pest.php`設定ファイルを作成
   - テストディレクトリをセットアップ
   - サンプルテストを作成（`tests/Pest.php`, `tests/ExampleTest.php`）
-- [ ] [TASK][VERIFY] Pestテストフレームワーク導入の確認
+- [x] [TASK][VERIFY] Pestテストフレームワーク導入の確認
   - `vendor/bin/pest`コマンドでサンプルテストが成功するか確認
 
 - [ ] [TASK][EXEC] PHPバックエンド基本設定
