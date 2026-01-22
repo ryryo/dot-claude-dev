@@ -1,7 +1,8 @@
-# Hooks 実装サンプル集
+# Hooks 実装サンプル集（ストーリー統合版）
 
-> **参照**: 著者の実際の実装パターンから抽出
+> **参照**: 著者の実際の実装パターンから抽出し、ストーリー駆動開発に統合
 > **出典**: `docs/SAMPLE/dot-claude-dev/everything-claude-code/`
+> **統合**: ストーリーごとのセッション管理に対応
 
 ---
 
@@ -51,34 +52,59 @@
 }
 ```
 
-**スクリプト**: `session-start.sh`
+**スクリプト**: `session-start.sh` (ストーリー対応版)
 
 ```bash
 #!/bin/bash
-# SessionStart Hook - Load previous context on new session
+# SessionStart Hook - Load story session or global session
 
-SESSIONS_DIR="${HOME}/.claude/sessions"
 LEARNED_DIR="${HOME}/.claude/skills/learned"
 
-# Check for recent session files (last 7 days)
-recent_sessions=$(find "$SESSIONS_DIR" -name "*.tmp" -mtime -7 2>/dev/null | wc -l | tr -d ' ')
+# ストーリーディレクトリの検出（TODO.md の存在確認）
+if [ -f "TODO.md" ] && [ -f "SESSION.md" ]; then
+  # ストーリー内のセッション
+  FEATURE=$(grep -m1 "^# Session Log: " SESSION.md | sed 's/# Session Log: //' || echo "unknown")
+  LAST_UPDATED=$(grep "Last Updated" SESSION.md | sed 's/\*\*Last Updated:\*\* //' || echo "unknown")
 
-if [ "$recent_sessions" -gt 0 ]; then
-  latest=$(ls -t "$SESSIONS_DIR"/*.tmp 2>/dev/null | head -1)
-  echo "[SessionStart] Found $recent_sessions recent session(s)" >&2
-  echo "[SessionStart] Latest: $latest" >&2
+  echo "📝 Story Session Found" >&2
+  echo "  Story: $FEATURE" >&2
+  echo "  Last Updated: $LAST_UPDATED" >&2
+
+  # Completed Tasks をカウント
+  COMPLETED=$(grep -c "^- \[x\]" TODO.md 2>/dev/null || echo "0")
+  IN_PROGRESS=$(grep -c "^- \[ \]" TODO.md 2>/dev/null || echo "0")
+  echo "  Progress: $COMPLETED completed, $IN_PROGRESS remaining" >&2
+
+elif [ -f "TODO.md" ] && [ ! -f "SESSION.md" ]; then
+  # ストーリー内だがSESSION.mdがない（新規ストーリー）
+  echo "🆕 New Story Detected (SESSION.md not found)" >&2
+  echo "  Run /dev:story to initialize SESSION.md" >&2
+
+else
+  # ストーリー外 - グローバルセッション確認
+  SESSIONS_DIR="${HOME}/.claude/sessions"
+  TODAY=$(date '+%Y-%m-%d')
+  GLOBAL_SESSION="$SESSIONS_DIR/$TODAY-global.tmp"
+
+  if [ -f "$GLOBAL_SESSION" ]; then
+    echo "🌐 Global Session Found: $GLOBAL_SESSION" >&2
+  else
+    echo "🌐 Global Session (outside story context)" >&2
+  fi
 fi
 
 # Check for learned skills
 learned_count=$(find "$LEARNED_DIR" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$learned_count" -gt 0 ]; then
-  echo "[SessionStart] $learned_count learned skill(s) available in $LEARNED_DIR" >&2
+  echo "💡 $learned_count learned skill(s) available in $LEARNED_DIR" >&2
 fi
 ```
 
 **ポイント**:
-- 環境変数でディレクトリをカスタマイズ可能
+- **ストーリー検出**: TODO.mdの存在でストーリーコンテキストを判定
+- **二重管理**: ストーリー内SESSION.md + グローバル.tmp
+- **進捗表示**: ストーリー内ではTODO.mdの進捗も表示
 - `>&2` でユーザーへの通知
 - パススルー不要（SessionStart hookはツール呼び出しなし）
 
@@ -274,71 +300,159 @@ fi
 
 ## セッションファイル サンプル
 
-**ファイル名**: `~/.claude/sessions/2026-01-17-debugging-memory.tmp`
+### ストーリー単位セッション（推奨）
+
+**ファイルパス**: `docs/features/user-auth/stories/implement-email-validation/SESSION.md`
 
 ```markdown
-# Session: Memory Leak Investigation
-**Date:** 2026-01-17
-**Started:** 09:00
-**Last Updated:** 12:00
+# Session Log: implement-email-validation
+
+**Feature**: user-auth
+**Story**: implement-email-validation
+**Started**: 2026-01-22 14:30
+**Last Updated**: 2026-01-22 16:45
 
 ---
 
 ## Current State
 
-Investigating memory leak in production. Heap growing unbounded over 24h period.
+TDD ワークフローで email バリデーション機能を実装中。
+RED → GREEN → REFACTOR の第2サイクル完了。
 
-### Completed
-- [x] Set up heap snapshots in staging
-- [x] Identified leak source: event listeners not being cleaned up
-- [x] Fixed leak in WebSocket handler
-- [x] Verified fix with 4h soak test
+### Completed Tasks (TODO.md から自動更新)
+- [x] [TDD][RED] validateEmail のテスト作成
+- [x] [TDD][GREEN] validateEmail の実装
+- [x] [TDD][REFACTOR] validateEmail のリファクタリング
+- [x] [TDD][REVIEW] セルフレビュー
+- [ ] [TDD][CHECK] lint/format/build  ← 次はここ
 
-### Root Cause
-WebSocket `onMessage` handlers were being added on reconnect but not removed on disconnect. After ~1000 reconnects, memory grew from 200MB to 2GB.
+### Progress Summary
+- Phase: TDD - CHECK フェーズ
+- Files Modified:
+  - `src/utils/validation.ts`
+  - `src/utils/validation.test.ts`
 
-### The Fix
-\`\`\`javascript
-// Before (leaking)
-socket.on('connect', () => {
-  socket.on('message', handleMessage)
-})
+---
 
-// After (fixed)
-socket.on('connect', () => {
-  socket.off('message', handleMessage) // Remove old listener first
-  socket.on('message', handleMessage)
-})
+## Context
 
-// Even better - use once or cleanup on disconnect
-socket.on('disconnect', () => {
-  socket.removeAllListeners('message')
-})
-\`\`\`
+### 実装の要点
 
-### Debugging Technique Worth Saving
-1. Take heap snapshot at T=0
-2. Force garbage collection: \`global.gc()\`
-3. Run suspected operation N times
-4. Take heap snapshot at T=1
-5. Compare snapshots - look for objects with count = N
+**バリデーションロジック**:
+- RFC 5322 準拠の簡易版正規表現
+- 空文字・null チェック
+- Result型で統一的なエラーハンドリング
 
-### Notes for Next Session
-- Add memory monitoring alert at 1GB threshold
-- Document this debugging pattern for team
+**テストカバレッジ**:
+- 正常系: 標準的なメールアドレス 5パターン
+- 異常系: 不正形式 8パターン
+- 境界値: 空文字、null、undefined
 
-### Context to Load
-\`\`\`
-src/services/websocket.js
-\`\`\`
+### 学んだこと
+
+**Result型パターンの有効性**:
+```typescript
+type Result<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };
+```
+- エラーハンドリングが型安全
+- テストが書きやすい
+- 呼び出し側で強制的にエラーチェック
+
+**Zodとの使い分け**:
+- 単純なバリデーション → 自前のResult型
+- フォーム全体・複雑なスキーマ → Zod
+
+---
+
+## Issues & Resolutions
+
+### Issue 1: Vitest の expect.toEqual が構造等価で失敗
+**原因**: エラーオブジェクトに追加プロパティが含まれていた
+**解決**: `expect.objectContaining()` で必要なプロパティのみ検証
+
+### Issue 2: TypeScript strict mode でのnullチェック
+**学び**: `value ?? ''` より `value == null` の方が意図明確
+
+---
+
+## Next Steps
+
+1. lint/format/build 実行
+2. 問題なければコミット
+3. validatePassword の実装に移行（新規セッション開始）
+
+---
+
+## Files to Keep Context
+
+```
+src/utils/validation.ts
+src/utils/validation.test.ts
+docs/features/user-auth/stories/implement-email-validation/TODO.md
 ```
 
-**このセッションから学習可能なパターン**:
-- エラー解決: メモリリーク修正手法
-- デバッグ手法: Heap スナップショット比較
-- コードスニペット: WebSocket listener クリーンアップ
+---
 
-→ `/learn` コマンドで `learned/debug-memory-leak.md` として保存可能
+## Notes for /learn Evaluation
+
+このセッションで**繰り返し使用した手法**:
+- Result型パターン（3回目の使用 → スキル化検討）
+- TDDサイクルの厳密な遵守（効果実感）
+- expect.objectContaining パターン（2回目 → 定着）
+
+**推奨アクション**:
+- Result型パターンを `learned/result-type-pattern.md` として保存
+```
+
+**配置**: ストーリーディレクトリ内に配置され、Git管理される
+
+**dev:developing での自動更新**:
+- タスク完了時に "Completed Tasks" セクションを更新
+- /compact 実行前に PreCompact hook が状態を保存
+
+**このセッションから学習可能なパターン**:
+- Result型パターンの実装と使い方
+- Vitest での構造比較テスト
+- TDDサイクルの実践ノウハウ
+
+→ `/learn` コマンドで `learned/result-type-pattern.md` として保存可能
+
+---
+
+### グローバルセッション（補助的）
+
+**ファイルパス**: `~/.claude/sessions/2026-01-22-global.tmp`
+
+```markdown
+# Global Session: 2026-01-22
+
+**Date**: 2026-01-22
+**Context**: Story外の作業（緊急バグ修正等）
+
+---
+
+## Quick Fixes
+
+### 14:00 - Production Hotfix
+- 本番環境のメモリリーク緊急対応
+- WebSocket listener cleanup を適用
+- デプロイ完了
+
+### 16:00 - Documentation Update
+- README.md の環境構築手順を更新
+- Node.js バージョン要件を明記
+
+---
+
+## Notes
+
+ストーリー外の短時間作業のみ記録。
+通常はストーリー単位のSESSION.mdを使用。
+```
+
+**用途**: ストーリー外の緊急対応・軽微な作業のみ
 
 ---
 
@@ -409,11 +523,29 @@ src/services/websocket.js
 
 ## 実装チェックリスト
 
+### Hooks設定
+
 - [ ] `.claude/hooks/hooks.json` 作成
-- [ ] SessionStart hook 実装
-- [ ] PreCompact hook 実装
-- [ ] Stop hook 実装
+- [ ] SessionStart hook 実装（ストーリー検出対応）
+- [ ] PreCompact hook 実装（ストーリー検出対応）
+- [ ] Stop hook 実装（ストーリー検出対応）
 - [ ] 全スクリプトに実行権限付与 (`chmod +x`)
-- [ ] セッションディレクトリ作成 (`~/.claude/sessions/`)
-- [ ] .gitignore に `sessions/*.tmp` 追加
-- [ ] テスト実行（新規セッション開始して確認）
+
+### ディレクトリ構成
+
+- [ ] グローバルセッションディレクトリ作成 (`~/.claude/sessions/`)
+- [ ] .gitignore に `.claude/sessions/*.tmp` 追加（グローバルセッションのみ）
+- [ ] ストーリーディレクトリの SESSION.md は Git 管理対象（.gitignore 不要）
+
+### dev:story スキル更新
+
+- [ ] `.claude/skills/dev/story/SKILL.md` に Phase 4.2 追加
+- [ ] SESSION.md テンプレートを追加
+
+### テスト実行
+
+- [ ] ストーリー外で新規セッション開始 → グローバルセッション確認
+- [ ] /dev:story 実行 → SESSION.md 自動作成確認
+- [ ] ストーリー内で新規セッション開始 → ストーリーセッション読み込み確認
+- [ ] /compact 実行 → PreCompact hook で状態保存確認
+- [ ] セッション終了 → Stop hook で SESSION.md 更新確認
