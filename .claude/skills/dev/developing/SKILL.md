@@ -40,15 +40,44 @@ TODO.mdのタスクを実行する。タスクのラベルに応じてTDDまた�
 
 ---
 
-## Phase 0: ブランチ/Worktree チェック
+## Phase 0: Worktree移動 & ブランチチェック
 
-実装開始前に、作業ブランチの状態を確認する。
+実装開始前に、作業環境を正しく設定する。
 
 ```
-現在のブランチを確認
-    ├─ master/main → Worktree作成を促す
-    └─ feature/* 等 → そのまま続行
+引数が指定されているか確認
+    ├─ 引数あり（docs/features/...） → Worktree存在チェック
+    │   ├─ Worktree存在 → 移動
+    │   └─ Worktree不在 → カレントで継続（通常ありえない）
+    └─ 引数なし → ブランチ確認
+        ├─ master/main → Worktree作成を促す
+        └─ feature/* 等 → そのまま続行
 ```
+
+### 0.0 Worktree存在チェック・移動（引数指定時）
+
+**引数が `docs/features/{feature-slug}/stories/{story-slug}` 形式の場合:**
+
+```bash
+# 1. Worktree一覧を取得
+git worktree list
+
+# 2. story-slugに対応するWorktreeを探す
+# 例: docs/features/tarot-demo/stories/init-project
+#  → .worktrees/feature-init-project を探す
+
+# 3. 存在すれば移動
+WORKTREE_DIR=$(git worktree list | grep "feature-{story-slug}" | awk '{print $1}')
+if [ -n "$WORKTREE_DIR" ]; then
+  cd "$WORKTREE_DIR"
+  pwd  # 移動先を確認
+  echo "Worktreeに移動しました: $WORKTREE_DIR"
+else
+  echo "対応するWorktreeが見つかりません。カレントディレクトリで継続します。"
+fi
+```
+
+**重要**: 引数が指定された場合、まずこの手順を実行してからPhase 0.1以降に進む。
 
 ### 0.1 ブランチ確認
 

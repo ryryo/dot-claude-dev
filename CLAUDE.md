@@ -1,43 +1,5 @@
 # CLAUDE.md
-
-このファイルはClaude Code (claude.ai/code) がこのリポジトリで作業する際のガイダンスを提供します。
-
-## ルールとスキルの構造
-
 このリポジトリはClaude Codeによるストーリー駆動開発のための構造化されたアプローチを提供します：
-
-- **ルール**: `.claude/rules/` に配置。ファイルパスに基づいて自動的に読み込まれます。プロジェクト規約の情報源。
-- **スキル**: `.claude/skills/` に配置。特定のワークフローで手動で呼び出します。
-- **コマンド**: `.claude/commands/` に配置。スキルを呼び出すためのショートカット。
-
-## 利用可能なルール
-
-### ワークフロールール
-
-| ルール | 適用対象 | 説明 |
-|--------|----------|------|
-| **tdd-workflow** | `**/*.test.ts`, `**/*.spec.ts`, `**/*.test.tsx`, `**/*.spec.tsx` | TDD 6ステップワークフロー（RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT） |
-| **e2e-cycle** | `**/components/**/*.tsx`, `**/pages/**/*.tsx`, `**/views/**/*.php` | E2Eサイクル（UI実装→agent-browser検証→品質チェック→コミット） |
-| **workflow-branching** | `**/TODO.md` | TDD/E2E/TASK分岐判定ルール |
-
-### 言語別ルール
-
-| ルール | 適用対象 | 説明 |
-|--------|----------|------|
-| **typescript/coding** | `**/*.ts`, `**/*.tsx` | TypeScriptコーディング規約。strict mode、Zod連携、Result型パターン |
-| **typescript/testing** | `**/*.test.ts`, `**/*.spec.ts` | TypeScriptテスト規約。Vitest、Given-When-Then形式 |
-| **react/coding** | `**/*.tsx`, `**/*.jsx` | Reactコーディング規約。関数コンポーネント、Hooks、React Hook Form + Zod |
-| **react/testing** | `**/*.test.tsx`, `**/*.spec.tsx` | Reactテスト規約。Vitest、React Testing Library、ユーザー視点テスト |
-| **react/design** | `**/components/**/*.tsx` | Reactデザイン規約。Compound Components、アクセシビリティ |
-| **javascript/coding** | `**/*.js`, `**/*.mjs` | JavaScriptコーディング規約。ES6+、async/await |
-| **javascript/testing** | `**/*.test.js`, `**/*.spec.js` | JavaScriptテスト規約。Vitest |
-| **php/coding** | `**/*.php` | PHPコーディング規約。PSR-12、strict_types |
-| **php/testing** | `**/tests/**/*.php`, `**/*Test.php` | PHPテスト規約。Pest |
-| **python/coding** | `**/*.py` | Pythonコーディング規約。PEP 8、型ヒント、Pydantic |
-| **python/testing** | `**/test_*.py`, `**/*_test.py` | Pythonテスト規約。pytest |
-| **html-css/coding** | `**/*.html`, `**/*.css`, `**/*.scss` | HTML/CSSコーディング規約。セマンティックHTML、CSS変数、BEM |
-| **html-css/testing** | `**/*.html`, `**/*.css` | HTML/CSSテスト規約。axe-core、Playwright視覚的回帰 |
-| **html-css/design** | `**/*.html`, `**/*.css`, `**/components/**/*` | HTML/CSSデザイン規約。デザイントークン、アクセシビリティ |
 
 ## 利用可能なスキル
 
@@ -60,6 +22,7 @@
 | コマンド | 説明 |
 |----------|------|
 | `/dev:story` | ストーリーからタスクリスト生成。dev:storyスキルを起動 |
+| `/dev:developing` | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
 | `/dev:feedback` | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案 |
 
 ## テスト環境
