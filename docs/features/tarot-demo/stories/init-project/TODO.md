@@ -70,11 +70,11 @@
   - `package.json`, `vite.config.ts`, `tsconfig.json`が生成されたか確認
   - 必要なディレクトリが作成されたか確認
 
-- [ ] [TASK][EXEC] Vitestテストフレームワーク導入
+- [x] [TASK][EXEC] Vitestテストフレームワーク導入
   - Vitest、React Testing Library、@testing-library/user-eventをインストール
   - `vitest.config.ts`を設定
   - サンプルテストを作成（`src/App.test.tsx`）
-- [ ] [TASK][VERIFY] Vitestテストフレームワーク導入の確認
+- [x] [TASK][VERIFY] Vitestテストフレームワーク導入の確認
   - `npm test`コマンドでサンプルテストが成功するか確認
 
 - [ ] [TASK][EXEC] Tailwind CSS導入

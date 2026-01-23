@@ -252,7 +252,11 @@ Task({
 - 設定ファイル
 - インフラ構築結果
 
-simple-addエージェントを使用して、適切なコミットメッセージで変更をコミットしてください。`,
+重要: simple-add.mdで定義されているコミットメッセージフォーマットに従ってください：
+- <emoji> <type>: <description>
+- 変更点をリスト形式で記載。日本語。
+
+simple-addエージェントを使用してコミットしてください。`,
   subagent_type: "simple-add",
   model: "haiku"
 })
@@ -460,7 +464,11 @@ Task({
 - コード整理結果
 - テスト資産管理の結果
 
-simple-addエージェントを使用して、適切なコミットメッセージで変更をコミットしてください。`,
+重要: simple-add.mdで定義されているコミットメッセージフォーマットに従ってください：
+- <emoji> <type>: <description>
+- 変更点をリスト形式で記載。日本語。
+
+simple-addエージェントを使用してコミットしてください。`,
   subagent_type: "simple-add",
   model: "haiku"
 })
@@ -550,7 +558,12 @@ Task({
 - UIコンポーネント実装
 - agent-browser検証結果
 
-simple-addエージェントを使用して、適切なコミットメッセージで変更をコミットしてください。`,
+重要: simple-add.mdで定義されているコミットメッセージフォーマットに従ってください：
+- <emoji> <type>: <description>
+- 変更点をリスト形式で記載
+- Co-Authored-By: Claude <noreply@anthropic.com> を含める
+
+simple-addエージェントを使用してコミットしてください。`,
   subagent_type: "simple-add",
   model: "haiku"
 })
