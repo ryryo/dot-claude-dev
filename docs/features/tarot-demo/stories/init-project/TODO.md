@@ -62,11 +62,11 @@
 
 ### TASKタスク
 
-- [ ] [TASK][EXEC] Reactプロジェクト初期化
+- [x] [TASK][EXEC] Reactプロジェクト初期化
   - `demo/tarot/frontend/`にVite + React + TypeScriptプロジェクトを初期化
   - `npm create vite@latest`コマンドを実行
   - 基本的なファイル構造を生成
-- [ ] [TASK][VERIFY] Reactプロジェクト初期化の確認
+- [x] [TASK][VERIFY] Reactプロジェクト初期化の確認
   - `package.json`, `vite.config.ts`, `tsconfig.json`が生成されたか確認
   - 必要なディレクトリが作成されたか確認
 
