@@ -1,0 +1,12 @@
+[submodule "docs/SAMPLE/dot-claude-dev/cc-sdd"]
+	path = docs/SAMPLE/dot-claude-dev/cc-sdd
+	url = https://github.com/gotalab/cc-sdd.git
+[submodule "docs/SAMPLE/dot-claude-dev/dotfiles"]
+	path = docs/SAMPLE/dot-claude-dev/dotfiles
+	url = https://github.com/skanehira/dotfiles.git
+[submodule "docs/SAMPLE/dot-claude-dev/everything-claude-code"]
+	path = docs/SAMPLE/dot-claude-dev/everything-claude-code
+	url = https://github.com/affaan-m/everything-claude-code.git
+[submodule "docs/SAMPLE/dot-claude-dev/meta-skill-creator"]
+	path = docs/SAMPLE/dot-claude-dev/meta-skill-creator
+	url = https://github.com/daishiman/meta-skill-creator.git
