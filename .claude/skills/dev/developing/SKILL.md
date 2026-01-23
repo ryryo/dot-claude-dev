@@ -195,7 +195,7 @@ TODO.mdを読み込み
     → ファイル存在確認、ビルド確認
         ↓
 [3/3] コミット（COMMIT）
-    → agents/simple-add.md [haiku]
+    → agents/simple-add-dev.md [haiku]
     → 軽量・高速なサブエージェントで実行
 ```
 
@@ -252,12 +252,12 @@ Task({
 - 設定ファイル
 - インフラ構築結果
 
-重要: simple-add.mdで定義されているコミットメッセージフォーマットに従ってください：
+重要: simple-add-dev.mdで定義されているコミットメッセージフォーマットに従ってください：
 - <emoji> <type>: <description>
 - 変更点をリスト形式で記載。日本語。
 
-simple-addエージェントを使用してコミットしてください。`,
-  subagent_type: "simple-add",
+simple-add-devエージェントを使用してコミットしてください。`,
+  subagent_type: "simple-add-dev",
   model: "haiku"
 })
 ```
@@ -305,7 +305,7 @@ simple-addエージェントを使用してコミットしてください。`,
     → メンテナンスコスト最小化
         ↓
 [8/8] コミット（COMMIT）
-    → agents/simple-add.md [haiku]
+    → agents/simple-add-dev.md [haiku]
     → 実装とテスト資産管理の結果をコミット
     → 軽量・高速なサブエージェントで実行
 ```
@@ -464,12 +464,12 @@ Task({
 - コード整理結果
 - テスト資産管理の結果
 
-重要: simple-add.mdで定義されているコミットメッセージフォーマットに従ってください：
+重要: simple-add-dev.mdで定義されているコミットメッセージフォーマットに従ってください：
 - <emoji> <type>: <description>
 - 変更点をリスト形式で記載。日本語。
 
-simple-addエージェントを使用してコミットしてください。`,
-  subagent_type: "simple-add",
+simple-add-devエージェントを使用してコミットしてください。`,
+  subagent_type: "simple-add-dev",
   model: "haiku"
 })
 ```
@@ -494,8 +494,10 @@ simple-addエージェントを使用してコミットしてください。`,
     → lint/format/build
         ↓
 [4/4] コミット（COMMIT）
-    → agents/simple-add.md [haiku]
+    → agents/simple-add-dev.md [haiku]
     → 軽量・高速なサブエージェントで実行
+    → <emoji> <type>: <description>
+    → 変更点をリスト形式で記載。日本語。
 ```
 
 → 詳細: [references/e2e-flow.md]
@@ -558,13 +560,12 @@ Task({
 - UIコンポーネント実装
 - agent-browser検証結果
 
-重要: simple-add.mdで定義されているコミットメッセージフォーマットに従ってください：
+重要: simple-add-dev.mdで定義されているコミットメッセージフォーマットに従ってください：
 - <emoji> <type>: <description>
-- 変更点をリスト形式で記載
-- Co-Authored-By: Claude <noreply@anthropic.com> を含める
+- 変更点をリスト形式で記載。日本語。
 
-simple-addエージェントを使用してコミットしてください。`,
-  subagent_type: "simple-add",
+simple-add-devエージェントを使用してコミットしてください。`,
+  subagent_type: "simple-add-dev",
   model: "haiku"
 })
 ```
@@ -595,7 +596,7 @@ TDD/E2E/TASKワークフローで共通して使用するサブエージェン�
 - **使用場面**: TDDのREVIEWステップ
 - **効果**: 高品質な実装を保証
 
-### simple-add (haiku)
+### simple-add-dev (haiku)
 - **用途**: Git commit自動化
 - **使用場面**: 全ワークフローのCOMMITステップ
 - **効果**: 軽量・高速なコミット処理

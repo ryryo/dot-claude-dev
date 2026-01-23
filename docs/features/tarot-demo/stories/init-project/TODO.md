@@ -86,10 +86,10 @@
   - Tailwindの設定ファイルが正しく生成されたか確認
   - `src/index.css`が更新されたか確認
 
-- [ ] [TASK][EXEC] React開発サーバー起動確認
+- [x] [TASK][EXEC] React開発サーバー起動確認
   - `npm run dev`コマンドで開発サーバーを起動
   - ブラウザでアクセスして基本的なページが表示されるか確認
-- [ ] [TASK][VERIFY] React開発サーバー起動確認の検証
+- [x] [TASK][VERIFY] React開発サーバー起動確認の検証
   - 起動コマンドをREADMEに記載
   - サーバー停止
 
