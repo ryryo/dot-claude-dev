@@ -12,17 +12,57 @@ Claude Codeのためのストーリー駆動開発ワークフロー。TDD/PLAN�
 
 ## インストール
 
-`.claude` ディレクトリをプロジェクトにコピーします：
+### 共有リポジトリをセットアップ
 
 ```bash
-# このリポジトリをクローン
-git clone https://github.com/ryryo/dot-claude-dev.git
+# 1. このリポジトリをホームディレクトリにクローン（推奨）
+git clone https://github.com/ryryo/dot-claude-dev.git ~/.claude-shared
 
-# .claudeをプロジェクトにコピー
-cp -r dot-claude-dev/.claude /path/to/your-project/
+# または任意の場所に配置（環境変数で指定）
+export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
+git clone https://github.com/ryryo/dot-claude-dev.git "$CLAUDE_SHARED_DIR"
+```
 
-# または自動更新のためにシンボリックリンクを作成
-ln -s /path/to/dot-claude-dev/.claude /path/to/your-project/.claude
+### プロジェクトに適用
+
+```bash
+# 2. プロジェクトディレクトリで実行
+cd /path/to/your-project
+bash ~/.claude-shared/setup-claude.sh
+
+# WSL環境でも同様に動作
+```
+
+これにより以下の構造が作成されます：
+
+```
+your-project/.claude/
+├── rules/
+│   ├── languages -> ~/.claude-shared/.claude/rules/languages  # シンボリックリンク
+│   └── workflow -> ~/.claude-shared/.claude/rules/workflow    # シンボリックリンク
+├── skills/
+│   ├── dev -> ~/.claude-shared/.claude/skills/dev             # シンボリックリンク
+│   ├── meta-skill-creator -> ...                              # シンボリックリンク
+│   └── agent-browser -> ...                                   # シンボリックリンク
+├── commands/
+│   └── dev -> ~/.claude-shared/.claude/commands/dev           # シンボリックリンク
+├── settings.local.json # プロジェクト固有
+└── hooks/             # プロジェクト固有
+```
+
+**利点**：
+- 共通設定の更新が全プロジェクトに即座に反映
+- プロジェクト固有の設定も追加可能
+- WSL環境でも問題なく動作
+
+### 更新
+
+共通設定を更新：
+
+```bash
+cd ~/.claude-shared
+git pull
+# すべてのプロジェクトに自動反映される
 ```
 
 ## 使い方
