@@ -133,7 +133,9 @@ TODO.mdを読み込み
 [2/3] 検証（VERIFY）
     → ファイル存在確認、ビルド確認
         ↓
-[3/3] コミット
+[3/3] コミット（COMMIT）
+    → agents/simple-add.md [haiku]
+    → 軽量・高速なサブエージェントで実行
 ```
 
 → 詳細: [references/task-flow.md]
@@ -172,38 +174,69 @@ Task({
 })
 ```
 
+```javascript
+// [COMMIT] コミット
+Task({
+  description: "コミット",
+  prompt: `変更をコミットしてください。
+対象: {task_name}
+
+変更内容:
+- 設定ファイル
+- インフラ構築結果
+
+simple-addエージェントを使用して、適切なコミットメッセージで変更をコミットしてください。`,
+  subagent_type: "simple-add",
+  model: "haiku"
+})
+```
+
 ---
 
 ## TDDワークフロー
 
-`[TDD]` ラベル付きタスクに適用。RED→GREEN→REFACTORサイクルを厳格に遵守。
+`[TDD]` ラベル付きタスクに適用。RED→GREEN→REFACTOR→SIMPLIFY→REVIEWサイクルを厳格に遵守。
 
 ```
-[1/6] テスト作成（RED）
+[1/8] テスト作成（RED）
     → agents/tdd-write-test.md [sonnet]
     → テスト実行して失敗を確認
     → コミット（テストのみ）
         ↓
-[2/6] 実装（GREEN）
+[2/8] 実装（GREEN）
     → agents/tdd-implement.md [sonnet]
     → テスト実行して成功を確認
     → ⚠️ テストは絶対に変更しない（仕様のブレ防止）
     → 通常2〜4周で収束
         ↓
-[3/6] リファクタリング
+[3/8] リファクタリング（REFACTOR）
     → agents/tdd-refactor.md [opus]
+    → 構造的改善（単一責任、重複排除、複雑度低減）
     → テスト実行して成功を確認
         ↓
-[4/6] セルフレビュー【過剰適合・抜け道チェック】
+[4/8] コード整理（SIMPLIFY）
+    → code-simplifierエージェント [sonnet]
+    → 明瞭性・一貫性・保守性の向上
+    → テスト実行して成功を確認
+        ↓
+[5/8] セルフレビュー（REVIEW）【過剰適合・抜け道チェック】
     → 「この実装、テストに過剰適合してない？抜け道ない？」
     → 過剰適合: テストケースだけに最適化されていないか
     → 抜け道: テストをすり抜ける不具合・エッジケースがないか
-    → 問題あれば[2/6]に戻って修正
+    → 問題あれば[2/8]に戻って修正
         ↓
-[5/6] 品質チェック
+[6/8] 品質チェック（CHECK）
     → lint/format/build
         ↓
-[6/6] コミット
+[7/8] テスト資産の管理
+    → テストコードの長期的価値を評価
+    → 長期保持 or 簡素化/削除を判断
+    → メンテナンスコスト最小化
+        ↓
+[8/8] コミット（COMMIT）
+    → agents/simple-add.md [haiku]
+    → 実装とテスト資産管理の結果をコミット
+    → 軽量・高速なサブエージェントで実行
 ```
 
 → 詳細: [references/tdd-flow.md]
@@ -283,28 +316,80 @@ Task({
 ```
 
 ```javascript
+// [SIMPLIFY] コード整理
+Task({
+  description: "コード整理",
+  prompt: `code-simplifierエージェントを使ってコードを整理してください。
+対象: {task_name}
+
+明瞭性・一貫性・保守性を向上させます。
+リファクタリング完了後のコード整理として実行。
+
+重要: テストが成功し続けることを確認`,
+  subagent_type: "code-simplifier",
+  model: "sonnet"
+})
+```
+
+```javascript
 // [REVIEW] セルフレビュー（過剰適合・抜け道チェック）
 Task({
   description: "セルフレビュー",
   prompt: `実装をレビューしてください。
 対象: {task_name}
 
-チェックリスト:
-1. 過剰適合チェック:
-   - テストケースだけに最適化された実装になっていないか？
-   - テスト以外のケースでも正しく動作するか？
+実装ファイル: {implementation_file}
+テストファイル: {test_file}
 
-2. 抜け道チェック:
-   - テストをすり抜ける不具合やエッジケースがないか？
-   - 境界値、null/undefined、空配列などを考慮したか？
-
-3. コード品質:
-   - 読みやすく保守しやすいか？
-   - プロジェクト規約に準拠しているか？
-
-問題があれば指摘し、修正案を提示してください。`,
-  subagent_type: "general-purpose",
+過剰適合・抜け道チェックを実施してください。`,
+  subagent_type: "tdd-review",
   model: "opus"
+})
+```
+
+```javascript
+// [CHECK] 品質チェック
+Task({
+  description: "品質チェック",
+  prompt: `品質チェック（lint/format/build）を実行してください。
+
+結果を簡潔に報告してください。`,
+  subagent_type: "quality-check",
+  model: "haiku"
+})
+```
+
+```javascript
+// [MANAGE] テスト資産の管理
+Task({
+  description: "テスト資産の管理",
+  prompt: `以下のテストファイルを評価してください。
+
+対象テストファイル: {test_file}
+実装ファイル: {implementation_file}
+
+長期的価値を評価し、保持/簡素化/削除を判断してください。`,
+  subagent_type: "test-asset-management",
+  model: "sonnet"
+})
+```
+
+```javascript
+// [COMMIT] コミット
+Task({
+  description: "コミット",
+  prompt: `変更をコミットしてください。
+対象: {task_name}
+
+変更内容:
+- 実装コード
+- リファクタリング結果
+- コード整理結果
+- テスト資産管理の結果
+
+simple-addエージェントを使用して、適切なコミットメッセージで変更をコミットしてください。`,
+  subagent_type: "simple-add",
+  model: "haiku"
 })
 ```
 
@@ -327,7 +412,9 @@ Task({
 [3/4] 品質チェック
     → lint/format/build
         ↓
-[4/4] コミット
+[4/4] コミット（COMMIT）
+    → agents/simple-add.md [haiku]
+    → 軽量・高速なサブエージェントで実行
 ```
 
 → 詳細: [references/e2e-flow.md]
@@ -373,63 +460,53 @@ Task({
 })
 ```
 
----
-
-## テスト実行（サブエージェント）
-
-トークン消費を抑えるため、テスト実行はサブエージェントに委譲。
-
 ```javascript
+// [COMMIT] コミット
 Task({
-  description: "テスト実行",
-  prompt: `プロジェクトのテストを実行し、結果を報告してください。
+  description: "コミット",
+  prompt: `変更をコミットしてください。
+対象: {task_name}
 
-テストコマンド: npm test / cargo test / pytest など
+変更内容:
+- UIコンポーネント実装
+- agent-browser検証結果
 
-報告形式:
-- 全テスト成功: "SUCCESS: X tests passed"
-- 失敗あり: "FAILED:" + 失敗したテスト名とエラーのみ`,
-  subagent_type: "general-purpose",
+simple-addエージェントを使用して、適切なコミットメッセージで変更をコミットしてください。`,
+  subagent_type: "simple-add",
   model: "haiku"
 })
 ```
 
 ---
 
-## セルフレビュー
+## 共通サブエージェント
 
-フェーズ完了時にコード品質をチェック。
+TDD/E2E/TASKワークフローで共通して使用するサブエージェント：
 
-```javascript
-Task({
-  description: "セルフレビュー",
-  prompt: `変更されたファイルをレビューしてください。
+### test-runner (haiku)
+- **用途**: テスト実行と結果報告
+- **使用場面**: RED/GREEN/REFACTOR/SIMPLIFYの各ステップ
+- **効果**: トークン消費を抑え、高速にテスト結果を取得
 
-レビュー観点:
-1. TDD/テスト品質
-2. コード品質（可読性、命名、複雑度）
-3. セキュリティ
-4. 設計原則
+### quality-check (haiku)
+- **用途**: lint/format/build実行
+- **使用場面**: TDD/E2E/TASKの品質チェックステップ
+- **効果**: 自動修正と簡潔な報告で効率化
 
-報告形式:
-- 問題なし: "PASSED"
-- 問題あり: "ISSUES:" + Critical/Warningのみ`,
-  subagent_type: "Explore",
-  model: "opus"
-})
-```
+### test-asset-management (sonnet)
+- **用途**: テスト資産の長期価値評価
+- **使用場面**: TDDのMANAGEステップ
+- **効果**: メンテナンスコスト最小化
 
----
+### tdd-review (opus)
+- **用途**: 過剰適合・抜け道チェック
+- **使用場面**: TDDのREVIEWステップ
+- **効果**: 高品質な実装を保証
 
-## 品質チェック
-
-```bash
-npm run lint && npm run format && npm run build
-# または
-cargo clippy && cargo fmt && cargo build
-# または
-flake8 && black . && pytest
-```
+### simple-add (haiku)
+- **用途**: Git commit自動化
+- **使用場面**: 全ワークフローのCOMMITステップ
+- **効果**: 軽量・高速なコミット処理
 
 ---
 
