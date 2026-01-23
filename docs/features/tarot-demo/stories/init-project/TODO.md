@@ -77,12 +77,12 @@
 - [x] [TASK][VERIFY] Vitestテストフレームワーク導入の確認
   - `npm test`コマンドでサンプルテストが成功するか確認
 
-- [ ] [TASK][EXEC] Tailwind CSS導入
+- [x] [TASK][EXEC] Tailwind CSS導入
   - Tailwind CSS、PostCSS、Autoprefixerをインストール
   - `tailwind.config.js`を作成
   - `postcss.config.js`を作成
   - `src/index.css`にTailwindディレクティブを追加
-- [ ] [TASK][VERIFY] Tailwind CSS導入の確認
+- [x] [TASK][VERIFY] Tailwind CSS導入の確認
   - Tailwindの設定ファイルが正しく生成されたか確認
   - `src/index.css`が更新されたか確認
 
