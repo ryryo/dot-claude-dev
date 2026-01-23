@@ -15,6 +15,10 @@ allowed-tools:
   - Grep
   - Task
   - AskUserQuestion
+  - TaskCreate
+  - TaskList
+  - TaskGet
+  - TaskUpdate
 ---
 
 # 実装（dev:developing）
@@ -85,14 +89,13 @@ AskUserQuestion({
 })
 
 // Worktree作成
-// 配置: ../.worktrees/{project}/{branch}
-// 例: ../.worktrees/dot-claude-dev/feature-user-auth
+// 配置: .worktrees/{branch}（リポジトリ内）
+// 例: .worktrees/feature-user-auth
 Bash({
   command: `
-PROJECT_NAME=$(basename $(pwd))
 BRANCH_NAME="{branch-name}"
-WORKTREE_DIR="../.worktrees/$PROJECT_NAME/${BRANCH_NAME//\//-}"
-mkdir -p $(dirname "$WORKTREE_DIR")
+WORKTREE_DIR=".worktrees/${BRANCH_NAME//\//-}"
+mkdir -p .worktrees
 git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR"
 `,
   description: "Worktreeを作成"
@@ -100,9 +103,67 @@ git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR"
 ```
 
 **作成後**:
-- 新しいWorktreeディレクトリ（`../.worktrees/{project}/{branch}/`）に移動して作業を継続
-- ユーザーに新しいパスを通知
-- 例: `cd ../.worktrees/dot-claude-dev/feature-user-auth`
+- エージェント自身が新しいWorktreeディレクトリに移動する
+- 作業ディレクトリを変更してからタスクを継続
+
+```bash
+cd "$WORKTREE_DIR"
+pwd  # 移動先を確認
+```
+
+---
+
+## Phase 0.5: タスク登録
+
+TODO.mdからタスクを読み込み、タスク管理システムに登録する。
+これによりリアルタイムの進捗追跡が可能になる。
+
+### 0.5.1 TODO.md読み込み
+
+```javascript
+Read({ file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md" })
+```
+
+### 0.5.2 タスク登録
+
+未完了タスク（`- [ ]`）を抽出し、TaskCreateで登録:
+
+```javascript
+// 例: TODO.mdに以下のタスクがある場合
+// - [ ] [TDD][RED] validateEmail テスト作成
+// - [ ] [TDD][GREEN] validateEmail 実装
+
+TaskCreate({
+  subject: "[TDD][RED] validateEmail テスト作成",
+  description: "validateEmail関数のテストを作成する",
+  activeForm: "validateEmailテストを作成中..."
+});
+
+TaskCreate({
+  subject: "[TDD][GREEN] validateEmail 実装",
+  description: "validateEmail関数を実装する",
+  activeForm: "validateEmailを実装中..."
+});
+```
+
+### 0.5.3 依存関係の判断
+
+依存関係はエージェントが文脈で判断する。必要に応じて:
+
+```javascript
+TaskUpdate({
+  taskId: "2",
+  addBlockedBy: ["1"]  // GREENはREDの後
+});
+```
+
+**注意**: 固定ルールは設けない。エージェントがタスク内容を見て判断。
+
+### 0.5.4 現在の状態確認
+
+```javascript
+TaskList()  // 登録されたタスク一覧を確認
+```
 
 ---
 
@@ -144,6 +205,9 @@ TODO.mdを読み込み
 
 ```javascript
 // [EXEC] タスク実行
+// 開始時: ステータスをin_progressに更新
+TaskUpdate({ taskId: currentTaskId, status: "in_progress" });
+
 Task({
   description: "TASKタスク実行",
   prompt: `以下のTASKタスクを実行してください。
@@ -172,6 +236,9 @@ Task({
   subagent_type: "general-purpose",
   model: "haiku"
 })
+
+// 完了時: ステータスをcompletedに更新 + TODO.md更新
+TaskUpdate({ taskId: currentTaskId, status: "completed" });
 ```
 
 ```javascript
@@ -245,6 +312,9 @@ simple-addエージェントを使用して、適切なコミットメッセー�
 
 ```javascript
 // [RED] テスト作成
+// 開始時: ステータスをin_progressに更新
+TaskUpdate({ taskId: currentTaskId, status: "in_progress" });
+
 Task({
   description: "テスト作成",
   prompt: `以下のタスクのテストを作成してください。
@@ -357,6 +427,9 @@ Task({
   subagent_type: "quality-check",
   model: "haiku"
 })
+
+// 完了時: ステータスをcompletedに更新 + TODO.md更新
+TaskUpdate({ taskId: currentTaskId, status: "completed" });
 ```
 
 ```javascript
@@ -423,6 +496,9 @@ simple-addエージェントを使用して、適切なコミットメッセー�
 
 ```javascript
 // [IMPL] UI実装
+// 開始時: ステータスをin_progressに更新
+TaskUpdate({ taskId: currentTaskId, status: "in_progress" });
+
 Task({
   description: "UI実装",
   prompt: `UIコンポーネントを実装してください。
@@ -458,6 +534,9 @@ Task({
   subagent_type: "general-purpose",
   model: "haiku"
 })
+
+// 完了時: ステータスをcompletedに更新 + TODO.md更新
+TaskUpdate({ taskId: currentTaskId, status: "completed" });
 ```
 
 ```javascript
