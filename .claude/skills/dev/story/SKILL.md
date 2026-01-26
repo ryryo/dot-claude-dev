@@ -43,7 +43,7 @@ allowed-tools:
 
 **⚠️ 以下の3ファイルは必ずWriteツールで保存すること**
 
-`docs/features/{feature-slug}/stories/{story-slug}/` に保存:
+`docs/features/{feature-slug}/{story-slug}/` に保存:
 
 | ファイル | 内容 | 保存タイミング |
 |----------|------|---------------|
@@ -147,7 +147,7 @@ AskUserQuestion({
 ### 1.4 出力ディレクトリ作成
 
 ```bash
-mkdir -p docs/features/{feature-slug}/stories/{story-slug}
+mkdir -p docs/features/{feature-slug}/{story-slug}
 ```
 
 ### 1.5 story-analysis.json 保存 【必須】
@@ -156,7 +156,7 @@ mkdir -p docs/features/{feature-slug}/stories/{story-slug}
 
 ```javascript
 Write({
-  file_path: "docs/features/{feature-slug}/stories/{story-slug}/story-analysis.json",
+  file_path: "docs/features/{feature-slug}/{story-slug}/story-analysis.json",
   content: JSON.stringify({
     goal: "目的",
     scope: "スコープ",
@@ -199,7 +199,7 @@ Task({
 
 ```javascript
 Write({
-  file_path: "docs/features/{feature-slug}/stories/{story-slug}/task-list.json",
+  file_path: "docs/features/{feature-slug}/{story-slug}/task-list.json",
   content: JSON.stringify({
     tasks: [
       { id: 1, name: "タスク名", description: "説明", dependencies: [] }
@@ -240,7 +240,7 @@ Task({
 
 ```javascript
 Write({
-  file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md",
+  file_path: "docs/features/{feature-slug}/{story-slug}/TODO.md",
   content: `# TODO
 
 ## フェーズ1: 環境セットアップ
@@ -299,7 +299,7 @@ AskUserQuestion({
 
 ### 必須出力ファイル（3点セット）
 
-以下のファイルがすべて `docs/features/{feature-slug}/stories/{story-slug}/` に保存されていること：
+以下のファイルがすべて `docs/features/{feature-slug}/{story-slug}/` に保存されていること：
 
 | ファイル | 内容 | Phase |
 |----------|------|-------|
