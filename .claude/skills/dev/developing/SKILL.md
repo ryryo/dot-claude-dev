@@ -89,16 +89,24 @@ git branch --show-current
 
 ```javascript
 AskUserQuestion({
-  questions: [{
-    question: "現在 master/main ブランチです。Worktreeを作成しますか？",
-    header: "Worktree",
-    options: [
-      { label: "作成する（推奨）", description: "Worktree（別ディレクトリ）で独立した開発環境を作成" },
-      { label: "このまま続行", description: "master/main で直接作業（非推奨）" }
-    ],
-    multiSelect: false
-  }]
-})
+  questions: [
+    {
+      question: "現在 master/main ブランチです。Worktreeを作成しますか？",
+      header: "Worktree",
+      options: [
+        {
+          label: "作成する（推奨）",
+          description: "Worktree（別ディレクトリ）で独立した開発環境を作成",
+        },
+        {
+          label: "このまま続行",
+          description: "master/main で直接作業（非推奨）",
+        },
+      ],
+      multiSelect: false,
+    },
+  ],
+});
 ```
 
 **「作成する」を選択された場合**:
@@ -132,6 +140,7 @@ git worktree add -b "$BRANCH_NAME" "$WORKTREE_DIR"
 ```
 
 **作成後**:
+
 - エージェント自身が新しいWorktreeディレクトリに移動する
 - 作業ディレクトリを変更してからタスクを継続
 
@@ -150,7 +159,9 @@ TODO.mdからタスクを読み込み、タスク管理システムに登録す�
 ### 0.5.1 TODO.md読み込み
 
 ```javascript
-Read({ file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md" })
+Read({
+  file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md",
+});
 ```
 
 ### 0.5.2 タスク登録
@@ -165,13 +176,13 @@ Read({ file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md" })
 TaskCreate({
   subject: "[TDD][RED] validateEmail テスト作成",
   description: "validateEmail関数のテストを作成する",
-  activeForm: "validateEmailテストを作成中..."
+  activeForm: "validateEmailテストを作成中...",
 });
 
 TaskCreate({
   subject: "[TDD][GREEN] validateEmail 実装",
   description: "validateEmail関数を実装する",
-  activeForm: "validateEmailを実装中..."
+  activeForm: "validateEmailを実装中...",
 });
 ```
 
@@ -182,7 +193,7 @@ TaskCreate({
 ```javascript
 TaskUpdate({
   taskId: "2",
-  addBlockedBy: ["1"]  // GREENはREDの後
+  addBlockedBy: ["1"], // GREENはREDの後
 });
 ```
 
@@ -191,7 +202,7 @@ TaskUpdate({
 ### 0.5.4 現在の状態確認
 
 ```javascript
-TaskList()  // 登録されたタスク一覧を確認
+TaskList(); // 登録されたタスク一覧を確認
 ```
 
 ---
@@ -215,80 +226,37 @@ TODO.mdを読み込み
 
 `[TASK]` ラベル付きタスクに適用。設定/セットアップ/インフラ構築を実行。
 
+**シンプルに直接実行**（サブエージェント呼び出しなし）
+
 ```
-[1/3] 実行（EXEC）
-    → agents/task-execute.md [sonnet]
-    → 設定ファイル作成、コマンド実行
-        ↓
-[2/3] 検証（VERIFY）
-    → ファイル存在確認、ビルド確認
-        ↓
-[3/3] コミット（COMMIT）
-    → agents/simple-add-dev.md [haiku]
-    → 軽量・高速なサブエージェントで実行
+1. タスクをin_progressに更新
+2. 普通に実行（設定ファイル作成、コマンド実行など）
+3. 検証（ファイル存在確認、ビルド確認など）
+4. タスクをcompletedに更新 + TODO.md更新
+5. コミット（/simple-add）
 ```
 
-→ 詳細: [references/task-flow.md]
-
-### TASKタスク実行
+### TASKタスク実行手順
 
 ```javascript
-// [EXEC] タスク実行
-// 開始時: ステータスをin_progressに更新
+// 1. 開始
 TaskUpdate({ taskId: currentTaskId, status: "in_progress" });
 
-Task({
-  description: "TASKタスク実行",
-  prompt: `以下のTASKタスクを実行してください。
-タスク: {task_name}
-説明: {task_description}
+// 2. 実行（エージェントが直接行う）
+// - 設定ファイル作成/編集
+// - コマンド実行
+// - 必要な作業を完了
 
-1. 必要な設定ファイルを作成/編集
-2. 必要なコマンドを実行
-3. 結果を報告`,
-  subagent_type: "general-purpose",
-  model: "sonnet"
-})
-```
+// 3. 検証（エージェントが直接確認）
+// - ファイル存在確認
+// - ビルド/コンパイル確認
 
-```javascript
-// [VERIFY] 検証
-Task({
-  description: "TASK検証",
-  prompt: `以下のTASKタスクの検証を行ってください。
-タスク: {task_name}
-
-検証内容:
-- ファイル存在確認
-- ビルド/コンパイル確認
-- サービス起動確認（該当する場合）`,
-  subagent_type: "general-purpose",
-  model: "haiku"
-})
-
-// 完了時: ステータスをcompletedに更新 + TODO.md更新
+// 4. 完了
 TaskUpdate({ taskId: currentTaskId, status: "completed" });
-```
+// TODO.mdを更新（チェックマーク付与）
 
-```javascript
-// [COMMIT] コミット
-Task({
-  description: "コミット",
-  prompt: `変更をコミットしてください。
-対象: {task_name}
-
-変更内容:
-- 設定ファイル
-- インフラ構築結果
-
-重要: simple-add-dev.mdで定義されているコミットメッセージフォーマットに従ってください：
-- <emoji> <type>: <description>
-- 変更点をリスト形式で記載。日本語。
-
-simple-add-devエージェントを使用してコミットしてください。`,
-  subagent_type: "simple-add-dev",
-  model: "haiku"
-})
+// 5. コミット
+// /simple-add を使用、または手動でコミット
 ```
 
 ---
@@ -359,8 +327,8 @@ Task({
 テストのみ作成し、実装は書かないでください。
 テストを実行して失敗することを確認してください。`,
   subagent_type: "general-purpose",
-  model: "sonnet"
-})
+  model: "sonnet",
+});
 ```
 
 ```javascript
@@ -395,8 +363,8 @@ Task({
 「今のテストを通す → 次のテストを追加 → また通す」
 このサイクルを小さく回す。`,
   subagent_type: "general-purpose",
-  model: "sonnet"
-})
+  model: "sonnet",
+});
 ```
 
 ```javascript
@@ -414,8 +382,8 @@ Task({
 
 重要: テストが成功し続けることを確認`,
   subagent_type: "general-purpose",
-  model: "opus"
-})
+  model: "opus",
+});
 ```
 
 ```javascript
@@ -430,8 +398,8 @@ Task({
 
 重要: テストが成功し続けることを確認`,
   subagent_type: "code-simplifier",
-  model: "sonnet"
-})
+  model: "sonnet",
+});
 ```
 
 ```javascript
@@ -446,8 +414,8 @@ Task({
 
 過剰適合・抜け道チェックを実施してください。`,
   subagent_type: "tdd-review",
-  model: "opus"
-})
+  model: "opus",
+});
 ```
 
 ```javascript
@@ -458,8 +426,8 @@ Task({
 
 結果を簡潔に報告してください。`,
   subagent_type: "quality-check",
-  model: "haiku"
-})
+  model: "haiku",
+});
 
 // 完了時: ステータスをcompletedに更新 + TODO.md更新
 TaskUpdate({ taskId: currentTaskId, status: "completed" });
@@ -476,8 +444,8 @@ Task({
 
 長期的価値を評価し、保持/簡素化/削除を判断してください。`,
   subagent_type: "test-asset-management",
-  model: "sonnet"
-})
+  model: "sonnet",
+});
 ```
 
 ```javascript
@@ -499,8 +467,8 @@ Task({
 
 simple-add-devエージェントを使用してコミットしてください。`,
   subagent_type: "simple-add-dev",
-  model: "haiku"
-})
+  model: "haiku",
+});
 ```
 
 ---
@@ -549,8 +517,8 @@ Task({
 - イベントハンドラ
 - スタイリング`,
   subagent_type: "general-purpose",
-  model: "sonnet"
-})
+  model: "sonnet",
+});
 ```
 
 ```javascript
@@ -571,8 +539,8 @@ Task({
 期待する動作:
 {expected_behavior}`,
   subagent_type: "general-purpose",
-  model: "haiku"
-})
+  model: "haiku",
+});
 
 // 完了時: ステータスをcompletedに更新 + TODO.md更新
 TaskUpdate({ taskId: currentTaskId, status: "completed" });
@@ -595,39 +563,44 @@ Task({
 
 simple-add-devエージェントを使用してコミットしてください。`,
   subagent_type: "simple-add-dev",
-  model: "haiku"
-})
+  model: "haiku",
+});
 ```
 
 ---
 
 ## 共通サブエージェント
 
-TDD/E2E/TASKワークフローで共通して使用するサブエージェント：
+TDD/E2Eワークフローで使用するサブエージェント（TASKは直接実行のため不要）：
 
 ### test-runner (haiku)
+
 - **用途**: テスト実行と結果報告
 - **使用場面**: RED/GREEN/REFACTOR/SIMPLIFYの各ステップ
 - **効果**: トークン消費を抑え、高速にテスト結果を取得
 
 ### quality-check (haiku)
+
 - **用途**: lint/format/build実行
-- **使用場面**: TDD/E2E/TASKの品質チェックステップ
+- **使用場面**: TDD/E2Eの品質チェックステップ
 - **効果**: 自動修正と簡潔な報告で効率化
 
 ### test-asset-management (sonnet)
+
 - **用途**: テスト資産の長期価値評価
 - **使用場面**: TDDのMANAGEステップ
 - **効果**: メンテナンスコスト最小化
 
 ### tdd-review (opus)
+
 - **用途**: 過剰適合・抜け道チェック
 - **使用場面**: TDDのREVIEWステップ
 - **効果**: 高品質な実装を保証
 
 ### simple-add-dev (haiku)
+
 - **用途**: Git commit自動化
-- **使用場面**: 全ワークフローのCOMMITステップ
+- **使用場面**: TDD/E2EのCOMMITステップ（TASKは任意）
 - **効果**: 軽量・高速なコミット処理
 
 ---
@@ -640,8 +613,8 @@ TDD/E2E/TASKワークフローで共通して使用するサブエージェン�
 Edit({
   file_path: "docs/features/{feature-slug}/stories/{story-slug}/TODO.md",
   old_string: "- [ ] [TDD][GREEN] validateEmail の実装",
-  new_string: "- [x] [TDD][GREEN] validateEmail の実装"
-})
+  new_string: "- [x] [TDD][GREEN] validateEmail の実装",
+});
 ```
 
 ---
@@ -650,22 +623,22 @@ Edit({
 
 ```javascript
 AskUserQuestion({
-  questions: [{
-    question: "フェーズが完了しました。次のフェーズに進みますか？",
-    header: "フェーズ完了",
-    options: [
-      { label: "承認", description: "次のフェーズに進む" }
-    ],
-    multiSelect: false
-  }]
-})
+  questions: [
+    {
+      question: "フェーズが完了しました。次のフェーズに進みますか？",
+      header: "フェーズ完了",
+      options: [{ label: "承認", description: "次のフェーズに進む" }],
+      multiSelect: false,
+    },
+  ],
+});
 ```
 
 ---
 
 ## 完了条件
 
-- [ ] すべてのTASKタスクが完了（EXEC→VERIFY）
+- [ ] すべてのTASKタスクが完了
 - [ ] すべてのTDDタスクが完了（RED→GREEN→REFACTOR）
 - [ ] すべてのE2Eタスクが完了（IMPL→AUTO）
 - [ ] 全テストが成功

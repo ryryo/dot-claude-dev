@@ -38,13 +38,14 @@ TODO.mdのタスクを実行します。TDD/E2E/TASKラベルに応じて適切�
 
 `dev:developing` スキルによって以下が実行されます：
 
-1. TODO.md の検索と読み込み
-2. 未完了タスクの特定とラベル（TDD/E2E/TASK）確認
-3. ラベルに応じたワークフロー実行
-   - **[TASK]**: EXEC → VERIFY → COMMIT
+1. **Worktree管理**: ブランチ確認、必要に応じてWorktree作成・移動
+2. **TODO.md読み込み**: 未完了タスクの特定とラベル（TDD/E2E/TASK）確認
+3. **タスク登録**: TaskCreateでタスク管理システムに登録（進捗追跡用）
+4. **ラベルに応じたワークフロー実行**
+   - **[TASK]**: 直接実行（シンプル）
    - **[TDD]**: RED → GREEN → REFACTOR → SIMPLIFY → REVIEW → CHECK → MANAGE → COMMIT
    - **[E2E]**: IMPL → AUTO → CHECK → COMMIT
-4. TODO.md の更新（完了タスクにチェックマーク）
+5. **TODO.md更新**: 完了タスクにチェックマーク
 
 詳細なワークフローは、スキルファイルを参照してください。
 
