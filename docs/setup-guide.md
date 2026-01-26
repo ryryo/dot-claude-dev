@@ -74,6 +74,37 @@ readlink .claude/rules/languages
 # 出力例: /Users/yourname/.claude-shared/.claude/rules/languages
 ```
 
+### 4. .gitignoreの設定
+
+**重要**: `.claude/`全体を除外してはいけません。プロジェクト固有の設定がgit管理できなくなります。
+
+以下の内容を`.gitignore`に追加してください：
+
+```gitignore
+# Claude Code - shared configuration (symlinks only)
+.claude/rules/languages
+.claude/rules/workflow
+.claude/skills/dev
+.claude/skills/meta-skill-creator
+.claude/skills/agent-browser
+.claude/commands/dev
+
+# Claude Code - local settings only
+.claude/settings.local.json
+.claude/hooks/
+```
+
+**除外されるもの**:
+
+- 共有設定へのシンボリックリンク（各自が`setup-claude.sh`で作成）
+- ローカル設定ファイル（個人の環境設定）
+
+**git管理されるもの**:
+
+- `.claude/rules/project/` - プロジェクト固有のルール（チーム共有）
+- `.claude/skills/custom/` - プロジェクト固有のスキル（チーム共有）
+- `.claude/commands/custom/` - プロジェクト固有のコマンド（チーム共有）
+
 ## プロジェクト固有の設定
 
 プロジェクト固有の設定が必要な場合、手動で作成します：
@@ -140,43 +171,6 @@ cd /path/to/your-project
 rm -rf .claude/rules/languages .claude/rules/workflow
 rm -rf .claude/skills/dev .claude/skills/meta-skill-creator
 bash ~/.claude-shared/setup-claude.sh
-```
-
-## トラブルシューティング
-
-### シンボリックリンクが機能しない
-
-**症状**: Claude Codeがルールやスキルを認識しない
-
-**原因**: リンク先のパスが間違っている
-
-**解決策**:
-```bash
-readlink .claude/rules/languages
-# 実際のパスを確認して、存在するか確認
-ls -la ~/.claude-shared/.claude/rules/languages
-```
-
-### 環境変数で場所を指定したい
-
-```bash
-# .bashrc または .zshrc に追加
-export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
-
-# セットアップ実行時に参照される
-bash "$CLAUDE_SHARED_DIR/setup-claude.sh"
-```
-
-### プロジェクト固有の設定を誤ってコミットしてしまった
-
-```bash
-# .gitignoreに追加
-echo ".claude/settings.local.json" >> .gitignore
-echo ".claude/hooks/" >> .gitignore
-
-# 履歴から削除
-git rm --cached .claude/settings.local.json
-git commit -m "chore: remove local settings from git"
 ```
 
 ## ベストプラクティス
