@@ -283,7 +283,7 @@ TaskUpdate({ taskId: currentTaskId, status: "completed" });
     → テスト実行して成功を確認
         ↓
 [4/8] コード整理（SIMPLIFY）
-    → code-simplifierエージェント [sonnet]
+    → code-simplifierエージェント [opus]
     → 明瞭性・一貫性・保守性の向上
     → テスト実行して成功を確認
         ↓
@@ -398,7 +398,7 @@ Task({
 
 重要: テストが成功し続けることを確認`,
   subagent_type: "code-simplifier",
-  model: "sonnet",
+  model: "opus",
 });
 ```
 

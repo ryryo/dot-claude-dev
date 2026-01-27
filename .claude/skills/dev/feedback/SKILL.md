@@ -33,11 +33,11 @@ allowed-tools:
 
 ## 出力
 
-| ファイル                                 | 必須   | 内容                                   |
-| ---------------------------------------- | ------ | -------------------------------------- |
-| `docs/features/{feature-slug}/DESIGN.md` | ✅     | 機能固有の設計判断・学習事項           |
-| `docs/features/DESIGN.md`                | ✅     | **プロジェクト全体に影響する設計判断** |
-| スキル/ルール化の提案                    | 該当時 | 繰り返しパターンの抽出                 |
+| ファイル                                       | 必須   | 内容                                                                          |
+| ---------------------------------------------- | ------ | ----------------------------------------------------------------------------- |
+| `docs/features/{feature-slug}/DESIGN.md`       | ✅     | 機能固有の設計判断・学習事項                                                  |
+| `docs/features/DESIGN.md`                      | ✅     | **プロジェクト全体に影響する設計判断**                                        |
+| `docs/features/{feature-slug}/IMPROVEMENTS.md` | 該当時 | 改善提案・スキル/ルール化候補・リファクタリング案（後続エージェント用ガイド） |
 
 ---
 
@@ -46,39 +46,35 @@ allowed-tools:
 ```
 Phase 1: 変更内容の収集
     → agents/analyze-changes.md [sonnet]
-    → 変更ファイル・学習事項を抽出
+    → 変更ファイル・学習事項・改善/リファクタリング候補の素材を抽出
         ↓
 Phase 2a: 機能DESIGN.md更新
-    → agents/update-design.md [opus]
+    → agents/update-design.md [sonnet]
     → docs/features/{feature-slug}/DESIGN.md に追記
         ↓
-Phase 2b: 総合DESIGN.md更新 ★必須★
+Phase 2b: 総合DESIGN.md更新 [sonnet]
     → docs/features/DESIGN.md に重要な設計判断を反映
     → プロジェクト全体に影響する学びを記録
         ↓
-Phase 2c: コード整理（SIMPLIFY）
-    → code-simplifierエージェント [sonnet]
+Phase 2c: 総合DESIGNの整理（SIMPLIFY）
+    → code-simplifierエージェント [opus]
     → 明瞭性・一貫性・保守性の向上
         ↓
-Phase 3: パターン検出
-    → agents/detect-patterns.md [haiku]
-    → 繰り返しパターンを検出
-        ↓
-Phase 4: 改善提案
+Phase 3: 改善提案・リファクタリング計画のドキュメント化
     → agents/propose-improvement.md [opus]
-    → スキル化/ルール化を提案
-    → ユーザー承認後、meta-skill-creatorを呼び出し
+    → スキル化/ルール化候補とリファクタリング候補を1つのMDに整理
+    → 実作業は行わず、後続エージェントが参照できるガイドのみ生成
         ↓
-Phase 5: テスト資産の整理（TDDタスクがあった場合）
+Phase 4: テスト資産の整理（TDDタスクがあった場合）
     → 長期的価値があるテスト → 保持・維持
     → 一時的価値のみ → 簡素化または削除
     → ユーザー確認後に整理を実行
         ↓
-Phase 6: PR作成・Worktreeクリーンアップ
+Phase 5: PR作成・Worktreeクリーンアップ
     → PR作成（gh pr create）
     → マージ後、Worktree削除
         ↓
-Phase 7: 進行中ストーリー一覧の更新
+Phase 6: 進行中ストーリー一覧の更新
     → in-progress-stories.tmp再生成
     → 完了したストーリーを一覧から削除
 ```
@@ -102,6 +98,11 @@ Task({
 3. 設計判断（なぜこの構造にしたか）
 4. 技術的な発見
 5. 注意点・ハマりどころ
+6. 将来の改善・リファクタリング候補になりそうなポイント
+   - 重複している実装や似たような処理
+   - 一時的なワークアラウンド
+   - 複雑で簡素化の余地がある箇所
+7. 共通パターン・抽象化できそうな構造
 
 出力形式: JSON`,
   subagent_type: "general-purpose",
@@ -129,34 +130,12 @@ Task({
 
 フォーマット: references/update-format.md を参照`,
   subagent_type: "general-purpose",
-  model: "opus",
+  model: "sonnet",
 });
 ```
 
 → 詳細: [agents/update-design.md](.claude/skills/dev/feedback/agents/update-design.md)
-→ テンプレート: [references/design-template.md](.claude/skills/dev/feedback/references/design-template.md)
-
-### 更新フォーマット
-
-```markdown
-## 更新履歴
-
-### 2024-01-21: {story-slug}
-
-**設計判断**:
-
-- JWTではなくセッションベース認証を採用（理由: ...）
-- バリデーションはZodを使用
-
-**学んだこと**:
-
-- React Hook Formとの連携でのポイント
-- エラーハンドリングのパターン
-
-**注意点**:
-
-- 〇〇の場合は△△に注意
-```
+→ テンプレートや具体的な記述フォーマットは [references/design-template.md](.claude/skills/dev/feedback/references/design-template.md) を参照
 
 ---
 
@@ -193,47 +172,33 @@ Edit({
 });
 ```
 
-### 総合DESIGN.md更新フォーマット
-
-```markdown
-## 設計判断
-
-### 2024-01-21: {feature-slug} - {概要}
-
-**決定事項**:
-
-- {プロジェクト全体に影響する設計判断}
-
-**理由**:
-
-- {なぜこの決定をしたか}
-
-**影響範囲**:
-
-- {どの機能/コンポーネントに影響するか}
-```
+※ 総合DESIGN.md側の具体的なセクション構成や見出しレベルも、
+必要に応じて [references/design-template.md](.claude/skills/dev/feedback/references/design-template.md) をガイドとして利用する
 
 ---
 
-## Phase 2c: コード整理（SIMPLIFY）
+## Phase 2c: 総合DESIGNの整理（SIMPLIFY）
 
-実装完了後、コードの明瞭性・一貫性・保守性を向上させる。
+Phase 2b で更新した `docs/features/DESIGN.md` に対して、
+**記述の明瞭性・一貫性・保守性** を高めるための整理を行う。
+コードではなく、あくまで「総合DESIGN.mdの内容」を対象とする。
 
 ```javascript
 Task({
-  description: "コード整理",
-  prompt: `今回の実装で変更されたコードを整理してください。
+  description: "総合DESIGN.mdの整理",
+  prompt: `docs/features/DESIGN.md を読み込み、内容を整理してください。
 
-対象: git diff で変更されたファイル
+対象: docs/features/DESIGN.md 全体（特に今回追加・更新した箇所）
 
 観点:
-- 明瞭性: 読みやすさ、意図の伝わりやすさ
-- 一貫性: 命名規則、コードスタイルの統一
-- 保守性: 将来の変更のしやすさ
+- 明瞭性: 用語・文章がわかりやすく、一貫した表現になっているか
+- 一貫性: セクション構成や見出しレベル、フォーマットが統一されているか
+- 保守性: 将来の変更時に迷わないような構造・粒度になっているか
 
 注意:
-- 機能は変更しない
-- テストが成功し続けることを確認`,
+- 設計判断そのものの意味や意図は変えない
+- 情報を削る場合は、重複や冗長な表現に限る
+- 必要であれば「用語の定義」「参照リンク」などの補足を追加してよい`,
   subagent_type: "code-simplifier",
   model: "sonnet",
 });
@@ -241,65 +206,72 @@ Task({
 
 ### 整理対象
 
-| カテゴリ | 確認項目                               |
-| -------- | -------------------------------------- |
-| 命名     | 変数名・関数名が意図を表しているか     |
-| 構造     | 適切な抽象化レベルか                   |
-| コメント | 必要なコメントがあるか（過剰でないか） |
-| 重複     | 不要な重複がないか                     |
-
-### 整理後の確認
-
-```bash
-# テスト実行
-npm test
-
-# lint/format
-npm run lint
-npm run format
-```
+| カテゴリ     | 確認項目                                               |
+| ------------ | ------------------------------------------------------ |
+| 用語・表現   | 同じ概念に同じ用語を使えているか                       |
+| セクション   | 見出し構造が論理的で、ナビゲーションしやすいか         |
+| 冗長さ       | 不要な重複や回りくどい表現が残っていないか             |
+| 将来の追記性 | 後から設計判断を追加しやすいフォーマットになっているか |
 
 ---
 
-## Phase 3: パターン検出
+## Phase 3: 改善提案・リファクタリング計画のドキュメント化
+
+Phase 1〜2cで得た情報（DESIGN更新内容・コード整理の結果・暗黙のパターン）をもとに、
+**改善提案・リファクタリング候補・スキル/ルール化候補**を1つのMarkdownドキュメントにまとめる。
+
+このPhaseでは **実際のスキル作成/ルール追加/リファクタリング作業は行わず**、
+後続エージェントがこのドキュメントだけを見て作業できるようにする。
 
 ```javascript
 Task({
-  description: "パターン検出",
-  prompt: `実装履歴から繰り返しパターンを検出してください。
+  description: "改善・リファクタリング提案ドキュメントの作成",
+  prompt: `以下の情報を入力として、改善提案とリファクタリング計画をMarkdownでまとめてください。
 
-検出対象:
-- 3回以上使用したパターン
-- 同じ構造のコード
-- 共通の設計判断
+入力:
+- Phase 1（変更分析）のJSON出力
+- docs/features/{feature-slug}/DESIGN.md の更新内容
+- docs/features/DESIGN.md に追加された設計判断
+- コード整理（SIMPLIFY）の結果、気づいた改善ポイント
 
-出力形式: JSON（patterns配列）`,
-  subagent_type: "general-purpose",
-  model: "haiku",
-});
-```
+出力先:
+- docs/features/{feature-slug}/IMPROVEMENTS.md
 
-→ 詳細: [agents/detect-patterns.md](.claude/skills/dev/feedback/agents/detect-patterns.md)
+Markdownの構成:
 
----
+# 改善・リファクタリング提案 ({feature-slug}, {story-slug})
 
-## Phase 4: 改善提案
+## 1. スキル化候補
+- {パターン名}
+  - 背景 / 文脈
+  - 適用条件
+  - 期待される効果
+  - 想定されるSKILL.mdの場所（例: .claude/skills/...）
 
-繰り返しパターンを検出し、スキル/ルール化を提案。
+## 2. ルール化候補
+- {ルール名}
+  - 背景 / 文脈
+  - 適用条件
+  - 期待される効果
+  - 想定されるRULE.mdの場所（例: .cursor/rules/...）
 
-```javascript
-Task({
-  description: "改善提案",
-  prompt: `検出されたパターンをスキル/ルール化する提案を生成してください。
+## 3. リファクタリング候補
+- {対象ファイルと概要}
+  - 目的（なぜ変えるのか）
+  - 変更の方針（どのように変えるか）
+  - 想定される影響範囲
+  - 実施時のチェックポイント（テストや確認観点）
 
-提案形式:
-- ルール化候補: .claude/rules/ に保存
-- スキル化候補: .claude/skills/ に保存
+## 4. メモ / 補足
+- その他、後続エージェントが知っておくべき前提・注意点
 
-各提案に以下を含める:
-- パターン名
-- 適用条件
-- 期待される効果`,
+注意:
+- ここではコードや設定ファイルを直接変更しない
+- 実作業は別エージェント（例: dev:developing や meta-skill-creator）に委ねる前提で、
+  「目的・背景・手順・影響範囲」がわかるレベルまで具体的に書く
+- 基本的には Phase 1 で抽出した情報を前提とし、git diff や履歴のフルスキャンは繰り返さない
+- ただし、改善案やリファクタリング案を具体化するために必要な箇所があれば、その部分に限ってコードや履歴を追加で参照してよい
+- 実装コード自体の詳細な再分析ではなく、「どこをどう改善するか」を説明できるレベルまで情報を補うことに留める`,
   subagent_type: "general-purpose",
   model: "opus",
 });
@@ -307,45 +279,6 @@ Task({
 
 → 詳細: [agents/propose-improvement.md](.claude/skills/dev/feedback/agents/propose-improvement.md)
 → パターン基準: [references/improvement-patterns.md](.claude/skills/dev/feedback/references/improvement-patterns.md)
-
-### 提案フォーマット
-
-```markdown
-💡 改善提案を検出しました
-
-1. **ルール化候補**:
-   - Zodバリデーションパターンを3回使用
-     → `.claude/rules/languages/typescript/validation.md` として保存？
-
-2. **スキル化候補**:
-   - 認証フロー実装で同じ手順を実行
-     → `.claude/skills/dev/auth-setup/SKILL.md` として抽出？
-```
-
-### ユーザー確認
-
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "これらのパターンをルール/スキルとして保存しますか？",
-      header: "自己改善",
-      options: [
-        {
-          label: "保存する",
-          description: "meta-skill-creatorでルール/スキルを作成",
-        },
-        { label: "今回はスキップ", description: "保存しない" },
-      ],
-      multiSelect: false,
-    },
-  ],
-});
-```
-
-**「保存する」を選択された場合**:
-
-- meta-skill-creatorを呼び出してスキル/ルールを作成
 
 ---
 
@@ -363,7 +296,7 @@ meta-skill-creatorの機構を活用:
 
 ---
 
-## Phase 5: テスト資産の整理（TDDタスクがあった場合）
+## Phase 4: テスト資産の整理（TDDタスクがあった場合）
 
 実装完了後、テストコードの扱いを決定する。
 
@@ -421,7 +354,7 @@ AskUserQuestion({
 
 ---
 
-## Phase 6: PR作成・Worktreeクリーンアップ
+## Phase 5: PR作成・Worktreeクリーンアップ
 
 ### 6.1 PR作成確認
 
@@ -512,7 +445,7 @@ AskUserQuestion({
 
 ---
 
-## Phase 7: 進行中ストーリー一覧の更新
+## Phase 6: 進行中ストーリー一覧の更新
 
 ### 7.1 in-progress-stories.tmp更新
 
@@ -574,12 +507,11 @@ fi
 - [ ] 機能DESIGN.mdが更新された（Phase 2a）
 - [ ] **総合DESIGN.mdが更新された（Phase 2b）** ★必須★
 - [ ] コード整理が実行された（Phase 2c）
-- [ ] パターン検出が実行された（Phase 3）
-- [ ] 改善提案が表示された（該当あれば）（Phase 4）
-- [ ] テスト資産の整理が実行された（TDDタスクがあった場合）（Phase 5）
-- [ ] PR作成が完了した（または手動作成を選択）（Phase 6）
-- [ ] Worktreeクリーンアップ手順を案内した（Phase 6）
-- [ ] in-progress-stories.tmpが更新された（Phase 7）
+- [ ] 改善・リファクタリング提案MDが作成された（該当あれば）（Phase 3）
+- [ ] テスト資産の整理が実行された（TDDタスクがあった場合）（Phase 4）
+- [ ] PR作成が完了した（または手動作成を選択）（Phase 5）
+- [ ] Worktreeクリーンアップ手順を案内した（Phase 5）
+- [ ] in-progress-stories.tmpが更新された（Phase 6）
 
 ## 関連スキル
 
