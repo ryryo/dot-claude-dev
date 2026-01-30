@@ -1,6 +1,6 @@
 ---
 description: t_wadaのTDDをYAGNIとBaby stepsで実践するためのルール
-paths:
+globs:
   - "**/*"
 ---
 
