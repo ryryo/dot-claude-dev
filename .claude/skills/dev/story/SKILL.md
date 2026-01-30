@@ -58,11 +58,12 @@ allowed-tools:
 ```
 Phase 1: ストーリー理解・slug確定
     → agents/analyze-story.md [opus]
-    → AskUserQuestionでslug確定
+    → AskUserQuestionでslug確定 ※必須
     → 【Write】story-analysis.json 保存
         ↓
 Phase 2: タスク分解
     → agents/decompose-tasks.md [sonnet]
+    → AskUserQuestionで不明点確認（技術選定・方針等） ※必要に応じて
     → 【Write】task-list.json 保存
         ↓
 Phase 3: TDD/E2E/TASK分類
@@ -192,6 +193,38 @@ Task({
 ```
 
 → 詳細: [agents/decompose-tasks.md](.claude/skills/dev/story/agents/decompose-tasks.md)
+
+### 2.2 タスク作成前の確認 【必須】
+
+タスク分解エージェントの結果を保存する前に、タスクを作成するうえで判断が必要な事項をAskUserQuestionで確認する。
+
+**確認すべき事項の例**:
+- 使用するライブラリ・フレームワークの選定
+- アーキテクチャや設計方針
+- スコープの境界（どこまで含めるか）
+- 既存コードとの整合性や制約
+
+```javascript
+AskUserQuestion({
+  questions: [
+    // ストーリー分析から判断が必要な事項を動的に生成
+    // 例:
+    {
+      question: "バリデーションにはどのライブラリを使いますか？",
+      header: "技術選定",
+      options: [
+        { label: "Zod", description: "TypeScriptファーストのスキーマバリデーション" },
+        { label: "Yup", description: "既存プロジェクトで使用中" }
+      ],
+      multiSelect: false
+    }
+  ]
+})
+```
+
+**ポイント**:
+- 確認不要（自明）な場合はスキップしてよい
+- 回答を踏まえてタスク分解を調整する
 
 ### 出力: task-list.json 【必須】
 
