@@ -179,11 +179,12 @@ Task({
   description: "タスク分解",
   prompt: `story-analysis.jsonを読み込み、ストーリーを実装可能なタスクに分解してください。
 
-各タスクには以下を含める:
-- タスク名
-- 説明
-- 入出力（明確な場合）
-- 依存関係
+【必須】タスク分解の前に、対象ファイルをGlob/Read等で探索し、
+現在のコード構造（シグネチャ、型、関連モジュール、既存テスト）を把握すること。
+
+出力のtask-list.jsonには以下を含める:
+- context: 対象ファイルパス、現在のシグネチャ、関連モジュール、既存テスト（必須）
+- tasks: 各タスク（名前、説明、filesフィールド（パスと操作）、入出力、依存関係）
 
 出力形式: JSON
 `,
@@ -230,18 +231,25 @@ AskUserQuestion({
 
 **⚠️ 必ずWriteツールで保存すること**
 
+**⚠️ contextセクション必須**: 後続エージェント（dev:developing）がこのファイルだけで作業開始できるよう、対象ファイルパス・現在のシグネチャ・関連モジュール・既存テスト情報を含めること。
+
 ```javascript
 Write({
   file_path: "docs/features/{feature-slug}/{story-slug}/task-list.json",
   content: JSON.stringify({
+    context: {
+      description: "ストーリーの技術的説明",
+      targetFiles: { "src/path/to/file.ts": "現状と変更内容" },
+      existingTests: { "src/path/to/file.test.ts": "更新要否" },
+      relatedModules: { "storeName": "役割と関係" },
+      currentSignatures: { "functionName": "現在のシグネチャ" }
+    },
     tasks: [
-      { id: 1, name: "タスク名", description: "説明", dependencies: [] }
+      { id: 1, name: "タスク名", description: "何をするかの説明", files: { "src/path/to/file.ts": "new or edit" }, dependencies: [] }
     ]
   }, null, 2)
 })
 ```
-
-**チェックポイント**: ファイルが存在することを確認してから次のPhaseへ進む。
 
 ---
 
