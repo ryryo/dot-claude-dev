@@ -40,8 +40,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## 出力先
 
-`docs/ideation/{YYYYMMDD}-{slug}/` に3ファイルを**順次**保存する。
-- `{YYYYMMDD}`: 実行日（例: `20260202`）
+`docs/ideation/{YYMMDD}-{slug}/` に3ファイルを**順次**保存する。
+- `{YYMMDD}`: 実行日（例: `260202`）
 - `{slug}`: アイデアを表す短い英語スラッグ（例: `ai-code-review`）
 
 ---
@@ -55,11 +55,11 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
    - 「誰のどんな問題を解決しますか？」
 2. アイデアが曖昧な場合は追加質問で具体化
 3. アイデアからスラッグ候補を生成し **AskUserQuestion** で確定
-4. `mkdir -p docs/ideation/{YYYYMMDD}-{slug}`
+4. `mkdir -p docs/ideation/{YYMMDD}-{slug}`
 
 **ゲート**: アイデアの概要が明確で、出力ディレクトリが作成されるまで次に進まない。
 
-以降、`{dir}` = `docs/ideation/{YYYYMMDD}-{slug}` とする。
+以降、`{dir}` = `docs/ideation/{YYMMDD}-{slug}` とする。
 
 ### Step 1: 問題定義 → PROBLEM_DEFINITION.md
 

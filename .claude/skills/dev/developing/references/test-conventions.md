@@ -118,7 +118,7 @@ src/**/*.integration.test.ts  # TypeScript
 ### E2E（エンドツーエンドテスト）
 
 - ユーザー操作フローをテスト
-- agent-browserで視覚的検証
+- agent-browserスキルで視覚的検証
 
 ```
 e2e/                  # 専用ディレクトリ

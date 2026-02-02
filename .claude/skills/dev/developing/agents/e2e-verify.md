@@ -2,7 +2,7 @@
 
 ## 役割
 
-E2EのAUTOフェーズ: MCP agent-browser（Claude in Chrome）で操作フローを検証する。
+E2EのAUTOフェーズ: agent-browserスキル（CLIツール）で操作フローを検証する。
 
 ## 推奨モデル
 
@@ -22,7 +22,7 @@ E2EのAUTOフェーズ: MCP agent-browser（Claude in Chrome）で操作フロ�
 ## プロンプト
 
 ```
-MCP agent-browser（Claude in Chrome）で操作フローを検証してください。
+agent-browserスキルを使って操作フローを検証してください。
 
 ## 検証対象
 - コンポーネント: {component_name}
@@ -30,90 +30,31 @@ MCP agent-browser（Claude in Chrome）で操作フローを検証してくだ�
 
 ## 検証手順
 
-### 1. タブ準備
-```javascript
-// タブ情報取得
-mcp__claude-in-chrome__tabs_context_mcp({ createIfEmpty: true })
+### 1. ページを開く
+agent-browser open http://localhost:3000/{path}
 
-// 新規タブ作成
-mcp__claude-in-chrome__tabs_create_mcp()
-```
+### 2. 初期状態確認
+agent-browser snapshot -i    # インタラクティブ要素一覧取得
+agent-browser screenshot     # スクリーンショット取得
 
-### 2. ページ遷移
-```javascript
-mcp__claude-in-chrome__navigate({
-  url: "http://localhost:3000/{path}",
-  tabId: {tab_id}
-})
-```
+### 3. 要素操作
+# snapshot結果の@refを使用
+agent-browser fill @e1 "test@example.com"   # フォーム入力
+agent-browser click @e2                      # ボタンクリック
+agent-browser wait --load networkidle        # 遷移待機
 
-### 3. 初期状態確認
-```javascript
-// スクリーンショット取得
-mcp__claude-in-chrome__computer({
-  action: "screenshot",
-  tabId: {tab_id}
-})
+### 4. 結果確認
+agent-browser snapshot -i    # 操作後の状態確認
+agent-browser screenshot     # 操作後のスクリーンショット
 
-// ページ構造確認
-mcp__claude-in-chrome__read_page({ tabId: {tab_id} })
-```
+### 5. レスポンシブ検証（必要な場合）
+agent-browser set viewport 375 667     # モバイルサイズ
+agent-browser screenshot
+agent-browser set viewport 768 1024    # タブレットサイズ
+agent-browser screenshot
 
-### 4. 要素検索・操作
-```javascript
-// 要素検索（自然言語）
-mcp__claude-in-chrome__find({
-  query: "メールアドレス入力欄",
-  tabId: {tab_id}
-})
-// → ref_1 が返される
-
-// フォーム入力
-mcp__claude-in-chrome__form_input({
-  ref: "ref_1",
-  value: "test@example.com",
-  tabId: {tab_id}
-})
-
-// ボタンクリック
-mcp__claude-in-chrome__find({
-  query: "ログインボタン",
-  tabId: {tab_id}
-})
-mcp__claude-in-chrome__computer({
-  action: "left_click",
-  ref: "ref_2",
-  tabId: {tab_id}
-})
-```
-
-### 5. 結果確認
-```javascript
-// 状態変化確認
-mcp__claude-in-chrome__read_page({ tabId: {tab_id} })
-
-// スクリーンショット取得
-mcp__claude-in-chrome__computer({
-  action: "screenshot",
-  tabId: {tab_id}
-})
-```
-
-### 6. レスポンシブ検証（必要な場合）
-```javascript
-// モバイルサイズに変更
-mcp__claude-in-chrome__resize_window({
-  width: 375,
-  height: 667,
-  tabId: {tab_id}
-})
-
-// スクリーンショット取得
-mcp__claude-in-chrome__computer({
-  action: "screenshot",
-  tabId: {tab_id}
-})
-```
+### 6. 終了
+agent-browser close
 
 ## 期待する動作
 {expected_behavior}
@@ -132,5 +73,5 @@ mcp__claude-in-chrome__computer({
 ## 注意事項
 
 - 開発サーバーが起動していることを確認
-- 操作は慎重に（クリック位置など）
+- snapshot -i で取得した@refを使って操作する
 - 問題があれば詳細に報告
