@@ -11,6 +11,12 @@
 | **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは6ステップ、E2Eはagent-browser検証付き、TASKはEXEC→VERIFY→COMMIT |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成・Worktreeクリーンアップまで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
+### アイデアワークフロー
+
+| スキル | 用途 |
+|--------|------|
+| **dev:ideation** | プロダクトアイデアをJTBD分析→競合調査→SLC仕様書に構造化。何を作るべきかを明確にする。Triggers: /dev:ideation, アイデア整理, プロダクト企画 |
+
 ### メタスキル
 
 | スキル | 用途 |
@@ -22,6 +28,7 @@
 
 | コマンド | 説明 |
 |----------|------|
+| `/dev:ideation` | アイデアからプロダクト仕様書生成。JTBD分析→競合調査→SLC仕様 |
 | `/dev:story` | ストーリーからタスクリスト生成。dev:storyスキルを起動 |
 | `/dev:developing` | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
 | `/dev:feedback` | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案 |
