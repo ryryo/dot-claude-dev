@@ -10,8 +10,8 @@ PROBLEM_DEFINITION.md と COMPETITOR_ANALYSIS.md を基に、SLCプロダクト�
 
 ## 入力
 
-- `docs/PROBLEM_DEFINITION.md`（必須・Read で取得）
-- `docs/COMPETITOR_ANALYSIS.md`（必須・Read で取得）
+- `{dir}/PROBLEM_DEFINITION.md`（必須・Read で取得、パスは呼び出し元から受け取る）
+- `{dir}/COMPETITOR_ANALYSIS.md`（必須・Read で取得、パスは呼び出し元から受け取る）
 - `references/slc-framework.md`（Read で取得）
 - `references/product-spec-template.md`（Read で取得）
 
@@ -34,11 +34,11 @@ PROBLEM_DEFINITION.md と COMPETITOR_ANALYSIS.md を基に、SLCプロダクト�
 
 ## 出力
 
-`docs/PRODUCT_SPEC.md` を Write で保存（テンプレートは references/product-spec-template.md 参照）
+呼び出し元から指定された `{dir}/PRODUCT_SPEC.md` に Write で保存（テンプレートは references/product-spec-template.md 参照）
 
 ## 完了条件
 
-- PRODUCT_SPEC.md が保存されている
+- `{dir}/PRODUCT_SPEC.md` が保存されている
 - SLCの3条件（Simple, Lovable, Complete）が満たされている
 - コア機能に品質基準が定義されている
 - 除外機能とその理由が記載されている

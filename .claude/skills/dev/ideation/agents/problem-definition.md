@@ -32,7 +32,7 @@
 
 ## 出力
 
-`docs/PROBLEM_DEFINITION.md` を Write で保存:
+呼び出し元から指定された `{dir}/PROBLEM_DEFINITION.md` に Write で保存:
 
 ```markdown
 # 問題定義
@@ -68,6 +68,6 @@
 
 ## 完了条件
 
-- PROBLEM_DEFINITION.md が保存されている
+- `{dir}/PROBLEM_DEFINITION.md` が保存されている
 - JTBDの3層が記載されている
 - ペイン/ゲインに優先度が付いている

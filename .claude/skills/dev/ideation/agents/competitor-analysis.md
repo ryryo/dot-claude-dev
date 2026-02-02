@@ -10,7 +10,7 @@ PROBLEM_DEFINITION.md を基に競合・代替手段を調査し、差別化ポ�
 
 ## 入力
 
-- `docs/PROBLEM_DEFINITION.md`（必須・Read で取得）
+- `{dir}/PROBLEM_DEFINITION.md`（必須・Read で取得、パスは呼び出し元から受け取る）
 
 ## 手順
 
@@ -33,7 +33,7 @@ PROBLEM_DEFINITION.md を基に競合・代替手段を調査し、差別化ポ�
 
 ## 出力
 
-`docs/COMPETITOR_ANALYSIS.md` を Write で保存:
+呼び出し元から指定された `{dir}/COMPETITOR_ANALYSIS.md` に Write で保存:
 
 ```markdown
 # 競合分析
@@ -76,6 +76,6 @@ PROBLEM_DEFINITION.md を基に競合・代替手段を調査し、差別化ポ�
 
 ## 完了条件
 
-- COMPETITOR_ANALYSIS.md が保存されている
+- `{dir}/COMPETITOR_ANALYSIS.md` が保存されている
 - 3つ以上の競合/代替手段が分析されている
 - 差別化機会が1つ以上特定されている
