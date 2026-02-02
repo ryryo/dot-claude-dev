@@ -9,7 +9,7 @@
 ### 共有リポジトリ（このリポジトリ）
 
 ```
-~/.claude-shared/
+~/.dot-claude-dev/
 ├── .claude/
 │   ├── rules/
 │   │   ├── languages/     # 言語別コーディング規約（共通）
@@ -28,15 +28,15 @@
 ```
 your-project/.claude/
 ├── rules/
-│   ├── languages -> ~/.claude-shared/.claude/rules/languages  # リンク
-│   ├── workflow -> ~/.claude-shared/.claude/rules/workflow    # リンク
+│   ├── languages -> ~/.dot-claude-dev/.claude/rules/languages  # リンク
+│   ├── workflow -> ~/.dot-claude-dev/.claude/rules/workflow    # リンク
 │   └── project/                                               # プロジェクト固有（任意）
 ├── skills/
-│   ├── dev -> ~/.claude-shared/.claude/skills/dev             # リンク
+│   ├── dev -> ~/.dot-claude-dev/.claude/skills/dev             # リンク
 │   ├── meta-skill-creator -> ...                              # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
 ├── commands/
-│   ├── dev -> ~/.claude-shared/.claude/commands/dev           # リンク
+│   ├── dev -> ~/.dot-claude-dev/.claude/commands/dev           # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
 ├── settings.local.json                                        # プロジェクト固有
 └── hooks/                                                     # プロジェクト固有
@@ -48,7 +48,7 @@ your-project/.claude/
 
 ```bash
 # デフォルトの場所（推奨）
-git clone <this-repo-url> ~/.claude-shared
+git clone <this-repo-url> ~/.dot-claude-dev
 
 # または任意の場所（環境変数で指定）
 export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
@@ -59,7 +59,7 @@ git clone <this-repo-url> "$CLAUDE_SHARED_DIR"
 
 ```bash
 cd /path/to/your-project
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.dot-claude-dev/setup-claude.sh
 ```
 
 ### 3. 確認
@@ -144,14 +144,14 @@ WSL2ではLinuxのシンボリックリンクが問題なく動作します：
 
 ```bash
 # WSL内で実行
-git clone <this-repo-url> ~/.claude-shared
+git clone <this-repo-url> ~/.dot-claude-dev
 cd /path/to/your-project
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.dot-claude-dev/setup-claude.sh
 ```
 
 ### 注意事項
 
-- **推奨**: WSLファイルシステム内（`~/.claude-shared`）に配置
+- **推奨**: WSLファイルシステム内（`~/.dot-claude-dev`）に配置
 - **可能**: Windowsファイルシステム（`/mnt/c/...`）上でも動作しますが、パフォーマンスに注意
 
 ## 更新
@@ -159,7 +159,7 @@ bash ~/.claude-shared/setup-claude.sh
 ### 共通設定の更新
 
 ```bash
-cd ~/.claude-shared
+cd ~/.dot-claude-dev
 git pull
 # すべてのプロジェクトに自動的に反映される
 ```
@@ -170,14 +170,71 @@ git pull
 cd /path/to/your-project
 rm -rf .claude/rules/languages .claude/rules/workflow
 rm -rf .claude/skills/dev .claude/skills/meta-skill-creator
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.dot-claude-dev/setup-claude.sh
 ```
+
+## リモート環境（Claude Code on the Web）での利用
+
+ウェブ上のClaude Codeではリポジトリがクリーンな状態でクローンされるため、`~/.dot-claude-dev/` が存在せずシンボリックリンクが壊れます。SessionStartフックで自動的にクローン＆リンクを行うことで解決します。
+
+### セットアップ手順
+
+#### 1. スクリプトをプロジェクトにコピー
+
+```bash
+cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
+```
+
+必要に応じて `SHARED_REPO` のURLを変更してください。
+
+#### 2. SessionStartフックを登録
+
+プロジェクトの `.claude/settings.json` に追加:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+#### 3. 動作確認
+
+Claude Code on the Web でセッションを開始し、以下を確認:
+
+```bash
+ls -la ~/.dot-claude-dev/          # クローンされている
+ls -la .claude/rules/languages     # シンボリックリンクが張られている
+```
+
+### 仕組み
+
+- 環境変数 `CLAUDE_CODE_REMOTE=true` でリモート環境を判別（ローカルではスキップ）
+- `git clone --depth 1` で共有リポジトリを `~/.dot-claude-dev/` にクローン
+- 既存の `setup-claude.sh` を実行してシンボリックリンクを作成
+
+### 注意事項
+
+- 共有リポジトリがプライベートの場合、Claude GitHub Appのアクセス権が必要
+- リモート環境は毎セッション使い捨てのため、クローンは毎回実行される
+- クローン失敗時はエラーにせず継続する（共有設定なしでも動作可能）
 
 ## ベストプラクティス
 
 ### 共通設定の変更
 
-1. `~/.claude-shared` で変更を加える
+1. `~/.dot-claude-dev` で変更を加える
 2. テストプロジェクトで動作確認
 3. コミット＆プッシュ
 4. 他のマシンで `git pull`
@@ -194,11 +251,11 @@ bash ~/.claude-shared/setup-claude.sh
 
 ```bash
 # 1. 共有リポジトリをクローン
-git clone <shared-repo> ~/.claude-shared
+git clone <shared-repo> ~/.dot-claude-dev
 
 # 2. プロジェクトで適用
 cd /path/to/team-project
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.dot-claude-dev/setup-claude.sh
 ```
 
 これにより、チーム全体で統一されたルールとワークフローを使用できます。
