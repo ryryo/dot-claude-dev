@@ -18,8 +18,13 @@
 │   │   ├── dev/           # ストーリー駆動開発スキル（共通）
 │   │   ├── meta-skill-creator/
 │   │   └── agent-browser/
-│   └── commands/
-│       └── dev/           # /dev:story, /dev:developing 等（共通）
+│   ├── commands/
+│   │   └── dev/           # /dev:story, /dev:developing 等（共通）
+│   └── hooks/
+│       └── dev/           # 共通フックスクリプト
+│           ├── commit-check.sh
+│           ├── memory-persistence/
+│           └── strategic-compact/
 └── setup-claude.sh        # セットアップスクリプト
 ```
 
@@ -38,8 +43,11 @@ your-project/.claude/
 ├── commands/
 │   ├── dev -> ~/.dot-claude-dev/.claude/commands/dev           # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
-├── settings.local.json                                        # プロジェクト固有
-└── hooks/                                                     # プロジェクト固有
+├── hooks/
+│   ├── dev -> ~/.dot-claude-dev/.claude/hooks                  # リンク
+│   └── project/                                               # プロジェクト固有（任意）
+├── settings.json                                              # プロジェクト固有（フック設定等）
+└── settings.local.json                                        # ローカル設定
 ```
 
 ## インストール手順
@@ -68,6 +76,7 @@ bash ~/.dot-claude-dev/setup-claude.sh
 # シンボリックリンクを確認
 ls -la .claude/rules/
 ls -la .claude/skills/
+ls -la .claude/hooks/
 
 # リンク先を確認
 readlink .claude/rules/languages
@@ -88,10 +97,10 @@ readlink .claude/rules/languages
 .claude/skills/meta-skill-creator
 .claude/skills/agent-browser
 .claude/commands/dev
+.claude/hooks/dev
 
 # Claude Code - local settings only
 .claude/settings.local.json
-.claude/hooks/
 ```
 
 **除外されるもの**:
@@ -104,6 +113,8 @@ readlink .claude/rules/languages
 - `.claude/rules/project/` - プロジェクト固有のルール（チーム共有）
 - `.claude/skills/custom/` - プロジェクト固有のスキル（チーム共有）
 - `.claude/commands/custom/` - プロジェクト固有のコマンド（チーム共有）
+- `.claude/hooks/project/` - プロジェクト固有のフック（チーム共有）
+- `.claude/settings.json` - プロジェクトのフック設定等（チーム共有）
 
 ## プロジェクト固有の設定
 
@@ -125,6 +136,9 @@ EOF
 
 # プロジェクト固有のスキル
 mkdir -p .claude/skills/custom
+
+# プロジェクト固有のフック
+mkdir -p .claude/hooks/project
 
 # コマンド（スキルのショートカット）
 mkdir -p .claude/commands
@@ -170,6 +184,7 @@ git pull
 cd /path/to/your-project
 rm -rf .claude/rules/languages .claude/rules/workflow
 rm -rf .claude/skills/dev .claude/skills/meta-skill-creator
+rm -rf .claude/hooks/dev
 bash ~/.dot-claude-dev/setup-claude.sh
 ```
 
@@ -242,8 +257,10 @@ ls -la .claude/rules/languages     # シンボリックリンクが張られて�
 ### プロジェクト固有設定の管理
 
 - `.claude/settings.local.json`: `.gitignore` に追加（ローカルのみ）
+- `.claude/settings.json`: プロジェクトにコミット（フック設定等）
 - `.claude/rules/project/`: プロジェクトにコミット（チーム共有）
 - `.claude/skills/custom/`: プロジェクトにコミット（チーム共有）
+- `.claude/hooks/project/`: プロジェクトにコミット（チーム共有）
 
 ### チーム開発
 

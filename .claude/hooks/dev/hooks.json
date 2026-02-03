@@ -3,25 +3,25 @@
   "hooks": {
     "SessionStart": [
       {
-        "command": ".claude/hooks/memory-persistence/session-start.sh",
+        "command": ".claude/hooks/dev/memory-persistence/session-start.sh",
         "description": "ストーリーの進捗状況を表示"
       }
     ],
     "PreCompact": [
       {
-        "command": ".claude/hooks/memory-persistence/pre-compact.sh",
+        "command": ".claude/hooks/dev/memory-persistence/pre-compact.sh",
         "description": "TODO.mdのLast Updatedとin-progress-stories.tmpを更新"
       }
     ],
     "Stop": [
       {
-        "command": ".claude/hooks/memory-persistence/session-end.sh",
+        "command": ".claude/hooks/dev/memory-persistence/session-end.sh",
         "description": "セッション終了時にTODO.mdとin-progress-stories.tmpを更新"
       }
     ],
     "PreToolUse": [
       {
-        "command": ".claude/hooks/strategic-compact/suggest-compact.sh",
+        "command": ".claude/hooks/dev/strategic-compact/suggest-compact.sh",
         "description": "ツール呼び出し数に基づいて/compact提案を表示"
       }
     ]

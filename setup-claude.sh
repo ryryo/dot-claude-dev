@@ -44,6 +44,13 @@ if [ -d "$SHARED_DIR/.claude/skills/agent-browser" ]; then
   echo "✓ Linked skills/agent-browser"
 fi
 
+# 共通フックをリンク
+if [ -d "$SHARED_DIR/.claude/hooks/dev" ]; then
+  mkdir -p .claude/hooks
+  ln -sf "$SHARED_DIR/.claude/hooks/dev" .claude/hooks/dev
+  echo "✓ Linked hooks/dev"
+fi
+
 # 共通コマンドをリンク
 if [ -d "$SHARED_DIR/.claude/commands/dev" ]; then
   ln -sf "$SHARED_DIR/.claude/commands/dev" .claude/commands/dev
@@ -67,10 +74,10 @@ echo ".claude/skills/dev"
 echo ".claude/skills/meta-skill-creator"
 echo ".claude/skills/agent-browser"
 echo ".claude/commands/dev"
+echo ".claude/hooks/dev"
 echo ""
 echo "# Claude Code - local settings only"
 echo ".claude/settings.local.json"
-echo ".claude/hooks/"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "❌ DO NOT add '.claude/' (this would ignore project-specific configs)"
