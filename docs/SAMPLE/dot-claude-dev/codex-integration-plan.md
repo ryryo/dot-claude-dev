@@ -227,44 +227,13 @@ Critical issuesがあれば修正を推奨。
 | `dev/feedback/agents/post-impl-review.md` | 新規 | Codex実装後レビューエージェント |
 | `dev/feedback/agents/propose-improvement.md` | 修正 | Codex呼び出しに変更 |
 
-### 4.2 新規ルール（オプション）
-
-`.claude/rules/workflow/codex-delegation.md`:
-
-```markdown
-# Codex Delegation Rule
-
-## いつCodexに相談するか
-
-MUST consult Codex for:
-- 設計判断（どう構造化すべき？）
-- レビュー（過剰適合、抜け道チェック）
-- リファクタリング判断
-- トレードオフ分析
-- 改善提案
-
-## 呼び出し方法
-
-サブエージェント経由で呼び出し、メインコンテキストを保護:
-
-```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
-{question}
-" 2>/dev/null
-```
-
-## 言語プロトコル
-
-1. Codexへは英語で質問
-2. 英語で回答を受け取る
-3. ユーザーには日本語で報告
-```
-
 ---
 
 ## 5. 実装順序
 
 ### Phase 1: 既存エージェントの委譲変更
+
+**参照**: 本計画書「1. 既存エージェントのCodex委譲」セクション
 
 1. [ ] tdd-review.md をCodex呼び出しに変更
 2. [ ] tdd-refactor.md をCodex呼び出しに変更
@@ -273,20 +242,24 @@ codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
 
 ### Phase 2: 計画レビュー追加
 
+**参照**: 本計画書「2. 計画レビュー」セクション
+
 5. [ ] plan-review.md を新規作成
 6. [ ] dev/story/SKILL.md を更新（Step 4追加）
 7. [ ] 動作確認（dev:storyで検証）
 
 ### Phase 3: 実装後レビュー追加
 
+**参照**: 本計画書「3. 実装後レビュー」セクション
+
 8. [ ] post-impl-review.md を新規作成
 9. [ ] dev/feedback/SKILL.md を更新（Phase 0追加）
 10. [ ] 動作確認（dev:feedbackで検証）
 
-### Phase 4: ルール整備（オプション）
+### Phase 4: 仕上げ
 
-11. [ ] codex-delegation.md を新規作成
-12. [ ] ドキュメント整備
+11. [ ] CLAUDE.md にCodex協調の概要を追記
+12. [ ] 動作確認（全ワークフローで検証）
 
 ---
 
@@ -335,7 +308,42 @@ Gemini CLIが利用可能になった場合:
 
 ---
 
+## 8. 設計判断
+
+### 8.1 委譲判断ルールは不要
+
+Claude Code Orchestraでは「いつCodexに相談するか」の動的判断ルール（`codex-delegation.md`）があるが、**私たちのdev/スキルでは不要**。
+
+**理由**: エージェント単位で委譲先が最初から確定しているため。
+
+| エージェント | 委譲先 | 判断タイミング |
+|------------|-------|--------------|
+| tdd-review | Codex | 設計時に確定 |
+| tdd-refactor | Codex | 設計時に確定 |
+| propose-improvement | Codex | 設計時に確定 |
+| plan-review | Codex | 設計時に確定 |
+| post-impl-review | Codex | 設計時に確定 |
+
+### 8.2 必要なのはCodex呼び出し方法のみ
+
+各エージェントの.mdファイル内に直接記載すべき内容：
+
+1. **コマンド形式**: `codex exec --model {model} --sandbox read-only --full-auto "{prompt}"`
+2. **言語プロトコル**: 英語で質問 → 日本語で報告
+
+---
+
 ## 参考
 
-- [Claude Code Orchestra](./claude-code-orchestra/) - マルチエージェント協調テンプレート
-- [Claude Code Orchestra 記事](./Claude%20Code%20Orchestra_%20Claude%20Code%20×%20Codex%20CLI%20×%20Gemini%20CLIの最適解を探る.md)
+- [Claude Code Orchestra 記事](./Claude%20Code%20Orchestra_%20Claude%20Code%20×%20Codex%20CLI%20×%20Gemini%20CLIの最適解を探る.md) - 思想・アーキテクチャの詳細
+- `claude-code-orchestra/` - 実装例（サブモジュール、クラウドでは参照不可の可能性あり）
+
+### Orchestra記事からの主要コンセプト
+
+| コンセプト | 本計画での適用 |
+|-----------|--------------|
+| **サブエージェントパターン** | メインコンテキスト保護のため、Codex呼び出しはサブエージェント経由 |
+| **コンテキスト管理** | 大きな出力はサブエージェントで処理→要約して返却 |
+| **言語プロトコル** | Codexへは英語、ユーザーへは日本語 |
+| **バックグラウンド実行** | `run_in_background: true`で並列作業可能 |
+| **フォールバック** | Codex CLIがない環境ではClaude opusにフォールバック |
