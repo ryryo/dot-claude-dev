@@ -1,14 +1,14 @@
 ---
 name: tdd-review
-description: TDDセルフレビュー。過剰適合・抜け道チェックで実装品質を検証。高度な分析が必要。
-model: opus
-allowed_tools: Read, Grep, Glob
+description: TDDセルフレビュー。Codex CLIを使用した批判的分析で過剰適合・抜け道を検出。
+model: sonnet
+allowed_tools: Read, Grep, Glob, Bash
 ---
 
 # TDD Review Agent
 
-TDD実装のセルフレビューを行う高品質サブエージェント。
-過剰適合（テストに最適化されすぎ）と抜け道（テストをすり抜ける不具合）を検出します。
+TDD実装のセルフレビューを行うサブエージェント。
+**Codex CLI**を使用して、実装バイアスを排除した客観的な批判的分析を実施します。
 
 ## 役割
 
@@ -36,7 +36,7 @@ Task({
 
 過剰適合・抜け道チェックを実施してください。`,
   subagent_type: "tdd-review",
-  model: "opus"
+  model: "sonnet"
 })
 ```
 
@@ -51,77 +51,81 @@ Read({ file_path: "src/validator.ts" })
 Read({ file_path: "src/__tests__/validator.test.ts" })
 ```
 
-### Step 2: 過剰適合チェック
+### Step 2: Codex CLIでレビュー実行
 
-**Question**: この実装、テストケースだけに最適化されていないか？
+**Codex CLI呼び出し**:
 
-#### 検出パターン
+```bash
+codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
+Review this TDD implementation:
 
-**❌ 過剰適合の兆候：**
+## Implementation
+{実装コードの内容}
+
+## Test
+{テストコードの内容}
+
+Analyze:
+1. Over-fitting: Is the implementation only optimized for test cases?
+   - Hardcoded values matching test inputs
+   - Order-dependent logic
+   - Magic numbers from tests
+2. Escape routes: Are there bugs/edge cases that bypass tests?
+   - Unhandled null/undefined
+   - Missing boundary checks
+   - Type mismatches
+3. Code quality: Readability, maintainability, conventions
+
+Provide:
+- PASS or FAIL verdict
+- Specific issues with file:line references
+- Concrete fix recommendations
+" 2>/dev/null
+```
+
+### Step 3: フォールバック処理
+
+Codex CLIが利用不可の場合（環境変数 `USE_CODEX=false` またはコマンドエラー）:
+- 従来のClaude opusベースの分析にフォールバック
+- 以下のチェックリストに基づいて手動分析
+
+### フォールバック時のチェックリスト
+
+#### 過剰適合の兆候
+
+**❌ 過剰適合の例：**
 
 ```typescript
-// 例1: テストの入力値をハードコード
+// テストの入力値をハードコード
 function validateEmail(email: string): boolean {
-  // テストで使われる値だけに対応
   if (email === "user@example.com") return true;
   if (email === "invalid") return false;
   return false;
 }
 ```
 
-```typescript
-// 例2: テストケースの順序に依存
-function processItems(items: string[]): string[] {
-  // テストでは常に ["a", "b", "c"] が来ると想定
-  return [items[0].toUpperCase(), items[1].toUpperCase(), items[2].toUpperCase()];
-}
-```
-
 **✅ 適切な実装：**
 
 ```typescript
-// 汎用的な実装
 function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 ```
 
-```typescript
-// 配列長に依存しない実装
-function processItems(items: string[]): string[] {
-  return items.map(item => item.toUpperCase());
-}
-```
+#### 抜け道の例
 
-### Step 3: 抜け道チェック
-
-**Question**: テストをすり抜ける不具合やエッジケースがないか？
-
-#### 検出パターン
-
-**❌ 抜け道の例：**
+**❌ テストをすり抜ける不具合：**
 
 ```typescript
-// テストされていないエッジケース
 function divide(a: number, b: number): number {
-  return a / b;  // ❌ b = 0 のケースがテストされていない
-}
-```
-
-```typescript
-// 型の不一致
-function getUser(id: string): User {
-  // ❌ id が空文字の場合がテストされていない
-  // ❌ id が数値の場合の型チェックがない
-  return db.findUser(id);
+  return a / b;  // ❌ b = 0 のケースが未処理
 }
 ```
 
 **✅ 適切な実装：**
 
 ```typescript
-// エッジケースを処理
 function divide(a: number, b: number): Result<number> {
   if (b === 0) {
     return { valid: false, error: "Division by zero" };
@@ -130,44 +134,9 @@ function divide(a: number, b: number): Result<number> {
 }
 ```
 
-```typescript
-// 入力検証を追加
-function getUser(id: string): Result<User> {
-  if (!id || id.trim() === "") {
-    return { valid: false, error: "Invalid user ID" };
-  }
-  return db.findUser(id);
-}
-```
+### Step 4: 結果を日本語で報告
 
-### Step 4: コード品質チェック
-
-#### チェック項目
-
-**1. 境界値テスト**
-- [ ] 最小値・最大値
-- [ ] 空配列・空文字列
-- [ ] null・undefined
-
-**2. エラーハンドリング**
-- [ ] 例外が適切に処理されているか
-- [ ] エラーメッセージが明確か
-
-**3. 型安全性**
-- [ ] 型が正しく定義されているか
-- [ ] any型の濫用がないか
-
-**4. 副作用**
-- [ ] 純粋関数になっているか
-- [ ] グローバル状態に依存していないか
-
-**5. 可読性**
-- [ ] 関数名が処理内容を表しているか
-- [ ] マジックナンバーがないか
-
-**6. プロジェクト規約**
-- [ ] コーディング規約に準拠しているか
-- [ ] 命名規則に従っているか
+Codexからの英語レスポンスを日本語に変換してユーザーに報告。
 
 ## 報告形式
 

@@ -90,3 +90,34 @@
 | **TDD** | ロジック、バリデーション、計算 | RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT |
 | **E2E** | UIコンポーネント、レイアウト | IMPL→AUTO→CHECK→COMMIT |
 | **TASK** | 設定、セットアップ、インフラ | EXEC→VERIFY→COMMIT |
+
+## Codex CLI協調
+
+特定のエージェントはCodex CLIを使用して、実装バイアスを排除した客観的な分析を行います。
+
+### Codex使用エージェント
+
+| エージェント | 用途 | タイミング |
+|------------|------|-----------|
+| **plan-review** | タスク分解の品質レビュー | dev:story Step 4 |
+| **tdd-review** | 過剰適合・抜け道検出 | dev:developing TDDフロー |
+| **tdd-refactor** | 設計判断を伴うリファクタリング | dev:developing TDDフロー |
+| **post-impl-review** | 実装後の品質チェック | dev:feedback Phase 0 |
+| **propose-improvement** | トレードオフ分析・改善提案 | dev:feedback Phase 3 |
+
+### Codex呼び出しパターン
+
+```bash
+codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "{prompt}" 2>/dev/null
+```
+
+### 言語プロトコル
+
+- **Codexへの質問**: 英語
+- **ユーザーへの報告**: 日本語
+
+### フォールバック
+
+Codex CLIが利用不可の場合（環境変数 `USE_CODEX=false` またはコマンドエラー）:
+- 従来のClaude opusベースの分析にフォールバック
+- 各エージェントのチェックリストに基づいて手動分析

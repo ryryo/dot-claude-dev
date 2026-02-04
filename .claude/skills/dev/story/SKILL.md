@@ -36,6 +36,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 | 1b | resolve-slug.md | haiku | story-analysis.json + 既存slug一覧 |
 | 2 | decompose-tasks.md | sonnet | story-analysis.jsonのパス |
 | 3 | assign-workflow.md | haiku | task-list.jsonのパス |
+| 4 | plan-review.md | sonnet | TODO.md + story-analysis.json + task-list.json（Codex CLI使用） |
 
 ## 出力先
 
@@ -72,10 +73,20 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 **ゲート**: `TODO.md` が存在しなければ次に進まない。
 
-### Step 4: ユーザー確認
+### Step 4: 計画レビュー（Codex）
+
+1. → **エージェント委譲**（plan-review.md / sonnet）
+   - Codex CLIを使用してTODO.mdのタスク分解をレビュー
+   - タスク粒度、依存関係、ワークフロー分類、漏れ、リスクを検証
+2. レビュー結果をユーザーに提示
+3. 修正が必要なら Step 3 に戻る
+
+**ゲート**: Codexレビューが完了しなければ次に進まない。
+
+### Step 5: ユーザー確認
 
 - **実装開始** → dev:developing を呼び出し
-- **修正が必要** → ユーザー指示に従いTODO.mdを修正 → 再確認
+- **修正が必要** → ユーザー指示に従いTODO.mdを修正 → Step 4から再実行
 
 ---
 
@@ -94,6 +105,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## 参照
 
-- agents/: analyze-story.md, decompose-tasks.md, assign-workflow.md
+- agents/: analyze-story.md, decompose-tasks.md, assign-workflow.md, plan-review.md
 - references/: tdd-criteria.md, e2e-criteria.md, task-criteria.md
 - ルール: `.claude/rules/workflow/workflow-branching.md`（自動適用）
