@@ -10,3 +10,6 @@
 [submodule "docs/SAMPLE/dot-claude-dev/meta-skill-creator"]
 	path = docs/SAMPLE/dot-claude-dev/meta-skill-creator
 	url = https://github.com/daishiman/meta-skill-creator.git
+[submodule "docs/SAMPLE/dot-claude-dev/claude-code-orchestra"]
+	path = docs/SAMPLE/dot-claude-dev/claude-code-orchestra
+	url = https://github.com/DeL-TaiseiOzaki/claude-code-orchestra.git
