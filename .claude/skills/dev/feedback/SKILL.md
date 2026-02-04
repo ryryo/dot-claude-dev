@@ -32,10 +32,11 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 | Phase | agent | model | type | 追加コンテキスト |
 |-------|-------|-------|------|-----------------|
+| 0 | post-impl-review.md | sonnet | general-purpose | git diff, feature-slug（Codex CLI使用） |
 | 1 | analyze-changes.md | sonnet | general-purpose | git diff, feature-slug, story-slug |
 | 2a | update-design.md | sonnet | general-purpose | Phase 1のJSON + feature-slug |
 | 2c | (code-simplifier) | opus | code-simplifier | docs/features/DESIGN.mdのパス |
-| 3 | propose-improvement.md | opus | general-purpose | Phase 1-2の結果 + feature-slug |
+| 3 | propose-improvement.md | sonnet | general-purpose | Phase 1-2の結果 + feature-slug（Codex CLI使用） |
 | 4 | evaluate-tests.md | haiku | general-purpose | テストファイル一覧 |
 
 ## 出力先
@@ -49,6 +50,16 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 ---
 
 ## ★ 実行手順（必ずこの順序で実行）
+
+### Phase 0: 実装後レビュー（Codex）
+
+1. → **エージェント委譲**（post-impl-review.md / sonnet）
+   - Codex CLIを使用して実装バイアスを排除した客観的レビュー
+   - コード品質、バグリスク、エッジケース、セキュリティ、パフォーマンス、テストカバレッジを検証
+2. レビュー結果をユーザーに提示
+3. Critical issuesがあれば修正を推奨（dev:developingに戻る選択肢）
+
+**ゲート**: Codexレビューが完了しなければ次に進まない。
 
 ### Phase 1: 変更内容の収集 → 分析JSON
 
@@ -92,14 +103,15 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 完了条件
 
+- [ ] **実装後レビューが完了した（Phase 0）** ★Codex★
 - [ ] 変更内容が分析された（Phase 1）
 - [ ] 機能DESIGN.mdが更新された（Phase 2a）
 - [ ] **総合DESIGN.mdが更新された（Phase 2b）** ★必須★
 - [ ] 総合DESIGNが整理された（Phase 2c）
-- [ ] 改善提案が作成された（該当時）（Phase 3）
+- [ ] 改善提案が作成された（該当時）（Phase 3）★Codex★
 - [ ] テスト資産が整理された（TDD時）（Phase 4）
 
 ## 参照
 
-- agents/: analyze-changes.md, update-design.md, propose-improvement.md, evaluate-tests.md
+- agents/: post-impl-review.md, analyze-changes.md, update-design.md, propose-improvement.md, evaluate-tests.md
 - references/: design-template.md, update-format.md, improvement-patterns.md
