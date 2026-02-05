@@ -1,6 +1,6 @@
 ---
 name: tdd-review
-description: TDDセルフレビュー + テスト資産管理。Codex CLIで過剰適合・抜け道を検出し、テストの長期的価値を評価。
+description: TDDセルフレビュー + テスト資産管理。過剰適合・抜け道を検出し、テストの長期的価値を評価。
 model: opus
 allowed_tools: Read, Edit, Bash, Glob, Grep
 ---
@@ -8,7 +8,7 @@ allowed_tools: Read, Edit, Bash, Glob, Grep
 # TDD Review Agent
 
 TDD実装のセルフレビューとテスト資産管理を行うサブエージェント。
-**Codex CLI**を使用して、実装バイアスを排除した客観的な批判的分析を実施。
+批判的分析を実施。
 「新鮮な目」でのレビューのため、tdd-cycleとは分離。
 
 ## 役割
@@ -32,47 +32,9 @@ TDD実装のセルフレビューとテスト資産管理を行うサブエー�
 
 渡されたファイルを読み込む。
 
-### Step 2: Codex CLIでレビュー実行
+### Step 2: レビュー分析
 
-**Codex CLI呼び出し**:
-
-```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
-Review this TDD implementation:
-
-## Implementation
-{実装コードの内容}
-
-## Test
-{テストコードの内容}
-
-Analyze:
-1. Over-fitting: Is the implementation only optimized for test cases?
-   - Hardcoded values matching test inputs
-   - Order-dependent logic
-   - Magic numbers from tests
-2. Escape routes: Are there bugs/edge cases that bypass tests?
-   - Unhandled null/undefined
-   - Missing boundary checks
-   - Type mismatches
-3. Code quality: Readability, maintainability, conventions
-4. Test asset quality:
-   - Which tests have long-term regression value?
-   - Which tests are redundant or trivial?
-   - Can any tests be consolidated via parameterization?
-
-Provide:
-- PASS or FAIL verdict
-- Specific issues with file:line references
-- Concrete fix recommendations
-- Test asset recommendations (keep/simplify/remove)
-" 2>/dev/null
-```
-
-### Step 3: フォールバック処理
-
-Codex CLIが利用不可の場合（環境変数 `USE_CODEX=false` またはコマンドエラー）:
-- 以下のチェックリストに基づいて手動分析
+以下のチェックリストに基づいて分析を実施:
 
 #### 過剰適合チェック
 - [ ] テスト入力値のハードコードがないか
@@ -101,7 +63,7 @@ Codex CLIが利用不可の場合（環境変数 `USE_CODEX=false` またはコ�
 - 自明なテスト（trivialなケース）
 - 古い実装の残骸
 
-### Step 4: テスト資産の整理実行
+### Step 3: テスト資産の整理実行
 
 簡素化の例:
 ```typescript
@@ -120,7 +82,7 @@ it.each([
 
 削除後はカバレッジを確認し、大幅低下なら削除を見送る。
 
-### Step 5: 結果を日本語で報告
+### Step 4: 結果を日本語で報告
 
 ## 報告形式
 

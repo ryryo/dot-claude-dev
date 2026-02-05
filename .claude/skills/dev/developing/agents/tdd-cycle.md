@@ -75,27 +75,7 @@ EOF
 
 **機能追加なし。テストが成功し続けることを確認しながら品質改善。**
 
-#### Codex CLIでリファクタリング分析:
-
-```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
-Analyze this code for refactoring:
-
-## Implementation
-{実装コードの内容}
-
-## Test
-{テストコードの内容}
-
-Evaluate: SOLID, Testability, Structure, Simplicity, Naming
-Prioritize: 1.Testability 2.SRP 3.DRY 4.Naming
-Provide specific recommendations with before/after snippets.
-" 2>/dev/null
-```
-
-#### フォールバック（Codex利用不可時）:
-
-チェックリスト:
+#### リファクタリング分析チェックリスト:
 - [ ] 単一責任原則（SRP）: 1関数が1つの責務のみ
 - [ ] 依存性逆転原則（DIP）: 抽象に依存
 - [ ] 重複排除（DRY）
@@ -110,7 +90,7 @@ Provide specific recommendations with before/after snippets.
 - 保守性の向上（変更しやすさ、拡張しやすさ）
 
 手順:
-1. Codex提案に基づきコードを修正（小さなステップで）
+1. チェックリストに基づきコードを修正（小さなステップで）
 2. 各変更後にテスト実行 → 全パス確認
 3. 結果を日本語で報告
 

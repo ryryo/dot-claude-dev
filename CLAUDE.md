@@ -96,8 +96,6 @@
 | エージェント | 用途 | タイミング |
 |------------|------|-----------|
 | **plan-review** | タスク分解の品質レビュー | dev:story Step 4 |
-| **tdd-cycle** | 設計判断を伴うリファクタリング（REFACTORフェーズ） | dev:developing TDDフロー |
-| **tdd-review** | 過剰適合・抜け道検出 + テスト資産管理 | dev:developing TDDフロー |
 | **post-impl-review** | 実装後の品質チェック | dev:feedback Phase 0 |
 | **propose-improvement** | トレードオフ分析・改善提案 | dev:feedback Phase 3 |
 
