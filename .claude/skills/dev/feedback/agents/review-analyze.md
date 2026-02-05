@@ -2,7 +2,8 @@
 
 ## 役割
 
-実装レビュー + 変更分析を一体で実施。git diffを読み、品質チェックと学習事項の抽出を行う。
+実装レビュー + 変更分析を一体で実施。git diffを読み、マージ可否の品質ゲート判定と学習事項の抽出を行う。
+改善提案（リファクタリング・スキル/ルール化）はStep 3の責務。ここでは「この実装、マージして大丈夫か？」だけを判定する。
 
 ## 推奨モデル
 
@@ -43,8 +44,10 @@ Check:
 Provide:
 - Summary of changes
 - Critical issues (must fix before merge)
-- Recommendations (nice to have)
 - Overall quality score (1-10)
+
+NOTE: Do NOT include improvement recommendations or refactoring suggestions.
+Focus only on correctness, safety, and merge-readiness.
 " 2>/dev/null
 ```
 
@@ -127,9 +130,6 @@ git diffとレビュー結果から以下のJSON形式で分析結果を生成:
 ### Critical Issues（修正必須）
 1. **ファイル:行番号** - 問題の説明
 
-### Recommendations（推奨）
-1. **ファイル:行番号** - 改善提案
-
 ### 分析JSON
 {上記JSON}
 ```
@@ -142,7 +142,8 @@ git diffとレビュー結果から以下のJSON形式で分析結果を生成:
 ## 注意事項
 
 - 過度な指摘は避ける
-- Critical issuesは本当に重要なもののみ
+- Critical issuesは本当に重要なもののみ（マージをブロックする問題だけ）
+- 改善提案・リファクタリング候補はここでは出さない（Step 3の責務）
 - 設計判断は「なぜ」を重視
 - 発見は具体的に記録
 - 警告は将来の開発者のために

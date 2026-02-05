@@ -2,7 +2,8 @@
 
 ## 役割
 
-改善提案 + テスト資産管理を一体で実施。パターン検出からルール/スキル化提案、テスト評価までを行う。
+スキル/ルール化候補の検出 + テスト資産管理を実施。繰り返しパターンからスキル化・ルール化を提案する。
+コードの品質・正しさのレビューはStep 1の責務。ここでは「今後の開発を効率化するメタ改善」だけを扱う。
 
 ## 推奨モデル
 
@@ -41,17 +42,19 @@ Analyze this implementation for improvement opportunities:
 ## Existing Skills/Rules
 {既存スキル/ルール一覧}
 
-Evaluate:
-1. Refactoring candidates (cost/benefit, risk assessment)
-2. Skill candidates (repeated patterns, expected efficiency gain)
-3. Rule candidates (conventions to enforce, mistakes to prevent)
-4. Trade-off analysis (time investment vs. long-term benefit)
+Evaluate for meta-improvement opportunities (NOT code review):
+1. Skill candidates (repeated implementation patterns worth automating as Claude Code skills)
+2. Rule candidates (conventions that should be enforced as Claude Code rules)
+3. Trade-off analysis (time investment vs. long-term efficiency gain)
+
+NOTE: Do NOT suggest code refactoring or implementation improvements.
+Focus only on patterns that should become reusable skills or rules.
 
 Provide:
-- Top 3-5 prioritized recommendations
-- Clear rationale for each
-- Implementation steps
-- Risk level (Low/Medium/High)
+- Top 3-5 prioritized skill/rule candidates
+- Clear rationale and occurrence count for each
+- Expected efficiency gain
+- Suggested file path (.claude/skills/ or .claude/rules/)
 " 2>/dev/null
 ```
 
@@ -101,35 +104,28 @@ TDDで作成されたテストを以下の観点で分類:
 ### Step 5: IMPROVEMENTS.md作成
 
 ```markdown
-# 改善・リファクタリング提案 ({feature-slug})
+# スキル/ルール化提案 ({feature-slug})
 
-## 1. リファクタリング候補
-- {対象ファイルと概要}
-  - 目的（なぜ変えるのか）
-  - 変更の方針（どのように変えるか）
-  - 想定される影響範囲
-  - リスクレベル: Low/Medium/High
-
-## 2. スキル化候補
+## 1. スキル化候補
 - {パターン名}（出現回数: {N}回）
   - 出現場所: {ファイル/ストーリー}
   - 背景 / 文脈
   - 期待される効果
   - 保存先: `.claude/skills/{category}/{name}/SKILL.md`
 
-## 3. ルール化候補
+## 2. ルール化候補
 - {ルール名}（出現回数: {N}回）
   - 出現場所: {ファイル/ストーリー}
   - 背景 / 文脈
   - 期待される効果
   - 保存先: `.claude/rules/{category}/{name}.md`
 
-## 4. テスト資産の評価（TDD時のみ）
+## 3. テスト資産の評価（TDD時のみ）
 - 保持推奨: [テスト名一覧と理由]
 - 簡素化候補: [テスト名一覧と理由]
 - 削除候補: [テスト名一覧と理由]
 
-## 5. メモ / 補足
+## 4. メモ / 補足
 - 後続エージェントが知っておくべき前提・注意点
 ```
 

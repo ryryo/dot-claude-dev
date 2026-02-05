@@ -1,7 +1,7 @@
 ---
 name: dev:feedback
 description: |
-  実装完了後、学んだことをDESIGN.mdに蓄積。リファクタリング/スキル・ルールの自己改善も提案。
+  実装完了後、学んだことをDESIGN.mdに蓄積。スキル/ルールの自己改善を提案。
   ストーリー駆動開発の終点。
   「フィードバック」「/dev:feedback」で起動。
 
@@ -49,10 +49,10 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 実行手順（必ずこの順序で実行）
 
-### Step 1: REVIEW（実装レビュー + 変更分析）
+### Step 1: REVIEW（品質ゲート + 変更分析）
 
 1. → **エージェント委譲**（review-analyze.md / sonnet）
-   - Codex CLIで実装バイアスを排除した客観的レビュー
+   - 「この実装、マージして大丈夫か？」の品質ゲート判定
    - 変更内容を分析し、学習事項を抽出 → 分析JSON
 2. レビュー結果をユーザーに提示
 3. Critical issuesがあれば修正を推奨（dev:developingに戻る選択肢）
@@ -78,7 +78,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 **ゲート**: 機能DESIGN.md + 総合DESIGN.md更新完了
 
-### Step 3: IMPROVE（改善提案 + テスト管理）
+### Step 3: IMPROVE（スキル/ルール化検討 + テスト管理）
 
 1. → **エージェント委譲**（propose-manage.md / sonnet）
 2. `docs/features/{feature-slug}/IMPROVEMENTS.md` に保存
@@ -93,7 +93,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 - [ ] 実装レビュー + 変更分析が完了した（Step 1）
 - [ ] 機能DESIGN.mdが更新された（Step 2a）
 - [ ] 総合DESIGN.mdが更新・整理された（Step 2a + 2b）
-- [ ] 改善提案が作成された（Step 3）
+- [ ] スキル/ルール化候補が検討された（Step 3）
 - [ ] テスト資産が整理された（TDD時）（Step 3）
 
 ## 参照
