@@ -2,14 +2,14 @@
 
 ## 概要
 
-このリポジトリは、複数のプロジェクト間で共有するClaude Code設定を提供します。シンボリックリンクを使用することで、共通設定の更新が全プロジェクトに即座に反映されます。
+このリポジトリは、複数のプロジェクト間で共有するClaude Code設定を提供します。シンボリックリンクにより、共通設定の更新が全プロジェクトに即座に反映されます。
 
-## 設定のステップ
+セットアップは2つに分かれます。
 
-セットアップは次の2つに分かれます。
-
-1. **ローカル環境のセットアップ** — 共有リポジトリのクローン、プロジェクトへの適用、.gitignore、プロジェクト固有設定（任意）、WSLの場合の注意（任意）。本文の「インストール手順」〜「WSL環境でのセットアップ」を参照。
-2. **リモート環境のセットアップ** — Claude Code on the Web で利用する場合の追加設定。SessionStartフックで共有リポのクローンとリンクを自動実行する。本文の「リモート環境（Claude Code on the Web）での利用」を参照。
+| 環境 | 内容 | 参照セクション |
+|------|------|---------------|
+| **ローカル** | クローン、リンク作成、.gitignore設定 | 「インストール手順」以降 |
+| **リモート** | SessionStartフックで自動セットアップ | 「リモート環境での利用」 |
 
 ## ディレクトリ構造
 
@@ -80,24 +80,19 @@ bash ~/.dot-claude-dev/setup-claude.sh
 ### 3. 確認
 
 ```bash
-# シンボリックリンクを確認
 ls -la .claude/rules/
 ls -la .claude/skills/
-ls -la .claude/hooks/
-
-# リンク先を確認
 readlink .claude/rules/languages
-# 出力例: /Users/yourname/.claude-shared/.claude/rules/languages
 ```
 
 ### 4. .gitignoreの設定
 
-**重要**: `.claude/`全体を除外してはいけません。プロジェクト固有の設定がgit管理できなくなります。
+**重要**: `.claude/`全体を除外しないでください。プロジェクト固有の設定がgit管理できなくなります。
 
-以下の内容を`.gitignore`に追加してください：
+以下を`.gitignore`に追加します。
 
 ```gitignore
-# Claude Code - shared configuration (symlinks only)
+# Claude Code - shared configuration (symlinks)
 .claude/rules/languages
 .claude/rules/workflow
 .claude/skills/dev
@@ -106,51 +101,30 @@ readlink .claude/rules/languages
 .claude/commands/dev
 .claude/hooks/dev
 
-# Claude Code - local settings only
+# Claude Code - local settings
 .claude/settings.local.json
 ```
 
-**除外されるもの**:
+| 区分 | 対象 | git管理 |
+|------|------|---------|
+| シンボリックリンク | 共有設定（各自が`setup-claude.sh`で作成） | 除外 |
+| ローカル設定 | `settings.local.json` | 除外 |
+| プロジェクト固有 | `rules/project/`, `skills/custom/`, `commands/custom/`, `hooks/project/`, `settings.json` | コミット |
 
-- 共有設定へのシンボリックリンク（各自が`setup-claude.sh`で作成）
-- ローカル設定ファイル（個人の環境設定）
+## プロジェクト固有の設定（任意）
 
-**git管理されるもの**:
-
-- `.claude/rules/project/` - プロジェクト固有のルール（チーム共有）
-- `.claude/skills/custom/` - プロジェクト固有のスキル（チーム共有）
-- `.claude/commands/custom/` - プロジェクト固有のコマンド（チーム共有）
-- `.claude/hooks/project/` - プロジェクト固有のフック（チーム共有）
-- `.claude/settings.json` - プロジェクトのフック設定等（チーム共有）
-
-## プロジェクト固有の設定
-
-プロジェクト固有の設定が必要な場合、手動で作成します：
+必要に応じて以下のディレクトリを作成し、プロジェクト固有の設定を追加します。
 
 ```bash
-# プロジェクト固有のルール
-mkdir -p .claude/rules/project
-cat > .claude/rules/project/api-conventions.md << 'EOF'
-# API Conventions
+mkdir -p .claude/rules/project    # プロジェクト固有ルール
+mkdir -p .claude/skills/custom    # プロジェクト固有スキル
+mkdir -p .claude/hooks/project    # プロジェクト固有フック
+mkdir -p .claude/commands         # コマンド（スキルのショートカット）
+```
 
-## エンドポイント命名
-- RESTful: /api/v1/users/:id
-- GraphQL: /graphql
+ローカル設定の例:
 
-## エラーハンドリング
-...
-EOF
-
-# プロジェクト固有のスキル
-mkdir -p .claude/skills/custom
-
-# プロジェクト固有のフック
-mkdir -p .claude/hooks/project
-
-# コマンド（スキルのショートカット）
-mkdir -p .claude/commands
-
-# ローカル設定
+```bash
 cat > .claude/settings.local.json << 'EOF'
 {
   "model": "sonnet",
@@ -177,102 +151,57 @@ bash ~/.dot-claude-dev/setup-claude.sh
 
 ## 更新
 
-### 共通設定の更新
-
 ```bash
-cd ~/.dot-claude-dev
-git pull
-# すべてのプロジェクトに自動的に反映される
-```
+# 共通設定の更新（全プロジェクトに自動反映）
+cd ~/.dot-claude-dev && git pull
 
-### 個別プロジェクトの再リンク（壊れた場合）
-
-```bash
-cd /path/to/your-project
-rm -rf .claude/rules/languages .claude/rules/workflow
-rm -rf .claude/skills/dev .claude/skills/meta-skill-creator
-rm -rf .claude/hooks/dev
-bash ~/.dot-claude-dev/setup-claude.sh
+# リンクが壊れた場合は再実行
+cd /path/to/your-project && bash ~/.dot-claude-dev/setup-claude.sh
 ```
 
 ## リモート環境（Claude Code on the Web）での利用
 
-ウェブ上のClaude Codeではリポジトリがクリーンな状態でクローンされるため、`~/.dot-claude-dev/` が存在せずシンボリックリンクが壊れます。SessionStartフックで共有リポのクローンとリンクを自動実行すれば解消できます。
+ウェブ上のClaude Codeではセッション毎にクリーンな環境が作られるため、`~/.dot-claude-dev/` が存在しません。SessionStartフックで自動セットアップすることで解消できます。
 
 ### 手順
 
-1. **スクリプトをプロジェクトにコピー**
+1. セットアップスクリプトをプロジェクトにコピーし、必要に応じて `SHARED_REPO` のURLを変更する
    ```bash
    cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
    ```
-   必要に応じて `SHARED_REPO` のURLを変更してください。
 
-2. **`.claude/settings.json` を用意する**（下記「最終形」を参照）
-
-3. **gh も使う場合**  
-   カスタム環境で `GITHUB_TOKEN` を設定し、下記の SessionStart に gh 用フックを追加します。使わない場合はそのフックを書かなくてよいです。
-
-### 最終形の `.claude/settings.json` の例
-
-共有リポのセットアップと、gh 利用（任意）をまとめた例です。gh を使わない場合は、`hooks` 配列から `bun x gh-setup-hooks` のブロックを削除してください。
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
-          },
-          {
-            "type": "command",
-            "command": "bun x gh-setup-hooks",
-            "timeout": 120
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+2. `.claude/settings.json` にSessionStartフックを設定する（ghを使わない場合は該当ブロックを削除）
+   ```json
+   {
+     "hooks": {
+       "SessionStart": [
+         {
+           "matcher": "startup",
+           "hooks": [
+             {
+               "type": "command",
+               "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
+             },
+             {
+               "type": "command",
+               "command": "bun x gh-setup-hooks",
+               "timeout": 120
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
 
 ### 補足
 
-- 共有リポ: 環境変数 `CLAUDE_CODE_REMOTE=true` のときだけ実行され、`~/.dot-claude-dev/` をクローンして `setup-claude.sh` でリンクを作成します。ローカルではスキップされます。
-- 共有リポがプライベートの場合は Claude GitHub App のアクセス権が必要です。リモート環境は毎セッション使い捨てのため、クローンは毎回行われます。
-- gh 利用時は、サンドボックスの制約で `gh` に `-R owner/repo` を渡す必要がある場合があります。
+- スクリプトは `CLAUDE_CODE_REMOTE=true` のときだけ実行され、ローカルではスキップされる
+- プライベートリポジトリの場合はClaude GitHub Appのアクセス権が必要
+- gh利用時はサンドボックスの制約で `-R owner/repo` が必要な場合がある
 
-## ベストプラクティス
+## チーム開発
 
-### 共通設定の変更
+各メンバーが「インストール手順」のステップ1〜4を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
 
-1. `~/.dot-claude-dev` で変更を加える
-2. テストプロジェクトで動作確認
-3. コミット＆プッシュ
-4. 他のマシンで `git pull`
-
-### プロジェクト固有設定の管理
-
-- `.claude/settings.local.json`: `.gitignore` に追加（ローカルのみ）
-- `.claude/settings.json`: プロジェクトにコミット（フック設定等）
-- `.claude/rules/project/`: プロジェクトにコミット（チーム共有）
-- `.claude/skills/custom/`: プロジェクトにコミット（チーム共有）
-- `.claude/hooks/project/`: プロジェクトにコミット（チーム共有）
-
-### チーム開発
-
-各メンバーが以下を実行：
-
-```bash
-# 1. 共有リポジトリをクローン
-git clone <shared-repo> ~/.dot-claude-dev
-
-# 2. プロジェクトで適用
-cd /path/to/team-project
-bash ~/.dot-claude-dev/setup-claude.sh
-```
-
-これにより、チーム全体で統一されたルールとワークフローを使用できます。
+共通設定を変更する場合は `~/.dot-claude-dev` で修正し、テストプロジェクトで確認してからプッシュしてください。
