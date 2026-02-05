@@ -55,7 +55,10 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
    - 「この実装、マージして大丈夫か？」の品質ゲート判定
    - 変更内容を分析し、学習事項を抽出 → 分析JSON
 2. レビュー結果をユーザーに提示
-3. Critical issuesがあれば修正を推奨（dev:developingに戻る選択肢）
+3. Critical issuesがあれば → **AskUserQuestion** で次のアクションを確認:
+   - `/plan-doc` で修正計画書を作成（別スレッドで修正作業）
+   - `/dev:story` で修正タスクリストを生成（別スレッドで修正作業）
+   - そのまま続行（軽微な場合）
 
 **ゲート**: レビュー + 分析JSON完了
 
