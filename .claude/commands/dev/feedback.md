@@ -24,7 +24,7 @@ argument-hint: "[feature-slug/story-slug（任意）]"
 /dev:feedback
 ```
 
-→ 現在のWorktreeから自動推定、または質問
+→ 現在のブランチから自動推定、または質問
 
 ## 実行方法
 

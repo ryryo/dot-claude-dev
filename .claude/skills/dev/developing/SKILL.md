@@ -2,7 +2,6 @@
 name: dev:developing
 description: |
   TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。
-  Worktree内での独立した開発を支援。
 
   Trigger:
   dev:developing, /dev:developing, 実装, 開発, implementing, develop
@@ -74,15 +73,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 実行手順（必ずこの順序で実行）
 
-### Phase 1: Worktree移動 & ブランチチェック
-
-1. 引数が `docs/features/{feature-slug}/stories/{story-slug}` 形式 → `git worktree list` で対応Worktreeを探し移動
-2. 引数なし → `git branch --show-current` でブランチ確認
-3. master/main → **AskUserQuestion** でWorktree作成を確認。作成する場合は `.worktrees/{branch}` に配置
-
-**ゲート**: 作業ディレクトリが確定しなければ次に進まない。
-
-### Phase 2: タスク登録
+### Phase 1: タスク登録
 
 1. TODO.mdを読み込み、未完了タスク（`- [ ]`）を **TaskCreate** で登録
 2. 依存関係があれば **TaskUpdate(addBlockedBy)** で設定
@@ -90,7 +81,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 **ゲート**: タスクが登録されなければ次に進まない。
 
-### Phase 3: タスク実行（ラベル別ワークフロー）
+### Phase 2: タスク実行（ラベル別ワークフロー）
 
 1. **実行順序**: TASKタスクを最初に実行（環境構築が必要なため）
 2. 各タスクのラベルに応じて上記ワークフローを適用

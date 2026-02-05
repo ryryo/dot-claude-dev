@@ -30,7 +30,7 @@ TASKは、テスト不要・UI検証不要のセットアップ/設定/インフ
 
 | カテゴリ | 例 |
 |----------|-----|
-| 環境構築 | npm init, Docker環境構築, Worktree作成 |
+| 環境構築 | npm init, Docker環境構築 |
 | 設定 | ESLint, Prettier, TypeScript, Vite設定 |
 | 依存関係 | npm install, パッケージ追加/更新 |
 | CI/CD | GitHub Actions, デプロイスクリプト |
