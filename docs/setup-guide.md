@@ -4,6 +4,13 @@
 
 このリポジトリは、複数のプロジェクト間で共有するClaude Code設定を提供します。シンボリックリンクを使用することで、共通設定の更新が全プロジェクトに即座に反映されます。
 
+## 設定のステップ
+
+セットアップは次の2つに分かれます。
+
+1. **ローカル環境のセットアップ** — 共有リポジトリのクローン、プロジェクトへの適用、.gitignore、プロジェクト固有設定（任意）、WSLの場合の注意（任意）。本文の「インストール手順」〜「WSL環境でのセットアップ」を参照。
+2. **リモート環境のセットアップ** — Claude Code on the Web で利用する場合の追加設定。SessionStartフックで共有リポのクローンとリンクを自動実行する。本文の「リモート環境（Claude Code on the Web）での利用」を参照。
+
 ## ディレクトリ構造
 
 ### 共有リポジトリ（このリポジトリ）
@@ -190,21 +197,24 @@ bash ~/.dot-claude-dev/setup-claude.sh
 
 ## リモート環境（Claude Code on the Web）での利用
 
-ウェブ上のClaude Codeではリポジトリがクリーンな状態でクローンされるため、`~/.dot-claude-dev/` が存在せずシンボリックリンクが壊れます。SessionStartフックで自動的にクローン＆リンクを行うことで解決します。
+ウェブ上のClaude Codeではリポジトリがクリーンな状態でクローンされるため、`~/.dot-claude-dev/` が存在せずシンボリックリンクが壊れます。SessionStartフックで共有リポのクローンとリンクを自動実行すれば解消できます。
 
-### セットアップ手順
+### 手順
 
-#### 1. スクリプトをプロジェクトにコピー
+1. **スクリプトをプロジェクトにコピー**
+   ```bash
+   cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
+   ```
+   必要に応じて `SHARED_REPO` のURLを変更してください。
 
-```bash
-cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
-```
+2. **`.claude/settings.json` を用意する**（下記「最終形」を参照）
 
-必要に応じて `SHARED_REPO` のURLを変更してください。
+3. **gh も使う場合**  
+   カスタム環境で `GITHUB_TOKEN` を設定し、下記の SessionStart に gh 用フックを追加します。使わない場合はそのフックを書かなくてよいです。
 
-#### 2. SessionStartフックを登録
+### 最終形の `.claude/settings.json` の例
 
-プロジェクトの `.claude/settings.json` に追加:
+共有リポのセットアップと、gh 利用（任意）をまとめた例です。gh を使わない場合は、`hooks` 配列から `bun x gh-setup-hooks` のブロックを削除してください。
 
 ```json
 {
@@ -216,6 +226,11 @@ cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/script
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
+          },
+          {
+            "type": "command",
+            "command": "bun x gh-setup-hooks",
+            "timeout": 120
           }
         ]
       }
@@ -224,26 +239,11 @@ cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/script
 }
 ```
 
-#### 3. 動作確認
+### 補足
 
-Claude Code on the Web でセッションを開始し、以下を確認:
-
-```bash
-ls -la ~/.dot-claude-dev/          # クローンされている
-ls -la .claude/rules/languages     # シンボリックリンクが張られている
-```
-
-### 仕組み
-
-- 環境変数 `CLAUDE_CODE_REMOTE=true` でリモート環境を判別（ローカルではスキップ）
-- `git clone --depth 1` で共有リポジトリを `~/.dot-claude-dev/` にクローン
-- 既存の `setup-claude.sh` を実行してシンボリックリンクを作成
-
-### 注意事項
-
-- 共有リポジトリがプライベートの場合、Claude GitHub Appのアクセス権が必要
-- リモート環境は毎セッション使い捨てのため、クローンは毎回実行される
-- クローン失敗時はエラーにせず継続する（共有設定なしでも動作可能）
+- 共有リポ: 環境変数 `CLAUDE_CODE_REMOTE=true` のときだけ実行され、`~/.dot-claude-dev/` をクローンして `setup-claude.sh` でリンクを作成します。ローカルではスキップされます。
+- 共有リポがプライベートの場合は Claude GitHub App のアクセス権が必要です。リモート環境は毎セッション使い捨てのため、クローンは毎回行われます。
+- gh 利用時は、サンドボックスの制約で `gh` に `-R owner/repo` を渡す必要がある場合があります。
 
 ## ベストプラクティス
 
