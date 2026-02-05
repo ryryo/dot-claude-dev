@@ -8,7 +8,7 @@
 | スキル | 用途 |
 |--------|------|
 | **dev:story** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。Worktree作成も粒度に応じて自動判定。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
-| **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは6ステップ、E2Eはagent-browser検証付き、TASKはEXEC→VERIFY→COMMIT |
+| **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→COMMIT)、E2Eは3ステップ(CYCLE→CHECK→COMMIT)、TASKはEXEC→VERIFY→COMMIT |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成・Worktreeクリーンアップまで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
 ### アイデアワークフロー
@@ -66,8 +66,8 @@
 
 2. dev:developing でタスク実行
    ├── [TASK] EXEC → VERIFY → COMMIT
-   ├── [TDD] RED → GREEN → REFACTOR → REVIEW → CHECK → COMMIT
-   └── [E2E] UI実装 → agent-browser検証 → 品質チェック → COMMIT
+   ├── [TDD] CYCLE(RED→GREEN→REFACTOR) → REVIEW → CHECK → COMMIT
+   └── [E2E] CYCLE(UI実装→agent-browser検証) → CHECK → COMMIT
 
 3. /dev:feedback 実行
    ├── DESIGN.md更新 → パターン検出 → スキル/ルール改善提案
@@ -87,8 +87,8 @@
 
 | カテゴリ | 対象 | ワークフロー |
 |----------|------|--------------|
-| **TDD** | ロジック、バリデーション、計算 | RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT |
-| **E2E** | UIコンポーネント、レイアウト | IMPL→AUTO→CHECK→COMMIT |
+| **TDD** | ロジック、バリデーション、計算 | CYCLE→REVIEW→CHECK→COMMIT |
+| **E2E** | UIコンポーネント、レイアウト | CYCLE→CHECK→COMMIT |
 | **TASK** | 設定、セットアップ、インフラ | EXEC→VERIFY→COMMIT |
 
 ## Codex CLI協調
@@ -100,8 +100,8 @@
 | エージェント | 用途 | タイミング |
 |------------|------|-----------|
 | **plan-review** | タスク分解の品質レビュー | dev:story Step 4 |
-| **tdd-review** | 過剰適合・抜け道検出 | dev:developing TDDフロー |
-| **tdd-refactor** | 設計判断を伴うリファクタリング | dev:developing TDDフロー |
+| **tdd-cycle** | 設計判断を伴うリファクタリング（REFACTORフェーズ） | dev:developing TDDフロー |
+| **tdd-review** | 過剰適合・抜け道検出 + テスト資産管理 | dev:developing TDDフロー |
 | **post-impl-review** | 実装後の品質チェック | dev:feedback Phase 0 |
 | **propose-improvement** | トレードオフ分析・改善提案 | dev:feedback Phase 3 |
 

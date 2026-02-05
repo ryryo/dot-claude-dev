@@ -10,43 +10,35 @@ agent-browser open <url>        # ページを開く
 agent-browser snapshot -i       # インタラクティブ要素一覧（@ref付き）
 agent-browser click @e1         # @refで要素をクリック
 agent-browser fill @e2 "text"   # @refでフォーム入力
+agent-browser screenshot        # スクリーンショット取得
+agent-browser set viewport W H  # ビューポートサイズ変更
 agent-browser close             # ブラウザを閉じる
 ```
 
 ## E2Eフロー
 
 ```
-ステップ1: UI実装
+ステップ1: E2Eサイクル（IMPL→AUTO ループ）
+  e2e-cycleサブエージェント [sonnet] を使用
+
+  Phase 1 - IMPL:
   - コンポーネント構造を作成
   - スタイリング・レスポンシブ対応
+  - アクセシビリティ対応
+
+  Phase 2 - AUTO:
+  - agent-browserスキルで検証
+  - 要素操作（snapshot -i → @refでclick, fill等）
+  - 結果確認（snapshot -i, screenshot）
+  - レスポンシブ検証（375px / 768px / 1024px）
+  問題あり → Phase 1に戻って修正（通常1-3回で収束）
       ↓
-ステップ2: agent-browserスキルで自動検証（ループ）
-  1. agent-browser open → snapshot -i → screenshot
-  2. 要素操作（fill, click等）
-  3. 結果確認（snapshot -i, screenshot）
-  問題あり → ステップ1に戻って修正（通常1-3回で収束）
+ステップ2: 品質チェック（lint/format/build）
+  quality-checkサブエージェント [haiku] を使用
       ↓
-ステップ3: 目視確認（ユーザー任意）
-  ユーザーがlocalhost で直接確認
-      ↓
-ステップ4: 品質チェック（lint/format/build）
-      ↓
-ステップ5: コミット
+ステップ3: コミット
+  simple-add-devサブエージェント [haiku] を使用
 ```
-
-## 主要コマンド
-
-| コマンド | 用途 |
-|--------|------|
-| `agent-browser open <url>` | ページを開く |
-| `agent-browser snapshot -i` | インタラクティブ要素取得（@ref付き） |
-| `agent-browser click @e1` | クリック |
-| `agent-browser fill @e1 "text"` | フォーム入力 |
-| `agent-browser screenshot` | スクリーンショット取得 |
-| `agent-browser set viewport W H` | ビューポートサイズ変更 |
-| `agent-browser wait --load networkidle` | ネットワーク待機 |
-| `agent-browser get text @e1` | テキスト取得 |
-| `agent-browser close` | ブラウザ閉じる |
 
 ## 検証パターン例
 
@@ -78,7 +70,7 @@ agent-browser screenshot
 ## TODO.md でのラベル表記
 
 ```markdown
-- [ ] [E2E][IMPL] LoginForm UIコンポーネント実装
-- [ ] [E2E][AUTO] agent-browserスキルで自動検証
+- [ ] [E2E][CYCLE] LoginForm UI実装 + agent-browser検証
 - [ ] [E2E][CHECK] lint/format/build
+- [ ] [E2E][COMMIT] コミット
 ```

@@ -74,28 +74,21 @@ globs:
 
 ## コミット戦略
 
-1. **テストコミット**: REDフェーズ完了時
-2. **実装コミット**: GREEN + REFACTORフェーズ完了時
+1. **テストコミット**: REDフェーズ完了時（tdd-cycleエージェント内で実行）
+2. **実装コミット**: REVIEW + CHECK後にsimple-add-devで実行
 
-```bash
-# テストコミット
-git add src/**/*.test.ts
-git commit -m "test: add tests for validateEmail"
+## エージェント構成（4ステップ）
 
-# 実装コミット
-git add src/**/validate.ts
-git commit -m "feat: implement validateEmail"
+```
+tdd-cycle(sonnet) → tdd-review(opus) → quality-check(haiku) → simple-add-dev(haiku)
 ```
 
-## テスト実行
-
-```bash
-# 単一テスト
-npm test -- --grep "validateEmail"
-
-# 全テスト
-npm test
-```
+| Step | Agent | 責務 |
+|------|-------|------|
+| 1 CYCLE | tdd-cycle | RED→テストcommit→GREEN→REFACTOR |
+| 2 REVIEW | tdd-review | 過剰適合・抜け道 + テスト資産管理 |
+| 3 CHECK | quality-check | lint/format/build |
+| 4 COMMIT | simple-add-dev | 実装コミット |
 
 ## アンチパターン
 

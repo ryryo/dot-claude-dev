@@ -107,19 +107,18 @@ globs:
 ### TDDタスク
 
 ```markdown
-- [ ] [TDD][RED] {タスク名} のテスト作成
-- [ ] [TDD][GREEN] {タスク名} の実装
-- [ ] [TDD][REFACTOR] {タスク名} のリファクタリング
-- [ ] [TDD][REVIEW] セルフレビュー
+- [ ] [TDD][CYCLE] {タスク名} のテスト作成・実装・リファクタリング
+- [ ] [TDD][REVIEW] セルフレビュー + テスト資産管理
 - [ ] [TDD][CHECK] lint/format/build
+- [ ] [TDD][COMMIT] コミット
 ```
 
 ### E2Eタスク
 
 ```markdown
-- [ ] [E2E][IMPL] {タスク名} 実装
-- [ ] [E2E][AUTO] {タスク名} agent-browser検証
+- [ ] [E2E][CYCLE] {タスク名} UI実装 + agent-browser検証
 - [ ] [E2E][CHECK] lint/format/build
+- [ ] [E2E][COMMIT] コミット
 ```
 
 ### TASKタスク

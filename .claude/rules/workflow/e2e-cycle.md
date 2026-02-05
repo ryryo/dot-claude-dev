@@ -34,15 +34,16 @@ globs:
 
 ### AUTO（agent-browser検証）
 
-MCP版 agent-browser（Claude in Chrome）で検証:
+**agent-browserスキル**（CLIツール）で検証:
 
-```
-1. tabs_context_mcp でタブ情報取得
-2. tabs_create_mcp で新規タブ作成
-3. navigate でURLへ遷移
-4. find で要素検索（自然言語）
-5. computer/form_input で操作実行
-6. read_page で結果確認
+```bash
+agent-browser open <url>              # ページを開く
+agent-browser snapshot -i             # インタラクティブ要素一覧（@ref付き）
+agent-browser click @e1               # @refで要素をクリック
+agent-browser fill @e1 "text"         # @refでフォーム入力
+agent-browser screenshot              # スクリーンショット取得
+agent-browser set viewport W H        # ビューポートサイズ変更
+agent-browser close                   # ブラウザ閉じる
 ```
 
 **検証項目**:
@@ -57,31 +58,25 @@ MCP版 agent-browser（Claude in Chrome）で検証:
 
 ### フォーム検証
 
-```javascript
-// 要素検索
-mcp__claude-in-chrome__find({ query: "メールアドレス入力欄", tabId })
+```bash
+agent-browser open http://localhost:3000/login
+agent-browser snapshot -i
+# → textbox "Email" [ref=e1], textbox "Password" [ref=e2], button "Submit" [ref=e3]
 
-// 入力
-mcp__claude-in-chrome__form_input({ ref: "ref_1", value: "test@example.com", tabId })
-
-// 送信
-mcp__claude-in-chrome__find({ query: "送信ボタン", tabId })
-mcp__claude-in-chrome__computer({ action: "left_click", ref: "ref_2", tabId })
-
-// 結果確認
-mcp__claude-in-chrome__read_page({ tabId })
+agent-browser fill @e1 "user@example.com"
+agent-browser fill @e2 "password123"
+agent-browser click @e3
+agent-browser wait --load networkidle
+agent-browser snapshot -i    # 結果確認
 ```
 
 ### レスポンシブ検証
 
-```javascript
-// モバイルサイズ
-mcp__claude-in-chrome__resize_window({ width: 375, height: 667, tabId })
-mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
-
-// タブレットサイズ
-mcp__claude-in-chrome__resize_window({ width: 768, height: 1024, tabId })
-mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
+```bash
+agent-browser set viewport 375 667      # モバイル
+agent-browser screenshot
+agent-browser set viewport 768 1024     # タブレット
+agent-browser screenshot
 ```
 
 ## アクセシビリティ要件
@@ -93,9 +88,21 @@ mcp__claude-in-chrome__computer({ action: "screenshot", tabId })
 | コントラスト | WCAG 2.1 AA以上 |
 | フォーカス | 視覚的にわかる |
 
+## エージェント構成（3ステップ）
+
+```
+e2e-cycle(sonnet) → quality-check(haiku) → simple-add-dev(haiku)
+```
+
+| Step | Agent | 責務 |
+|------|-------|------|
+| 1 CYCLE | e2e-cycle | UI実装 → agent-browser検証ループ |
+| 2 CHECK | quality-check | lint/format/build |
+| 3 COMMIT | simple-add-dev | コミット |
+
 ## エラー時の対応
 
-1. **検証失敗**: 実装を修正 → 再検証
+1. **検証失敗**: 実装を修正 → 再検証（e2e-cycle内でループ）
 2. **3回失敗**: 問題を報告、ユーザーに確認
 3. **ツールエラー**: 開発サーバー確認、再試行
 

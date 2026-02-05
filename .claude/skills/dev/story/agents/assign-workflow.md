@@ -80,16 +80,15 @@ task-list.jsonを読み込み、各タスクをTDD/E2E/TASKに分類してくだ
 - [ ] [TASK][VERIFY] {タスク名} 検証
 
 ### TDDタスク
-- [ ] [TDD][RED] {タスク名} のテスト作成
-- [ ] [TDD][GREEN] {タスク名} の実装
-- [ ] [TDD][REFACTOR] {タスク名} のリファクタリング
+- [ ] [TDD][CYCLE] {タスク名} のテスト作成・実装・リファクタリング
+- [ ] [TDD][REVIEW] セルフレビュー + テスト資産管理
+- [ ] [TDD][CHECK] lint/format/build
+- [ ] [TDD][COMMIT] コミット
 
 ### E2Eタスク
-- [ ] [E2E][IMPL] {タスク名} 実装
-- [ ] [E2E][AUTO] {タスク名} agent-browser検証
-
-### 共通
-- [ ] [CHECK] lint/format/build
+- [ ] [E2E][CYCLE] {タスク名} UI実装 + agent-browser検証
+- [ ] [E2E][CHECK] lint/format/build
+- [ ] [E2E][COMMIT] コミット
 
 ## フェーズ2: ...
 ```
@@ -100,19 +99,18 @@ task-list.jsonを読み込み、各タスクをTDD/E2E/TASKに分類してくだ
 |--------|------|
 | [TASK][EXEC] | タスク実行（設定/セットアップ） |
 | [TASK][VERIFY] | 検証（ファイル存在/ビルド確認） |
-| [TDD][RED] | テスト作成（失敗するテスト） |
-| [TDD][GREEN] | 実装（テストを通す最小実装） |
-| [TDD][REFACTOR] | リファクタリング |
-| [TDD][REVIEW] | セルフレビュー |
-| [E2E][IMPL] | UI実装 |
-| [E2E][AUTO] | agent-browser自動検証 |
-| [CHECK] | 品質チェック（lint/format/build） |
+| [TDD][CYCLE] | テスト作成・実装・リファクタリング（RED→GREEN→REFACTOR） |
+| [TDD][REVIEW] | セルフレビュー + テスト資産管理 |
+| [TDD][CHECK] | 品質チェック（lint/format/build） |
+| [TDD][COMMIT] | 実装コミット |
+| [E2E][CYCLE] | UI実装 + agent-browser検証ループ |
+| [E2E][CHECK] | 品質チェック（lint/format/build） |
+| [E2E][COMMIT] | コミット |
 ```
 
 ## 注意事項
 
 - TASKタスクは最初に実行（環境構築が必要なため）
 - TASKタスクはEXEC→VERIFYの順序
-- TDDタスクは必ずRED→GREEN→REFACTORの順序
-- E2EタスクはIMPL→AUTOの順序
-- 各フェーズの最後にCHECKを入れる
+- TDDタスクはCYCLE→REVIEW→CHECK→COMMITの順序
+- E2EタスクはCYCLE→CHECK→COMMITの順序
