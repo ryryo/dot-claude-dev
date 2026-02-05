@@ -1,0 +1,148 @@
+# review-analyze
+
+## 役割
+
+実装レビュー + 変更分析を一体で実施。git diffを読み、品質チェックと学習事項の抽出を行う。
+
+## 推奨モデル
+
+**sonnet** - サブエージェントとしてCodex呼び出し
+
+## 入力
+
+- git diff（mainブランチとの差分）
+- feature-slug
+
+## 実行フロー
+
+### Step 1: 差分取得
+
+```bash
+git diff main...HEAD
+git diff main...HEAD --stat
+git log main...HEAD --oneline
+```
+
+### Step 2: Codex CLIで実装レビュー
+
+```bash
+codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
+Review this implementation:
+
+## Changes
+{git diff出力}
+
+Check:
+1. Code quality (clean code, consistent style, appropriate abstraction)
+2. Potential bugs (null/undefined, error boundaries, race conditions)
+3. Missing edge cases (boundary values, empty/invalid inputs)
+4. Security concerns (input validation, auth, sensitive data)
+5. Performance issues (N+1, unnecessary re-renders, memory leaks)
+6. Test coverage gaps (untested paths, missing error cases)
+
+Provide:
+- Summary of changes
+- Critical issues (must fix before merge)
+- Recommendations (nice to have)
+- Overall quality score (1-10)
+" 2>/dev/null
+```
+
+### Step 3: フォールバック（Codex利用不可時）
+
+環境変数 `USE_CODEX=false` またはコマンドエラーの場合、以下のチェックリストで手動レビュー:
+
+- [ ] クリーンコード原則に従っている
+- [ ] 一貫したコーディングスタイル
+- [ ] null/undefined処理
+- [ ] エラー境界のカバレッジ
+- [ ] 境界値・空入力・無効入力
+- [ ] 入力検証、認証/認可、機密データ
+- [ ] N+1クエリ、不要な再レンダリング、メモリリーク
+- [ ] 未テストのパス、欠落しているエラーケース
+
+### Step 4: 変更内容を分析 → JSON出力
+
+git diffとレビュー結果から以下のJSON形式で分析結果を生成:
+
+```json
+{
+  "changedFiles": [
+    { "path": "src/auth/validate.ts", "type": "added", "description": "バリデーション関数を追加" }
+  ],
+  "addedFeatures": ["メールアドレスバリデーション"],
+  "designDecisions": [
+    { "decision": "Zodを使用", "reason": "型安全性と表現力の両立", "alternatives": ["手動", "Yup"] }
+  ],
+  "discoveries": [
+    { "topic": "Zodのエラーメッセージ", "detail": ".message()でカスタムエラーメッセージを設定可能" }
+  ],
+  "warnings": [
+    { "topic": "バリデーション順序", "detail": "長さチェックを先にしないとエラーメッセージが不適切" }
+  ]
+}
+```
+
+抽出項目:
+1. **変更されたファイル**: パス、変更タイプ（added/modified/deleted）、説明
+2. **追加された機能**: 機能名リスト
+3. **設計判断**: 何を、なぜ、代替案
+4. **技術的な発見**: 新しく学んだこと
+5. **注意点・ハマりどころ**: 将来の開発者への警告
+
+### Step 5: 結果を日本語で報告
+
+## 報告形式
+
+### 問題なしの場合
+
+```markdown
+## REVIEW PASSED
+
+### 変更サマリー
+{変更の概要}
+
+### 評価結果
+- コード品質: PASS/NEEDS ATTENTION
+- バグリスク: PASS/NEEDS ATTENTION
+- エッジケース: PASS/NEEDS ATTENTION
+- セキュリティ: PASS/NEEDS ATTENTION
+- パフォーマンス: PASS/NEEDS ATTENTION
+- テストカバレッジ: PASS/NEEDS ATTENTION
+
+### 品質スコア: X/10
+
+### 分析JSON
+{上記JSON}
+```
+
+### 問題ありの場合
+
+```markdown
+## REVIEW NEEDS ATTENTION
+
+### 変更サマリー
+{変更の概要}
+
+### Critical Issues（修正必須）
+1. **ファイル:行番号** - 問題の説明
+
+### Recommendations（推奨）
+1. **ファイル:行番号** - 改善提案
+
+### 分析JSON
+{上記JSON}
+```
+
+## 出力
+
+- レビュー結果（PASS / NEEDS ATTENTION）
+- 分析JSON（changedFiles, addedFeatures, designDecisions, discoveries, warnings）
+
+## 注意事項
+
+- 過度な指摘は避ける
+- Critical issuesは本当に重要なもののみ
+- 設計判断は「なぜ」を重視
+- 発見は具体的に記録
+- 警告は将来の開発者のために
