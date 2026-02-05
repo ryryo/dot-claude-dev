@@ -32,6 +32,16 @@ agentContent = Read(".claude/skills/dev/developing/agents/{agent}.md")
 Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, model: {指定モデル} })
 ```
 
+## エラーハンドリング
+
+エージェントが❌（FAILED）を返した場合:
+1. エラー内容を確認
+2. 修正可能なら前のステップに戻って再実行（例: CHECK失敗 → CYCLE に戻る）
+3. 同じステップが合計3回失敗 → ユーザーに状況を報告し、指示を仰ぐ
+
+**エスカレーション報告形式**:
+「{タスク名}の{ステップ名}が3回失敗しました。{エラー要約}。どう対応しますか？」
+
 ## ワークフロー別ステップ・委譲先
 
 ### TDDワークフロー（[TDD]ラベル）

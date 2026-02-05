@@ -113,6 +113,17 @@ agent-browser screenshot
 Ready for quality check!
 ```
 
+### 失敗時
+
+```markdown
+❌ E2E CYCLE FAILED
+
+問題: {検証で発見された問題}
+試行: {n}回
+スクリーンショット: {失敗時のスクリーンショット情報}
+推奨: {修正方法 / ユーザーへの質問}
+```
+
 ## 注意事項
 
 - アクセシビリティを考慮（aria属性、キーボード操作、コントラスト）

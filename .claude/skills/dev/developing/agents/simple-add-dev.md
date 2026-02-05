@@ -54,6 +54,12 @@ git status
 
 **ポイント**: Step 1の並列実行とStep 2の`&&`連結により、最小限のAPI往復で完了。
 
+### エラー時の対応
+
+- **コミット失敗**（pre-commit hook等）: エラー内容を報告し、呼び出し元に修正を依頼
+- **プッシュ失敗**: エラー内容を報告し、ユーザーに確認
+- **変更なし**: `git status` で変更がなければ、その旨を報告して正常終了
+
 ## コミットメッセージ形式
 
 ```
@@ -109,6 +115,24 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 🎨 style: 可読性向上のためコンポーネント構造を再編成
 🔥 fix: 非推奨のレガシーコードを削除
 💚 fix: 失敗しているCIパイプラインテストを解決
+```
+
+## 報告形式
+
+### 成功時
+
+```markdown
+✅ COMMIT COMPLETE
+- Commit: {hash} {message}
+- Push: {pushed / skipped}
+```
+
+### 失敗時
+
+```markdown
+❌ COMMIT FAILED
+- 原因: {エラー内容}
+- 推奨: {修正方法}
 ```
 
 ## 注意事項
