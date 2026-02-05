@@ -43,8 +43,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 3 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 4 COMMIT | simple-add-dev.md | haiku | simple-add | 実装+テスト整理結果をコミット |
 
-→ 詳細: [references/tdd-flow.md]
-
 ### E2Eワークフロー（[E2E]ラベル）
 
 | Step | agent | model | type | 備考 |
@@ -52,8 +50,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 1 CYCLE | e2e-cycle.md | sonnet | general-purpose | UI実装 → agent-browser検証ループ |
 | 2 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
-
-→ 詳細: [references/e2e-flow.md]
 
 ### TASKワークフロー（[TASK]ラベル）
 
@@ -66,8 +62,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 4. TaskUpdate(completed) + TODO.md更新（- [ ] → - [x]）
 5. /simple-add でコミット
 ```
-
-→ 詳細: [references/task-flow.md]
 
 ---
 
@@ -103,5 +97,4 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 ## 参照
 
 - agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md
-- references/: tdd-flow.md, e2e-flow.md, task-flow.md, test-conventions.md
 - rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md
