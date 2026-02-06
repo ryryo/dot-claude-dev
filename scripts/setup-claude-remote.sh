@@ -75,23 +75,20 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
     # PATHに追加（現在のセッション）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
 
-    # ~/.profile と ~/.bashrc にPATHを永続化（重複チェック付き）
-    OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
-
-    # ~/.profile に追加（ログインシェル用）
-    if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
-      echo "" >> "$HOME/.profile"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
-      echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+    # /usr/local/bin にシンボリックリンクを作成
+    # Note: .profile や .bashrc への PATH 追加は Claude Code の Bash ツールでは効かない。
+    # Bash ツールは親プロセスから PATH を継承し、profile ファイルを再読み込みしないため。
+    # /usr/local/bin は既に PATH に含まれているので、ここにリンクを作れば即座に有効になる。
+    OPENCODE_BIN=""
+    if [ -x "$HOME/.opencode/bin/opencode" ]; then
+      OPENCODE_BIN="$HOME/.opencode/bin/opencode"
+    elif [ -x "$HOME/.local/share/opencode/bin/opencode" ]; then
+      OPENCODE_BIN="$HOME/.local/share/opencode/bin/opencode"
     fi
 
-    # ~/.bashrc に追加（非ログインシェル・新規Bash起動時用）
-    if ! grep -q "\.opencode/bin" "$HOME/.bashrc" 2>/dev/null; then
-      echo "" >> "$HOME/.bashrc"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.bashrc"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.bashrc"
-      echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
+    if [ -n "$OPENCODE_BIN" ] && [ -d /usr/local/bin ]; then
+      ln -sf "$OPENCODE_BIN" /usr/local/bin/opencode
+      echo "[setup-claude-remote] opencode symlinked to /usr/local/bin/opencode"
     fi
 
     if ! command -v opencode &>/dev/null; then
@@ -128,23 +125,17 @@ else
     # PATHに追加（現在のセッション）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
 
-    # ~/.profile と ~/.bashrc にPATHを永続化（重複チェック付き）
-    OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
-
-    # ~/.profile に追加（ログインシェル用）
-    if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
-      echo "" >> "$HOME/.profile"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
-      echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+    # /usr/local/bin にシンボリックリンクを作成
+    OPENCODE_BIN=""
+    if [ -x "$HOME/.opencode/bin/opencode" ]; then
+      OPENCODE_BIN="$HOME/.opencode/bin/opencode"
+    elif [ -x "$HOME/.local/share/opencode/bin/opencode" ]; then
+      OPENCODE_BIN="$HOME/.local/share/opencode/bin/opencode"
     fi
 
-    # ~/.bashrc に追加（非ログインシェル・新規Bash起動時用）
-    if ! grep -q "\.opencode/bin" "$HOME/.bashrc" 2>/dev/null; then
-      echo "" >> "$HOME/.bashrc"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.bashrc"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.bashrc"
-      echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
+    if [ -n "$OPENCODE_BIN" ] && [ -d /usr/local/bin ]; then
+      ln -sf "$OPENCODE_BIN" /usr/local/bin/opencode
+      echo "[setup-claude-remote] opencode symlinked to /usr/local/bin/opencode"
     fi
 
     if command -v opencode &>/dev/null; then
@@ -163,9 +154,7 @@ if command -v opencode &>/dev/null; then
   echo "[setup-claude-remote] Command available: opencode"
 else
   echo "[setup-claude-remote] ⚠ opencode installed but not in current PATH"
-  echo "[setup-claude-remote] PATH added to ~/.profile and ~/.bashrc"
-  echo "[setup-claude-remote] Next Bash command: opencode will be available automatically"
-  echo "[setup-claude-remote] Current workaround: Use 'source ~/.bashrc' or full path"
+  echo "[setup-claude-remote] Try: ln -sf \$HOME/.opencode/bin/opencode /usr/local/bin/opencode"
 fi
 
 exit 0
