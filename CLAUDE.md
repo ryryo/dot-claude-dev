@@ -8,7 +8,7 @@
 | スキル | 用途 |
 |--------|------|
 | **dev:story** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
-| **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは5ステップ(CYCLE→REVIEW→CHECK→COMMIT→SPOT)、E2Eは4ステップ(CYCLE→CHECK→COMMIT→SPOT)、TASKは4ステップ(EXEC→VERIFY→COMMIT→SPOT) |
+| **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。コミットはフック駆動（commit-check.sh）。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは3ステップ(CYCLE→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成まで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
 ### アイデアワークフロー
@@ -61,10 +61,10 @@
 1. /dev:story 実行
    └── ストーリー入力 → TODO.md生成（TDD/E2E/TASKラベル付き）
 
-2. dev:developing でタスク実行
-   ├── [TASK] EXEC → VERIFY → COMMIT → SPOT(+OpenCode)
-   ├── [TDD] CYCLE(RED→GREEN→REFACTOR+OpenCode) → REVIEW(+OpenCode) → CHECK → COMMIT → SPOT(+OpenCode)
-   └── [E2E] CYCLE(UI実装→agent-browser検証) → CHECK → COMMIT → SPOT(+OpenCode)
+2. dev:developing でタスク実行（コミットはフック駆動）
+   ├── [TASK] EXEC → VERIFY → [hook: commit] → SPOT(+OpenCode)
+   ├── [TDD] CYCLE(RED→GREEN→REFACTOR+OpenCode) → [hook: commit] → REVIEW(+OpenCode) → CHECK → [hook: commit] → SPOT(+OpenCode)
+   └── [E2E] CYCLE(UI実装→agent-browser検証) → CHECK → [hook: commit] → SPOT(+OpenCode)
 
 3. /dev:feedback 実行
    ├── DESIGN.md更新 → パターン検出 → スキル/ルール改善提案
@@ -83,9 +83,11 @@
 
 | カテゴリ | 対象 | ワークフロー |
 |----------|------|--------------|
-| **TDD** | ロジック、バリデーション、計算 | CYCLE(+OpenCode)→REVIEW(+OpenCode)→CHECK→COMMIT→SPOT(+OpenCode) |
-| **E2E** | UIコンポーネント、レイアウト | CYCLE→CHECK→COMMIT→SPOT(+OpenCode) |
-| **TASK** | 設定、セットアップ、インフラ | EXEC→VERIFY→COMMIT→SPOT(+OpenCode) |
+| **TDD** | ロジック、バリデーション、計算 | CYCLE(+OpenCode)→REVIEW(+OpenCode)→CHECK→SPOT(+OpenCode) |
+| **E2E** | UIコンポーネント、レイアウト | CYCLE→CHECK→SPOT(+OpenCode) |
+| **TASK** | 設定、セットアップ、インフラ | EXEC→VERIFY→SPOT(+OpenCode) |
+
+※ コミットはフック駆動（commit-check.sh PostToolUseフック）。各Task完了後に自動検出・指示。
 
 ## OpenCode CLI協調
 

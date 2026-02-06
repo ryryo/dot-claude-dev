@@ -88,17 +88,20 @@ agent-browser screenshot
 | コントラスト | WCAG 2.1 AA以上 |
 | フォーカス | 視覚的にわかる |
 
-## エージェント構成（3ステップ）
+## エージェント構成（2ステップ + フック駆動コミット）
 
 ```
-e2e-cycle(sonnet) → quality-check(haiku) → simple-add-dev(haiku)
+e2e-cycle(sonnet) → quality-check(haiku) → [hook: auto-commit] → spot-review(sonnet+OpenCode) → [FAIL時] spot-fix(opus)
 ```
 
 | Step | Agent | 責務 |
 |------|-------|------|
 | 1 CYCLE | e2e-cycle | UI実装 → agent-browser検証ループ |
 | 2 CHECK | quality-check | lint/format/build |
-| 3 COMMIT | simple-add-dev | コミット |
+| 3 SPOT | spot-review | commit後の即時レビュー(+OpenCode)。検出のみ |
+| 3b FIX | spot-fix | SPOT FAIL時: 修正→CHECK→再SPOT（最大3回） |
+
+※ コミットはフック（commit-check.sh）が各Task完了後に自動検出・指示。明示的なCOMMITステップは不要。
 
 ## エラー時の対応
 

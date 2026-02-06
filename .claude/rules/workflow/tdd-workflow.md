@@ -75,12 +75,12 @@ globs:
 ## コミット戦略
 
 1. **テストコミット**: REDフェーズ完了時（tdd-cycleエージェント内で実行）
-2. **実装コミット**: REVIEW + CHECK後にsimple-add-devで実行
+2. **実装コミット**: フック駆動（commit-check.sh PostToolUseフックが各Task完了後に自動検出・指示）
 
-## エージェント構成（6ステップ）
+## エージェント構成（4ステップ + フック駆動コミット）
 
 ```
-tdd-cycle(opus+OpenCode) → tdd-review(sonnet+OpenCode) → quality-check(haiku) → simple-add-dev(haiku) → spot-review(sonnet+OpenCode) → [FAIL時] spot-fix(opus)
+tdd-cycle(opus+OpenCode) → [hook: auto-commit] → tdd-review(sonnet+OpenCode) → quality-check(haiku) → [hook: auto-commit] → spot-review(sonnet+OpenCode) → [FAIL時] spot-fix(opus)
 ```
 
 | Step | Agent | 責務 |
@@ -88,9 +88,10 @@ tdd-cycle(opus+OpenCode) → tdd-review(sonnet+OpenCode) → quality-check(haiku
 | 1 CYCLE | tdd-cycle | RED→テストcommit→GREEN→REFACTOR(+OpenCode) |
 | 2 REVIEW | tdd-review | 過剰適合・抜け道(+OpenCode) + テスト資産管理 |
 | 3 CHECK | quality-check | lint/format/build |
-| 4 COMMIT | simple-add-dev | 実装コミット |
-| 5 SPOT | spot-review | commit後の即時レビュー(+OpenCode)。検出のみ |
-| 5b FIX | spot-fix | SPOT FAIL時: 修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 4 SPOT | spot-review | commit後の即時レビュー(+OpenCode)。検出のみ |
+| 4b FIX | spot-fix | SPOT FAIL時: 修正→CHECK→再SPOT（最大3回） |
+
+※ コミットはフック（commit-check.sh）が各Task完了後に自動検出・指示。明示的なCOMMITステップは不要。
 
 ## アンチパターン
 

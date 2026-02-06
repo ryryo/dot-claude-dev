@@ -18,9 +18,28 @@ allowed-tools:
   - TaskList
   - TaskGet
   - TaskUpdate
+hooks:
+  PostToolUse:
+    - matcher: "Task"
+      hooks:
+        - type: command
+          command: "$CLAUDE_PROJECT_DIR/.claude/hooks/dev/commit-check.sh"
 ---
 
 # 実装（dev:developing）
+
+## コミット戦略（フック駆動）
+
+**コミットはワークフローの明示的ステップではなく、フックが自動的に制御する。**
+
+- 各Taskエージェント完了後、`commit-check.sh`（PostToolUseフック）が未コミット変更を検出
+- 10行以上の変更がある場合、フックがコミットを促すメッセージを返す
+- **フックからコミット指示を受けたら、simple-add-devエージェントをTask呼び出しでコミットしてから次のステップに進む**
+
+```
+agentContent = Read(".claude/skills/dev/developing/agents/simple-add-dev.md")
+Task({ prompt: agentContent, subagent_type: "simple-add", model: "haiku" })
+```
 
 ## エージェント委譲ルール
 
@@ -51,9 +70,10 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 1 CYCLE | tdd-cycle.md | opus | general-purpose | RED→テストcommit→GREEN→REFACTOR(+OpenCode) |
 | 2 REVIEW | tdd-review.md | sonnet | general-purpose | 過剰適合・抜け道(+OpenCode) + テスト資産管理。問題→Step 1へ |
 | 3 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
-| 4 COMMIT | simple-add-dev.md | haiku | simple-add | 実装+テスト整理結果をコミット |
-| 5 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
-| 5b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
+
+※ コミットはフック（commit-check.sh）が各Task完了後に自動検出・指示
 
 ### E2Eワークフロー（[E2E]ラベル）
 
@@ -61,9 +81,10 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 |------|-------|-------|------|------|
 | 1 CYCLE | e2e-cycle.md | sonnet | general-purpose | UI実装 → agent-browser検証ループ |
 | 2 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
-| 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
-| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
-| 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 3 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 3b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
+
+※ コミットはフック（commit-check.sh）が各Task完了後に自動検出・指示
 
 ### TASKワークフロー（[TASK]ラベル）
 
@@ -73,9 +94,10 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 |------|-------|-------|------|------|
 | 1 EXEC | - | - | - | エージェントが直接実行（設定ファイル作成、コマンド実行など） |
 | 2 VERIFY | - | - | - | 検証（ファイル存在確認、ビルド確認など） |
-| 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
-| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
-| 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 3 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 3b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→再SPOT（最大3回） |
+
+※ コミットはフック（commit-check.sh）がEXEC/VERIFY後に自動検出・指示
 
 ---
 
@@ -93,7 +115,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 1. **実行順序**: TASKタスクを最初に実行（環境構築が必要なため）
 2. 各タスクのラベルに応じて上記ワークフローを適用
-3. 各タスク完了時に **TaskUpdate(completed)** + TODO.md更新（`- [ ]` → `- [x]`）
+3. フックがコミットを促したら、simple-add-devでコミット後に次のステップへ進む
+4. 各タスク完了時に **TaskUpdate(completed)** + TODO.md更新（`- [ ]` → `- [x]`）
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
 
@@ -101,9 +124,9 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 完了条件
 
-- [ ] すべてのTASKタスクが完了（EXEC→VERIFY→COMMIT→SPOT）
-- [ ] すべてのTDDタスクが完了（CYCLE→REVIEW→CHECK→COMMIT→SPOT）
-- [ ] すべてのE2Eタスクが完了（CYCLE→CHECK→COMMIT→SPOT）
+- [ ] すべてのTASKタスクが完了（EXEC→VERIFY→SPOT）
+- [ ] すべてのTDDタスクが完了（CYCLE→REVIEW→CHECK→SPOT）
+- [ ] すべてのE2Eタスクが完了（CYCLE→CHECK→SPOT）
 - [ ] 全テストが成功
 - [ ] 品質チェックが通過
 - [ ] spot-reviewがパス（または3回失敗でエスカレーション）
@@ -112,4 +135,5 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 ## 参照
 
 - agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md, spot-review.md, spot-fix.md
+- hooks/: dev/commit-check.sh（PostToolUseフック、各Task完了後にコミット検出）
 - rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md

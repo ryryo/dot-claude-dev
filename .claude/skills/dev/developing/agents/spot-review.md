@@ -162,12 +162,12 @@ loop:
   if spot_count >= 3 → エスカレーション（ユーザーに報告）→ 終了
   spot-fix(opus)       ← 問題リストを渡して修正（コミットしない）
   quality-check(haiku)  ← lint/format/build
-  simple-add-dev(haiku) ← 修正コミット
+  [hook: commit-check.sh → コミット指示 → simple-add-dev]
   goto loop
 ```
 
 - spot-reviewの報告（問題リスト）をspot-fixのプロンプトに追加コンテキストとして渡す
-- spot-fixは修正のみ行い、コミットはsimple-add-devに委譲
+- spot-fixは修正のみ行い、コミットはフック駆動（commit-check.sh PostToolUseフック）
 
 ## 重要なポイント
 
