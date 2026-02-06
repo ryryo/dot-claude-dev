@@ -103,6 +103,18 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
     echo "[setup-claude-remote] opencode already installed: $(opencode -v 2>/dev/null)"
   fi
 
+  # シンボリックリンクを作成（$HOME/.local/bin は常にPATHに含まれる）
+  # これにより、PATH設定に依存せず確実に opencode コマンドが使える
+  if [ -f "$HOME/.opencode/bin/opencode" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
+    echo "[setup-claude-remote] Created symlink: ~/.local/bin/opencode -> ~/.opencode/bin/opencode"
+  elif [ -f "$HOME/.local/share/opencode/bin/opencode" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$HOME/.local/share/opencode/bin/opencode" "$HOME/.local/bin/opencode"
+    echo "[setup-claude-remote] Created symlink: ~/.local/bin/opencode -> ~/.local/share/opencode/bin/opencode"
+  fi
+
   # auth.json を復元（OAuth refresh token を引き継ぐ）
   OPENCODE_DATA_DIR="$HOME/.local/share/opencode"
   mkdir -p "$OPENCODE_DATA_DIR"
@@ -152,6 +164,18 @@ else
     else
       echo "[setup-claude-remote] WARNING: opencode installation may have failed."
     fi
+
+    # シンボリックリンクを作成（$HOME/.local/bin は常にPATHに含まれる）
+    # これにより、PATH設定に依存せず確実に opencode コマンドが使える
+    if [ -f "$HOME/.opencode/bin/opencode" ]; then
+      mkdir -p "$HOME/.local/bin"
+      ln -sf "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
+      echo "[setup-claude-remote] Created symlink: ~/.local/bin/opencode -> ~/.opencode/bin/opencode"
+    elif [ -f "$HOME/.local/share/opencode/bin/opencode" ]; then
+      mkdir -p "$HOME/.local/bin"
+      ln -sf "$HOME/.local/share/opencode/bin/opencode" "$HOME/.local/bin/opencode"
+      echo "[setup-claude-remote] Created symlink: ~/.local/bin/opencode -> ~/.local/share/opencode/bin/opencode"
+    fi
   fi
 fi
 
@@ -159,13 +183,13 @@ fi
 echo ""
 echo "[setup-claude-remote] ✓ Setup completed"
 if command -v opencode &>/dev/null; then
-  echo "[setup-claude-remote] opencode is ready to use"
-  echo "[setup-claude-remote] Command available: opencode"
+  echo "[setup-claude-remote] ✓ opencode is ready to use"
+  echo "[setup-claude-remote] ✓ Command available: opencode"
 else
-  echo "[setup-claude-remote] ⚠ opencode installed but not in current PATH"
-  echo "[setup-claude-remote] PATH added to ~/.profile and ~/.bashrc"
-  echo "[setup-claude-remote] Next Bash command: opencode will be available automatically"
-  echo "[setup-claude-remote] Current workaround: Use 'source ~/.bashrc' or full path"
+  echo "[setup-claude-remote] ⚠ opencode not found in current PATH"
+  echo "[setup-claude-remote] Note: Symlink created at ~/.local/bin/opencode"
+  echo "[setup-claude-remote] Note: PATH settings added to ~/.profile and ~/.bashrc"
+  echo "[setup-claude-remote] Tip: Next Bash command will have opencode available"
 fi
 
 exit 0
