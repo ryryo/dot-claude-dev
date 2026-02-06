@@ -200,6 +200,70 @@ cd /path/to/your-project && bash ~/.dot-claude-dev/setup-claude.sh
 - プライベートリポジトリの場合はClaude GitHub Appのアクセス権が必要
 - gh利用時はサンドボックスの制約で `-R owner/repo` が必要な場合がある
 
+## フック設定
+
+シンボリックリンク作成後、`.claude/settings.json` にフック設定を追加します。SessionStart（リモート環境用）に加え、Stop（コミット促進）とPreToolUse（コンパクト提案）を設定します。
+
+### 推奨設定
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dev/suggest-compact.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dev/commit-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### フック一覧
+
+| イベント | スクリプト | 説明 |
+|----------|-----------|------|
+| **SessionStart** | `setup-claude-remote.sh` | リモート環境で共有リポジトリを自動クローン・リンク |
+| **PreToolUse** | `suggest-compact.sh` | ツール呼び出し50回で `/compact` を提案 |
+| **Stop** | `commit-check.sh` | エージェント停止時に未コミット変更（10行以上）があればコミットを促す |
+
+### フックの動作
+
+**commit-check.sh（Stopフック）**:
+- エージェントが応答を完了するタイミングで発火
+- 未コミットの変更が10行以上ある場合、`exit 2` でエージェントをブロックし `/simple-add` でのコミットを促す
+- `stop_hook_active=true` のとき（コミット作業中）はスキップ（無限ループ防止）
+
+**suggest-compact.sh（PreToolUseフック）**:
+- 全ツール呼び出しでカウントし、50回で初回提案、75回以降25回ごとに再提案
+- コンテキストが長くなった際の `/compact` 実行を促す
+
 ## チーム開発
 
 各メンバーが「インストール手順」のステップ1〜4を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
