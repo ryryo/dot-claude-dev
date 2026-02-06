@@ -72,15 +72,24 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
     echo "[setup-claude-remote] Installing opencode..."
     curl -fsSL https://opencode.ai/install | bash 2>/dev/null
 
-    # PATHに追加（インストーラのデフォルトパス）
+    # PATHに追加（現在のセッション）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
+
+    # ~/.profile にPATHを永続化（重複チェック付き）
+    # Note: ~/.bashrc は非インタラクティブシェルでは早期リターンするため、
+    # ~/.profile を使用してログイン時に確実に読み込まれるようにする
+    OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
+    if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
+      echo "" >> "$HOME/.profile"
+      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
+      echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
+      echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+    fi
 
     if ! command -v opencode &>/dev/null; then
       echo "[setup-claude-remote] WARNING: opencode installation failed."
     else
       echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
-      echo "[setup-claude-remote] Note: opencode PATH has been added to ~/.bashrc"
-      echo "[setup-claude-remote] To use opencode in current session, run: source ~/.bashrc"
     fi
   else
     echo "[setup-claude-remote] opencode already installed: $(opencode -v 2>/dev/null)"
@@ -107,12 +116,23 @@ else
   if ! command -v opencode &>/dev/null; then
     echo "[setup-claude-remote] Installing opencode (free models only)..."
     curl -fsSL https://opencode.ai/install | bash 2>/dev/null
+
+    # PATHに追加（現在のセッション）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
+
+    # ~/.profile にPATHを永続化（重複チェック付き）
+    # Note: ~/.bashrc は非インタラクティブシェルでは早期リターンするため、
+    # ~/.profile を使用してログイン時に確実に読み込まれるようにする
+    OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
+    if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
+      echo "" >> "$HOME/.profile"
+      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
+      echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
+      echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+    fi
 
     if command -v opencode &>/dev/null; then
       echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
-      echo "[setup-claude-remote] Note: opencode PATH has been added to ~/.bashrc"
-      echo "[setup-claude-remote] To use opencode in current session, run: source ~/.bashrc"
     else
       echo "[setup-claude-remote] WARNING: opencode installation may have failed."
     fi
@@ -124,9 +144,11 @@ echo ""
 echo "[setup-claude-remote] ✓ Setup completed"
 if command -v opencode &>/dev/null; then
   echo "[setup-claude-remote] opencode is ready to use"
+  echo "[setup-claude-remote] Command available: opencode"
 else
-  echo "[setup-claude-remote] ⚠ opencode command not found in current session"
-  echo "[setup-claude-remote] Run 'source ~/.bashrc' or start a new shell to use opencode"
+  echo "[setup-claude-remote] ⚠ opencode installed but not in current PATH"
+  echo "[setup-claude-remote] Next session: opencode will be available (added to ~/.profile)"
+  echo "[setup-claude-remote] Current session: Use full path - /root/.opencode/bin/opencode"
 fi
 
 exit 0
