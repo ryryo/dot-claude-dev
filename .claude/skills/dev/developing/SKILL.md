@@ -48,11 +48,12 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 | Step | agent | model | type | 備考 |
 |------|-------|-------|------|------|
-| 1 CYCLE | tdd-cycle.md | sonnet | general-purpose | RED→テストcommit→GREEN→REFACTOR(+OpenCode) |
-| 2 REVIEW | tdd-review.md | opus | general-purpose | 過剰適合・抜け道(+OpenCode) + テスト資産管理。問題→Step 1へ |
+| 1 CYCLE | tdd-cycle.md | opus | general-purpose | RED→テストcommit→GREEN→REFACTOR(+OpenCode) |
+| 2 REVIEW | tdd-review.md | sonnet | general-purpose | 過剰適合・抜け道(+OpenCode) + テスト資産管理。問題→Step 1へ |
 | 3 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 4 COMMIT | simple-add-dev.md | haiku | simple-add | 実装+テスト整理結果をコミット |
-| 5 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)。問題→修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 5 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 5b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ### E2Eワークフロー（[E2E]ラベル）
 
@@ -61,18 +62,20 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 1 CYCLE | e2e-cycle.md | sonnet | general-purpose | UI実装 → agent-browser検証ループ |
 | 2 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
-| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)。問題→修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ### TASKワークフロー（[TASK]ラベル）
 
-**SPOT以外はサブエージェント呼び出しなし。エージェントが直接実行。**
+**SPOT/FIX以外はサブエージェント呼び出しなし。エージェントが直接実行。**
 
 | Step | agent | model | type | 備考 |
 |------|-------|-------|------|------|
 | 1 EXEC | - | - | - | エージェントが直接実行（設定ファイル作成、コマンド実行など） |
 | 2 VERIFY | - | - | - | 検証（ファイル存在確認、ビルド確認など） |
 | 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
-| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)。問題→修正→CHECK→COMMIT→再SPOT（最大3回） |
+| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ---
 
@@ -108,5 +111,5 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 参照
 
-- agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md, spot-review.md
+- agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md, spot-review.md, spot-fix.md
 - rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md

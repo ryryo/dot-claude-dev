@@ -77,18 +77,20 @@ globs:
 1. **テストコミット**: REDフェーズ完了時（tdd-cycleエージェント内で実行）
 2. **実装コミット**: REVIEW + CHECK後にsimple-add-devで実行
 
-## エージェント構成（4ステップ）
+## エージェント構成（6ステップ）
 
 ```
-tdd-cycle(sonnet) → tdd-review(opus) → quality-check(haiku) → simple-add-dev(haiku)
+tdd-cycle(opus+OpenCode) → tdd-review(sonnet+OpenCode) → quality-check(haiku) → simple-add-dev(haiku) → spot-review(sonnet+OpenCode) → [FAIL時] spot-fix(opus)
 ```
 
 | Step | Agent | 責務 |
 |------|-------|------|
-| 1 CYCLE | tdd-cycle | RED→テストcommit→GREEN→REFACTOR |
-| 2 REVIEW | tdd-review | 過剰適合・抜け道 + テスト資産管理 |
+| 1 CYCLE | tdd-cycle | RED→テストcommit→GREEN→REFACTOR(+OpenCode) |
+| 2 REVIEW | tdd-review | 過剰適合・抜け道(+OpenCode) + テスト資産管理 |
 | 3 CHECK | quality-check | lint/format/build |
 | 4 COMMIT | simple-add-dev | 実装コミット |
+| 5 SPOT | spot-review | commit後の即時レビュー(+OpenCode)。検出のみ |
+| 5b FIX | spot-fix | SPOT FAIL時: 修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ## アンチパターン
 

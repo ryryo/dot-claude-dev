@@ -1,7 +1,7 @@
 ---
 name: tdd-cycle
-description: TDDコアサイクル（RED→GREEN→REFACTOR）を1エージェントで実行。コンテキストを維持し設計意図の断絶を防止。
-model: sonnet
+description: TDDコアサイクル（RED→GREEN→REFACTOR）を1エージェントで実行。REFACTORフェーズでOpenCode CLI（gpt-5.3-codex）による客観的分析を実施。
+model: opus
 allowed_tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 

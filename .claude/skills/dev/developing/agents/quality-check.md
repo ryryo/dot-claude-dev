@@ -179,9 +179,8 @@ Manual fixes needed. See details above.
 
 | ワークフロー | タイミング |
 |------------|-----------|
-| **TDD** | [6/8] CHECK - コミット前の最終確認 |
-| **E2E** | [3/4] CHECK - UI実装後の品質確認 |
-| **TASK** | [2/3] VERIFY - 設定ファイル検証の一部 |
+| **TDD** | Step 3 CHECK - コミット前の最終確認 |
+| **E2E** | Step 2 CHECK - UI実装後の品質確認 |
 
 ## 注意事項
 

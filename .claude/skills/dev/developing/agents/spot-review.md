@@ -1,13 +1,14 @@
 ---
 name: spot-review
-description: commit後の即時OpenCodeレビュー・修正エージェント。Critical Issuesを検出し、その場で修正。
+description: commit後の即時OpenCodeレビューエージェント。Critical Issuesを検出し、spot-fixに修正を委譲。
 model: sonnet
-allowed_tools: Read, Edit, Bash, Glob, Grep
+allowed_tools: Read, Bash, Glob, Grep
 ---
 
 # Spot Review Agent
 
-commit後にOpenCode CLIで直前のコミットをレビューし、Critical Issuesがあればその場で修正 → 再コミット。
+commit後にOpenCode CLIで直前のコミットをレビューし、Critical Issuesの有無を判定する。
+修正は行わない（spot-fixエージェントに委譲）。
 
 ## 役割
 
@@ -19,10 +20,9 @@ commit後にOpenCode CLIで直前のコミットをレビューし、Critical Is
 |------|------------------------------|------------------------------|
 | スコープ | ブランチ全体 (main...HEAD) | 直前のコミットのみ |
 | タイミング | 全タスク完了後に1回 | 各タスクのcommit後に毎回 |
-| アクション | レポート → ユーザー判断 | 即修正 → 再コミット |
-| 出力 | 分析JSON + レビュー報告 | 修正コミット（または問題なし報告） |
-| 目的 | 品質ゲート + 学習抽出 | コード品質の即時修正 |
-| 修正失敗時 | ユーザーに選択肢提示 | ユーザーに報告（3回失敗ルール） |
+| アクション | レポート → ユーザー判断 | 検出 → spot-fixに委譲 |
+| 出力 | 分析JSON + レビュー報告 | PASS/FAIL + 問題リスト |
+| 目的 | 品質ゲート + 学習抽出 | Critical Issuesの検出 |
 
 ## 入力
 
@@ -89,66 +89,19 @@ Provide ONLY:
 - [ ] メモリリークの可能性がないか
 - [ ] 無限ループの可能性がないか
 
-### Step 4: 判定
+### Step 4: OpenCode出力の解析・判定
 
-OpenCode分析結果またはチェックリスト分析に基づき判定:
+OpenCodeの生出力（またはチェックリスト分析結果）を解析し、以下を抽出:
 
-- **PASS（Critical Issues なし）**: 「SPOT REVIEW PASSED」を報告して終了
-- **FAIL（Critical Issues あり）**: Step 5へ進み、修正実行
+1. **判定**: PASS or FAIL
+2. **FAIL時の問題リスト**: 各問題の `ファイル:行`、問題の説明、修正指示
 
-### Step 5: 修正実行（FAIL時）
+### Step 5: 報告
 
-OpenCode分析またはチェックリストで検出された問題を修正:
+抽出した情報を以下の報告形式に整形し、オーケストレーターに返す:
 
-1. 問題のファイルを読み込み
-2. 指摘された箇所を修正（具体的な修正指示に従う）
-3. 修正後、テストがあれば実行して確認
-
-**注意**: 修正は最小限にとどめる。改善提案ではなく、Critical Issuesの修正のみ。
-
-### Step 6: 修正コミット（FAIL時）
-
-修正が完了したら、SKILL.md（オーケストレーター）に戻り、以下を実行:
-
-1. **quality-check**: lint/format/buildの確認
-2. **simple-add-dev**: 修正コミット
-3. **spot-review**: 再度このエージェントを呼び出し（最大3回ループ）
-
-修正コミットメッセージ形式:
-
-```bash
-git add {修正ファイル} && git commit -m "$(cat <<'EOF'
-🔧 fix: spot-review指摘の修正
-
-- {問題の説明}
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-EOF
-)"
-```
-
-### Step 7: 再レビュー（最大3回ループ）
-
-修正コミット後、再度spot-reviewを実行:
-
-- **1-2回目**: Step 1からやり直し
-- **3回目でもFAIL**: ユーザーにエスカレーション（Step 8へ）
-
-### Step 8: エスカレーション（3回失敗時）
-
-3回連続でCritical Issuesが検出された場合、ユーザーに報告:
-
-```markdown
-⚠️ SPOT REVIEW ESCALATION
-
-3回の修正試行後もCritical Issuesが残っています。
-
-## 検出された問題
-{問題のリスト}
-
-## 推奨アクション
-手動での確認と修正をお願いします。
-```
+- **PASS（Critical Issues なし）**: PASS報告して終了
+- **FAIL（Critical Issues あり）**: 問題リストを報告して終了（修正はspot-fixが担当）
 
 ## 報告形式
 
@@ -168,24 +121,21 @@ Checked:
 Ready to proceed!
 ```
 
-### FAIL時（修正実行）
+### FAIL時
 
 ```markdown
-⚠️ SPOT REVIEW DETECTED ISSUES
+⚠️ SPOT REVIEW FAILED
 
 直前のコミット（{commit hash}）でCritical Issuesを検出しました。
 
 ## 検出された問題
 1. {ファイル:行} - {問題の説明}
-   修正: {修正内容}
+   修正指示: {具体的な修正内容}
 
-## 修正実行
-{修正ファイルのリスト}
-
-修正をコミットし、再レビューします...
+spot-fixエージェントに修正を委譲します。
 ```
 
-### ESCALATION時（3回失敗）
+### ESCALATION時（SKILL.mdが3回ループ後に報告）
 
 ```markdown
 ⚠️ SPOT REVIEW ESCALATION
@@ -199,18 +149,34 @@ Ready to proceed!
 手動での確認と修正をお願いします。修正後、再度タスクを実行してください。
 ```
 
+## FAIL時の後続フロー（SKILL.mdが制御）
+
+spot-reviewがFAILを返した場合、SKILL.md（オーケストレーター）が以下のループを実行:
+
+```
+spot_count = 0
+loop:
+  spot_count += 1
+  result = spot-review(sonnet)  ← 検出のみ
+  if result == PASS → 終了
+  if spot_count >= 3 → エスカレーション（ユーザーに報告）→ 終了
+  spot-fix(opus)       ← 問題リストを渡して修正（コミットしない）
+  quality-check(haiku)  ← lint/format/build
+  simple-add-dev(haiku) ← 修正コミット
+  goto loop
+```
+
+- spot-reviewの報告（問題リスト）をspot-fixのプロンプトに追加コンテキストとして渡す
+- spot-fixは修正のみ行い、コミットはsimple-add-devに委譲
+
 ## 重要なポイント
 
-1. **Critical Issuesのみ**: 改善提案は出さない。バグ、セキュリティ、エッジケース、パフォーマンス問題のみ
-2. **即修正**: 問題を検出したらその場で修正（分析だけで終わらない）
-3. **最大3回**: 修正ループは3回まで。それ以上はエスカレーション
-4. **最小限の修正**: 過度なリファクタリングは避ける
-5. **dev:feedbackとの分離**: spot-reviewは「タスク単位・即修正」、review-analyzeは「ブランチ全体・学習抽出」
+1. **検出専任**: 修正は行わない。spot-fixエージェントに委譲
+2. **Critical Issuesのみ**: 改善提案は出さない。バグ、セキュリティ、エッジケース、パフォーマンス問題のみ
+3. **dev:feedbackとの分離**: spot-reviewは「タスク単位・検出」、review-analyzeは「ブランチ全体・学習抽出」
 
 ## 注意事項
 
-- 修正は最小限にとどめる（Critical Issuesのみ）
 - 改善提案は出さない（dev:feedbackの役割）
-- 3回失敗したら必ずエスカレーション
-- 修正コミット後は必ずquality-check → simple-add-dev → spot-review（再）の順で実行
+- 修正コードを書かない（spot-fixの役割）
 - OpenCode CLI利用不可時はチェックリストベースの手動分析にフォールバック

@@ -98,7 +98,7 @@
 | **plan-review** | タスク分解の品質レビュー | dev:story Step 4 |
 | **tdd-cycle** | TDDリファクタリング分析 | dev:developing TDD CYCLE Phase 3 |
 | **tdd-review** | TDDレビュー分析 | dev:developing TDD REVIEW Step 2 |
-| **spot-review** | commit後の即時レビュー | dev:developing 各ワークフローCOMMIT後 |
+| **spot-review** | commit後の即時レビュー（検出） | dev:developing 各ワークフローCOMMIT後 |
 | **review-analyze** | 実装後の品質チェック | dev:feedback Step 1 |
 | **propose-manage** | トレードオフ分析・改善提案 | dev:feedback Step 3 |
 
