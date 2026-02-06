@@ -16,7 +16,7 @@ UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | xargs wc -l 2
 TOTAL=$((LINES + STAGED + UNTRACKED))
 
 if [ "$TOTAL" -ge 10 ]; then
-  echo "未コミットの変更があります（${TOTAL}行）。/simple-add でコミットしてください。" >&2
+  echo "未コミットの変更があります（${TOTAL}行）。/dev:simple-add でコミットしてください。" >&2
   exit 2
 fi
 
