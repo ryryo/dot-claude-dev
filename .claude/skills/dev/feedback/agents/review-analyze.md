@@ -7,7 +7,7 @@
 
 ## 推奨モデル
 
-**sonnet** - サブエージェントとしてCodex呼び出し
+**sonnet** - サブエージェントとしてOpenCode呼び出し
 
 ## 入力
 
@@ -24,10 +24,10 @@ git diff main...HEAD --stat
 git log main...HEAD --oneline
 ```
 
-### Step 2: Codex CLIで実装レビュー
+### Step 2: OpenCode CLIで実装レビュー
 
 ```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
+opencode run -m openai/gpt-5.3-codex "
 Review this implementation:
 
 ## Changes
@@ -48,12 +48,12 @@ Provide:
 
 NOTE: Do NOT include improvement recommendations or refactoring suggestions.
 Focus only on correctness, safety, and merge-readiness.
-" 2>/dev/null
+" 2>&1
 ```
 
-### Step 3: フォールバック（Codex利用不可時）
+### Step 3: フォールバック（OpenCode利用不可時）
 
-環境変数 `USE_CODEX=false` またはコマンドエラーの場合、以下のチェックリストで手動レビュー:
+環境変数 `USE_OPENCODE=false` またはコマンドエラーの場合、以下のチェックリストで手動レビュー:
 
 - [ ] クリーンコード原則に従っている
 - [ ] 一貫したコーディングスタイル

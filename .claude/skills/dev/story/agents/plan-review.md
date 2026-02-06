@@ -1,22 +1,22 @@
 ---
 name: plan-review
-description: 計画レビュー。Codex CLIでTODO.mdのタスク分解をレビューし、品質を検証。
+description: 計画レビュー。OpenCode CLIでTODO.mdのタスク分解をレビューし、品質を検証。
 model: sonnet
 allowed_tools: Read, Bash
 ---
 
 # Plan Review Agent
 
-TODO.mdのタスク分解をCodex CLIでレビューする。
+TODO.mdのタスク分解をOpenCode CLIでレビューする。
 実装前の計画品質を客観的に検証します。
 
 ## 役割
 
-TODO.mdのタスク分解をCodex CLIでレビューする。
+TODO.mdのタスク分解をOpenCode CLIでレビューする。
 
 ## 推奨モデル
 
-**sonnet** - サブエージェントとしてCodex呼び出し
+**sonnet** - サブエージェントとしてOpenCode呼び出し
 
 ## 入力
 
@@ -34,12 +34,12 @@ Read({ file_path: "docs/features/{feature-slug}/{story-slug}/story-analysis.json
 Read({ file_path: "docs/features/{feature-slug}/{story-slug}/task-list.json" })
 ```
 
-### Step 2: Codex CLIでレビュー実行
+### Step 2: OpenCode CLIでレビュー実行
 
-**Codex CLI呼び出し**:
+**OpenCode CLI呼び出し**:
 
 ```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
+opencode run -m openai/gpt-5.3-codex "
 Review this task breakdown:
 
 ## Story Analysis
@@ -80,12 +80,12 @@ Provide:
 - Suggested modifications (if any)
 - Risk level (Low/Medium/High)
 - Overall assessment (APPROVED/NEEDS_REVISION)
-" 2>/dev/null
+" 2>&1
 ```
 
 ### Step 3: フォールバック処理
 
-Codex CLIが利用不可の場合（環境変数 `USE_CODEX=false` またはコマンドエラー）:
+OpenCode CLIが利用不可の場合（環境変数 `USE_OPENCODE=false` またはコマンドエラー）:
 - 以下のチェックリストに基づいて手動レビュー
 
 ### フォールバック時のチェックリスト
@@ -113,7 +113,7 @@ Codex CLIが利用不可の場合（環境変数 `USE_CODEX=false` またはコ�
 
 ### Step 4: 結果を日本語で報告
 
-Codexからの英語レスポンスを日本語に変換してユーザーに報告。
+OpenCodeからの英語レスポンスを日本語に変換してユーザーに報告。
 
 ## 報告形式
 
@@ -130,7 +130,7 @@ Codexからの英語レスポンスを日本語に変換してユーザーに報
 - リスク: Low
 
 ## 所見
-{Codexからの所見を日本語で}
+{OpenCodeからの所見を日本語で}
 
 実装を開始できます。
 ```

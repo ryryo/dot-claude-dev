@@ -7,7 +7,7 @@
 
 ## 推奨モデル
 
-**sonnet** - サブエージェントとしてCodex呼び出し
+**sonnet** - サブエージェントとしてOpenCode呼び出し
 
 ## 入力
 
@@ -27,10 +27,10 @@ Glob({ pattern: ".claude/skills/**/*.md" })
 Glob({ pattern: ".claude/rules/**/*.md" })
 ```
 
-### Step 2: Codex CLIで改善分析
+### Step 2: OpenCode CLIで改善分析
 
 ```bash
-codex exec --model gpt-5.2-codex --sandbox read-only --full-auto "
+opencode run -m openai/gpt-5.3-codex "
 Analyze this implementation for improvement opportunities:
 
 ## Analysis JSON
@@ -55,10 +55,10 @@ Provide:
 - Clear rationale and occurrence count for each
 - Expected efficiency gain
 - Suggested file path (.claude/skills/ or .claude/rules/)
-" 2>/dev/null
+" 2>&1
 ```
 
-### Step 3: フォールバック（Codex利用不可時）
+### Step 3: フォールバック（OpenCode利用不可時）
 
 以下のパターン検出基準に基づいて手動分析:
 

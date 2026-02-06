@@ -36,7 +36,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 | 1b | resolve-slug.md | haiku | story-analysis.json + 既存slug一覧 |
 | 2 | decompose-tasks.md | sonnet | story-analysis.jsonのパス |
 | 3 | assign-workflow.md | haiku | task-list.jsonのパス |
-| 4 | plan-review.md | sonnet | TODO.md + story-analysis.json + task-list.json（Codex CLI使用） |
+| 4 | plan-review.md | sonnet | TODO.md + story-analysis.json + task-list.json（OpenCode CLI使用） |
 
 ## 出力先
 
@@ -73,15 +73,15 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 **ゲート**: `TODO.md` が存在しなければ次に進まない。
 
-### Step 4: 計画レビュー（Codex）
+### Step 4: 計画レビュー（OpenCode）
 
 1. → **エージェント委譲**（plan-review.md / sonnet）
-   - Codex CLIを使用してTODO.mdのタスク分解をレビュー
+   - OpenCode CLIを使用してTODO.mdのタスク分解をレビュー
    - タスク粒度、依存関係、ワークフロー分類、漏れ、リスクを検証
 2. レビュー結果をユーザーに提示
 3. 修正が必要なら Step 3 に戻る
 
-**ゲート**: Codexレビューが完了しなければ次に進まない。
+**ゲート**: OpenCodeレビューが完了しなければ次に進まない。
 
 ### Step 5: ユーザー確認
 
