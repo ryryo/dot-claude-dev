@@ -160,14 +160,12 @@ loop:
   result = spot-review(sonnet)  ← 検出のみ
   if result == PASS → 終了
   if spot_count >= 3 → エスカレーション（ユーザーに報告）→ 終了
-  spot-fix(opus)       ← 問題リストを渡して修正（コミットしない）
+  spot-fix(opus)       ← 問題リストを渡して修正
   quality-check(haiku)  ← lint/format/build
-  [hook: commit-check.sh → コミット指示 → simple-add-dev]
   goto loop
 ```
 
 - spot-reviewの報告（問題リスト）をspot-fixのプロンプトに追加コンテキストとして渡す
-- spot-fixは修正のみ行い、コミットはフック駆動（commit-check.sh PostToolUseフック）
 
 ## 重要なポイント
 

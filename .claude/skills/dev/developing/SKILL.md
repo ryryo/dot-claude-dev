@@ -28,19 +28,6 @@ hooks:
 
 # 実装（dev:developing）
 
-## コミット戦略（フック駆動）
-
-**コミットはワークフローの明示的ステップではなく、フックが自動的に制御する。**
-
-- 各Taskエージェント完了後、`commit-check.sh`（PostToolUseフック）が未コミット変更を検出
-- 10行以上の変更がある場合、フックがコミットを促すメッセージを返す
-- **フックからコミット指示を受けたら、simple-add-devエージェントをTask呼び出しでコミットしてから次のステップに進む**
-
-```
-agentContent = Read(".claude/skills/dev/developing/agents/simple-add-dev.md")
-Task({ prompt: agentContent, subagent_type: "simple-add", model: "haiku" })
-```
-
 ## エージェント委譲ルール
 
 **各ステップの実行は必ずTaskエージェントに委譲する。自分で実装・テスト・レビューしない。**
@@ -73,8 +60,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
 | 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
 
-※ コミットはフック（commit-check.sh）が各Task完了後に自動検出・指示
-
 ### E2Eワークフロー（[E2E]ラベル）
 
 | Step | agent | model | type | 備考 |
@@ -83,8 +68,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 2 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 3 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
 | 3b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
-
-※ コミットはフック（commit-check.sh）が各Task完了後に自動検出・指示
 
 ### TASKワークフロー（[TASK]ラベル）
 
@@ -96,8 +79,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 2 VERIFY | - | - | - | 検証（ファイル存在確認、ビルド確認など） |
 | 3 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
 | 3b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→再SPOT（最大3回） |
-
-※ コミットはフック（commit-check.sh）がEXEC/VERIFY後に自動検出・指示
 
 ---
 
@@ -115,8 +96,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 1. **実行順序**: TASKタスクを最初に実行（環境構築が必要なため）
 2. 各タスクのラベルに応じて上記ワークフローを適用
-3. フックがコミットを促したら、simple-add-devでコミット後に次のステップへ進む
-4. 各タスク完了時に **TaskUpdate(completed)** + TODO.md更新（`- [ ]` → `- [x]`）
+3. 各タスク完了時に **TaskUpdate(completed)** + TODO.md更新（`- [ ]` → `- [x]`）
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
 
@@ -135,5 +115,4 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 ## 参照
 
 - agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md, spot-review.md, spot-fix.md
-- hooks/: dev/commit-check.sh（PostToolUseフック、各Task完了後にコミット検出）
 - rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md

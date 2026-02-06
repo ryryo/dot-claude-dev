@@ -4,11 +4,12 @@
 
 このリポジトリは、複数のプロジェクト間で共有するClaude Code設定を提供します。シンボリックリンクにより、共通設定の更新が全プロジェクトに即座に反映されます。
 
-セットアップは2つに分かれます。
+セットアップは3つに分かれます。
 
 | 環境 | 内容 | 参照セクション |
 |------|------|---------------|
-| **ローカル** | クローン、リンク作成、.gitignore設定 | 「インストール手順」以降 |
+| **ローカル** | クローン、リンク作成、.gitignore設定 | 「インストール手順」 |
+| **settings.json** | フック設定（コミット促進、コンパクト提案等） | 「settings.json設定」 |
 | **リモート** | SessionStartフックで自動セットアップ | 「リモート環境での利用」 |
 
 ## ディレクトリ構造
@@ -111,107 +112,16 @@ readlink .claude/rules/languages
 | ローカル設定 | `settings.local.json` | 除外 |
 | プロジェクト固有 | `rules/project/`, `skills/custom/`, `commands/custom/`, `hooks/project/`, `settings.json` | コミット |
 
-## プロジェクト固有の設定（任意）
+## settings.json設定
 
-必要に応じて以下のディレクトリを作成し、プロジェクト固有の設定を追加します。
-
-```bash
-mkdir -p .claude/rules/project    # プロジェクト固有ルール
-mkdir -p .claude/skills/custom    # プロジェクト固有スキル
-mkdir -p .claude/hooks/project    # プロジェクト固有フック
-mkdir -p .claude/commands         # コマンド（スキルのショートカット）
-```
-
-ローカル設定の例:
-
-```bash
-cat > .claude/settings.local.json << 'EOF'
-{
-  "model": "sonnet",
-  "autoApprove": ["read", "glob", "grep"]
-}
-EOF
-```
-
-## WSL環境でのセットアップ
-
-WSL2ではLinuxのシンボリックリンクが問題なく動作します：
-
-```bash
-# WSL内で実行
-git clone <this-repo-url> ~/.dot-claude-dev
-cd /path/to/your-project
-bash ~/.dot-claude-dev/setup-claude.sh
-```
-
-### 注意事項
-
-- **推奨**: WSLファイルシステム内（`~/.dot-claude-dev`）に配置
-- **可能**: Windowsファイルシステム（`/mnt/c/...`）上でも動作しますが、パフォーマンスに注意
-
-## 更新
-
-```bash
-# 共通設定の更新（全プロジェクトに自動反映）
-cd ~/.dot-claude-dev && git pull
-
-# リンクが壊れた場合は再実行
-cd /path/to/your-project && bash ~/.dot-claude-dev/setup-claude.sh
-```
-
-## リモート環境（Claude Code on the Web）での利用
-
-ウェブ上のClaude Codeではセッション毎にクリーンな環境が作られるため、`~/.dot-claude-dev/` が存在しません。SessionStartフックで自動セットアップすることで解消できます。
-
-### 手順
-
-1. セットアップスクリプトをプロジェクトにコピーし、必要に応じて `SHARED_REPO` のURLを変更する
-   ```bash
-   cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
-   ```
-
-2. `.claude/settings.json` にSessionStartフックを設定する（ghを使わない場合は該当ブロックを削除）
-   ```json
-   {
-     "hooks": {
-       "SessionStart": [
-         {
-           "matcher": "startup",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
-             },
-             {
-               "type": "command",
-               "command": "bun x gh-setup-hooks",
-               "timeout": 120
-             }
-           ]
-         }
-       ]
-     }
-   }
-   ```
-
-### 補足
-
-- スクリプトは `CLAUDE_CODE_REMOTE=true` のときだけ実行され、ローカルではスキップされる
-- プライベートリポジトリの場合はClaude GitHub Appのアクセス権が必要
-- gh利用時はサンドボックスの制約で `-R owner/repo` が必要な場合がある
-
-## フック設定
-
-シンボリックリンク作成後、`.claude/settings.json` にフック設定を追加します。SessionStart（リモート環境用）に加え、Stop（コミット促進）とPreToolUse（コンパクト提案）を設定します。
-
-### 推奨設定
+シンボリックリンク作成後、`.claude/settings.json` にフック設定を追加します。
 
 ```json
 {
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
@@ -251,21 +161,77 @@ cd /path/to/your-project && bash ~/.dot-claude-dev/setup-claude.sh
 |----------|-----------|------|
 | **SessionStart** | `setup-claude-remote.sh` | リモート環境で共有リポジトリを自動クローン・リンク |
 | **PreToolUse** | `suggest-compact.sh` | ツール呼び出し50回で `/compact` を提案 |
-| **Stop** | `commit-check.sh` | エージェント停止時に未コミット変更（10行以上）があればコミットを促す |
+| **Stop** | `commit-check.sh` | 未コミット変更（10行以上）があればコミットを促す |
 
-### フックの動作
+## プロジェクト固有の設定（任意）
 
-**commit-check.sh（Stopフック）**:
-- エージェントが応答を完了するタイミングで発火
-- 未コミットの変更が10行以上ある場合、`exit 2` でエージェントをブロックし `/simple-add` でのコミットを促す
-- `stop_hook_active=true` のとき（コミット作業中）はスキップ（無限ループ防止）
+必要に応じて以下のディレクトリを作成し、プロジェクト固有の設定を追加します。
 
-**suggest-compact.sh（PreToolUseフック）**:
-- 全ツール呼び出しでカウントし、50回で初回提案、75回以降25回ごとに再提案
-- コンテキストが長くなった際の `/compact` 実行を促す
+```bash
+mkdir -p .claude/rules/project    # プロジェクト固有ルール
+mkdir -p .claude/skills/custom    # プロジェクト固有スキル
+mkdir -p .claude/hooks/project    # プロジェクト固有フック
+mkdir -p .claude/commands         # コマンド（スキルのショートカット）
+```
+
+ローカル設定の例:
+
+```bash
+cat > .claude/settings.local.json << 'EOF'
+{
+  "model": "sonnet",
+  "autoApprove": ["read", "glob", "grep"]
+}
+EOF
+```
+
+## WSL環境でのセットアップ
+
+WSL2ではLinuxのシンボリックリンクが問題なく動作します：
+
+```bash
+# WSL内で実行
+git clone <this-repo-url> ~/.dot-claude-dev
+cd /path/to/your-project
+bash ~/.dot-claude-dev/setup-claude.sh
+```
+
+### 注意事項
+
+- **推奨**: WSLファイルシステム内（`~/.dot-claude-dev`）に配置
+- **可能**: Windowsファイルシステム（`/mnt/c/...`）上でも動作しますが、パフォーマンスに注意
+
+## リモート環境（Claude Code on the Web）での利用
+
+ウェブ上のClaude Codeではセッション毎にクリーンな環境が作られるため、`~/.dot-claude-dev/` が存在しません。settings.jsonのSessionStartフックで自動セットアップされます。
+
+### 手順
+
+1. セットアップスクリプトをプロジェクトにコピーし、必要に応じて `SHARED_REPO` のURLを変更する
+   ```bash
+   cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
+   ```
+
+2. 「settings.json設定」セクションの設定を `.claude/settings.json` に適用する
+
+### 補足
+
+- スクリプトは `CLAUDE_CODE_REMOTE=true` のときだけ実行され、ローカルではスキップされる
+- プライベートリポジトリの場合はClaude GitHub Appのアクセス権が必要
+- gh利用時はサンドボックスの制約で `-R owner/repo` が必要な場合がある
+
+## 更新
+
+```bash
+# 共通設定の更新（全プロジェクトに自動反映）
+cd ~/.dot-claude-dev && git pull
+
+# リンクが壊れた場合は再実行
+cd /path/to/your-project && bash ~/.dot-claude-dev/setup-claude.sh
+```
 
 ## チーム開発
 
-各メンバーが「インストール手順」のステップ1〜4を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
+各メンバーが「インストール手順」のステップ1〜4 + 「settings.json設定」を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
 
 共通設定を変更する場合は `~/.dot-claude-dev` で修正し、テストプロジェクトで確認してからプッシュしてください。

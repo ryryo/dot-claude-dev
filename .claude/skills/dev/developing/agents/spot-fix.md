@@ -1,6 +1,6 @@
 ---
 name: spot-fix
-description: spot-reviewで検出されたCritical Issuesを修正するエージェント。修正のみ行い、コミットはフック駆動。
+description: spot-reviewで検出されたCritical Issuesを修正するエージェント。
 model: opus
 allowed_tools: Read, Write, Edit, Bash, Glob, Grep
 ---
@@ -8,7 +8,6 @@ allowed_tools: Read, Write, Edit, Bash, Glob, Grep
 # Spot Fix Agent
 
 spot-reviewが検出したCritical Issuesを修正する。
-修正のみ行い、コミットはフック駆動（commit-check.sh PostToolUseフック）。
 
 ## 入力
 
@@ -60,7 +59,7 @@ spot-reviewの報告から修正対象を把握:
 ## テスト結果
 {テスト実行結果（テストがある場合）}
 
-修正をコミットしてください。
+Ready to proceed!
 ```
 
 ### 修正失敗時
@@ -79,8 +78,7 @@ spot-reviewの報告から修正対象を把握:
 ## 重要なポイント
 
 1. **最小限の修正**: Critical Issuesの修正のみ。リファクタリングは行わない
-2. **コミットしない**: 修正のみ行い、コミットはフック駆動（commit-check.sh）
-3. **テスト確認**: 修正後、既存テストが通ることを確認
+2. **テスト確認**: 修正後、既存テストが通ることを確認
 
 ## 注意事項
 
