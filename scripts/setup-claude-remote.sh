@@ -75,15 +75,23 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
     # PATHに追加（現在のセッション）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
 
-    # ~/.profile にPATHを永続化（重複チェック付き）
-    # Note: ~/.bashrc は非インタラクティブシェルでは早期リターンするため、
-    # ~/.profile を使用してログイン時に確実に読み込まれるようにする
+    # ~/.profile と ~/.bashrc にPATHを永続化（重複チェック付き）
     OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
+
+    # ~/.profile に追加（ログインシェル用）
     if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
       echo "" >> "$HOME/.profile"
       echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
       echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
       echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+    fi
+
+    # ~/.bashrc に追加（非ログインシェル・新規Bash起動時用）
+    if ! grep -q "\.opencode/bin" "$HOME/.bashrc" 2>/dev/null; then
+      echo "" >> "$HOME/.bashrc"
+      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.bashrc"
+      echo "$OPENCODE_PATH_LINE" >> "$HOME/.bashrc"
+      echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
     fi
 
     if ! command -v opencode &>/dev/null; then
@@ -120,15 +128,23 @@ else
     # PATHに追加（現在のセッション）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
 
-    # ~/.profile にPATHを永続化（重複チェック付き）
-    # Note: ~/.bashrc は非インタラクティブシェルでは早期リターンするため、
-    # ~/.profile を使用してログイン時に確実に読み込まれるようにする
+    # ~/.profile と ~/.bashrc にPATHを永続化（重複チェック付き）
     OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
+
+    # ~/.profile に追加（ログインシェル用）
     if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
       echo "" >> "$HOME/.profile"
       echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
       echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
       echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+    fi
+
+    # ~/.bashrc に追加（非ログインシェル・新規Bash起動時用）
+    if ! grep -q "\.opencode/bin" "$HOME/.bashrc" 2>/dev/null; then
+      echo "" >> "$HOME/.bashrc"
+      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.bashrc"
+      echo "$OPENCODE_PATH_LINE" >> "$HOME/.bashrc"
+      echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
     fi
 
     if command -v opencode &>/dev/null; then
@@ -147,8 +163,9 @@ if command -v opencode &>/dev/null; then
   echo "[setup-claude-remote] Command available: opencode"
 else
   echo "[setup-claude-remote] ⚠ opencode installed but not in current PATH"
-  echo "[setup-claude-remote] Next session: opencode will be available (added to ~/.profile)"
-  echo "[setup-claude-remote] Current session: Use full path - /root/.opencode/bin/opencode"
+  echo "[setup-claude-remote] PATH added to ~/.profile and ~/.bashrc"
+  echo "[setup-claude-remote] Next Bash command: opencode will be available automatically"
+  echo "[setup-claude-remote] Current workaround: Use 'source ~/.bashrc' or full path"
 fi
 
 exit 0
