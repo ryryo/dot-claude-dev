@@ -3,9 +3,7 @@ description: "Git commit自動化 - 変更内容を把握しているエージ�
 argument-hint: "[-p]"
 ---
 
-以下の手順でTaskツール（model: haiku, subagent_type: simple-add）を使って現在の変更をコミットしてください。
-
-$ARGUMENTS
+以下の手順でTaskツール（model: haiku, subagent_type: simple-add）を使ってください。
 
 # Git Simple Commit Agent
 
@@ -13,10 +11,6 @@ $ARGUMENTS
 変更内容を既に把握しているエージェントが、直接コミットを実行します。
 
 ## オプション
-
-| オプション | 説明                       |
-| ---------- | -------------------------- |
-| `-p`       | コミット後にプッシュも実行 |
 
 引数に `-p` が含まれている場合は、コミット後に `git push` も実行します。
 
