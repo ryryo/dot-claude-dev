@@ -76,22 +76,50 @@ EOF
 
 **機能追加なし。テストが成功し続けることを確認しながら品質改善。**
 
-#### リファクタリング分析チェックリスト:
+#### OpenCode CLIでリファクタリング分析:
+
+実装とテストのコードを読み取り、OpenCode CLI（gpt-5.3-codex）で客観的な分析を実行:
+
+```bash
+opencode run -m openai/gpt-5.3-codex "
+Analyze this code for refactoring:
+
+## Implementation
+{実装コードの内容}
+
+## Test
+{テストコードの内容}
+
+Evaluate: SOLID, Testability, Structure, Simplicity, Naming
+Prioritize: 1.Testability 2.SRP 3.DRY 4.Naming
+Provide specific recommendations with before/after snippets.
+" 2>&1
+```
+
+**フォールバック**: `USE_OPENCODE=false` 環境変数が設定されているか、OpenCode CLIが利用できない場合は、以下のチェックリストベースの手動分析にフォールバック。
+
+#### フォールバック（OpenCode利用不可時）:
+
+リファクタリング分析チェックリスト:
 - [ ] 単一責任原則（SRP）: 1関数が1つの責務のみ
 - [ ] 依存性逆転原則（DIP）: 抽象に依存
 - [ ] 重複排除（DRY）
 - [ ] YAGNI: 不要な抽象化なし
 - [ ] 命名: 関数名が処理内容を表す
 
-#### コード整理（旧SIMPLIFYステップ統合）:
+コード整理（旧SIMPLIFYステップ統合）:
 
 リファクタリングと同時に以下も実施:
 - 明瞭性の向上（読みやすさ、理解しやすさ）
 - 一貫性の確保（コーディングスタイル、パターンの統一）
 - 保守性の向上（変更しやすさ、拡張しやすさ）
 
+#### リファクタリング実行:
+
+OpenCode分析結果またはチェックリストに基づき、コードを改善:
+
 手順:
-1. チェックリストに基づきコードを修正（小さなステップで）
+1. 分析結果に基づきコードを修正（小さなステップで）
 2. 各変更後にテスト実行 → 全パス確認
 3. 結果を日本語で報告
 

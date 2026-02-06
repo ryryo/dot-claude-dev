@@ -32,9 +32,52 @@ TDD実装のセルフレビューとテスト資産管理を行うサブエー�
 
 渡されたファイルを読み込む。
 
-### Step 2: レビュー分析
+### Step 2: OpenCode CLIでレビュー実行
 
-以下のチェックリストに基づいて分析を実施:
+実装とテストのコードを読み取り、OpenCode CLI（gpt-5.3-codex）で客観的なレビューを実行:
+
+```bash
+opencode run -m openai/gpt-5.3-codex "
+Review this TDD implementation:
+
+## Implementation
+{実装コードの内容}
+
+## Test
+{テストコードの内容}
+
+Analyze:
+1. Over-fitting: Is the implementation only optimized for test cases?
+   - Hardcoded values matching test inputs
+   - Order-dependent logic
+   - Magic numbers from tests
+2. Escape routes: Are there bugs/edge cases that bypass tests?
+   - Unhandled null/undefined
+   - Missing boundary checks
+   - Type mismatches
+3. Code quality: Readability, maintainability, conventions
+4. Test asset quality:
+   - Which tests have long-term regression value?
+   - Which tests are redundant or trivial?
+   - Can any tests be consolidated via parameterization?
+
+Provide:
+- PASS or FAIL verdict
+- Specific issues with file:line references
+- Concrete fix recommendations
+- Test asset recommendations (keep/simplify/remove)
+" 2>&1
+```
+
+**Opusとの併用**:
+- OpenCode分析を実行後、Opus自身のチェックリストに基づいて独自分析も実施
+- 両者の結果を統合して最終判定（Opusを主、OpenCodeを補完）
+
+**フォールバック**: `USE_OPENCODE=false` 環境変数が設定されているか、OpenCode CLIが利用できない場合は、以下のチェックリストベースの手動分析にフォールバック。
+
+### Step 3: フォールバック処理（OpenCode利用不可時）
+
+`USE_OPENCODE=false` またはコマンドエラー時、以下のチェックリストに基づいて分析を実施:
 
 #### 過剰適合チェック
 - [ ] テスト入力値のハードコードがないか
@@ -63,7 +106,7 @@ TDD実装のセルフレビューとテスト資産管理を行うサブエー�
 - 自明なテスト（trivialなケース）
 - 古い実装の残骸
 
-### Step 3: テスト資産の整理実行
+### Step 4: テスト資産の整理実行
 
 簡素化の例:
 ```typescript
@@ -82,7 +125,7 @@ it.each([
 
 削除後はカバレッジを確認し、大幅低下なら削除を見送る。
 
-### Step 4: 結果を日本語で報告
+### Step 5: 結果を日本語で報告
 
 ## 報告形式
 
