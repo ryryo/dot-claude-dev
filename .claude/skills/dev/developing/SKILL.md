@@ -48,10 +48,11 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 | Step | agent | model | type | 備考 |
 |------|-------|-------|------|------|
-| 1 CYCLE | tdd-cycle.md | sonnet | general-purpose | RED→テストcommit→GREEN→REFACTOR |
-| 2 REVIEW | tdd-review.md | opus | general-purpose | 過剰適合・抜け道 + テスト資産管理。問題→Step 1へ |
+| 1 CYCLE | tdd-cycle.md | sonnet | general-purpose | RED→テストcommit→GREEN→REFACTOR(+OpenCode) |
+| 2 REVIEW | tdd-review.md | opus | general-purpose | 過剰適合・抜け道(+OpenCode) + テスト資産管理。問題→Step 1へ |
 | 3 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 4 COMMIT | simple-add-dev.md | haiku | simple-add | 実装+テスト整理結果をコミット |
+| 5 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)。問題→修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ### E2Eワークフロー（[E2E]ラベル）
 
@@ -60,18 +61,18 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 1 CYCLE | e2e-cycle.md | sonnet | general-purpose | UI実装 → agent-browser検証ループ |
 | 2 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
 | 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
+| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)。問題→修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ### TASKワークフロー（[TASK]ラベル）
 
-**サブエージェント呼び出しなし。エージェントが直接実行。**
+**SPOT以外はサブエージェント呼び出しなし。エージェントが直接実行。**
 
-```
-1. TaskUpdate(in_progress)
-2. 実行（設定ファイル作成、コマンド実行など）
-3. 検証（ファイル存在確認、ビルド確認など）
-4. TaskUpdate(completed) + TODO.md更新（- [ ] → - [x]）
-5. /simple-add でコミット
-```
+| Step | agent | model | type | 備考 |
+|------|-------|-------|------|------|
+| 1 EXEC | - | - | - | エージェントが直接実行（設定ファイル作成、コマンド実行など） |
+| 2 VERIFY | - | - | - | 検証（ファイル存在確認、ビルド確認など） |
+| 3 COMMIT | simple-add-dev.md | haiku | simple-add | コミット |
+| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)。問題→修正→CHECK→COMMIT→再SPOT（最大3回） |
 
 ---
 
@@ -97,14 +98,15 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 完了条件
 
-- [ ] すべてのTASKタスクが完了
-- [ ] すべてのTDDタスクが完了（CYCLE→REVIEW→CHECK→COMMIT）
-- [ ] すべてのE2Eタスクが完了（CYCLE→CHECK→COMMIT）
+- [ ] すべてのTASKタスクが完了（EXEC→VERIFY→COMMIT→SPOT）
+- [ ] すべてのTDDタスクが完了（CYCLE→REVIEW→CHECK→COMMIT→SPOT）
+- [ ] すべてのE2Eタスクが完了（CYCLE→CHECK→COMMIT→SPOT）
 - [ ] 全テストが成功
 - [ ] 品質チェックが通過
+- [ ] spot-reviewがパス（または3回失敗でエスカレーション）
 - [ ] TODO.mdが全て完了マーク
 
 ## 参照
 
-- agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md
+- agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md, spot-review.md
 - rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md
