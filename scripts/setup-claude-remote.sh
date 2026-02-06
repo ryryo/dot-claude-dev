@@ -57,6 +57,13 @@ fi
 
 # --- opencode CLI セットアップ ---
 
+# OPENCODE_AUTH_JSON 環境変数の存在確認
+if [ -n "$OPENCODE_AUTH_JSON" ]; then
+  echo "[setup-claude-remote] ✓ OPENCODE_AUTH_JSON is set (OAuth credentials available)"
+else
+  echo "[setup-claude-remote] ✗ OPENCODE_AUTH_JSON is not set (free models only)"
+fi
+
 if [ -n "$OPENCODE_AUTH_JSON" ]; then
   echo "[setup-claude-remote] Setting up opencode CLI..."
 
