@@ -17,6 +17,14 @@
 #          }]
 #        }
 #      }
+#
+# opencode連携（オプション）:
+#   OPENCODE_AUTH_JSON 環境変数にbase64エンコードしたauth.jsonを設定すると、
+#   opencode CLIをインストールし、OpenAI Plus/ProのOAuth認証を引き継ぐ。
+#
+#   ローカルで準備:
+#     cat ~/.local/share/opencode/auth.json | base64 | pbcopy
+#   → Claude Code Webのシークレットに OPENCODE_AUTH_JSON として設定
 
 # ローカル環境ではスキップ
 if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
@@ -26,27 +34,72 @@ fi
 SHARED_REPO="https://github.com/ryryo/dot-claude-dev.git"
 SHARED_DIR="$HOME/.dot-claude-dev"
 
+# --- dot-claude-dev セットアップ ---
+
 # 既にクローン済みならスキップ
 if [ -d "$SHARED_DIR" ]; then
   echo "[setup-claude-remote] ~/.dot-claude-dev already exists, skipping clone."
-  exit 0
-fi
-
-# 共有リポジトリをクローン
-echo "[setup-claude-remote] Cloning shared config..."
-git clone --depth 1 "$SHARED_REPO" "$SHARED_DIR"
-
-if [ $? -ne 0 ]; then
-  echo "[setup-claude-remote] WARNING: Failed to clone shared config. Continuing without shared settings."
-  exit 0
-fi
-
-# setup-claude.sh を実行してシンボリックリンクを張る
-if [ -f "$SHARED_DIR/setup-claude.sh" ]; then
-  echo "[setup-claude-remote] Running setup-claude.sh..."
-  CLAUDE_SHARED_DIR="$SHARED_DIR" bash "$SHARED_DIR/setup-claude.sh"
 else
-  echo "[setup-claude-remote] WARNING: setup-claude.sh not found in shared repo."
+  echo "[setup-claude-remote] Cloning shared config..."
+  git clone --depth 1 "$SHARED_REPO" "$SHARED_DIR"
+
+  if [ $? -ne 0 ]; then
+    echo "[setup-claude-remote] WARNING: Failed to clone shared config. Continuing without shared settings."
+  fi
+
+  if [ -f "$SHARED_DIR/setup-claude.sh" ]; then
+    echo "[setup-claude-remote] Running setup-claude.sh..."
+    CLAUDE_SHARED_DIR="$SHARED_DIR" bash "$SHARED_DIR/setup-claude.sh"
+  else
+    echo "[setup-claude-remote] WARNING: setup-claude.sh not found in shared repo."
+  fi
+fi
+
+# --- opencode CLI セットアップ ---
+
+if [ -n "$OPENCODE_AUTH_JSON" ]; then
+  echo "[setup-claude-remote] Setting up opencode CLI..."
+
+  # opencode インストール（未インストールの場合）
+  if ! command -v opencode &>/dev/null; then
+    echo "[setup-claude-remote] Installing opencode..."
+    curl -fsSL https://opencode.ai/install | bash 2>/dev/null
+
+    # PATHに追加（インストーラのデフォルトパス）
+    export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
+
+    if ! command -v opencode &>/dev/null; then
+      echo "[setup-claude-remote] WARNING: opencode installation failed."
+    else
+      echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
+    fi
+  else
+    echo "[setup-claude-remote] opencode already installed: $(opencode -v 2>/dev/null)"
+  fi
+
+  # auth.json を復元（OAuth refresh token を引き継ぐ）
+  OPENCODE_DATA_DIR="$HOME/.local/share/opencode"
+  mkdir -p "$OPENCODE_DATA_DIR"
+
+  echo "$OPENCODE_AUTH_JSON" | base64 -d > "$OPENCODE_DATA_DIR/auth.json" 2>/dev/null
+
+  if [ $? -eq 0 ] && [ -s "$OPENCODE_DATA_DIR/auth.json" ]; then
+    chmod 600 "$OPENCODE_DATA_DIR/auth.json"
+    echo "[setup-claude-remote] opencode auth.json restored."
+  else
+    echo "[setup-claude-remote] WARNING: Failed to decode OPENCODE_AUTH_JSON."
+    rm -f "$OPENCODE_DATA_DIR/auth.json"
+  fi
+else
+  echo "[setup-claude-remote] OPENCODE_AUTH_JSON not set, skipping OAuth setup."
+  echo "[setup-claude-remote] Free models (opencode/*) are available without auth."
+
+  # 無料モデル用にopencode本体だけインストール
+  if ! command -v opencode &>/dev/null; then
+    echo "[setup-claude-remote] Installing opencode (free models only)..."
+    curl -fsSL https://opencode.ai/install | bash 2>/dev/null
+    export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
+  fi
 fi
 
 exit 0
