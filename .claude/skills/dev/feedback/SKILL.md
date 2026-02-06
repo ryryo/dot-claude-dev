@@ -7,6 +7,7 @@ description: |
 
   Trigger:
   フィードバック, 学習事項蓄積, /dev:feedback, feedback, design update
+context: fork
 allowed-tools:
   - Read
   - Write

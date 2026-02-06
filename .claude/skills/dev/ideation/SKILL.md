@@ -7,6 +7,7 @@ description: |
 
   Trigger:
   アイデア整理, プロダクト企画, /dev:ideation, ideation, 何を作るべきか
+context: fork
 allowed-tools:
   - Read
   - Write

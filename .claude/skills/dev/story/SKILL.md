@@ -7,6 +7,7 @@ description: |
 
   Trigger:
   タスクを作成, ストーリーからタスク, /dev:story, story to tasks
+context: fork
 allowed-tools:
   - Read
   - Write
