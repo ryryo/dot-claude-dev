@@ -28,3 +28,15 @@ node_modules/
 # PHP
 vendor/
 composer.lock
+
+# Claude Code - shared configuration (symlinks only)
+.claude/rules/languages
+.claude/rules/workflow
+.claude/skills/dev
+.claude/skills/meta-skill-creator
+.claude/skills/agent-browser
+.claude/commands/dev
+.claude/hooks/dev
+
+# Claude Code - local settings only
+.claude/settings.local.json

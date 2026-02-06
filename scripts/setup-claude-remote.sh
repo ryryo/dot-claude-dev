@@ -57,6 +57,13 @@ fi
 
 # --- opencode CLI セットアップ ---
 
+# OPENCODE_AUTH_JSON 環境変数の存在確認
+if [ -n "$OPENCODE_AUTH_JSON" ]; then
+  echo "[setup-claude-remote] ✓ OPENCODE_AUTH_JSON is set (OAuth credentials available)"
+else
+  echo "[setup-claude-remote] ✗ OPENCODE_AUTH_JSON is not set (free models only)"
+fi
+
 if [ -n "$OPENCODE_AUTH_JSON" ]; then
   echo "[setup-claude-remote] Setting up opencode CLI..."
 
@@ -72,6 +79,8 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
       echo "[setup-claude-remote] WARNING: opencode installation failed."
     else
       echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
+      echo "[setup-claude-remote] Note: opencode PATH has been added to ~/.bashrc"
+      echo "[setup-claude-remote] To use opencode in current session, run: source ~/.bashrc"
     fi
   else
     echo "[setup-claude-remote] opencode already installed: $(opencode -v 2>/dev/null)"
@@ -99,7 +108,25 @@ else
     echo "[setup-claude-remote] Installing opencode (free models only)..."
     curl -fsSL https://opencode.ai/install | bash 2>/dev/null
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
+
+    if command -v opencode &>/dev/null; then
+      echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
+      echo "[setup-claude-remote] Note: opencode PATH has been added to ~/.bashrc"
+      echo "[setup-claude-remote] To use opencode in current session, run: source ~/.bashrc"
+    else
+      echo "[setup-claude-remote] WARNING: opencode installation may have failed."
+    fi
   fi
+fi
+
+# セットアップ完了メッセージ
+echo ""
+echo "[setup-claude-remote] ✓ Setup completed"
+if command -v opencode &>/dev/null; then
+  echo "[setup-claude-remote] opencode is ready to use"
+else
+  echo "[setup-claude-remote] ⚠ opencode command not found in current session"
+  echo "[setup-claude-remote] Run 'source ~/.bashrc' or start a new shell to use opencode"
 fi
 
 exit 0
