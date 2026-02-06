@@ -34,6 +34,74 @@ fi
 SHARED_REPO="https://github.com/ryryo/dot-claude-dev.git"
 SHARED_DIR="$HOME/.dot-claude-dev"
 
+# --- ヘルパー関数 ---
+
+# opencode の PATH を永続化する
+# ~/.bashrc のガード `[ -z "$PS1" ] && return` より前に挿入する。
+# ガード以降は非インタラクティブシェル（Claude CodeのBashツール等）で
+# 読み込まれないため、末尾に追記しても効果がない。
+_persist_opencode_path() {
+  local path_comment="# opencode CLI path (added by setup-claude-remote.sh)"
+  local path_export='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
+
+  # --- ~/.profile（ログインシェル用） ---
+  if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
+    printf '\n%s\n%s\n' "$path_comment" "$path_export" >> "$HOME/.profile"
+    echo "[setup-claude-remote] opencode PATH added to ~/.profile"
+  fi
+
+  # --- ~/.bashrc（ガード行の前に挿入） ---
+  local bashrc="$HOME/.bashrc"
+  if [ ! -f "$bashrc" ]; then
+    printf '%s\n%s\n' "$path_comment" "$path_export" > "$bashrc"
+    echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
+    return
+  fi
+
+  # 既にガード前にある場合はスキップ
+  # ガード行より前の部分だけ取り出してチェック
+  if sed -n '/\[ -z "\$PS1" \] && return/q;p' "$bashrc" | grep -q "\.opencode/bin"; then
+    echo "[setup-claude-remote] opencode PATH already in ~/.bashrc (before guard), skipping"
+    return
+  fi
+
+  # ガード後に古いエントリがある場合は削除
+  if grep -q "\.opencode/bin" "$bashrc" 2>/dev/null; then
+    local tmpfile
+    tmpfile=$(mktemp)
+    grep -v "opencode/bin" "$bashrc" | grep -v "# opencode CLI path" | grep -v "^# opencode$" > "$tmpfile"
+    # 末尾の空行を除去して差し替え
+    sed -e :a -e '/^\n*$/{$d;N;ba}' "$tmpfile" > "$bashrc"
+    rm -f "$tmpfile"
+    echo "[setup-claude-remote] Removed old opencode PATH entries from ~/.bashrc"
+  fi
+
+  # ガード行 `[ -z "$PS1" ] && return` の直前に挿入
+  if grep -q '\[ -z "\$PS1" \] && return' "$bashrc"; then
+    local tmpfile
+    tmpfile=$(mktemp)
+    local inserted=0
+    while IFS= read -r line; do
+      if [ "$inserted" -eq 0 ] && echo "$line" | grep -q '\[ -z "\$PS1" \] && return'; then
+        printf '%s\n%s\n\n' "$path_comment" "$path_export" >> "$tmpfile"
+        inserted=1
+      fi
+      printf '%s\n' "$line" >> "$tmpfile"
+    done < "$bashrc"
+    cp "$tmpfile" "$bashrc"
+    rm -f "$tmpfile"
+  else
+    # ガード行が見つからない場合はファイル先頭に追加
+    local tmpfile
+    tmpfile=$(mktemp)
+    printf '%s\n%s\n\n' "$path_comment" "$path_export" > "$tmpfile"
+    cat "$bashrc" >> "$tmpfile"
+    cp "$tmpfile" "$bashrc"
+    rm -f "$tmpfile"
+  fi
+  echo "[setup-claude-remote] opencode PATH added to ~/.bashrc (before interactive guard)"
+}
+
 # --- dot-claude-dev セットアップ ---
 
 # 既にクローン済みならスキップ
@@ -72,27 +140,11 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
     echo "[setup-claude-remote] Installing opencode..."
     curl -fsSL https://opencode.ai/install | bash 2>/dev/null
 
-    # PATHに追加（現在のセッション）
+    # PATHに追加（現在のセッション用）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
 
-    # ~/.profile と ~/.bashrc にPATHを永続化（重複チェック付き）
-    OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
-
-    # ~/.profile に追加（ログインシェル用）
-    if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
-      echo "" >> "$HOME/.profile"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
-      echo "[setup-claude-remote] opencode PATH added to ~/.profile"
-    fi
-
-    # ~/.bashrc に追加（非ログインシェル・新規Bash起動時用）
-    if ! grep -q "\.opencode/bin" "$HOME/.bashrc" 2>/dev/null; then
-      echo "" >> "$HOME/.bashrc"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.bashrc"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.bashrc"
-      echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
-    fi
+    # PATH永続化（~/.profile + ~/.bashrcガード前に挿入）
+    _persist_opencode_path
 
     if ! command -v opencode &>/dev/null; then
       echo "[setup-claude-remote] WARNING: opencode installation failed."
@@ -125,27 +177,11 @@ else
     echo "[setup-claude-remote] Installing opencode (free models only)..."
     curl -fsSL https://opencode.ai/install | bash 2>/dev/null
 
-    # PATHに追加（現在のセッション）
+    # PATHに追加（現在のセッション用）
     export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
 
-    # ~/.profile と ~/.bashrc にPATHを永続化（重複チェック付き）
-    OPENCODE_PATH_LINE='export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$PATH"'
-
-    # ~/.profile に追加（ログインシェル用）
-    if ! grep -q "\.opencode/bin" "$HOME/.profile" 2>/dev/null; then
-      echo "" >> "$HOME/.profile"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.profile"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.profile"
-      echo "[setup-claude-remote] opencode PATH added to ~/.profile"
-    fi
-
-    # ~/.bashrc に追加（非ログインシェル・新規Bash起動時用）
-    if ! grep -q "\.opencode/bin" "$HOME/.bashrc" 2>/dev/null; then
-      echo "" >> "$HOME/.bashrc"
-      echo "# opencode CLI path (added by setup-claude-remote.sh)" >> "$HOME/.bashrc"
-      echo "$OPENCODE_PATH_LINE" >> "$HOME/.bashrc"
-      echo "[setup-claude-remote] opencode PATH added to ~/.bashrc"
-    fi
+    # PATH永続化（~/.profile + ~/.bashrcガード前に挿入）
+    _persist_opencode_path
 
     if command -v opencode &>/dev/null; then
       echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
@@ -163,9 +199,7 @@ if command -v opencode &>/dev/null; then
   echo "[setup-claude-remote] Command available: opencode"
 else
   echo "[setup-claude-remote] ⚠ opencode installed but not in current PATH"
-  echo "[setup-claude-remote] PATH added to ~/.profile and ~/.bashrc"
-  echo "[setup-claude-remote] Next Bash command: opencode will be available automatically"
-  echo "[setup-claude-remote] Current workaround: Use 'source ~/.bashrc' or full path"
+  echo "[setup-claude-remote] PATH will be available in next Bash session"
 fi
 
 exit 0
