@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODELS=("openai/gpt-5.3-codex" "zai-coding-plan/glm-5")
+MODELS=("openai/gpt-5.3-codex" "zai-coding-plan/glm-4.7")
 PASS="✅ PASS"
 FAIL="❌ FAIL"
 total_pass=0
