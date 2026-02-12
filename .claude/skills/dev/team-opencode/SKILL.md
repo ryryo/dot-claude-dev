@@ -245,9 +245,18 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 2. `references/role-catalog.md` から該当ロールの `role_directive` を取得
 3. `story-analysis.json` から該当ロールの `customDirective` を取得
 4. task-list.json からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
-5. テンプレートの変数を置換してエージェントプロンプトとして使用
-6. task-list.json の `needsPriorContext` を確認し、テンプレートの `{prior_context_step}` を置換
-7. task-list.json の `name` を `{task_name}` として置換
+5. task-list.json の `name` を `{task_name}` として置換
+6. `needsPriorContext: true` の場合、`{opencodePrompt}` の先頭に以下を付加してから置換する:
+   ```
+   Before starting, check what was changed by the previous task:
+   - Run: git log --oneline -3
+   - Run: git diff HEAD~1 --stat
+   - Run: git diff HEAD~1
+   Understand the prior changes, then proceed with the following task:
+
+   ```
+   `needsPriorContext` が未指定または false の場合はそのまま置換する
+7. テンプレートの変数を置換してエージェントプロンプトとして使用
 
 ⚠️ **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
 
