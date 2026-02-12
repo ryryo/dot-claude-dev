@@ -31,6 +31,8 @@
 
 1. TaskUpdate でタスク#{id} を in_progress にし、owner を「{agent_name}」に設定
 
+{prior_context_step}
+
 2. 以下のコマンドをそのまま実行してください。モデルやコマンドを変更しないでください:
 
 opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
@@ -39,9 +41,13 @@ opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
 
 4. opencode が生成したコードやファイルがあれば、指示通りに適用する
 
-5. TaskUpdate でタスク#{id} を completed にする
+5. 成果物をコミットする（dev:simple-add スキル経由）:
+Task({ subagent_type: "simple-add", model: "haiku", prompt: "タスク#{id}（{task_name}）の成果物をコミットしてください" })
+コミットに失敗した場合（変更なし等）はスキップして次に進む。
 
-6. SendMessage でリーダー(team-lead)に結果を報告する
+6. TaskUpdate でタスク#{id} を completed にする
+
+7. SendMessage でリーダー(team-lead)に結果を報告する
 
 ## 厳守事項
 
@@ -70,6 +76,8 @@ opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
 | `{id}` | TaskCreate で生成 | `1`, `2`, `3` |
 | `{OC_MODEL}` | Phase 0-1 で選択 | `openai/gpt-5.3-codex` |
 | `{opencodePrompt}` | task-list.json の `opencodePrompt` | `以下の仕様でHeroSectionを実装...` |
+| `{task_name}` | task-list.json の `name` | `HeroSectionのコピー作成` |
+| `{prior_context_step}` | task-list.json の `needsPriorContext` に基づく | （下記参照） |
 
 ## 使用ルール
 
@@ -79,3 +87,13 @@ opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
 4. opencode run コマンドは1行で記述する（改行しない）
 5. `{custom_directive}` が null の場合は空文字に置換する
 6. `{input_files}` が空の場合は「なし」に置換する
+7. `{prior_context_step}` は `needsPriorContext` の値に基づいて置換する:
+   - `needsPriorContext: true` の場合:
+     ```
+     1b. 前タスクの変更を確認してください:
+     git log --oneline -3
+     git diff HEAD~1 --stat
+     git diff HEAD~1
+     確認した内容を踏まえて、次の opencode run を実行してください。
+     ```
+   - `needsPriorContext` が未指定または false の場合: 空文字に置換する

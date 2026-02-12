@@ -142,6 +142,7 @@ Q: opencode run で使用するモデルは？
             "id": "task-1-1",
             "name": "タスク名",
             "description": "タスク説明",
+            "needsPriorContext": false,
             "inputs": [],
             "outputs": ["出力ファイルパス"],
             "opencodePrompt": "opencode に渡す具体的な実装指示"
@@ -245,6 +246,8 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 3. `story-analysis.json` から該当ロールの `customDirective` を取得
 4. task-list.json からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
 5. テンプレートの変数を置換してエージェントプロンプトとして使用
+6. task-list.json の `needsPriorContext` を確認し、テンプレートの `{prior_context_step}` を置換
+7. task-list.json の `name` を `{task_name}` として置換
 
 ⚠️ **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
 
@@ -392,9 +395,9 @@ TeamDelete()
 
 TaskUpdate で `completed` にする条件:
 
-1. **エージェントが実行した場合**: エージェントが SendMessage でリーダーに完了報告を送信済み
-2. **リーダーが代行した場合**: ユーザー承認を得た上で代行し、成果物が存在する
-3. **いずれの場合も**: 成果物ファイルが期待通りに存在することを確認済み
+1. **エージェントが実行した場合**: opencode結果を適用し、dev:simple-add でコミット済み
+2. **リーダーが代行した場合**: ユーザー承認を得た上で代行し、dev:simple-add でコミット済み
+3. **いずれの場合も**: 成果物ファイルが存在し、コミットされていることを確認済み
 
 **⚠️ 禁止**: 上記条件を満たさずにタスクを `completed` にする
 
