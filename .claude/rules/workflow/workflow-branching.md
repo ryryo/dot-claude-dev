@@ -1,7 +1,6 @@
 ---
 description: タスクをTDD/E2E/TASKに分岐する判定ルール。dev:storyスキルで使用。
 globs:
-  - "**/TODO.md"
   - "**/task-list.json"
 ---
 
@@ -102,31 +101,17 @@ globs:
 | ドキュメント | README, CHANGELOG |
 | 依存関係 | npm install, パッケージ追加 |
 
-## TODO.mdラベル形式
+## task-list.json での workflow 指定
 
-### TDDタスク
+各タスクに `workflow` フィールドを付与する:
 
-```markdown
-- [ ] [TDD][CYCLE] {タスク名} のテスト作成・実装・リファクタリング
-- [ ] [TDD][REVIEW] セルフレビュー + テスト資産管理
-- [ ] [TDD][CHECK] lint/format/build
-- [ ] [TDD][COMMIT] コミット
+```json
+{ "id": "task-1", "name": "validateEmail", "workflow": "tdd", ... }
+{ "id": "task-2", "name": "LoginForm",     "workflow": "e2e", ... }
+{ "id": "task-3", "name": "ESLint設定",     "workflow": "task", ... }
 ```
 
-### E2Eタスク
-
-```markdown
-- [ ] [E2E][CYCLE] {タスク名} UI実装 + agent-browser検証
-- [ ] [E2E][CHECK] lint/format/build
-- [ ] [E2E][COMMIT] コミット
-```
-
-### TASKタスク
-
-```markdown
-- [ ] [TASK][EXEC] {タスク名} 実行
-- [ ] [TASK][VERIFY] {タスク名} 検証
-```
+dev:developing はこの `workflow` フィールドに基づいてワークフローを適用する。
 
 ## 曖昧なケースの判断
 

@@ -51,20 +51,18 @@ TASKは、テスト不要・UI検証不要のセットアップ/設定/インフ
                         └─ NO → 再分析（タスクを分解）
 ```
 
-## TODO.mdラベル形式
+## task-list.json での指定
 
-```markdown
-### TASKタスク
-- [ ] [TASK][EXEC] {タスク名} 実行
-- [ ] [TASK][VERIFY] {タスク名} 検証
+```json
+{
+  "id": "task-1",
+  "name": "ESLint設定",
+  "type": "integration",
+  "workflow": "task",
+  "files": { ".eslintrc.js": "new" },
+  "description": "ESLintの設定ファイルを作成する"
+}
 ```
-
-## ラベル説明
-
-| ラベル | 意味 |
-|--------|------|
-| [TASK][EXEC] | タスク実行（設定ファイル作成、コマンド実行） |
-| [TASK][VERIFY] | 検証（ファイル存在確認、ビルド成功確認） |
 
 ## TASKワークフロー
 

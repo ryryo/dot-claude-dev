@@ -7,8 +7,8 @@
 
 | スキル | 用途 |
 |--------|------|
-| **dev:story** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
-| **dev:developing** | TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは3ステップ(CYCLE→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
+| **dev:story** | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解 |
+| **dev:developing** | task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは3ステップ(CYCLE→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
 | **dev:feedback** | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成まで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック |
 
 ### アイデアワークフロー
@@ -66,7 +66,7 @@
 
 ```
 1. /dev:story 実行
-   └── ストーリー入力 → TODO.md生成（TDD/E2E/TASKラベル付き）
+   └── ストーリー入力 → task-list.json生成（workflowフィールド付き）
 
 2. dev:developing でタスク実行
    ├── [TASK] EXEC → VERIFY → SPOT(+OpenCode)

@@ -1,7 +1,7 @@
 ---
 name: dev:developing
 description: |
-  TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装。
+  task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。
 
   Trigger:
   dev:developing, /dev:developing, 実装, 開発, implementing, develop
@@ -50,7 +50,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## ワークフロー別ステップ・委譲先
 
-### TDDワークフロー（[TDD]ラベル）
+### TDDワークフロー（workflow: tdd）
 
 | Step | agent | model | type | 備考 |
 |------|-------|-------|------|------|
@@ -60,7 +60,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
 | 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
 
-### E2Eワークフロー（[E2E]ラベル）
+### E2Eワークフロー（workflow: e2e）
 
 | Step | agent | model | type | 備考 |
 |------|-------|-------|------|------|
@@ -69,7 +69,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 3 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
 | 3b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
 
-### TASKワークフロー（[TASK]ラベル）
+### TASKワークフロー（workflow: task）
 
 **SPOT/FIX以外はサブエージェント呼び出しなし。エージェントが直接実行。**
 
@@ -86,17 +86,17 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ### Phase 1: タスク登録
 
-1. TODO.mdを読み込み、未完了タスク（`- [ ]`）を **TaskCreate** で登録
+1. task-list.jsonを読み込み、全タスクを **TaskCreate** で登録
 2. 依存関係があれば **TaskUpdate(addBlockedBy)** で設定
 3. **TaskList** で登録確認
 
 **ゲート**: タスクが登録されなければ次に進まない。
 
-### Phase 2: タスク実行（ラベル別ワークフロー）
+### Phase 2: タスク実行（workflow別ワークフロー）
 
-1. **実行順序**: TASKタスクを最初に実行（環境構築が必要なため）
-2. 各タスクのラベルに応じて上記ワークフローを適用
-3. 各タスク完了時に **TaskUpdate(completed)** + TODO.md更新（`- [ ]` → `- [x]`）
+1. **実行順序**: workflow: task のタスクを最初に実行（環境構築が必要なため）
+2. 各タスクの `workflow` フィールドに応じて上記ワークフローを適用
+3. 各タスク完了時に **TaskUpdate(completed)**
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
 
@@ -104,13 +104,12 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 完了条件
 
-- [ ] すべてのTASKタスクが完了（EXEC→VERIFY→SPOT）
-- [ ] すべてのTDDタスクが完了（CYCLE→REVIEW→CHECK→SPOT）
-- [ ] すべてのE2Eタスクが完了（CYCLE→CHECK→SPOT）
+- [ ] すべてのtaskワークフローが完了（EXEC→VERIFY→SPOT）
+- [ ] すべてのtddワークフローが完了（CYCLE→REVIEW→CHECK→SPOT）
+- [ ] すべてのe2eワークフローが完了（CYCLE→CHECK→SPOT）
 - [ ] 全テストが成功
 - [ ] 品質チェックが通過
 - [ ] spot-reviewがパス（または3回失敗でエスカレーション）
-- [ ] TODO.mdが全て完了マーク
 
 ## 参照
 

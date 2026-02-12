@@ -1,5 +1,5 @@
 ---
-description: "ストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成"
+description: "ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成"
 argument-hint: "[ストーリー説明（任意）]"
 ---
 
@@ -7,7 +7,7 @@ argument-hint: "[ストーリー説明（任意）]"
 
 ## 概要
 
-ユーザーストーリーからTDD/E2E/TASK分岐付きタスクリスト（TODO.md）を生成します。
+ユーザーストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成します。
 
 ## 使い方
 

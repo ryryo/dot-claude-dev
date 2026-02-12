@@ -1,5 +1,5 @@
 ---
-description: "TODO.mdのタスクを実行。TDD/E2E/TASKラベルに応じたワークフローで実装"
+description: "task-list.jsonのタスクを実行。workflowフィールドに応じたワークフローで実装"
 argument-hint: "[feature-slug/story-slug（任意）]"
 ---
 
@@ -7,7 +7,7 @@ argument-hint: "[feature-slug/story-slug（任意）]"
 
 ## 概要
 
-TODO.mdのタスクを実行します。TDD/E2E/TASKラベルに応じて適切なワークフローを適用します。
+task-list.jsonのタスクを実行します。workflowフィールド（tdd/e2e/task）に応じて適切なワークフローを適用します。
 
 ## 使い方
 
@@ -23,7 +23,7 @@ TODO.mdのタスクを実行します。TDD/E2E/TASKラベルに応じて適切�
 /dev:developing
 ```
 
-→ カレントディレクトリから TODO.md を検索
+→ カレントディレクトリから task-list.json を検索
 
 ## 実行方法
 

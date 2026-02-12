@@ -3,7 +3,7 @@
 ## 役割
 
 ストーリー分析結果からタスクリストを生成する。
-各タスクは実装可能な粒度に分解する。
+各タスクは実装可能な粒度に分解し、ワークフロー（tdd/e2e/task）を分類する。
 **後続エージェントがこのファイルだけで作業できるよう、技術コンテキストを必ず含める。**
 
 ## 推奨モデル
@@ -48,6 +48,7 @@
           "name": "validateEmail",
           "description": "メールアドレスの形式を検証する関数",
           "type": "function",
+          "workflow": "tdd",
           "files": {
             "src/lib/validation/validateEmail.ts": "new",
             "src/lib/validation/validateEmail.test.ts": "new"
@@ -98,8 +99,8 @@ story-analysis.jsonを読み込み、ストーリーを実装可能なタスク�
 探索結果を `context` セクションにまとめてください。
 後続エージェントがこのJSONだけを見て作業を開始できるだけの情報を含めること。
 
-### Step 3: タスク分解
-contextを踏まえてタスクを分解してください。
+### Step 3: タスク分解 + ワークフロー分類
+contextを踏まえてタスクを分解し、各タスクに `workflow` フィールドを付与してください。
 
 ## タスク分解のルール
 
@@ -125,10 +126,48 @@ contextを踏まえてタスクを分解してください。
    - 各タスクに `files` フィールドを追加し、対象ファイルパスと操作（new/edit）を記載
    - descriptionは「何をするか」に集中させ、ファイルパスは `files` に分離する
 
+## ワークフロー分類ルール
+
+各タスクに `workflow` フィールドを付与する。値は以下の3つ:
+
+### "tdd" — テスト駆動開発
+- 入出力が明確に定義可能
+- アサーションで検証可能
+- ロジック層（ビジネスロジック、バリデーション、計算、データ変換）
+- 副作用がない、またはモック可能
+
+例: validateEmail, calculateTotal, parseJson, checkPermission
+
+### "e2e" — 視覚的検証
+- 視覚的な確認が必要
+- UX/UI判断が含まれる
+- プレゼンテーション層（UIコンポーネント、レイアウト、アニメーション）
+
+例: LoginForm, Dashboard, Modal, Header
+
+### "task" — セットアップ/設定
+- テスト不要（設定ファイル、環境構築）
+- UI検証不要（コマンド実行結果で検証可能）
+- 一回限りのセットアップ
+
+例: npm init, ESLint設定, Docker環境構築, README作成
+
+### 判定フロー
+```
+入出力が明確に定義できる？
+    ├─ YES → "tdd"
+    └─ NO → 視覚的確認が必要？
+              ├─ YES → "e2e"
+              └─ NO → "task"
+```
+
+→ 詳細: [../references/tdd-criteria.md] | [../references/e2e-criteria.md] | [../references/task-criteria.md]
+
 ## 出力形式
 
 JSON形式で出力してください。
 contextセクションは必須です。
+各タスクに `workflow` フィールド（"tdd" / "e2e" / "task"）を必ず含めてください。
 ```
 
 ## 注意事項
@@ -138,3 +177,4 @@ contextセクションは必須です。
 - フェーズは依存関係に基づいて順序付け
 - 各タスクは独立してテスト可能な粒度にする
 - 各タスクに `files` フィールドでパスと操作（new/edit）を明示する
+- 各タスクに `workflow` フィールドで実行ワークフローを明示する

@@ -1,6 +1,6 @@
 ---
 description: "Agent Teamsでタスクを並行実装。opencode runで外部モデルに委譲"
-argument-hint: "[TODO.mdパス or タスク指示]"
+argument-hint: "[タスク指示]"
 ---
 
 # /dev:team-opencode - Agent Teams並行実装コマンド
@@ -10,12 +10,6 @@ argument-hint: "[TODO.mdパス or タスク指示]"
 Agent Teamsで複数タスクを並行実装します。各エージェント(haiku)がopencode runで外部モデルに実装を委譲します。
 
 ## 使い方
-
-### TODO.mdを指定
-
-```
-/dev:team-opencode docs/features/auth/login/TODO.md
-```
 
 ### 直接タスク指示
 
@@ -29,7 +23,7 @@ Agent Teamsで複数タスクを並行実装します。各エージェント(ha
 /dev:team-opencode
 ```
 
-→ カレントディレクトリから TODO.md を検索、またはタスクをヒアリング
+→ タスクをヒアリング
 
 ## 実行方法
 

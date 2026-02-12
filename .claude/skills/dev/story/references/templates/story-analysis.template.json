@@ -1,0 +1,11 @@
+{
+  "story": { "title": "", "description": "" },
+  "goal": "",
+  "scope": { "included": [], "excluded": [] },
+  "acceptanceCriteria": [],
+  "slugCandidates": {
+    "feature": [],
+    "story": []
+  },
+  "existingFeatures": []
+}

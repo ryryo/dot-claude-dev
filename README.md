@@ -78,7 +78,7 @@ git pull
 - ストーリーを分析
 - タスクに分解
 - 各タスクをTDDまたはPLANに分類
-- ラベル付きタスクで `TODO.md` を生成
+- workflowフィールド付きの `task-list.json` を生成
 
 ### 2. タスクを実行
 
@@ -113,7 +113,7 @@ IMPL → AUTO（agent-browser検証） → CHECK → COMMIT
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  1. /dev:story                                              │
-│     └── ストーリー → TODO.md（[TDD]/[PLAN]ラベル付き）        │
+│     └── ストーリー → task-list.json（workflow付き）            │
 │                                                             │
 │  2. dev:developing                                          │
 │     ├── [TDD] RED→GREEN→REFACTOR→REVIEW→CHECK→COMMIT       │
@@ -131,7 +131,7 @@ IMPL → AUTO（agent-browser検証） → CHECK → COMMIT
 .claude/
 ├── skills/
 │   ├── dev/
-│   │   ├── story/            # ストーリー → TODO.md変換
+│   │   ├── story/            # ストーリー → task-list.json変換
 │   │   ├── developing/       # タスク実行（TDD/PLAN）
 │   │   └── feedback/         # 学びの記録
 │   └── meta-skill-creator/   # スキル作成/改善

@@ -1,18 +1,18 @@
 ---
 name: plan-review
-description: 計画レビュー。OpenCode CLIでTODO.mdのタスク分解をレビューし、品質を検証。
+description: 計画レビュー。OpenCode CLIでtask-list.jsonのタスク分解をレビューし、品質を検証。
 model: sonnet
 allowed_tools: Read, Bash
 ---
 
 # Plan Review Agent
 
-TODO.mdのタスク分解をOpenCode CLIでレビューする。
+task-list.jsonのタスク分解をOpenCode CLIでレビューする。
 実装前の計画品質を客観的に検証します。
 
 ## 役割
 
-TODO.mdのタスク分解をOpenCode CLIでレビューする。
+task-list.jsonのタスク分解をOpenCode CLIでレビューする。
 
 ## 推奨モデル
 
@@ -20,7 +20,6 @@ TODO.mdのタスク分解をOpenCode CLIでレビューする。
 
 ## 入力
 
-- TODO.md
 - story-analysis.json
 - task-list.json
 
@@ -29,7 +28,6 @@ TODO.mdのタスク分解をOpenCode CLIでレビューする。
 ### Step 1: ファイル読み込み
 
 ```javascript
-Read({ file_path: "docs/features/{feature-slug}/{story-slug}/TODO.md" })
 Read({ file_path: "docs/features/{feature-slug}/{story-slug}/story-analysis.json" })
 Read({ file_path: "docs/features/{feature-slug}/{story-slug}/task-list.json" })
 ```
@@ -46,7 +44,7 @@ Review this task breakdown:
 {story-analysis.json内容}
 
 ## Task List
-{TODO.md内容}
+{task-list.json内容}
 
 Analyze:
 1. Task granularity - Too big? Too small?
@@ -60,9 +58,9 @@ Analyze:
    - Parallel tasks identified where possible
 
 3. Workflow assignment - TDD/E2E/TASK appropriate?
-   - TDD: Business logic, validation, data processing
-   - E2E: UI components, visual elements, user flows
-   - TASK: Setup, config, infrastructure, docs
+   - TDD: Business logic, validation, data processing (workflow: tdd)
+   - E2E: UI components, visual elements, user flows (workflow: e2e)
+   - TASK: Setup, config, infrastructure, docs (workflow: task)
 
 4. Missing tasks - Any gaps?
    - Setup/teardown tasks
@@ -101,9 +99,9 @@ OpenCode CLIが利用不可の場合（環境変数 `USE_OPENCODE=false` また�
 - [ ] 並列実行可能なタスクが特定されている
 
 #### ワークフロー分類
-- [ ] TDD: ロジック、バリデーション、計算
-- [ ] E2E: UI、レイアウト、ユーザー操作
-- [ ] TASK: 設定、セットアップ、インフラ
+- [ ] tdd: ロジック、バリデーション、計算
+- [ ] e2e: UI、レイアウト、ユーザー操作
+- [ ] task: 設定、セットアップ、インフラ
 
 #### 漏れチェック
 - [ ] セットアップ/クリーンアップタスク
@@ -158,7 +156,7 @@ OpenCodeからの英語レスポンスを日本語に変換してユーザーに
 
 ### 2. 漏れタスク
 - エラーハンドリングタスクが不足
-- 推奨: 「[TDD] エラーハンドリング実装」を追加
+- 推奨: workflow: tdd のエラーハンドリングタスクを追加
 
 ## 推奨アクション
 1. Task 3を分解
@@ -170,7 +168,7 @@ OpenCodeからの英語レスポンスを日本語に変換してユーザーに
 
 ## 出力
 
-レビュー結果をユーザーに提示（TODO.md修正提案を含む）
+レビュー結果をユーザーに提示（task-list.json修正提案を含む）
 
 ## 注意事項
 
