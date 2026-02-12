@@ -29,7 +29,7 @@ allowed-tools:
 
 ## 概要
 
-ストーリーまたは直接指示を受け取り、計画フェーズでロール分業・Wave構造を設計した上で、Agent Teamsで並行実装する。各エージェント（haiku）は `opencode run` で外部モデルに実装を委譲し、結果をコミットする。最終Waveにはレビュワーを必ず配置し、品質ゲートとフィードバックループで品質を担保する。
+ストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解・レビュー）も含めて opencode を活用する。リーダーはコンテキスト収集と検証・修正を担当し、Agent Teamsで並行実装する。各エージェント（haiku）は `opencode run` で外部モデルに実装を委譲し、結果をコミットする。最終Waveにはレビュワーを必ず配置し、品質ゲートとフィードバックループで品質を担保する。
 
 ## 必須リソース
 
@@ -52,7 +52,7 @@ docs/features/team-opencode/
 
 ---
 
-## Phase 0: 計画（Claude Code が実行）
+## Phase 0: 計画（リーダー + opencode 協調）
 
 ### 0-0: クリーンアップ＆テンプレート初期化
 
@@ -74,44 +74,64 @@ Q: opencode run で使用するモデルは？
 
 選択されたモデルを `$OC_MODEL` として以降のすべてのコマンドに使用する。
 
-### 0-2: ストーリー分析 → story-analysis.json
+### 0-2: ストーリー分析 → story-analysis.json（opencode実行）
 
-1. ユーザーのストーリー/指示を分析
-2. `references/role-catalog.md` を Read で読み込み、必要なロールを選定
-3. `docs/features/team-opencode/story-analysis.json` を以下の構造で埋める:
+1. ユーザーのストーリー/指示を整理する
+2. `references/role-catalog.md` を Read で読み込み、内容をプロンプトに含める
+3. opencode run でストーリー分析とロール選定を実行:
 
-```json
+```bash
+opencode run -m $OC_MODEL "
+Analyze the following story/instructions and produce a story-analysis.json.
+
+## User Story
+{ユーザーのストーリー/指示}
+
+## Available Roles
+{role-catalog.md の内容}
+
+## Output Format
+Write the file docs/features/team-opencode/story-analysis.json with this structure:
 {
-  "story": { "title": "...", "description": "..." },
-  "goal": "...",
-  "scope": { "included": [...], "excluded": [...] },
-  "acceptanceCriteria": [...],
-  "teamDesign": {
-    "roles": [
+  \"story\": { \"title\": \"...\", \"description\": \"...\" },
+  \"goal\": \"...\",
+  \"scope\": { \"included\": [...], \"excluded\": [...] },
+  \"acceptanceCriteria\": [...],
+  \"teamDesign\": {
+    \"roles\": [
       {
-        "name": "ロール名",
-        "catalogRef": "role-catalog.mdのキー",
-        "customDirective": "タスク固有の追加指示（不要ならnull）",
-        "outputs": ["期待する出力ファイル"]
+        \"name\": \"ロール名\",
+        \"catalogRef\": \"role-catalog.mdのキー\",
+        \"customDirective\": \"タスク固有の追加指示（不要ならnull）\",
+        \"outputs\": [\"期待する出力ファイル\"]
       }
     ],
-    "waves": [
+    \"waves\": [
       {
-        "id": 1,
-        "parallel": ["ロール名1", "ロール名2"],
-        "description": "Wave説明"
+        \"id\": 1,
+        \"parallel\": [\"ロール名1\", \"ロール名2\"],
+        \"description\": \"Wave説明\"
       },
       {
-        "id": 2,
-        "parallel": ["ロール名3"],
-        "blockedBy": [1],
-        "description": "Wave説明"
+        \"id\": 2,
+        \"parallel\": [\"ロール名3\"],
+        \"blockedBy\": [1],
+        \"description\": \"Wave説明\"
       }
     ],
-    "qualityGates": ["最終Waveにレビュワー配置"]
+    \"qualityGates\": [\"最終Waveにレビュワー配置\"]
   }
 }
+
+## Rules
+- The final wave MUST include a reviewer role
+- Use blockedBy to express sequential dependencies between waves
+- Roles within the same wave run in parallel
+" 2>&1
 ```
+
+4. 出力された `story-analysis.json` を Read で読み込み、構造を検証する
+5. 不備があればリーダーが修正する
 
 **ルール**:
 
@@ -119,51 +139,70 @@ Q: opencode run で使用するモデルは？
 - Wave間の `blockedBy` で直列依存を明示する
 - 同一Wave内のロールは並行実行される
 
-### 0-3: コード探索＆タスク分解 → task-list.json
+### 0-3: コード探索＆タスク分解 → task-list.json（opencode実行）
 
-1. 対象コードベースを探索（Glob, Grep, Read）
-2. 各ロールのタスクを **1つのopencode呼び出しで完結する粒度** に分解
-3. `docs/features/team-opencode/task-list.json` を以下の構造で埋める:
+1. リーダーが対象コードベースを探索（Glob, Grep, Read）し、コンテキスト情報を収集する
+2. 収集したコンテキストと story-analysis.json を opencode に渡してタスク分解を実行:
 
-```json
+```bash
+opencode run -m $OC_MODEL "
+Break down the following story into tasks for team execution.
+
+## Story Analysis
+{story-analysis.json の内容}
+
+## Codebase Context
+{リーダーが収集したコンテキスト情報: 対象ファイル、モジュール構成、技術メモ}
+
+## Rules
+- Each task MUST be completable in a single opencode call
+- Include specific file paths in inputs/outputs
+- opencodePrompt should be a concrete, actionable instruction
+
+## Output Format
+Write the file docs/features/team-opencode/task-list.json with this structure:
 {
-  "context": {
-    "description": "...",
-    "targetFiles": {},
-    "relatedModules": {},
-    "technicalNotes": {}
+  \"context\": {
+    \"description\": \"...\",
+    \"targetFiles\": {},
+    \"relatedModules\": {},
+    \"technicalNotes\": {}
   },
-  "waves": [
+  \"waves\": [
     {
-      "id": 1,
-      "roles": {
-        "ロール名": [
+      \"id\": 1,
+      \"roles\": {
+        \"ロール名\": [
           {
-            "id": "task-1-1",
-            "name": "タスク名",
-            "description": "タスク説明",
-            "inputs": [],
-            "outputs": ["出力ファイルパス"],
-            "opencodePrompt": "opencode に渡す具体的な実装指示"
+            \"id\": \"task-1-1\",
+            \"name\": \"タスク名\",
+            \"description\": \"タスク説明\",
+            \"inputs\": [],
+            \"outputs\": [\"出力ファイルパス\"],
+            \"opencodePrompt\": \"opencode に渡す具体的な実装指示\"
           }
         ]
       }
     }
   ],
-  "metadata": {
-    "totalTasks": 0,
-    "totalWaves": 0,
-    "roles": []
+  \"metadata\": {
+    \"totalTasks\": 0,
+    \"totalWaves\": 0,
+    \"roles\": []
   }
 }
+" 2>&1
 ```
+
+3. 出力された `task-list.json` を Read で読み込み、構造とタスク粒度を検証する
+4. 不備があればリーダーが修正する
 
 ### 0-4: opencode でタスクレビュー
 
-タスク分解の品質を opencode の codex モデルで検証する。モデルは必ず「openai/gpt-5.3-codex」指定。
+タスク分解の品質を opencode で検証する。0-1 で選択した `$OC_MODEL` を使用。
 
 ```bash
-opencode run -m openai/gpt-5.3-codex "
+opencode run -m $OC_MODEL "
 Review this team task breakdown:
 
 ## Story Analysis
@@ -404,7 +443,7 @@ TaskUpdate で `completed` にする条件:
 3. **モデル固定**: 選択されたモデルを全エージェントで統一
 4. **CC側はhaiku**: コスト最小化。実装はopencode側が担当
 5. **越境防止**: 各エージェントは自分のタスク以外に手を出さない
-6. **計画はリーダーが実行**: Phase 0 はリーダー（Claude Code）が自ら実行。opencode に委譲するのはタスク実行のみ
+6. **計画もopencode活用**: Phase 0 のストーリー分析（0-2）、タスク分解（0-3）、レビュー（0-4）は opencode で実行。リーダーはコンテキスト収集・検証・修正を担当
 7. **リーダーは実装しない**: リーダーの役割は計画・調整・監視。実装はエージェント（opencode）が担当。リーダーが直接コードを書くのはユーザー承認後の代行時のみ
 8. **Phase順序は絶対**: Phase 0→1→2→3 の順序を飛ばさない。Wave内のステップ（1-1→1-2→1-3→1-4→1-5）も飛ばさない
 9. **全Wave完走が必須**: 最終Waveのreviewerを含め、task-list.jsonで定義した全Waveをスポーン・完了させる。「効率化」のためにWaveを省略しない
