@@ -17,6 +17,13 @@
 |--------|------|
 | **dev:ideation** | プロダクトアイデアをJTBD分析→競合調査→SLC仕様書に構造化。何を作るべきかを明確にする。Triggers: /dev:ideation, アイデア整理, プロダクト企画 |
 
+### ユーティリティ
+
+| スキル | 用途 |
+|--------|------|
+| **agent-browser** | ブラウザ操作を自動化。Webテスト、フォーム入力、スクリーンショット、データ抽出。Triggers: ブラウザ操作, Webテスト, スクリーンショット |
+| **dev:opencode-check** | opencode CLIの動作確認。インストール状態、runコマンド、モデル応答をチェック。Triggers: opencode動作確認, opencode check |
+
 ### メタスキル
 
 | スキル | 用途 |
