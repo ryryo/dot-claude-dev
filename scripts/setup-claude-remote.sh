@@ -20,11 +20,14 @@
 #
 # opencode連携（オプション）:
 #   OPENCODE_AUTH_JSON 環境変数にbase64エンコードしたauth.jsonを設定すると、
-#   opencode CLIをインストールし、OpenAI Plus/ProのOAuth認証を引き継ぐ。
+#   opencode CLIをインストールし、全プロバイダの認証情報を引き継ぐ。
+#   （OpenAI OAuth, zai-coding-plan APIキー等）
 #
 #   ローカルで準備:
 #     cat ~/.local/share/opencode/auth.json | base64 | pbcopy
 #   → Claude Code Webのシークレットに OPENCODE_AUTH_JSON として設定
+#
+#   注意: プロバイダを追加・変更した場合は再エンコードが必要
 
 # ローカル環境ではスキップ
 if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
@@ -59,7 +62,7 @@ fi
 
 # OPENCODE_AUTH_JSON 環境変数の存在確認
 if [ -n "$OPENCODE_AUTH_JSON" ]; then
-  echo "[setup-claude-remote] ✓ OPENCODE_AUTH_JSON is set (OAuth credentials available)"
+  echo "[setup-claude-remote] ✓ OPENCODE_AUTH_JSON is set (provider credentials available)"
 else
   echo "[setup-claude-remote] ✗ OPENCODE_AUTH_JSON is not set (free models only)"
 fi
@@ -94,7 +97,7 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
     echo "[setup-claude-remote] opencode already installed: $(opencode -v 2>/dev/null)"
   fi
 
-  # auth.json を復元（OAuth refresh token を引き継ぐ）
+  # auth.json を復元（全プロバイダの認証情報を引き継ぐ）
   OPENCODE_DATA_DIR="$HOME/.local/share/opencode"
   mkdir -p "$OPENCODE_DATA_DIR"
 
@@ -103,12 +106,28 @@ if [ -n "$OPENCODE_AUTH_JSON" ]; then
   if [ $? -eq 0 ] && [ -s "$OPENCODE_DATA_DIR/auth.json" ]; then
     chmod 600 "$OPENCODE_DATA_DIR/auth.json"
     echo "[setup-claude-remote] opencode auth.json restored."
+
+    # 利用可能プロバイダ一覧を表示
+    if command -v python3 &>/dev/null; then
+      echo "[setup-claude-remote] Available providers:"
+      python3 -c "
+import json, sys
+try:
+    with open('$OPENCODE_DATA_DIR/auth.json') as f:
+        data = json.load(f)
+    for name, info in data.items():
+        auth_type = info.get('type', 'unknown')
+        print(f'  - {name} ({auth_type})')
+except Exception:
+    print('  (failed to parse auth.json)')
+" 2>/dev/null
+    fi
   else
     echo "[setup-claude-remote] WARNING: Failed to decode OPENCODE_AUTH_JSON."
     rm -f "$OPENCODE_DATA_DIR/auth.json"
   fi
 else
-  echo "[setup-claude-remote] OPENCODE_AUTH_JSON not set, skipping OAuth setup."
+  echo "[setup-claude-remote] OPENCODE_AUTH_JSON not set, skipping provider auth setup."
   echo "[setup-claude-remote] Free models (opencode/*) are available without auth."
 
   # 無料モデル用にopencode本体だけインストール

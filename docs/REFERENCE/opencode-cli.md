@@ -559,6 +559,8 @@ opencode auth login
 | `openai` | `openai/gpt-5.2` | 汎用 |
 | `openai` | `openai/gpt-5.2-codex` | コーディング特化 |
 | `openai` | `openai/gpt-5.3-codex` | コーディング特化（最新） |
+| `zai-coding-plan` | `zai-coding-plan/glm-5` | GLMシリーズ（最新） |
+| `zai-coding-plan` | `zai-coding-plan/glm-4.7` | GLMシリーズ |
 
 ---
 
@@ -593,6 +595,7 @@ opencode run -s <session-id> "前回の続き" 2>&1
 |------------|-----------|
 | セカンドオピニオン | `opencode run -m openai/gpt-5.2 "この設計の問題点は？"` |
 | コーディングレビュー | `opencode run -m openai/gpt-5.3-codex "セキュリティ観点でレビュー"` |
+| GLMモデル利用 | `opencode run -m zai-coding-plan/glm-4.7 "コードを分析"` |
 | 軽量タスク（無料） | `opencode run -m opencode/gpt-5-nano "変数名の改善案"` |
 | 並列分析 | バックグラウンドで `opencode run` を実行 |
 | Codex CLI代替 | GPT系codexモデルによる客観分析 |
@@ -607,8 +610,9 @@ opencode run -s <session-id> "前回の続き" 2>&1
 |---------|------|-----------------|
 | `opencode/*` (free) | 不要 | opencode インストールのみ |
 | `openai/*` | OpenAI OAuth必要 | auth.json の復元が必要 |
+| `zai-coding-plan/*` | APIキー必要 | auth.json の復元が必要 |
 
-**無料モデルだけ使うなら `OPENCODE_AUTH_JSON` は不要。** opencode をインストールするだけで動く。
+**無料モデルだけ使うなら `OPENCODE_AUTH_JSON` は不要。** opencode をインストールするだけで動く。有料モデル（`openai/*`, `zai-coding-plan/*`）を使うには auth.json の復元が必要。
 
 ### 2つの構成パターン
 
@@ -622,21 +626,24 @@ opencode run -m opencode/gpt-5-nano "この関数を説明して" 2>&1
 opencode run -m opencode/kimi-k2.5-free "コードレビューして" 2>&1
 ```
 
-#### パターンB: OpenAI モデル利用（OAuth認証あり）
+#### パターンB: 有料モデル利用（認証あり）
 
-OpenAI Plus/Proサブスクの `openai/gpt-5.2` や `openai/gpt-5.3-codex` を使う場合。
+OpenAI Plus/Proサブスクの `openai/*` モデルや、`zai-coding-plan/*` モデルを使う場合。
 
 ```bash
-# これらのモデルにはOAuth認証が必要
+# OpenAI モデル（OAuth認証）
 opencode run -m openai/gpt-5.3-codex "リファクタして" 2>&1
+
+# zai-coding-plan モデル（APIキー認証）
+opencode run -m zai-coding-plan/glm-4.7 "コードを分析して" 2>&1
 ```
 
-### OpenAI OAuth認証の仕組み
+### プロバイダ認証の仕組み
 
 ```
 opencode auth login
-  → ブラウザでOpenAI OAuthフロー
-  → ~/.local/share/opencode/auth.json に保存
+  → 各プロバイダに応じた認証フロー
+  → ~/.local/share/opencode/auth.json に保存（マルチプロバイダ対応）
     {
       "openai": {
         "type": "oauth",
@@ -644,13 +651,17 @@ opencode auth login
         "access": "eyJ...",     ← アクセストークン（10日間有効）
         "expires": 1771209089613,
         "accountId": "..."
+      },
+      "zai-coding-plan": {
+        "type": "api",
+        "key": "sk-..."         ← APIキー（無期限）
       }
     }
 ```
 
-- `access` トークンの有効期限は **10日間**
-- `refresh` トークンは長期有効。opencode が `access` の期限切れ時に自動更新する
-- つまり **auth.json をリモートに復元すれば認証が引き継がれる**
+- **openai**: `access` トークンは10日間有効。`refresh` トークンで自動更新される
+- **zai-coding-plan**: APIキーは無期限（プロバイダ側で無効化されない限り）
+- **auth.json をリモートに復元すれば全プロバイダの認証が引き継がれる**
 
 ### セットアップ手順
 
@@ -714,19 +725,21 @@ claude --remote "タスク"
 | auth.json のパーミッション | スクリプト内で `chmod 600` を設定 |
 | リモート環境の永続性 | セッション毎にフックで再セットアップされるため問題なし |
 
-### refresh token の更新（パターンB）
+### 認証情報の更新（パターンB）
 
-OpenAI 側で refresh token が無効化された場合（パスワード変更、セッション取消等）:
+プロバイダ側でトークンが無効化された場合や、新しいプロバイダを追加した場合:
 
 ```bash
-# ローカルで再ログイン
+# ローカルで再ログイン（または新プロバイダを追加）
 opencode auth login
 
-# 新しいauth.jsonをエンコードし直す
+# auth.json全体を再エンコード（全プロバイダの情報を含む）
 cat ~/.local/share/opencode/auth.json | base64 | pbcopy
 
-# シークレットを更新
+# シークレット OPENCODE_AUTH_JSON を更新
 ```
+
+**注意**: プロバイダを追加・変更した場合は必ず再エンコードしてシークレットを更新すること。auth.json には全プロバイダの認証情報が含まれるため、部分的な更新はできない。
 
 ### 動作確認
 
@@ -737,7 +750,8 @@ opencode -v
 # パターンA: 無料モデルで実行テスト
 opencode run -m opencode/gpt-5-nano "Hello, respond with OK" 2>&1
 
-# パターンB: 認証確認 + OpenAIモデルで実行テスト
+# パターンB: 認証確認 + 有料モデルで実行テスト
 opencode auth list
 opencode run -m openai/gpt-5.2 "Hello, respond with OK" 2>&1
+opencode run -m zai-coding-plan/glm-4.7 "Hello, respond with OK" 2>&1
 ```

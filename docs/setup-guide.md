@@ -183,6 +183,18 @@ readlink .claude/rules/languages
 - プライベートリポジトリの場合はClaude GitHub Appのアクセス権が必要
 - gh利用時はサンドボックスの制約で `-R owner/repo` が必要な場合がある
 
+### opencode認証（オプション）
+
+リモート環境でopencode CLIの有料モデル（`openai/*`, `zai-coding-plan/*`）を使う場合、ローカルの認証情報をシークレット経由で転送する必要があります。
+
+```bash
+# ローカルでauth.jsonをbase64エンコード
+cat ~/.local/share/opencode/auth.json | base64 | pbcopy
+# → Claude Code Webのシークレットに OPENCODE_AUTH_JSON として設定
+```
+
+プロバイダを追加・変更した場合は再エンコードが必要です。詳細は [OpenCode CLI リファレンス](REFERENCE/opencode-cli.md#claude-code-webリモートでの利用) を参照してください。
+
 ## 更新
 
 ```bash
