@@ -12,6 +12,5 @@ mkdir -p "$WORKSPACE/prompts"
 # テンプレート雛形を配置
 cp "$TEMPLATES_DIR/story-analysis.template.json" "$WORKSPACE/story-analysis.json"
 cp "$TEMPLATES_DIR/task-list.template.json"      "$WORKSPACE/task-list.json"
-cp "$TEMPLATES_DIR/TODO.template.md"             "$WORKSPACE/TODO.md"
 
 echo "✓ Team workspace initialized: $WORKSPACE"

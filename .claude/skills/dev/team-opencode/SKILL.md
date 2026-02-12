@@ -33,11 +33,11 @@ allowed-tools:
 
 ## 必須リソース
 
-| リソース | 読み込みタイミング | 用途 |
-|----------|-------------------|------|
+| リソース                              | 読み込みタイミング                  | 用途                       |
+| ------------------------------------- | ----------------------------------- | -------------------------- |
 | `references/agent-prompt-template.md` | Phase 1-3（エージェントスポーン前） | 統一エージェントプロンプト |
-| `references/role-catalog.md` | Phase 0-2（ロール設計時） | ロール定義の参照 |
-| `references/templates/*.json, *.md` | Phase 0-0（初期化時） | テンプレート雛形 |
+| `references/role-catalog.md`          | Phase 0-2（ロール設計時）           | ロール定義の参照           |
+| `references/templates/*.json`         | Phase 0-0（初期化時）               | テンプレート雛形           |
 
 **⚠️ エージェントスポーン時、必ず `agent-prompt-template.md` を Read で読み込んでからプロンプトを構築すること。記憶や要約で代替しない。**
 
@@ -47,7 +47,6 @@ allowed-tools:
 docs/features/team-opencode/
 ├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件、チーム設計）
 ├── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当）
-├── TODO.md                # 実行順序（Wave + ロール + ステップ）
 └── prompts/               # 各ロールの opencode 実行プロンプト（自動生成）
 ```
 
@@ -115,6 +114,7 @@ Q: opencode run で使用するモデルは？
 ```
 
 **ルール**:
+
 - 最終Waveには必ず `reviewer` ロールを配置する
 - Wave間の `blockedBy` で直列依存を明示する
 - 同一Wave内のロールは並行実行される
@@ -158,31 +158,9 @@ Q: opencode run で使用するモデルは？
 }
 ```
 
-### 0-4: TODO.md 生成
+### 0-4: opencode でタスクレビュー
 
-task-list.json から `docs/features/team-opencode/TODO.md` を生成:
-
-```markdown
-# TODO: {タスクタイトル}
-
-## Wave 1: {Wave説明}
-
-### {ロール名}
-
-- [ ] [TEAM][EXEC] task-1-1: {タスク名}
-- [ ] [TEAM][VERIFY] 成果物確認: {出力ファイル}
-
-## Wave 2: {Wave説明}（Wave 1 完了後）
-
-### {ロール名}
-
-- [ ] [TEAM][EXEC] task-2-1: {タスク名}
-- [ ] [TEAM][VERIFY] 成果物確認: {出力ファイル}
-```
-
-### 0-5: opencode codex でタスクレビュー
-
-タスク分解の品質を opencode の codex モデルで検証する。
+タスク分解の品質を opencode の codex モデルで検証する。モデルは必ず「openai/gpt-5.3-codex」指定。
 
 ```bash
 opencode run -m openai/gpt-5.3-codex "
@@ -209,31 +187,29 @@ Respond with:
 ```
 
 **判定**:
-- `APPROVED` → 0-6 へ
-- `NEEDS_REVISION` → task-list.json / TODO.md を修正 → 再レビュー（最大3回）
+
+- `APPROVED` → 0-5 へ
+- `NEEDS_REVISION` → task-list.json を修正 → 再レビュー（最大3回）
 - 3回失敗 → 現状のままユーザーに提示し判断を仰ぐ
 
 **注意**: codex の提案をそのまま適用するのではなく、リーダーが妥当性を判断してから適用する。
 
-### 0-6: ユーザー承認
+### 0-5: ユーザー承認
 
-計画をユーザーに提示:
+task-list.json を整形し、AskUserQuestion でユーザーに提示:
 
 ```
-以下の計画でAgent Teamsを実行します:
+Q: 以下の計画でAgent Teamsを実行します。承認しますか？
 
-## チーム構成
-{ロール一覧}
+【チーム構成】 {ロール一覧}
+【Wave構造】 {Wave 1}: {並行ロール} → {Wave 2}: {並行ロール} → ...
+【タスク数】 {totalTasks}タスク / {totalWaves} Wave
+【モデル】 {$OC_MODEL}
 
-## Wave構造
-{Wave 1}: {並行ロール} → {Wave 2}: {並行ロール} → ...
-
-## タスク一覧
-{TODO.md の内容}
-
-モデル: {$OC_MODEL}
-
-実行してよいですか？
+選択肢:
+- 承認して実行
+- タスク一覧を詳しく見たい（task-list.json の全タスクを展開表示）
+- 修正が必要（Phase 0-2 に戻る）
 ```
 
 **ゲート**: ユーザー承認なしに Phase 1 に進まない。
@@ -257,6 +233,7 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 現在のWaveに属するロールごとに1エージェントをスポーン。
 
 **全エージェント共通設定**:
+
 - `model`: haiku
 - `subagent_type`: general-purpose
 - `run_in_background`: true
@@ -312,7 +289,7 @@ Q: レビュワーから以下の改善候補が挙がりました。対応し�
 
 ### 2-3: フィードバック分岐
 
-- **対応あり** → Phase 0-2 に戻る（story-analysis.json / task-list.json / TODO.md を更新し、新Waveのエージェントをスポーン）
+- **対応あり** → Phase 0-2 に戻る（story-analysis.json / task-list.json を更新し、新Waveのエージェントをスポーン）
 - **対応なし** → Phase 3 へ
 
 **ループ制限**: 最大3ラウンド。超過時はユーザーに継続可否を確認。
@@ -347,12 +324,12 @@ TeamDelete()
 
 ## エラーハンドリング
 
-| 状況 | 対応 |
-|------|------|
-| opencode run エラー | 同じコマンドを最大3回リトライ |
-| エージェント無応答（5分） | SendMessage で状況確認 |
-| 3回リトライ失敗 | ユーザーに報告、指示を仰ぐ |
-| opencode モデル利用不可 | ユーザーに報告、別モデル選択を促す |
+| 状況                      | 対応                               |
+| ------------------------- | ---------------------------------- |
+| opencode run エラー       | 同じコマンドを最大3回リトライ      |
+| エージェント無応答（5分） | SendMessage で状況確認             |
+| 3回リトライ失敗           | ユーザーに報告、指示を仰ぐ         |
+| opencode モデル利用不可   | ユーザーに報告、別モデル選択を促す |
 
 ## 重要な注意事項
 

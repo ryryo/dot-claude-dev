@@ -8,7 +8,7 @@
 
 slide_ad2のLP改修タスクで `dev:team-opencode` を実行した際に発見された8つの問題を改善する。
 
-核心的な改善は **「計画フェーズ（Phase 0）の新設」** であり、dev:story と同様に story-analysis.json / task-list.json / TODO.md を作成するプロセスをスキルに組み込む。これにより問題の大半が構造的に解決される。
+核心的な改善は **「計画フェーズ（Phase 0）の新設」** であり、dev:story と同様に story-analysis.json / task-list.json を作成するプロセスをスキルに組み込む。これにより問題の大半が構造的に解決される。
 
 ## 背景
 
@@ -55,7 +55,6 @@ LP改修では「コピーライター / デザイナー / 実装者 / レビュ
 docs/features/team-opencode/
 ├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件）
 ├── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当）
-├── TODO.md                # 実行順序（Wave + ロール + ステップ）
 └── prompts/               # 各ロールの opencode 実行プロンプト（自動生成）
     ├── copywriter.md
     ├── designer.md
@@ -78,7 +77,6 @@ mkdir -p "$WORKSPACE/prompts"
 # テンプレート雛形を配置
 cp references/templates/story-analysis.template.json "$WORKSPACE/story-analysis.json"
 cp references/templates/task-list.template.json      "$WORKSPACE/task-list.json"
-cp references/templates/TODO.template.md             "$WORKSPACE/TODO.md"
 ```
 
 SKILL.md からは `Bash("bash scripts/init-team-workspace.sh")` で呼び出すだけ。
@@ -274,48 +272,6 @@ dev:story の task-list.json との差分:
 ```
 
 各ロール内のタスクは **1つのopencode呼び出しで完結する粒度** に分解する。1タスク = 1セクション or 1コンポーネント程度が目安。
-
----
-
-### TODO.md テンプレート
-
-`[TDD]`/`[E2E]`/`[TASK]` ラベルの代わりに `[TEAM][EXEC]`/`[TEAM][VERIFY]` ラベルを使用。Wave構造とロール名がそのまま見出しに反映される。
-
-```markdown
-# TODO: {タスクタイトル}
-
-## Wave 1: {Wave説明}
-
-### copywriter
-
-- [ ] [TEAM][EXEC] task-1-1: HeroSectionのコピー作成
-- [ ] [TEAM][EXEC] task-1-2: EvidenceSectionのコピー作成
-- [ ] [TEAM][EXEC] task-1-3: CTASectionのコピー作成
-- [ ] [TEAM][VERIFY] 成果物確認: copy-hero.md, copy-evidence.md, copy-cta.md
-
-### designer
-
-- [ ] [TEAM][EXEC] task-2-1: HeroSectionのデザイン仕様
-- [ ] [TEAM][EXEC] task-2-2: EvidenceSectionのデザイン仕様
-- [ ] [TEAM][EXEC] task-2-3: CTASectionのデザイン仕様
-- [ ] [TEAM][VERIFY] 成果物確認: design-hero.md, design-evidence.md, design-cta.md
-
-## Wave 2: {Wave説明}（Wave 1 完了後）
-
-### implementer
-
-- [ ] [TEAM][EXEC] task-3-1: HeroSection実装
-- [ ] [TEAM][EXEC] task-3-2: EvidenceSection実装
-- [ ] [TEAM][EXEC] task-3-3: CTASection実装
-- [ ] [TEAM][VERIFY] 成果物確認: HeroSection.tsx, EvidenceSection.tsx, CTASection.tsx
-
-## Wave 3: {Wave説明}（Wave 2 完了後）
-
-### reviewer
-
-- [ ] [TEAM][EXEC] 横断レビュー
-- [ ] [TEAM][VERIFY] レビュー結果報告
-```
 
 ---
 
@@ -574,9 +530,8 @@ Phase 0: 計画（NEW — Claude Code が実行）
   0-1: opencode モデル選択
   0-2: ストーリー分析 → story-analysis.json
   0-3: コード探索＆タスク分解 → task-list.json
-  0-4: TODO.md 生成
-  0-5: opencode codex でタスクレビュー → 修正ループ（最大3回）
-  0-6: ユーザー承認
+  0-4: opencode codex でタスクレビュー → 修正ループ（最大3回）
+  0-5: ユーザー承認
 
 Phase 1: チーム実行（Wave 式）
   1-1: チーム作成（TeamCreate）
@@ -605,16 +560,16 @@ dev:story の plan-review と同様、タスク分解の品質を opencode の c
 ### フロー
 
 ```
-0-4: TODO.md 生成完了
+0-3: task-list.json 生成完了
   ↓
-0-5: opencode run -m openai/gpt-5.3-codex "..." で以下を検証:
+0-4: opencode run -m openai/gpt-5.3-codex "..." で以下を検証:
   - タスク粒度（1 opencode呼び出しで完結する粒度か）
   - Wave間の依存関係（inputs/outputs の整合性）
   - ロール割当の妥当性（catalogRef と作業内容の一致）
   - 漏れタスク（セットアップ、エラーハンドリング等）
   ↓
-APPROVED → 0-6 へ
-NEEDS_REVISION → task-list.json / TODO.md を修正 → 再レビュー（最大3回）
+APPROVED → 0-5 へ
+NEEDS_REVISION → task-list.json を修正 → 再レビュー（最大3回）
 3回失敗 → 現状のままユーザーに提示し判断を仰ぐ
 ```
 
@@ -646,7 +601,7 @@ Respond with:
 
 ### 修正の適用
 
-NEEDS_REVISION の場合、リーダーが codex の提案を反映して task-list.json / TODO.md を更新し、再度 0-5 を実行する。codex の提案をそのまま適用するのではなく、リーダーが妥当性を判断してから適用する。
+NEEDS_REVISION の場合、リーダーが codex の提案を反映して task-list.json を更新し、再度 0-4 を実行する。codex の提案をそのまま適用するのではなく、リーダーが妥当性を判断してから適用する。
 
 ---
 
@@ -669,7 +624,7 @@ AskUserQuestion でユーザーに提示
   - 対応不要（完了へ進む）
   ↓
 対応あり → Phase 0-2 に戻る
-  - story-analysis.json / task-list.json / TODO.md を更新
+  - story-analysis.json / task-list.json を更新
   - 新Wave のエージェントをスポーン → Phase 1-3 から再実行
   ↓
 対応なし → Phase 3（クリーンアップ）へ
@@ -701,7 +656,6 @@ AskUserQuestion でユーザーに提示
 - [ ] [TASK] `references/templates/` にテンプレート雛形を作成:
   - `story-analysis.template.json`（teamDesign セクション付き）
   - `task-list.template.json`（waves + roles + opencodePrompt）
-  - `TODO.template.md`（Wave + ロール構造）
 - [ ] [TASK] `scripts/init-team-workspace.sh` 作成（クリーンアップ + テンプレートコピー）
 
 ### Phase C: エージェントプロンプト統一
