@@ -64,17 +64,18 @@ PLAN_DIR=$(bash .claude/skills/dev/team-opencode-plan/scripts/init-team-workspac
 
 ### 0-1: opencode モデル選択
 
-AskUserQuestion で使用するopencode モデルを確認:
+AskUserQuestion で計画フェーズ（ストーリー分析・タスク分解）に使用する opencode モデルを確認:
 
 ```
-Q: opencode run で使用するモデルは？
+Q: 計画（ストーリー分析・タスク分解）で使用する opencode モデルは？
 選択肢:
 - openai/gpt-5.3-codex
 - zai-coding-plan/glm-5
 - zai-coding-plan/glm-4.7
 ```
 
-選択されたモデルを `$OC_MODEL` として以降のすべてのコマンドに使用する。
+選択されたモデルを `$OC_MODEL` として以降の計画ステップで使用する。
+※ 実行時のモデルは `dev:team-opencode-exec` 起動時に別途選択可能。
 
 ### 0-2: ストーリー分析 → story-analysis.json（opencode実行）
 
