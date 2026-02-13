@@ -1,12 +1,11 @@
 ---
-name: dev:team-opencode
+name: dev:team-opencode-exec
 description: |
-  Agent Teamsでタスクを並行実行。計画フェーズでロール分業・Wave構造を設計し、
-  各エージェント(haiku)がopencode runで外部モデルに実装を委譲する。
-  レビュー・フィードバックループで品質を担保する。
+  承認済みのteam-opencode計画（task-list.json）をAgent Teamsで並行実行。
+  Wave式チーム実行→レビューフィードバック→クリーンアップ。
 
   Trigger:
-  dev:team-opencode, /dev:team-opencode, チームで実装, team opencode, swarm実装
+  dev:team-opencode-exec, /dev:team-opencode-exec, チーム実行, team exec
 allowed-tools:
   - Read
   - Write
@@ -25,123 +24,72 @@ allowed-tools:
   - SendMessage
 ---
 
-# Agent Teams + opencode 並行実装（dev:team-opencode）
+# チーム実行（dev:team-opencode-exec）
 
 ## 概要
 
-ストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解・レビュー）も含めて opencode を活用する。リーダーはコンテキスト収集と検証・修正を担当し、Agent Teamsで並行実装する。各エージェント（haiku）は `opencode run` で外部モデルに実装を委譲し、結果をコミットする。最終Waveにはレビュワーを必ず配置し、品質ゲートとフィードバックループで品質を担保する。
+`dev:team-opencode-plan` が生成した承認済み task-list.json を入力として、Agent Teams で並行実装する。各エージェント（haiku）は `opencode run` で外部モデルに実装を委譲し、結果をコミットする。最終Waveにはレビュワーを必ず配置し、品質ゲートとフィードバックループで品質を担保する。
 
 ## 必須リソース
 
-| リソース                               | 読み込みタイミング                  | 用途                       |
-| -------------------------------------- | ----------------------------------- | -------------------------- |
-| `references/agent-prompt-template.md`  | Phase 1-3（エージェントスポーン前） | 統一エージェントプロンプト |
-| `references/role-catalog.md`           | Phase 0-2（ロール設計時）           | ロール定義の参照           |
-| `references/prompts/story-analysis.md` | Phase 0-2（ストーリー分析時）       | opencode用プロンプト       |
-| `references/prompts/task-breakdown.md` | Phase 0-3（タスク分解時）           | opencode用プロンプト       |
-| `references/prompts/task-review.md`    | Phase 0-4（タスクレビュー時）       | opencode用プロンプト       |
-| `references/templates/*.json`          | Phase 0-0（初期化時）               | テンプレート雛形           |
+| リソース                              | 読み込みタイミング                  | 用途                       |
+| ------------------------------------- | ----------------------------------- | -------------------------- |
+| `references/agent-prompt-template.md` | Phase 1-3（エージェントスポーン前） | 統一エージェントプロンプト |
+| `references/role-catalog.md`          | Phase 1-3（role_directive 取得）    | ロール定義の参照           |
 
-**⚠️ エージェントスポーン時、必ず `agent-prompt-template.md` を Read で読み込んでからプロンプトを構築すること。記憶や要約で代替しない。**
+**エージェントスポーン時、必ず `agent-prompt-template.md` を Read で読み込んでからプロンプトを構築すること。記憶や要約で代替しない。**
 
-## 一時計画フォルダ
+## 計画入力元
 
 ```
-docs/features/team-opencode/
-├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件、チーム設計）
-├── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当）
-└── prompts/               # 各ロールの opencode 実行プロンプト（自動生成）
+docs/features/team-opencode/{YYMMDD}_{slug}/
+├── story-analysis.json    # ストーリー分析結果（チーム設計、ロール定義含む）
+├── task-list.json         # タスク定義（waves/roles 形式、承認済み）
+└── prompts/               # 各ロールの opencode 実行プロンプト（任意）
 ```
 
 ---
 
-## Phase 0: 計画（リーダー + opencode 協調）
+## 計画選択 UI（起動時）
 
-### 0-0: クリーンアップ＆テンプレート初期化
-
-```bash
-bash .claude/skills/dev/team-opencode/scripts/init-team-workspace.sh
-```
-
-### 0-1: opencode モデル選択
-
-AskUserQuestion で使用するopencode モデルを確認:
+1. `docs/features/team-opencode/` 以下のディレクトリを列挙する
+2. 各ディレクトリの `task-list.json` を Read し、metadata を表示する
+3. AskUserQuestion で選択:
 
 ```
-Q: opencode run で使用するモデルは？
+Q: 実行する計画を選択してください。
+
+【計画一覧】
+1. {YYMMDD}_{slug} ({totalTasks}タスク / {totalWaves} Wave)
+2. {YYMMDD}_{slug} ({totalTasks}タスク / {totalWaves} Wave)
+...
+
 選択肢:
+- 1
+- 2
+- パスを直接指定
+```
+
+計画が0件の場合: 「先に `dev:team-opencode-plan` を実行して計画を作成してください」と案内して終了する。
+
+選択後、`task-list.json` のパスを `$PLAN_DIR` として保持し、以降の Phase 1-3 で使用する。
+
+---
+
+## opencode モデル選択（Phase 1 前）
+
+`$PLAN_DIR/task-list.json` の `metadata.ocModel` をデフォルト値として AskUserQuestion で提示:
+
+```
+Q: opencode run で使用するモデルは？（計画時: {metadata.ocModel}）
+選択肢:
+- {metadata.ocModel}（計画時と同じ）(Recommended)
 - openai/gpt-5.3-codex
 - zai-coding-plan/glm-5
 - zai-coding-plan/glm-4.7
 ```
 
 選択されたモデルを `$OC_MODEL` として以降のすべてのコマンドに使用する。
-
-### 0-2: ストーリー分析 → story-analysis.json（opencode実行）
-
-1. ユーザーのストーリー/指示を整理する
-2. `references/role-catalog.md` を Read で読み込む
-3. `references/prompts/story-analysis.md` を Read で読み込み、変数を置換して opencode run を実行:
-
-```bash
-opencode run -m $OC_MODEL "{story-analysis.md の変数置換済みプロンプト}"
-```
-
-4. 出力された `story-analysis.json` を Read で読み込み、構造を検証する
-5. 不備があればリーダーが修正する
-
-**ルール**:
-
-- 最終Waveには必ず `reviewer` ロールを配置する
-- Wave間の `blockedBy` で直列依存を明示する
-- 同一Wave内のロールは並行実行される
-
-### 0-3: コード探索＆タスク分解 → task-list.json（opencode実行）
-
-1. リーダーが対象コードベースを探索（Glob, Grep, Read）し、コンテキスト情報を収集する
-2. `references/prompts/task-breakdown.md` を Read で読み込み、変数を置換して opencode run を実行:
-
-```bash
-opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプト}"
-```
-
-3. 出力された `task-list.json` を Read で読み込み、構造とタスク粒度を検証する
-4. 不備があればリーダーが修正する
-
-### 0-4: opencode でタスクレビュー
-
-タスク分解の品質を opencode で検証する。`references/prompts/task-review.md` を Read で読み込み、変数を置換して実行。**モデルは `openai/gpt-5.3-codex` 固定**（`$OC_MODEL` ではない）:
-
-```bash
-opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプロンプト}"
-```
-
-**判定**:
-
-- `APPROVED` → 0-5 へ
-- `NEEDS_REVISION` → task-list.json を修正 → 再レビュー（最大3回）
-- 3回失敗 → 現状のままユーザーに提示し判断を仰ぐ
-
-**注意**: codex の提案をそのまま適用するのではなく、リーダーが妥当性を判断してから適用する。
-
-### 0-5: ユーザー承認
-
-task-list.json を整形し、AskUserQuestion でユーザーに提示:
-
-```
-Q: 以下の計画でAgent Teamsを実行します。承認しますか？
-
-【チーム構成】 {ロール一覧}
-【Wave構造】 {Wave 1}: {並行ロール} → {Wave 2}: {並行ロール} → ...
-【タスク数】 {totalTasks}タスク / {totalWaves} Wave
-【モデル】 {$OC_MODEL}
-
-選択肢:
-- 承認して実行
-- 修正が必要（Phase 0-2 に戻る）
-```
-
-**ゲート**: ユーザー承認なしに Phase 1 に進まない。
 
 ---
 
@@ -155,7 +103,7 @@ TeamCreate({ team_name: "team-opencode-{timestamp}", description: "opencode並�
 
 ### 1-2: タスク登録
 
-task-list.json の全タスクを TaskCreate で登録する。Wave間の `blockedBy` も設定。
+`$PLAN_DIR/task-list.json` の全タスクを TaskCreate で登録する。Wave間の `blockedBy` も設定。
 
 ### 1-3: Wave N のエージェントスポーン
 
@@ -171,8 +119,8 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 
 1. `references/agent-prompt-template.md` を Read で読み込む
 2. `references/role-catalog.md` から該当ロールの `role_directive` を取得
-3. `story-analysis.json` から該当ロールの `customDirective` を取得
-4. task-list.json からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
+3. `$PLAN_DIR/story-analysis.json` から該当ロールの `customDirective` を取得
+4. `$PLAN_DIR/task-list.json` からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
 5. task-list.json の `name` を `{task_name}` として置換
 6. `needsPriorContext: true` の場合、`{opencodePrompt}` の先頭に以下を付加してから置換する:
 
@@ -189,7 +137,7 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 
 7. テンプレートの変数を置換してエージェントプロンプトとして使用
 
-⚠️ **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
+**必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
 
 ### 1-4: 完了待機
 
@@ -197,7 +145,7 @@ TaskList を定期的に確認し、現在のWaveの全タスク完了を待つ�
 
 **タイムアウト**: エージェントが5分以上 in_progress のまま変化がない場合、「エージェント遅延・失敗時のエスカレーション手順」に従う。
 
-**⚠️ 禁止:**
+**禁止:**
 
 - エージェント遅延を理由に、リーダーがユーザー承認なしで作業を代行する
 - 1つのエージェントの遅延を理由に、他のエージェントをシャットダウンする
@@ -207,7 +155,7 @@ TaskList を定期的に確認し、現在のWaveの全タスク完了を待つ�
 
 現在のWaveが完了したら、「Wave完了ゲート」のチェックリストを確認し、次のWaveのエージェントをスポーンする（1-3 に戻る）。全Waveが完了するまで繰り返す。
 
-**⚠️ 必須**: 最終Wave（reviewer含む）の完了まで、このループを続ける。Waveを省略しない。
+**必須**: 最終Wave（reviewer含む）の完了まで、このループを続ける。Waveを省略しない。
 
 ---
 
@@ -240,7 +188,7 @@ Q: レビュワーから以下の改善候補が挙がりました。対応し�
 
 ### 2-3: フィードバック分岐
 
-- **対応あり** → Phase 0-2 に戻る（story-analysis.json / task-list.json を更新し、新Waveのエージェントをスポーン）
+- **対応あり** → ユーザーに「`dev:team-opencode-plan` を再実行して計画を更新し、再度 `dev:team-opencode-exec` を実行してください」と案内する。exec 単体では計画を再生成しない。
 - **対応なし** → Phase 3 へ
 
 **ループ制限**: 最大3ラウンド。超過時はユーザーに継続可否を確認。
@@ -258,7 +206,7 @@ Q: レビュワーから以下の改善候補が挙がりました。対応し�
 
 | タスク | ロール | 状態 | 概要 |
 |--------|--------|------|------|
-| {タスク1} | {ロール} | ✅ / ❌ | {概要} |
+| {タスク1} | {ロール} | 完了 / 失敗 | {概要} |
 ```
 
 ### 3-2: シャットダウン
@@ -299,7 +247,7 @@ TeamDelete()
    - 中止する
 ```
 
-**⚠️ 禁止事項:**
+**禁止事項:**
 
 - リーダーが**ユーザー承認なしに**エージェントの作業を代行しない
 - 1つのエージェントが遅延しても、**他のエージェントをシャットダウンしない**
@@ -323,7 +271,7 @@ TeamDelete()
 - [ ] reviewer からの改善候補報告を受信している
 - [ ] Phase 2-2 でユーザーに改善候補を提示する
 
-**⚠️ 以下の行為は禁止:**
+**以下の行為は禁止:**
 
 - Wave完了前に次Waveのエージェントをスポーンする
 - 最終Wave（reviewer）をスキップして Phase 3 に進む
@@ -339,7 +287,7 @@ TaskUpdate で `completed` にする条件:
 2. **リーダーが代行した場合**: ユーザー承認を得た上で代行し、dev:simple-add でコミット済み
 3. **いずれの場合も**: 成果物ファイルが存在し、コミットされていることを確認済み
 
-**⚠️ 禁止**: 上記条件を満たさずにタスクを `completed` にする
+**禁止**: 上記条件を満たさずにタスクを `completed` にする
 
 ---
 
@@ -350,7 +298,6 @@ TaskUpdate で `completed` にする条件:
 3. **モデル固定**: 選択されたモデルを全エージェントで統一
 4. **CC側はhaiku**: コスト最小化。実装はopencode側が担当
 5. **越境防止**: 各エージェントは自分のタスク以外に手を出さない
-6. **計画もopencode活用**: Phase 0 のストーリー分析（0-2）、タスク分解（0-3）、レビュー（0-4）は opencode で実行。リーダーはコンテキスト収集・検証・修正を担当
-7. **リーダーは実装しない**: リーダーの役割は計画・調整・監視。実装はエージェント（opencode）が担当。リーダーが直接コードを書くのはユーザー承認後の代行時のみ
-8. **Phase順序は絶対**: Phase 0→1→2→3 の順序を飛ばさない。Wave内のステップ（1-1→1-2→1-3→1-4→1-5）も飛ばさない
-9. **全Wave完走が必須**: 最終Waveのreviewerを含め、task-list.jsonで定義した全Waveをスポーン・完了させる。「効率化」のためにWaveを省略しない
+6. **リーダーは実装しない**: リーダーの役割は調整・監視。実装はエージェント（opencode）が担当。リーダーが直接コードを書くのはユーザー承認後の代行時のみ
+7. **Phase順序は絶対**: Phase 1→2→3 の順序を飛ばさない。Wave内のステップ（1-1→1-2→1-3→1-4→1-5）も飛ばさない
+8. **全Wave完走が必須**: 最終Waveのreviewerを含め、task-list.jsonで定義した全Waveをスポーン・完了させる。「効率化」のためにWaveを省略しない
