@@ -56,64 +56,63 @@
 
 ---
 
-## 提案 1: Hybrid 実行モード（opencode 任意化）
+## 提案 1: 計画フェーズの native 実行オプション
 
 ### 概要
 
-現行の「全タスク opencode 経由」を見直し、3つの実行モードから選択可能にする。
+`team-opencode-plan` の Phase 0-1（モデル選択）に「native（現在の Claude Code モデルで直接実行）」オプションを追加する。計画フェーズ（0-2 ストーリー分析、0-3 タスク分解）に限定した変更であり、実行フェーズ（`team-opencode-exec`）は opencode のまま維持する。
+
+### 適用範囲
+
+| Phase | 現行 | 変更後 |
+|-------|------|--------|
+| 0-2 ストーリー分析 | opencode run 固定 | native / opencode 選択可能 |
+| 0-3 タスク分解 | opencode run 固定 | native / opencode 選択可能 |
+| 0-4 タスクレビュー | opencode (codex) 固定 | **変更なし**（外部モデルによるクロスチェックを維持） |
+| exec 全体 | opencode run 固定 | **変更なし**（opencode 経由が本スキルの思想） |
+
+### Phase 0-1 の変更
 
 ```
-実行モード選択
-├── native   : CC Teammate が直接実装（opencode 不使用）
-├── opencode : 現行通り opencode run 経由（外部モデル活用）
-└── hybrid   : タスクごとに native / opencode を自動判定
+Q: 計画（ストーリー分析・タスク分解）で使用するモデルは？
+選択肢:
+- native（現在の Claude Code モデルで直接実行）
+- openai/gpt-5.3-codex
+- zai-coding-plan/glm-5
+- zai-coding-plan/glm-4.7
 ```
 
-### hybrid モードの判定基準
+- `native` 選択時: Phase 0-2, 0-3 で `opencode run` を使用せず、現在の Claude Code セッションがプロンプトテンプレートに基づいて直接分析・タスク分解を行う
+- opencode モデル選択時: 現行通り `opencode run -m $OC_MODEL` で実行
 
-| 条件 | 実行方式 | 理由 |
-|------|---------|------|
-| コードベース探索・分析が主目的 | native | CC は Glob/Grep/Read で十分。opencode のオーバーヘッド不要 |
-| 設定ファイル変更・軽量タスク | native | haiku/sonnet で十分な単純作業 |
-| 複雑なロジック実装 | opencode | 外部の強力なモデル（codex等）の推論力が必要 |
-| レビュー・テスト分析 | native | 読み取り専用タスクに opencode は過剰 |
+### native 実行時の動作
 
-### task-list.json のスキーマ変更
+Phase 0-2, 0-3 の opencode run 呼び出し部分を、Claude Code による直接実行に置き換える:
 
-```json
-{
-  "id": "task-1-1",
-  "name": "CSS変数定義",
-  "role": "designer",
-  "executionMode": "native",
-  "opencodePrompt": "...",
-  "nativePrompt": "...",
-  ...
-}
-```
-
-- `executionMode`: `"native"` | `"opencode"` | `"auto"`（hybrid モード時に自動判定）
-- `nativePrompt`: native モード時の Teammate 用プロンプト（opencode 非経由）
-- `opencodePrompt`: opencode モード時のプロンプト（既存）
+1. プロンプトテンプレート（`references/prompts/*.md`）を Read で読み込み、変数を置換する（現行と同じ）
+2. `opencode run` の代わりに、Claude Code が自身のツール（Glob/Grep/Read/Write）を使ってプロンプトの指示を直接実行する
+3. 出力先（`$PLAN_DIR/story-analysis.json`, `$PLAN_DIR/task-list.json`）は現行と同一
 
 ### メリット
 
-- **コスト削減**: native モードのタスクは2層（Lead + Teammate）で済む。3層コストを回避
-- **レイテンシ改善**: opencode run の起動・応答待ちがなくなる
-- **耐障害性向上**: opencode 障害時も native タスクは継続可能
-- **Agent Teams の本領発揮**: Teammate が直接 Claude Code セッションとして動くため、Teammate 間メッセージング、自己クレーム等のネイティブ機能が活用可能
+- **コスト削減**: opencode の3層コスト（Lead + CC + opencode外部モデル）を2層（Lead + CC）に削減
+- **レイテンシ改善**: opencode run の起動オーバーヘッドがなくなる
+- **耐障害性向上**: opencode 障害時も計画フェーズは native で継続可能
+- **スキーマ変更不要**: task-list.json の構造は変更なし。影響は plan スキルの SKILL.md 内に閉じる
+- **段階的な検証**: 計画フェーズだけなので、品質比較が容易
 
 ### デメリット
 
-- **スキーマの複雑化**: `executionMode`, `nativePrompt` の追加でタスク定義が肥大化
-- **判定ロジックの設計負荷**: hybrid モードの auto 判定が不正確だと逆効果
-- **品質の不均一性**: native（haiku/sonnet）と opencode（codex等）で実装品質に差が出る可能性
-- **既存計画との互換性**: 既存の task-list.json に `executionMode` がないため移行が必要
-- **プロンプトの二重管理**: `opencodePrompt` と `nativePrompt` を両方メンテナンスする負荷
+- **バイアスの集中**: 計画とレビュー以外の分析が同一モデルに依存（ただし 0-4 レビューは外部モデル固定で緩和）
+- **Claude Code モデル依存**: native 実行の品質は現在の Claude Code モデル（opus/sonnet）に左右される
+- **プロンプトテンプレートの互換性**: opencode 用に設計されたプロンプトが native 実行でそのまま機能するか要検証
 
-### 採用判断の観点
+### 実装方針
 
-Zenn記事の知見「自動化そのものより設計パターンの体系化が価値」を踏まえると、hybrid モードの auto 判定に凝るよりも、**タスク設計時にユーザーが明示的に選択する方が実用的**。plan フェーズで `executionMode` を決定し、exec フェーズはそれに従うだけにするのが安全。
+1. Phase 0-1 の AskUserQuestion に `native` 選択肢を追加
+2. Phase 0-2, 0-3 に `if native then ... else opencode run ...` の分岐を追加
+3. プロンプトテンプレートは共通のまま維持（opencode 用の指示をそのまま Claude Code が解釈）
+4. Phase 0-4 は変更なし（codex 固定を維持）
 
 ---
 
