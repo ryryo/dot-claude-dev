@@ -48,11 +48,10 @@
 | # | 提案名 | インパクト | 実装難度 |
 |---|--------|-----------|----------|
 | 1 | [計画フェーズの native 実行オプション](#提案-1-計画フェーズの-native-実行オプション) | 中 | 低 |
-| 2 | [Adaptive モデル戦略](#提案-2-adaptive-モデル戦略) | 中〜高 | 中 |
-| 3 | [Teammate 間コミュニケーション](#提案-3-teammate-間コミュニケーションの活用) | 中 | 中 |
-| 4 | [テンプレートベースのチーム構成](#提案-4-テンプレートベースのチーム構成) | 中 | 低 |
-| 5 | [依存グラフベースのタスク実行](#提案-5-依存グラフベースのタスク実行) | 中 | 高 |
-| 6 | [Plan Approval ゲート](#提案-6-plan-approval-ゲート) | 中 | 低 |
+| 2 | [Teammate 間コミュニケーション](#提案-2-teammate-間コミュニケーションの活用) | 中 | 中 |
+| 3 | [テンプレートベースのチーム構成](#提案-3-テンプレートベースのチーム構成) | 中 | 低 |
+| 4 | [依存グラフベースのタスク実行](#提案-4-依存グラフベースのタスク実行) | 中 | 高 |
+| 5 | [Plan Approval ゲート](#提案-5-plan-approval-ゲート) | 中 | 低 |
 
 ---
 
@@ -116,71 +115,7 @@ Phase 0-2, 0-3 の opencode run 呼び出し部分を、Claude Code による直
 
 ---
 
-## 提案 2: Adaptive モデル戦略
-
-### 概要
-
-team-builder の4段階モデル戦略を参考に、ロールの複雑度に応じたモデル選択を導入する。
-
-```
-モデル戦略選択（AskUserQuestion）
-├── deep     : 全 Teammate = opus      （最高品質）
-├── adaptive : Lead/Architect = opus, Worker = sonnet（推奨）
-├── fast     : 全 Teammate = sonnet    （速度重視）
-└── budget   : 全 Teammate = haiku     （コスト最小、現行相当）
-```
-
-### ロール別モデルマッピング
-
-| ロール | deep | adaptive | fast | budget |
-|--------|------|----------|------|--------|
-| architect | opus | opus | sonnet | sonnet |
-| reviewer | opus | opus | sonnet | haiku |
-| frontend-developer | opus | sonnet | sonnet | haiku |
-| backend-developer | opus | sonnet | sonnet | haiku |
-| tdd-developer | opus | sonnet | sonnet | haiku |
-| designer | opus | sonnet | sonnet | haiku |
-| tester | opus | sonnet | sonnet | haiku |
-| researcher | opus | opus | sonnet | haiku |
-
-### opencode との組み合わせ
-
-モデル戦略は CC Teammate のモデル選択に適用される。opencode 実行時の `$OC_MODEL` は別途選択（現行通り）。提案 1 の hybrid モードと組み合わせると:
-
-- **native タスク**: CC Teammate のモデルがそのまま適用される（adaptive なら sonnet）
-- **opencode タスク**: CC Teammate は haiku（コスト最小）、実装は opencode の `$OC_MODEL` に委譲
-
-### task-list.json への反映
-
-```json
-{
-  "metadata": {
-    "modelStrategy": "adaptive",
-    "ocModel": "openai/gpt-5.3-codex"
-  }
-}
-```
-
-### メリット
-
-- **コスト・品質の最適化**: ロールの重要度に応じたリソース配分
-- **再現可能**: 戦略名を選ぶだけで一貫したモデル配置が得られる
-- **Zenn記事で「中〜高」評価**: モデル戦略の体系化は実証済みの高効果パターン
-
-### デメリット
-
-- **選択の負荷**: ユーザーが最適な戦略を判断する必要がある
-- **opencode 併用時の複雑さ**: CC モデルと opencode モデルの2軸選択になる
-- **opus のコスト**: deep/adaptive 戦略は大幅なコスト増（特に Teammate 数が多い場合）
-- **効果の不確実性**: haiku でも opencode に委譲すれば結果は同じ、という反論がある
-
-### 採用判断の観点
-
-提案 1 の hybrid モードなしでは効果が限定的。opencode にすべて委譲する現行設計では、CC Teammate のモデルは「opencode run コマンドを実行するだけ」なので haiku で十分という論理が成立する。**提案 1 とセットで採用するのが前提**。
-
----
-
-## 提案 3: Teammate 間コミュニケーションの活用
+## 提案 2: Teammate 間コミュニケーションの活用
 
 ### 概要
 
@@ -260,7 +195,7 @@ Agent Teams 最大の差別化要素である「Teammate 間の直接メッセ�
 
 ---
 
-## 提案 4: テンプレートベースのチーム構成
+## 提案 3: テンプレートベースのチーム構成
 
 ### 概要
 
@@ -348,7 +283,7 @@ references/team-templates/
 
 ---
 
-## 提案 5: 依存グラフベースのタスク実行
+## 提案 4: 依存グラフベースのタスク実行
 
 ### 概要
 
@@ -417,7 +352,7 @@ Wave 構造を廃止し、フラットなタスク配列 + `dependsOn` に変更
 
 ---
 
-## 提案 6: Plan Approval ゲート
+## 提案 5: Plan Approval ゲート
 
 ### 概要
 
@@ -487,27 +422,21 @@ Wave 構造を廃止し、フラットなタスク配列 + `dependsOn` に変更
 
 | 提案 | 理由 |
 |------|------|
-| **提案 4: テンプレート** | 新規ファイル追加のみ。既存スキルへの変更不要 |
-| **提案 6: Plan Approval** | task-list.json にフラグ追加のみ。既存フローへの影響最小 |
+| **提案 1: native 実行オプション** | SKILL.md の分岐追加のみ。スキーマ変更不要 |
+| **提案 3: テンプレート** | 新規ファイル追加のみ。既存スキルへの変更不要 |
+| **提案 5: Plan Approval** | task-list.json にフラグ追加のみ。既存フローへの影響最小 |
 
 ### Phase 2: 中程度の改修
 
 | 提案 | 理由 |
 |------|------|
-| **提案 3: Teammate 間通信（パターン A のみ）** | agent-prompt-template.md の修正 + exec の Wave 構造微調整 |
-| **提案 2: Adaptive モデル戦略** | モデル選択ロジックの追加。提案 1 と組み合わせると効果的 |
-
-### Phase 3: 大規模改修（要検証）
-
-| 提案 | 理由 |
-|------|------|
-| **提案 1: Hybrid 実行モード** | スキーマ変更 + 実行エンジンの大幅改修。効果は高いがリスクも高い |
+| **提案 2: Teammate 間通信（パターン A のみ）** | agent-prompt-template.md の修正 + exec の Wave 構造微調整 |
 
 ### 保留（現時点では不採用推奨）
 
 | 提案 | 理由 |
 |------|------|
-| **提案 5: DAG 実行** | YAGNI。Wave 構造で十分なケースが大半 |
+| **提案 4: DAG 実行** | YAGNI。Wave 構造で十分なケースが大半 |
 
 ---
 
@@ -515,11 +444,10 @@ Wave 構造を廃止し、フラットなタスク配列 + `dependsOn` に変更
 
 | Zenn記事の知見 | 本提案での反映 |
 |---------------|---------------|
-| 「自動化そのものより設計パターンの体系化が価値」 | 提案 4（テンプレート）に反映。自動判定より明示的な選択を推奨 |
-| 「ベストプラクティスの事前組み込みが最も効果的」 | 提案 4（テンプレート）+ 提案 6（Plan Approval）で適用漏れ防止 |
-| 「モデル戦略の体系化は中〜高評価」 | 提案 2（Adaptive モデル戦略）として独立提案 |
-| 「Teammate内Subagentは3層コスト」 | 提案 1（Hybrid モード）で opencode 依存を選択的に排除 |
+| 「自動化そのものより設計パターンの体系化が価値」 | 提案 3（テンプレート）に反映。自動判定より明示的な選択を推奨 |
+| 「ベストプラクティスの事前組み込みが最も効果的」 | 提案 3（テンプレート）+ 提案 5（Plan Approval）で適用漏れ防止 |
+| 「Teammate内Subagentは3層コスト」 | 提案 1（native 実行オプション）で計画フェーズの opencode 依存を選択的に排除 |
 | 「AUTO推薦はClaudeの自然言語理解で代替可能」 | テンプレートの AUTO 選択は不採用。明示的なテンプレート選択を推奨 |
 | 「Skill Injectionはリマインダー程度」 | agent-prompt-template.md の改善に留め、過度な skill injection を避ける |
-| 「並列調査・レビューが最も効果的」 | 提案 3（Teammate 間通信）でレビューフィードバックを強化 |
-| 「同一ファイル編集は気づかない上書き」 | 提案 4（テンプレート）の fileOwnership で事前防止 |
+| 「並列調査・レビューが最も効果的」 | 提案 2（Teammate 間通信）でレビューフィードバックを強化 |
+| 「同一ファイル編集は気づかない上書き」 | 提案 3（テンプレート）の fileOwnership で事前防止 |
