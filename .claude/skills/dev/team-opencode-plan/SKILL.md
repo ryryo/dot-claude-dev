@@ -120,8 +120,17 @@ opencode にコードベース探索からタスク分解まで一貫して実�
 opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプト}"
 ```
 
-2. 出力された `$PLAN_DIR/task-list.json` を Read で読み込み、構造とタスク粒度を検証する
-3. 不備があればリーダーが修正する
+2. 出力された `$PLAN_DIR/task-list.json` を Read で読み込み、以下のスキーマ検証を実施する:
+
+**スキーマ検証チェックリスト（全タスクに対して実施）**:
+
+- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `opencodePrompt`
+- [ ] 禁止フィールドが存在しない: `title`, `acceptanceCriteria`, `context`（タスクレベル）, `deliverables`
+- [ ] Wave構造が `waves[].tasks[]` フラット配列 + `role` フィールド形式である（旧 `roles.{roleName}` 形式でない）
+- [ ] `opencodePrompt` が具体的な実装指示を含む（ファイルパス・操作内容・期待結果）
+- [ ] `opencodePrompt` が曖昧でない（「機能を実装」「バグを修正」のような指示でない）
+
+3. 不備があればリーダーが修正する。特に `opencodePrompt` の欠損・曖昧さは必ず修正する
 
 **リトライ**: opencode が探索に失敗した場合は最大3回リトライ。3回失敗時はユーザーに報告し、次のステップに進むか修正内容の指示を仰ぐ。
 

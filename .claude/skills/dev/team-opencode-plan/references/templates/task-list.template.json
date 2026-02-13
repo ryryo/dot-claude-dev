@@ -3,13 +3,60 @@
     "description": "",
     "targetFiles": {},
     "relatedModules": {},
-    "technicalNotes": {}
+    "technicalNotes": {},
+    "designSystemRefs": {}
   },
-  "waves": [],
+  "waves": [
+    {
+      "id": 1,
+      "tasks": [
+        {
+          "id": "task-1-1",
+          "name": "CSS変数定義の追加",
+          "role": "designer",
+          "description": "新規コンポーネントに必要なCSS変数をデザイントークンファイルに追加する",
+          "needsPriorContext": false,
+          "inputs": ["src/styles/tokens.css"],
+          "outputs": ["src/styles/tokens.css"],
+          "opencodePrompt": "src/styles/tokens.css を開き、:root ブロックに以下のCSS変数を追加してください:\n--color-card-bg: #ffffff\n--color-card-border: #e5e7eb\n--spacing-card: 1.5rem\n既存の変数と命名規則を揃えてください。"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "tasks": [
+        {
+          "id": "task-2-1",
+          "name": "Cardコンポーネント実装",
+          "role": "frontend-developer",
+          "description": "Wave 1で定義されたCSS変数を使ってCardコンポーネントを新規作成する",
+          "needsPriorContext": true,
+          "inputs": ["src/styles/tokens.css"],
+          "outputs": ["src/components/Card/Card.tsx", "src/components/Card/index.ts"],
+          "opencodePrompt": "src/components/Card/Card.tsx を新規作成してください。\nPropsは { title: string; children: React.ReactNode } です。\nsrc/styles/tokens.css のCSS変数 --color-card-bg, --color-card-border, --spacing-card を使い、Tailwind v4 の変数ショートハンド構文 bg-(--color-card-bg) 形式でスタイリングしてください。\nindex.ts でnamed exportしてください。"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "tasks": [
+        {
+          "id": "task-3-1",
+          "name": "実装レビュー",
+          "role": "reviewer",
+          "description": "Wave 1-2の実装をレビューし、改善候補を報告する",
+          "needsPriorContext": true,
+          "inputs": ["src/styles/tokens.css", "src/components/Card/Card.tsx"],
+          "outputs": [],
+          "opencodePrompt": "以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。"
+        }
+      ]
+    }
+  ],
   "metadata": {
-    "totalTasks": 0,
-    "totalWaves": 0,
-    "roles": [],
+    "totalTasks": 3,
+    "totalWaves": 3,
+    "roles": ["designer", "frontend-developer", "reviewer"],
     "ocModel": "",
     "status": "pending"
   }

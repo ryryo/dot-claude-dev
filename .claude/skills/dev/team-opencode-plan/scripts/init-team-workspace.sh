@@ -19,8 +19,8 @@ if [ -d "$WORKSPACE" ]; then
   echo "WARNING: $WORKSPACE already exists. Files will be overwritten." >&2
 fi
 
-# ディレクトリ作成（クリーンアップしない）
-mkdir -p "$WORKSPACE/prompts"
+# ディレクトリ作成
+mkdir -p "$WORKSPACE"
 
 # テンプレート雛形を配置
 cp "$TEMPLATES_DIR/story-analysis.template.json" "$WORKSPACE/story-analysis.json"

@@ -92,6 +92,26 @@ Q: opencode run で使用するモデルは？（計画時: {metadata.ocModel}�
 
 ---
 
+## Pre-flight 検証ゲート（モデル選択後・チーム作成前）
+
+`$PLAN_DIR/task-list.json` を Read で読み込み、以下の検証を**全タスク**に対して実施する。
+
+### 検証チェックリスト
+
+- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `opencodePrompt`
+- [ ] 禁止フィールドが存在しない: `title`, `acceptanceCriteria`, `context`（タスクレベル）, `deliverables`
+- [ ] Wave構造が `waves[].tasks[]` フラット配列 + `role` フィールド形式である
+- [ ] `opencodePrompt` が具体的な実装指示を含む（ファイルパス・操作内容が明記されている）
+
+### 判定
+
+- **全タスク合格** → Phase 1 へ進む
+- **1つでも不合格** → **即座に停止**。不合格タスクのIDと欠損フィールドをユーザーに報告し、`dev:team-opencode-plan` での修正を案内する
+
+**禁止**: `opencodePrompt` が欠損・曖昧なタスクに対して、exec 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
+
+---
+
 ## Phase 1: チーム実行（Wave式）
 
 ### 1-1: チーム作成
