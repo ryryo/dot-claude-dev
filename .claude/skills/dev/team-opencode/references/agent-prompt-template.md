@@ -33,7 +33,7 @@
 
 2. 以下のコマンドをそのまま実行してください。モデルやコマンドを変更しないでください:
 
-opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
+opencode run -m {OC_MODEL} "{opencodePrompt}"
 
 3. opencode の出力結果を確認する
 
@@ -62,19 +62,19 @@ Task({ subagent_type: "simple-add", model: "haiku", prompt: "タスク#{id}（{t
 
 ## 変数一覧
 
-| 変数 | ソース | 例 |
-|------|--------|-----|
-| `{team_name}` | TeamCreate で生成 | `team-opencode-1770893466` |
-| `{agent_name}` | task-list.json の `role` | `copywriter`, `implementer` |
-| `{role_directive}` | role-catalog.md から取得 | （ロール定義文） |
-| `{custom_directive}` | story-analysis.json の `customDirective` | `敬語で統一。` |
-| `{タスク内容}` | task-list.json の `description` | `HeroSectionのコピー作成` |
-| `{input_files}` | task-list.json の `inputs` | `docs/features/team-opencode/copy-hero.md` |
-| `{output_files}` | task-list.json の `outputs` | `src/components/lp/HeroSection.tsx` |
-| `{id}` | TaskCreate で生成 | `1`, `2`, `3` |
-| `{OC_MODEL}` | Phase 0-1 で選択 | `openai/gpt-5.3-codex` |
-| `{opencodePrompt}` | task-list.json の `opencodePrompt` | `以下の仕様でHeroSectionを実装...` |
-| `{task_name}` | task-list.json の `name` | `HeroSectionのコピー作成` |
+| 変数                 | ソース                                   | 例                                         |
+| -------------------- | ---------------------------------------- | ------------------------------------------ |
+| `{team_name}`        | TeamCreate で生成                        | `team-opencode-1770893466`                 |
+| `{agent_name}`       | task-list.json の `role`                 | `copywriter`, `implementer`                |
+| `{role_directive}`   | role-catalog.md から取得                 | （ロール定義文）                           |
+| `{custom_directive}` | story-analysis.json の `customDirective` | `敬語で統一。`                             |
+| `{タスク内容}`       | task-list.json の `description`          | `HeroSectionのコピー作成`                  |
+| `{input_files}`      | task-list.json の `inputs`               | `docs/features/team-opencode/copy-hero.md` |
+| `{output_files}`     | task-list.json の `outputs`              | `src/components/lp/HeroSection.tsx`        |
+| `{id}`               | TaskCreate で生成                        | `1`, `2`, `3`                              |
+| `{OC_MODEL}`         | Phase 0-1 で選択                         | `openai/gpt-5.3-codex`                     |
+| `{opencodePrompt}`   | task-list.json の `opencodePrompt`       | `以下の仕様でHeroSectionを実装...`         |
+| `{task_name}`        | task-list.json の `name`                 | `HeroSectionのコピー作成`                  |
 
 ## 使用ルール
 

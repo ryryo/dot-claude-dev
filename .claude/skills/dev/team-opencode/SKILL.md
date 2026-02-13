@@ -84,7 +84,7 @@ Q: opencode run で使用するモデルは？
 3. `references/prompts/story-analysis.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 ```bash
-opencode run -m $OC_MODEL "{story-analysis.md の変数置換済みプロンプト}" 2>&1
+opencode run -m $OC_MODEL "{story-analysis.md の変数置換済みプロンプト}"
 ```
 
 4. 出力された `story-analysis.json` を Read で読み込み、構造を検証する
@@ -102,7 +102,7 @@ opencode run -m $OC_MODEL "{story-analysis.md の変数置換済みプロンプ�
 2. `references/prompts/task-breakdown.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 ```bash
-opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプト}" 2>&1
+opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプト}"
 ```
 
 3. 出力された `task-list.json` を Read で読み込み、構造とタスク粒度を検証する
@@ -113,7 +113,7 @@ opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプ�
 タスク分解の品質を opencode で検証する。`references/prompts/task-review.md` を Read で読み込み、変数を置換して実行。**モデルは `openai/gpt-5.3-codex` 固定**（`$OC_MODEL` ではない）:
 
 ```bash
-opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプロンプト}" 2>&1
+opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプロンプト}"
 ```
 
 **判定**:
