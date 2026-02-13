@@ -82,11 +82,74 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ---
 
-## 実行手順（必ずこの順序で実行）
+## 実行プロセス
+
+### Phase 0: 計画選択（エージェント実装）
+
+#### 0.1 task-list.json 検索
+
+```bash
+files=$(Glob "docs/features/**/task-list.json")
+if [ -z "$files" ]; then
+  echo "先に /dev:story を実行してタスクリストを作成してください。"
+  exit 0
+fi
+```
+
+#### 0.2 タスク統計を取得
+
+各 task-list.json を Read して統計を計算:
+- `totalTasks`: タスク数の合計
+- `tddCount`, `e2eCount`, `taskCount`: workflow別タスク数
+
+JSON形式例:
+```json
+{
+  "path": "docs/features/auth/task-list.json",
+  "totalTasks": 5,
+  "tddCount": 2,
+  "e2eCount": 2,
+  "taskCount": 1
+}
+```
+
+#### 0.3 件数別分岐
+
+**0件**: エラーメッセージ表示して終了
+
+**1件**: AskUserQuestion で確認（自動選択しない）
+```
+Q: 以下の計画を実行しますか?
+
+【パス】docs/features/auth/task-list.json
+【タスク数】5 (TDD: 2 / E2E: 2 / TASK: 1)
+
+選択肢: はい / いいえ (パスを直接指定)
+```
+
+**2件以上**: AskUserQuestion でリスト選択
+```
+Q: 実行する計画を選択してください。
+
+1. docs/features/auth/task-list.json
+   (5タスク: TDD 2 / E2E 2 / TASK 1)
+
+2. docs/features/profile/task-list.json
+   (3タスク: TDD 1 / E2E 1 / TASK 1)
+
+選択肢: 1 / 2 / パスを直接指定
+```
+
+#### 0.4 選択結果を環境変数に設定
+
+選択されたパスを `$TASK_LIST` として後続フェーズで使用:
+```bash
+export TASK_LIST="docs/features/auth/task-list.json"
+```
 
 ### Phase 1: タスク登録
 
-1. task-list.jsonを読み込み、全タスクを **TaskCreate** で登録
+1. `$TASK_LIST` を読み込み、全タスクを **TaskCreate** で登録
 2. 依存関係があれば **TaskUpdate(addBlockedBy)** で設定
 3. **TaskList** で登録確認
 
