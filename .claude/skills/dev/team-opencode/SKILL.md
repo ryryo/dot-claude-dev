@@ -37,6 +37,9 @@ allowed-tools:
 | ------------------------------------- | ----------------------------------- | -------------------------- |
 | `references/agent-prompt-template.md` | Phase 1-3（エージェントスポーン前） | 統一エージェントプロンプト |
 | `references/role-catalog.md`          | Phase 0-2（ロール設計時）           | ロール定義の参照           |
+| `references/prompts/story-analysis.md`| Phase 0-2（ストーリー分析時）       | opencode用プロンプト       |
+| `references/prompts/task-breakdown.md`| Phase 0-3（タスク分解時）           | opencode用プロンプト       |
+| `references/prompts/task-review.md`   | Phase 0-4（タスクレビュー時）       | opencode用プロンプト       |
 | `references/templates/*.json`         | Phase 0-0（初期化時）               | テンプレート雛形           |
 
 **⚠️ エージェントスポーン時、必ず `agent-prompt-template.md` を Read で読み込んでからプロンプトを構築すること。記憶や要約で代替しない。**
@@ -77,57 +80,11 @@ Q: opencode run で使用するモデルは？
 ### 0-2: ストーリー分析 → story-analysis.json（opencode実行）
 
 1. ユーザーのストーリー/指示を整理する
-2. `references/role-catalog.md` を Read で読み込み、内容をプロンプトに含める
-3. opencode run でストーリー分析とロール選定を実行:
+2. `references/role-catalog.md` を Read で読み込む
+3. `references/prompts/story-analysis.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 ```bash
-opencode run -m $OC_MODEL "
-Analyze the following story/instructions and produce a story-analysis.json.
-
-## User Story
-{ユーザーのストーリー/指示}
-
-## Available Roles
-{role-catalog.md の内容}
-
-## Output Format
-Write the file docs/features/team-opencode/story-analysis.json with this structure:
-{
-  \"story\": { \"title\": \"...\", \"description\": \"...\" },
-  \"goal\": \"...\",
-  \"scope\": { \"included\": [...], \"excluded\": [...] },
-  \"acceptanceCriteria\": [...],
-  \"teamDesign\": {
-    \"roles\": [
-      {
-        \"name\": \"ロール名\",
-        \"catalogRef\": \"role-catalog.mdのキー\",
-        \"customDirective\": \"タスク固有の追加指示（不要ならnull）\",
-        \"outputs\": [\"期待する出力ファイル\"]
-      }
-    ],
-    \"waves\": [
-      {
-        \"id\": 1,
-        \"parallel\": [\"ロール名1\", \"ロール名2\"],
-        \"description\": \"Wave説明\"
-      },
-      {
-        \"id\": 2,
-        \"parallel\": [\"ロール名3\"],
-        \"blockedBy\": [1],
-        \"description\": \"Wave説明\"
-      }
-    ],
-    \"qualityGates\": [\"最終Waveにレビュワー配置\"]
-  }
-}
-
-## Rules
-- The final wave MUST include a reviewer role
-- Use blockedBy to express sequential dependencies between waves
-- Roles within the same wave run in parallel
-" 2>&1
+opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
 ```
 
 4. 出力された `story-analysis.json` を Read で読み込み、構造を検証する
@@ -142,57 +99,10 @@ Write the file docs/features/team-opencode/story-analysis.json with this structu
 ### 0-3: コード探索＆タスク分解 → task-list.json（opencode実行）
 
 1. リーダーが対象コードベースを探索（Glob, Grep, Read）し、コンテキスト情報を収集する
-2. 収集したコンテキストと story-analysis.json を opencode に渡してタスク分解を実行:
+2. `references/prompts/task-breakdown.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 ```bash
-opencode run -m $OC_MODEL "
-Break down the following story into tasks for team execution.
-
-## Story Analysis
-{story-analysis.json の内容}
-
-## Codebase Context
-{リーダーが収集したコンテキスト情報: 対象ファイル、モジュール構成、技術メモ}
-
-## Rules
-- Each task MUST be completable in a single opencode call
-- Include specific file paths in inputs/outputs
-- opencodePrompt should be a concrete, actionable instruction
-
-## Output Format
-Write the file docs/features/team-opencode/task-list.json with this structure:
-{
-  \"context\": {
-    \"description\": \"...\",
-    \"targetFiles\": {},
-    \"relatedModules\": {},
-    \"technicalNotes\": {}
-  },
-  \"waves\": [
-    {
-      \"id\": 1,
-      \"roles\": {
-        \"ロール名\": [
-          {
-            \"id\": \"task-1-1\",
-            \"name\": \"タスク名\",
-            \"description\": \"タスク説明\",
-            \"needsPriorContext\": false,
-            \"inputs\": [],
-            \"outputs\": [\"出力ファイルパス\"],
-            \"opencodePrompt\": \"opencode に渡す具体的な実装指示\"
-          }
-        ]
-      }
-    }
-  ],
-  \"metadata\": {
-    \"totalTasks\": 0,
-    \"totalWaves\": 0,
-    \"roles\": []
-  }
-}
-" 2>&1
+opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
 ```
 
 3. 出力された `task-list.json` を Read で読み込み、構造とタスク粒度を検証する
@@ -200,30 +110,10 @@ Write the file docs/features/team-opencode/task-list.json with this structure:
 
 ### 0-4: opencode でタスクレビュー
 
-タスク分解の品質を opencode で検証する。0-1 で選択した `$OC_MODEL` を使用。
+タスク分解の品質を opencode で検証する。`references/prompts/task-review.md` を Read で読み込み、変数を置換して実行:
 
 ```bash
-opencode run -m $OC_MODEL "
-Review this team task breakdown:
-
-## Story Analysis
-{story-analysis.json の内容}
-
-## Task List
-{task-list.json の内容}
-
-Analyze:
-1. Task granularity - Each task should be completable in a single opencode call
-2. Wave dependencies - inputs/outputs consistent across waves?
-3. Role assignment - Does each task match its assigned role?
-4. Missing tasks - Setup, error handling, edge cases?
-5. Risk - External dependencies, technical unknowns?
-
-Respond with:
-- APPROVED or NEEDS_REVISION
-- Top 3-5 recommendations (if NEEDS_REVISION)
-- Suggested modifications as JSON patches to task-list.json
-" 2>&1
+opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
 ```
 
 **判定**:
