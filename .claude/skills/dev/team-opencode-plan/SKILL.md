@@ -39,8 +39,7 @@ allowed-tools:
 ```
 docs/features/team-opencode/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件、チーム設計）
-├── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当）
-└── prompts/               # 各ロールの opencode 実行プロンプト（自動生成）
+└── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当、各タスクに opencodePrompt 含む）
 ```
 
 命名規則: `{YYMMDD}_{slug}`（YYMMDD: 作成日、slug: kebab-case 英数字+ハイフン、最大40文字）

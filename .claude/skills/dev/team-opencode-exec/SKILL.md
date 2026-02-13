@@ -44,8 +44,7 @@ allowed-tools:
 ```
 docs/features/team-opencode/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析結果（チーム設計、ロール定義含む）
-├── task-list.json         # タスク定義（waves/roles 形式、承認済み）
-└── prompts/               # 各ロールの opencode 実行プロンプト（任意）
+└── task-list.json         # タスク定義（waves/roles 形式、承認済み、各タスクに opencodePrompt 含む）
 ```
 
 ---
