@@ -177,6 +177,7 @@ Write the file docs/features/team-opencode/task-list.json with this structure:
             \"id\": \"task-1-1\",
             \"name\": \"タスク名\",
             \"description\": \"タスク説明\",
+            \"needsPriorContext\": false,
             \"inputs\": [],
             \"outputs\": [\"出力ファイルパス\"],
             \"opencodePrompt\": \"opencode に渡す具体的な実装指示\"
@@ -283,7 +284,18 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 2. `references/role-catalog.md` から該当ロールの `role_directive` を取得
 3. `story-analysis.json` から該当ロールの `customDirective` を取得
 4. task-list.json からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
-5. テンプレートの変数を置換してエージェントプロンプトとして使用
+5. task-list.json の `name` を `{task_name}` として置換
+6. `needsPriorContext: true` の場合、`{opencodePrompt}` の先頭に以下を付加してから置換する:
+   ```
+   Before starting, check what was changed by the previous task:
+   - Run: git log --oneline -3
+   - Run: git diff HEAD~1 --stat
+   - Run: git diff HEAD~1
+   Understand the prior changes, then proceed with the following task:
+
+   ```
+   `needsPriorContext` が未指定または false の場合はそのまま置換する
+7. テンプレートの変数を置換してエージェントプロンプトとして使用
 
 ⚠️ **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
 
@@ -294,6 +306,7 @@ TaskList を定期的に確認し、現在のWaveの全タスク完了を待つ�
 **タイムアウト**: エージェントが5分以上 in_progress のまま変化がない場合、「エージェント遅延・失敗時のエスカレーション手順」に従う。
 
 **⚠️ 禁止:**
+
 - エージェント遅延を理由に、リーダーがユーザー承認なしで作業を代行する
 - 1つのエージェントの遅延を理由に、他のエージェントをシャットダウンする
 - Wave未完了のまま次のWaveに進む
@@ -370,13 +383,13 @@ TeamDelete()
 
 ## エラーハンドリング
 
-| 状況                      | 対応                               |
-| ------------------------- | ---------------------------------- |
-| opencode run エラー       | 同じコマンドを最大3回リトライ      |
-| エージェント無応答（5分） | SendMessage で状況確認             |
-| 状況確認後も無応答（3分） | エージェントを再スポーン（下記参照） |
-| 3回リトライ失敗           | ユーザーに報告、指示を仰ぐ         |
-| opencode モデル利用不可   | ユーザーに報告、別モデル選択を促す |
+| 状況                      | 対応                                 |
+| ------------------------- | ------------------------------------ |
+| opencode run エラー       | 同じコマンドを最大3回リトライ        |
+| エージェント無応答（5分） | SendMessage で状況確認               |
+| 状況確認後も無応答（5分） | エージェントを再スポーン（下記参照） |
+| 3回リトライ失敗           | ユーザーに報告、指示を仰ぐ           |
+| opencode モデル利用不可   | ユーザーに報告、別モデル選択を促す   |
 
 ### エージェント遅延・失敗時のエスカレーション手順
 
@@ -384,7 +397,7 @@ TeamDelete()
 
 ```
 1. SendMessage で状況確認（5分無応答後）
-     ↓ 3分待っても応答なし
+     ↓ 5分待っても応答なし
 2. 当該エージェントのみ shutdown_request → 同じタスクで新エージェントを再スポーン
      ↓ 再スポーンも失敗（3回）
 3. AskUserQuestion でユーザーに報告し、指示を仰ぐ
@@ -395,6 +408,7 @@ TeamDelete()
 ```
 
 **⚠️ 禁止事項:**
+
 - リーダーが**ユーザー承認なしに**エージェントの作業を代行しない
 - 1つのエージェントが遅延しても、**他のエージェントをシャットダウンしない**
 - エージェント代行時も、**後続Waveのスキップは禁止**（代行完了後、次Waveを通常通りスポーンする）
@@ -418,6 +432,7 @@ TeamDelete()
 - [ ] Phase 2-2 でユーザーに改善候補を提示する
 
 **⚠️ 以下の行為は禁止:**
+
 - Wave完了前に次Waveのエージェントをスポーンする
 - 最終Wave（reviewer）をスキップして Phase 3 に進む
 - タスクを実行せずに `completed` にする
@@ -428,9 +443,9 @@ TeamDelete()
 
 TaskUpdate で `completed` にする条件:
 
-1. **エージェントが実行した場合**: エージェントが SendMessage でリーダーに完了報告を送信済み
-2. **リーダーが代行した場合**: ユーザー承認を得た上で代行し、成果物が存在する
-3. **いずれの場合も**: 成果物ファイルが期待通りに存在することを確認済み
+1. **エージェントが実行した場合**: opencode結果を適用し、dev:simple-add でコミット済み
+2. **リーダーが代行した場合**: ユーザー承認を得た上で代行し、dev:simple-add でコミット済み
+3. **いずれの場合も**: 成果物ファイルが存在し、コミットされていることを確認済み
 
 **⚠️ 禁止**: 上記条件を満たさずにタスクを `completed` にする
 
