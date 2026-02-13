@@ -92,22 +92,17 @@ docs/features/team-opencode/
 
 ### role-catalog.md の共有方針
 
-`role-catalog.md` は exec 側に実体を配置し、plan 側からシンボリックリンクで参照する。
+`role-catalog.md` は両方にコピーを配置する。
 
 ```bash
-# exec 側に実体
-.claude/skills/dev/team-opencode-exec/references/role-catalog.md  # 実体
-
-# plan 側からシンボリックリンク
-.claude/skills/dev/team-opencode-plan/references/role-catalog.md
-  -> ../team-opencode-exec/references/role-catalog.md
+.claude/skills/dev/team-opencode-plan/references/role-catalog.md   # コピー
+.claude/skills/dev/team-opencode-exec/references/role-catalog.md   # コピー
 ```
 
 理由:
-- exec 側の方が使用頻度が高い（エージェントスポーン毎に参照）
-- plan 側は opencode プロンプトに埋め込むために1回だけ読む
-
-代替案: 両方にコピーを配置する（同期の手間は増えるがシンプル）。シンボリックリンクが git で問題を起こす場合はこちらを採用。
+- シンプルで Git 管理上の問題がない
+- role-catalog.md の変更頻度は低い（ロール定義の追加・変更はまれ）
+- 変更時は両方を更新する必要があるが、頻度が低いため許容範囲
 
 ### ワークスペース出力先（変更後）
 
@@ -444,7 +439,7 @@ CLAUDE.md の「利用可能なスキル」テーブルから `dev:team-opencode
 ### Phase C: リソースファイルの移動・配置
 
 - [ ] C-1: `role-catalog.md` を `team-opencode-exec/references/` にコピー（実体）
-- [ ] C-2: `role-catalog.md` を `team-opencode-plan/references/` にシンボリックリンク作成（`../team-opencode-exec/references/role-catalog.md`）
+- [ ] C-2: `role-catalog.md` を `team-opencode-plan/references/` にコピー
 - [ ] C-3: `agent-prompt-template.md` を `team-opencode-exec/references/` に移動
 - [ ] C-4: `prompts/story-analysis.md` を `team-opencode-plan/references/prompts/` に移動
 - [ ] C-5: `prompts/task-breakdown.md` を `team-opencode-plan/references/prompts/` に移動
@@ -462,7 +457,7 @@ CLAUDE.md の「利用可能なスキル」テーブルから `dev:team-opencode
 ### Phase E: 動作確認
 
 - [ ] E-1: `init-team-workspace.sh` に slug を渡して正しいディレクトリが作成されることを確認
-- [ ] E-2: シンボリックリンクが正しく解決されることを確認（`cat team-opencode-plan/references/role-catalog.md`）
+- [ ] E-2: 両方の `role-catalog.md` が同一内容であることを確認
 - [ ] E-3: plan SKILL.md の必須リソーステーブルのパスがすべて存在することを確認
 - [ ] E-4: exec SKILL.md の必須リソーステーブルのパスがすべて存在することを確認
 
@@ -484,8 +479,7 @@ CLAUDE.md の「利用可能なスキル」テーブルから `dev:team-opencode
 
 | リスク | 影響度 | 対策 |
 | ------ | :----: | ---- |
-| シンボリックリンクが Git で正しく追跡されない | 中 | Git はシンボリックリンクをデフォルトでリンクとして追跡する（`core.symlinks=true`）。問題が出た場合はコピー方式にフォールバック |
-| plan と exec で role-catalog.md の内容がずれる | 低 | シンボリックリンクなら実体は1つなので不整合は起きない。コピー方式の場合は更新時に両方を修正するルールを CLAUDE.md に追記 |
+| plan と exec で role-catalog.md の内容がずれる | 低 | コピー方式のため、変更時は両方を更新する必要がある。ただしロール定義の変更頻度は低く、リスクは許容範囲 |
 | 既存の計画ディレクトリが蓄積してディスクを圧迫 | 低 | 計画ファイルは JSON テキストのみで小さい。必要に応じて古い計画を手動削除。自動クリーンアップは実装しない |
 | exec 起動時に計画が0件でエラー | 低 | 計画一覧が空の場合は「先に dev:team-opencode-plan を実行してください」とガイド |
 | Phase 2-3 のフィードバック分岐で plan への戻りが煩雑 | 中 | exec から plan を呼び出すのではなく、ユーザーに「plan を再実行してから exec を再実行してください」と案内する。exec 内での計画再生成は行わない |
