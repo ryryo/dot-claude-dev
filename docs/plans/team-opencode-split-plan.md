@@ -136,7 +136,7 @@ docs/features/team-opencode/
 
 | Step | 内容 | 詳細 |
 | ---- | ---- | ---- |
-| 0-0 | ワークスペース初期化 | slug 生成、`docs/features/team-opencode/{YYMMDD}_{slug}/` を作成 |
+| 0-0 | ワークスペース初期化 | ストーリーから slug 候補を2-3個生成 → AskUserQuestion で確認 → `docs/features/team-opencode/{YYMMDD}_{slug}/` を作成 |
 | 0-1 | opencode モデル選択 | AskUserQuestion でモデル確認 |
 | 0-2 | ストーリー分析 | role-catalog.md + story-analysis.md で opencode 実行 |
 | 0-3 | コード探索 & タスク分解 | コンテキスト収集 + task-breakdown.md で opencode 実行 |
@@ -171,7 +171,7 @@ description: |
 | Phase | Step | 内容 |
 | ----- | ---- | ---- |
 | (前提) | - | 計画選択 UI: 既存計画一覧 → ユーザー選択 |
-| 1 | 1-0 | opencode モデル確認（plan 時と変更する場合のみ） |
+| 1 | 1-0 | opencode モデル選択（AskUserQuestion。plan 時のモデルをデフォルト表示、別モデルも選択可） |
 | 1 | 1-1 | チーム作成（TeamCreate） |
 | 1 | 1-2 | タスク登録（TaskCreate） |
 | 1 | 1-3 | Wave N エージェントスポーン |
@@ -285,7 +285,7 @@ plan 側で選択したモデルを task-list.json の metadata に保存する:
 }
 ```
 
-exec 側は起動時に `metadata.ocModel` を読み取り、`$OC_MODEL` として使用する。ユーザーが変更を希望する場合のみ AskUserQuestion で再選択。
+exec 側は起動時に `metadata.ocModel` をデフォルト値として AskUserQuestion で提示する。plan と exec で異なるモデルを使用可能（例: plan は軽量モデルで素早く計画、exec は高性能モデルで実装）。
 
 ---
 
@@ -350,10 +350,11 @@ echo "$WORKSPACE"
 - Task ツール群（TaskCreate, TaskList 等）を削除（plan では不要）
 - TeamCreate, TeamDelete, SendMessage を削除
 - ワークスペースパスを `{YYMMDD}_{slug}` 形式に変更
-- Step 0-0 で slug 生成ロジックを追加:
+- Step 0-0 で slug 生成ロジックを追加（dev:story と同様のフロー）:
   - ユーザーにストーリーを聞く
-  - ストーリータイトルから slug を生成（英数字+ハイフン、最大40文字）
-  - `init-team-workspace.sh` に slug を渡す
+  - ストーリータイトルから slug 候補を2-3個生成（kebab-case、英語、最大40文字）
+  - AskUserQuestion で候補を提示し、ユーザーが選択（カスタム入力も可）
+  - 選択された slug を `init-team-workspace.sh` に渡す
 - metadata に `ocModel` フィールドを追加する指示を 0-5 に追加
 - 必須リソーステーブルから exec 専用リソースを削除
 - 「一時計画フォルダ」セクションのパスを更新
