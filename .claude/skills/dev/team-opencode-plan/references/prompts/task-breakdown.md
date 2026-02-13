@@ -6,8 +6,9 @@ opencode run で使用するタスク分解プロンプト。Phase 0-3 で使用
 
 | 変数 | 説明 | 値の取得元 |
 |------|------|-----------|
-| `{story_analysis}` | story-analysis.json の内容 | `docs/features/team-opencode/story-analysis.json` |
+| `{story_analysis}` | story-analysis.json の内容 | `{plan_dir}/story-analysis.json` |
 | `{codebase_context}` | リーダーが収集したコンテキスト情報 | Glob/Grep/Read で収集 |
+| `{plan_dir}` | 計画ディレクトリパス | `$PLAN_DIR`（Phase 0-0 で取得） |
 
 ## プロンプト
 
@@ -26,7 +27,7 @@ Break down the following story into tasks for team execution.
 - opencodePrompt should be a concrete, actionable instruction
 
 ## Output Format
-Write the file docs/features/team-opencode/task-list.json with this structure:
+Write the file {plan_dir}/task-list.json with this structure:
 {
   "context": {
     "description": "...",
@@ -55,7 +56,8 @@ Write the file docs/features/team-opencode/task-list.json with this structure:
   "metadata": {
     "totalTasks": 0,
     "totalWaves": 0,
-    "roles": []
+    "roles": [],
+    "ocModel": ""
   }
 }
 ```

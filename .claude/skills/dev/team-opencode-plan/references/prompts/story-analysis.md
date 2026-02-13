@@ -8,6 +8,7 @@ opencode run で使用するストーリー分析プロンプト。Phase 0-2 で
 |------|------|-----------|
 | `{user_story}` | ユーザーのストーリー/指示 | ユーザー入力 |
 | `{role_catalog}` | role-catalog.md の内容 | `references/role-catalog.md` |
+| `{plan_dir}` | 計画ディレクトリパス | `$PLAN_DIR`（Phase 0-0 で取得） |
 
 ## プロンプト
 
@@ -21,7 +22,7 @@ Analyze the following story/instructions and produce a story-analysis.json.
 {role_catalog}
 
 ## Output Format
-Write the file docs/features/team-opencode/story-analysis.json with this structure:
+Write the file {plan_dir}/story-analysis.json with this structure:
 {
   "story": { "title": "...", "description": "..." },
   "goal": "...",

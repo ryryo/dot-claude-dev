@@ -6,8 +6,8 @@ opencode run で使用するタスクレビュープロンプト。Phase 0-4 で
 
 | 変数 | 説明 | 値の取得元 |
 |------|------|-----------|
-| `{story_analysis}` | story-analysis.json の内容 | `docs/features/team-opencode/story-analysis.json` |
-| `{task_list}` | task-list.json の内容 | `docs/features/team-opencode/task-list.json` |
+| `{story_analysis}` | story-analysis.json の内容 | `{plan_dir}/story-analysis.json` |
+| `{task_list}` | task-list.json の内容 | `{plan_dir}/task-list.json` |
 
 ## プロンプト
 
