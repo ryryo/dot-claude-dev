@@ -10,6 +10,7 @@
   "phases": [],
   "metadata": {
     "totalTasks": 0,
-    "estimatedPhases": 0
+    "estimatedPhases": 0,
+    "status": "pending"
   }
 }

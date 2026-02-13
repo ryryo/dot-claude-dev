@@ -96,11 +96,14 @@ if [ -z "$files" ]; then
 fi
 ```
 
-#### 0.2 タスク統計を取得
+#### 0.2 完了済みフィルタ＆タスク統計を取得
 
-各 task-list.json を Read して統計を計算:
+各 task-list.json を Read し、`metadata.status` が `"completed"` のものを除外する。
+残ったものについて統計を計算:
 - `totalTasks`: タスク数の合計
 - `tddCount`, `e2eCount`, `taskCount`: workflow別タスク数
+
+※ `metadata.status` が未定義の場合は `"pending"` として扱う（未完了）。
 
 JSON形式例:
 ```json
@@ -162,6 +165,11 @@ export TASK_LIST="docs/features/auth/task-list.json"
 3. 各タスク完了時に **TaskUpdate(completed)**
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
+
+### Phase 3: 計画ステータス更新
+
+全タスク完了後、`$TASK_LIST` の `metadata.status` を `"completed"` に更新して Write で保存する。
+これにより次回の計画選択時に候補から除外される。
 
 ---
 
