@@ -33,14 +33,14 @@ allowed-tools:
 
 ## 必須リソース
 
-| リソース                              | 読み込みタイミング                  | 用途                       |
-| ------------------------------------- | ----------------------------------- | -------------------------- |
-| `references/agent-prompt-template.md` | Phase 1-3（エージェントスポーン前） | 統一エージェントプロンプト |
-| `references/role-catalog.md`          | Phase 0-2（ロール設計時）           | ロール定義の参照           |
-| `references/prompts/story-analysis.md`| Phase 0-2（ストーリー分析時）       | opencode用プロンプト       |
-| `references/prompts/task-breakdown.md`| Phase 0-3（タスク分解時）           | opencode用プロンプト       |
-| `references/prompts/task-review.md`   | Phase 0-4（タスクレビュー時）       | opencode用プロンプト       |
-| `references/templates/*.json`         | Phase 0-0（初期化時）               | テンプレート雛形           |
+| リソース                               | 読み込みタイミング                  | 用途                       |
+| -------------------------------------- | ----------------------------------- | -------------------------- |
+| `references/agent-prompt-template.md`  | Phase 1-3（エージェントスポーン前） | 統一エージェントプロンプト |
+| `references/role-catalog.md`           | Phase 0-2（ロール設計時）           | ロール定義の参照           |
+| `references/prompts/story-analysis.md` | Phase 0-2（ストーリー分析時）       | opencode用プロンプト       |
+| `references/prompts/task-breakdown.md` | Phase 0-3（タスク分解時）           | opencode用プロンプト       |
+| `references/prompts/task-review.md`    | Phase 0-4（タスクレビュー時）       | opencode用プロンプト       |
+| `references/templates/*.json`          | Phase 0-0（初期化時）               | テンプレート雛形           |
 
 **⚠️ エージェントスポーン時、必ず `agent-prompt-template.md` を Read で読み込んでからプロンプトを構築すること。記憶や要約で代替しない。**
 
@@ -84,7 +84,7 @@ Q: opencode run で使用するモデルは？
 3. `references/prompts/story-analysis.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 ```bash
-opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
+opencode run -m $OC_MODEL "{story-analysis.md の変数置換済みプロンプト}" 2>&1
 ```
 
 4. 出力された `story-analysis.json` を Read で読み込み、構造を検証する
@@ -102,7 +102,7 @@ opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
 2. `references/prompts/task-breakdown.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 ```bash
-opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
+opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプト}" 2>&1
 ```
 
 3. 出力された `task-list.json` を Read で読み込み、構造とタスク粒度を検証する
@@ -110,10 +110,10 @@ opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
 
 ### 0-4: opencode でタスクレビュー
 
-タスク分解の品質を opencode で検証する。`references/prompts/task-review.md` を Read で読み込み、変数を置換して実行:
+タスク分解の品質を opencode で検証する。`references/prompts/task-review.md` を Read で読み込み、変数を置換して実行。**モデルは `openai/gpt-5.3-codex` 固定**（`$OC_MODEL` ではない）:
 
 ```bash
-opencode run -m $OC_MODEL "{置換済みプロンプト}" 2>&1
+opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプロンプト}" 2>&1
 ```
 
 **判定**:
@@ -138,7 +138,6 @@ Q: 以下の計画でAgent Teamsを実行します。承認しますか？
 
 選択肢:
 - 承認して実行
-- タスク一覧を詳しく見たい（task-list.json の全タスクを展開表示）
 - 修正が必要（Phase 0-2 に戻る）
 ```
 
@@ -176,6 +175,7 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
 4. task-list.json からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
 5. task-list.json の `name` を `{task_name}` として置換
 6. `needsPriorContext: true` の場合、`{opencodePrompt}` の先頭に以下を付加してから置換する:
+
    ```
    Before starting, check what was changed by the previous task:
    - Run: git log --oneline -3
@@ -184,7 +184,9 @@ task-list.json の全タスクを TaskCreate で登録する。Wave間の `block
    Understand the prior changes, then proceed with the following task:
 
    ```
+
    `needsPriorContext` が未指定または false の場合はそのまま置換する
+
 7. テンプレートの変数を置換してエージェントプロンプトとして使用
 
 ⚠️ **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
