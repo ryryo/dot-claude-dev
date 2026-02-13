@@ -70,7 +70,7 @@ docs/features/team-opencode/
 ├── team-opencode-plan/
 │   ├── SKILL.md                                 # Phase 0 のみ（~120行見込み）
 │   ├── references/
-│   │   ├── role-catalog.md                      # 共有: コピーではなくシンボリックリンク
+│   │   ├── role-catalog.md                      # 共有: コピー
 │   │   ├── prompts/
 │   │   │   ├── story-analysis.md
 │   │   │   ├── task-breakdown.md
@@ -84,7 +84,7 @@ docs/features/team-opencode/
 ├── team-opencode-exec/
 │   ├── SKILL.md                                 # Phase 1-3 のみ（~250行見込み）
 │   └── references/
-│       ├── role-catalog.md                      # 共有: シンボリックリンク元（実体を保持）
+│       ├── role-catalog.md                      # 共有: コピー
 │       └── agent-prompt-template.md
 │
 └── team-opencode/                               # 廃止（移行完了後に削除）
