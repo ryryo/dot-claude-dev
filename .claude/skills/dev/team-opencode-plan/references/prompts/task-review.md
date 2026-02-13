@@ -26,6 +26,9 @@ Analyze:
 3. Role assignment - Does each task match its assigned role?
 4. Missing tasks - Setup, error handling, edge cases?
 5. Risk - External dependencies, technical unknowns?
+6. Schema compliance - All 8 required fields present? No forbidden fields?
+7. opencodePrompt quality - Concrete instructions with file paths and operations?
+8. Reviewer constraint - reviewer/tester tasks' opencodePrompt MUST start with "IMPORTANT: Do NOT modify any files." and their outputs MUST be empty []
 
 Respond with:
 - APPROVED or NEEDS_REVISION

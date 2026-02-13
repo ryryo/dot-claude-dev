@@ -83,6 +83,7 @@ Based on the story analysis, perform the following:
    - Must describe the exact changes to make
    - Must be executable as a single opencode call
    - Must NOT be vague like "implement the feature" or "fix the bug"
+   - For reviewer/tester roles: MUST start with "IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only." and end with "コードの修正は行わないでください。"
 
 3. **Output** the file {plan_dir}/task-list.json
 
@@ -144,7 +145,7 @@ Write the file {plan_dir}/task-list.json with this structure:
           "needsPriorContext": true,
           "inputs": ["src/styles/tokens.css", "src/components/Card/Card.tsx"],
           "outputs": [],
-          "opencodePrompt": "以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。"
+          "opencodePrompt": "IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only.\n\n以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。コードの修正は行わないでください。"
         }
       ]
     }

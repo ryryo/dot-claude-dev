@@ -155,8 +155,11 @@ TeamCreate({ team_name: "team-opencode-{timestamp}", description: "opencode並�
    `needsPriorContext` が未指定または false の場合はそのまま置換する
 
 7. テンプレートの変数を置換してエージェントプロンプトとして使用
+8. `role` が `reviewer` または `tester` の場合、`{opencodePrompt}` が `"IMPORTANT: Do NOT modify any files."` で始まることを確認する。始まっていない場合、先頭に `"IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only.\n\n"` を付加する
 
 **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
+
+**レビュワー制約**: reviewer/tester ロールのエージェントは**レビュー報告のみ**を行う。コードの修正・ファイルの変更・コミットは禁止。この制約は agent-prompt-template.md の厳守事項にも記載されている。
 
 ### 1-4: 完了待機
 
@@ -178,7 +181,7 @@ TaskList を定期的に確認し、現在のWaveの全タスク完了を待つ�
 
 ---
 
-## Phase 2: レビュー・フィードバックループ
+## Phase 2: レビュー・フィードバックループ（修正実行込み）
 
 ### 2-1: レビュワー報告の受信
 
@@ -192,25 +195,106 @@ TaskList を定期的に確認し、現在のWaveの全タスク完了を待つ�
 2. [重要度: 高/中/低] ...
 
 改善候補がない場合は「改善候補なし」と報告してください。
+コードの修正は行わないでください。報告のみです。
 ```
 
 ### 2-2: ユーザーへの提示
 
-AskUserQuestion でレビュー結果をユーザーに提示:
+AskUserQuestion でレビュー結果をユーザーに提示。multiSelect で複数選択可能にする:
 
 ```
-Q: レビュワーから以下の改善候補が挙がりました。対応しますか？
-- 候補1: {改善内容}
-- 候補2: {改善内容}
+Q: レビュワーから以下の改善候補が挙がりました。修正する項目を選択してください。
+- [高] 候補1: {改善内容}
+- [中] 候補2: {改善内容}
+- [低] 候補3: {改善内容}
 - 対応不要（完了へ進む）
 ```
 
 ### 2-3: フィードバック分岐
 
-- **対応あり** → ユーザーに「`dev:team-opencode-plan` を再実行して計画を更新し、再度 `dev:team-opencode-exec` を実行してください」と案内する。exec 単体では計画を再生成しない。
 - **対応なし** → Phase 3 へ
+- **対応あり** → 2-4 へ
 
-**ループ制限**: 最大3ラウンド。超過時はユーザーに継続可否を確認。
+### 2-4: Fix タスク生成
+
+ユーザーが選択した改善候補ごとに fix タスクを生成する:
+
+1. 各改善候補から以下の情報を抽出:
+   - 対象ファイル（reviewer 報告から特定）
+   - 修正内容の具体的な指示
+   - 適切なロール（通常は `frontend-developer`）
+
+2. fix タスクの `opencodePrompt` をリーダーが構築:
+   ```
+   以下のレビュー指摘に基づいて修正してください:
+
+   指摘内容: {改善候補の内容}
+   対象ファイル: {ファイルパス}
+
+   修正方針:
+   - {具体的な修正手順}
+
+   修正後、変更内容を簡潔に報告してください。
+   ```
+
+3. `$PLAN_DIR/task-list.json` に新しい Wave（fix wave）として追加し Write で保存:
+   ```json
+   {
+     "id": {最終Wave ID + 1},
+     "tasks": [
+       {
+         "id": "task-{waveId}-{seq}",
+         "name": "Fix: {改善候補の要約}",
+         "role": "frontend-developer",
+         "description": "レビュー指摘対応: {改善内容}",
+         "needsPriorContext": true,
+         "inputs": ["{対象ファイル}"],
+         "outputs": ["{対象ファイル}"],
+         "opencodePrompt": "{上記で構築したプロンプト}"
+       }
+     ]
+   }
+   ```
+
+4. TaskCreate で fix タスクを登録
+
+### 2-5: Fix エージェントスポーン
+
+Phase 1-3 と同じ手順で fix タスクのエージェントをスポーン:
+
+- `references/agent-prompt-template.md` を使用
+- `$OC_MODEL` を使用
+- `needsPriorContext: true` なので git diff プレフィックスを付加
+- fix タスクは**実装系ロール**なので手順4-5（コード適用・コミット）を実行する
+
+### 2-6: Fix 完了確認
+
+Wave完了ゲートと同じチェックを実施:
+
+- [ ] 全 fix タスクが `completed` になっている
+- [ ] 成果物ファイルが存在する
+- [ ] コミットされている
+
+### 2-7: 再レビュー判断
+
+fix 完了後、AskUserQuestion でユーザーに確認:
+
+```
+Q: Fix が完了しました。再レビューを実施しますか？
+- 再レビュー実施
+- 不要（完了へ進む）
+```
+
+- **再レビュー** → 新しい reviewer タスクを生成し、Phase 2-1 に戻る
+- **不要** → Phase 3 へ
+
+**ループ制限**: 最大3ラウンド（fix + 再レビュー）。超過時はユーザーに継続可否を確認。
+
+**禁止事項:**
+
+- リーダーが fix タスクの `opencodePrompt` を曖昧にする（「改善してください」等）
+- fix wave で reviewer をスポーンしない（再レビューは 2-7 でユーザーが判断）
+- ユーザー未選択の改善候補を勝手に fix に含める
 
 ---
 
@@ -236,6 +320,8 @@ Q: レビュワーから以下の改善候補が挙がりました。対応し�
 
 `$PLAN_DIR/task-list.json` の `metadata.status` を `"completed"` に更新して Write で保存する。
 これにより次回の計画選択時に候補から除外される。
+
+**注意**: Phase 2 で fix タスクが追加された場合、fix タスクの完了後にのみ `"completed"` にする。fix 未完了の場合は `"review-pending"` のままにする。
 
 ### 3-4: TeamDelete
 
@@ -307,11 +393,27 @@ TeamDelete()
 
 TaskUpdate で `completed` にする条件:
 
+### 実装系ロール（designer, frontend-developer, backend-developer 等）
+
 1. **エージェントが実行した場合**: opencode結果を適用し、dev:simple-add でコミット済み
 2. **リーダーが代行した場合**: ユーザー承認を得た上で代行し、dev:simple-add でコミット済み
 3. **いずれの場合も**: 成果物ファイルが存在し、コミットされていることを確認済み
 
+### レビュー系ロール（reviewer, tester）
+
+1. opencode でレビュー/テストを実行済み
+2. 改善候補をリーダーに SendMessage で報告済み
+3. **コード変更・コミットは不要**（報告のみで完了）
+
 **禁止**: 上記条件を満たさずにタスクを `completed` にする
+
+### 計画ステータスの遷移
+
+| 状態 | 意味 | 設定タイミング |
+|------|------|---------------|
+| `pending` | 未実行 | 初期値 |
+| `review-pending` | レビュー指摘の修正待ち | Phase 2 で改善候補が選択された時 |
+| `completed` | 全完了（fix含む） | Phase 3 で全タスク＋全fix完了時のみ |
 
 ---
 
