@@ -1,7 +1,7 @@
 ---
 name: dev:team-opencode-plan
 description: |
-  opencode活用のチーム実装計画を作成。ストーリー分析→タスク分解→レビュー→ユーザー承認。
+  opencode活用のチーム実装計画を作成。ストーリー分析→タスク分解→レビュー。
   計画は docs/features/team-opencode/{YYMMDD}_{slug}/ に永続化され、複数保持可能。
 
   Trigger:
@@ -39,7 +39,7 @@ allowed-tools:
 ```
 docs/features/team-opencode/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件、チーム設計）
-├── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当、承認済み）
+├── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当）
 └── prompts/               # 各ロールの opencode 実行プロンプト（自動生成）
 ```
 
@@ -104,25 +104,27 @@ opencode run -m $OC_MODEL "{story-analysis.md の変数置換済みプロンプ�
 - Wave間の `blockedBy` で直列依存を明示する
 - 同一Wave内のロールは並行実行される
 
-### 0-3: コード探索＆タスク分解 → task-list.json（opencode実行）
+### 0-3: タスク分解 → task-list.json（opencode実行）
 
-1. リーダーが対象コードベースを探索（Glob, Grep, Read）し、コンテキスト情報を収集する
-2. `references/prompts/task-breakdown.md` を Read で読み込み、変数を置換して opencode run を実行:
+opencode にコードベース探索からタスク分解まで一貫して実行させる。リーダーは探索しない。
+
+1. `references/prompts/task-breakdown.md` を Read で読み込み、変数を置換して opencode run を実行:
 
 **変数置換テーブル**:
 
 | 変数 | 値の取得元 |
 |------|-----------|
 | `{story_analysis}` | `$PLAN_DIR/story-analysis.json` の内容 |
-| `{codebase_context}` | リーダーが収集したコンテキスト情報 |
 | `{plan_dir}` | `$PLAN_DIR`（0-0 で取得） |
 
 ```bash
 opencode run -m $OC_MODEL "{task-breakdown.md の変数置換済みプロンプト}"
 ```
 
-3. 出力された `$PLAN_DIR/task-list.json` を Read で読み込み、構造とタスク粒度を検証する
-4. 不備があればリーダーが修正する
+2. 出力された `$PLAN_DIR/task-list.json` を Read で読み込み、構造とタスク粒度を検証する
+3. 不備があればリーダーが修正する
+
+**リトライ**: opencode が探索に失敗した場合は最大3回リトライ。3回失敗時はユーザーに報告し、次のステップに進むか修正内容の指示を仰ぐ。
 
 ### 0-4: opencode でタスクレビュー
 
@@ -147,45 +149,10 @@ opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプ�
 
 **注意**: codex の提案をそのまま適用するのではなく、リーダーが妥当性を判断してから適用する。
 
-### 0-5: ユーザー承認
-
-1. `$PLAN_DIR/task-list.json` の metadata に `ocModel` を記録する:
-
-```json
-{
-  "metadata": {
-    "totalTasks": 5,
-    "totalWaves": 3,
-    "roles": ["frontend-developer", "reviewer"],
-    "ocModel": "{$OC_MODEL}"
-  }
-}
-```
-
-2. task-list.json を整形し、AskUserQuestion でユーザーに提示:
-
-```
-Q: 以下の計画でAgent Teamsを実行します。承認しますか？
-
-【計画パス】 {$PLAN_DIR}
-【チーム構成】 {ロール一覧}
-【Wave構造】 {Wave 1}: {並行ロール} → {Wave 2}: {並行ロール} → ...
-【タスク数】 {totalTasks}タスク / {totalWaves} Wave
-【モデル】 {$OC_MODEL}
-
-選択肢:
-- 承認（dev:team-opencode-exec で実行可能）
-- 修正が必要（Phase 0-2 に戻る）
-```
-
-**ゲート**: ユーザー承認後、「`dev:team-opencode-exec` を実行して計画を実行してください」と案内する。
-
----
-
 ## 重要な注意事項
 
 1. **opencode コマンドは決め打ち**: プロンプトテンプレートのコマンドをリーダーが改変しない
 2. **フォールバック禁止**: opencode 失敗時に直接実装しない。リトライのみ（最大3回）
-3. **計画もopencode活用**: Phase 0 のストーリー分析（0-2）、タスク分解（0-3）、レビュー（0-4）は opencode で実行。リーダーはコンテキスト収集・検証・修正を担当
+3. **計画もopencode活用**: Phase 0 のストーリー分析（0-2）、タスク分解（0-3）、レビュー（0-4）は opencode で実行。リーダーは検証・修正を担当（コードベース探索も opencode に委譲）
 4. **リーダーは実装しない**: リーダーの役割は計画・調整。実装はエージェント（opencode）が担当
-5. **Phase順序は絶対**: Phase 0-0→0-1→0-2→0-3→0-4→0-5 の順序を飛ばさない
+5. **Phase順序は絶対**: Phase 0-0→0-1→0-2→0-3→0-4 の順序を飛ばさない
