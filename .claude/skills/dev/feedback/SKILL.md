@@ -24,8 +24,9 @@ allowed-tools:
 ## エージェント委譲ルール
 
 **分析・更新・提案は必ずTaskエージェントに委譲する。自分で実行しない。**
+**Step 0 のみ SKILL.md 自身が Glob + AskUserQuestion で直接実行する。**
 
-呼び出しパターン（全ステップ共通）:
+呼び出しパターン（Step 1以降）:
 ```
 agentContent = Read(".claude/skills/dev/feedback/agents/{agent}.md")
 Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, model: {指定モデル} })
@@ -33,7 +34,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 | Step | agent | model | type | 追加コンテキスト |
 |------|-------|-------|------|-----------------|
-| 1 REVIEW | review-analyze.md | sonnet | general-purpose | git diff, feature-slug |
+| 0 SELECT | (自身で実行) | — | — | Glob → AskUserQuestion |
+| 1 REVIEW | review-analyze.md | sonnet | general-purpose | git diff, feature-slug, story-slug |
 | 2a DESIGN | update-design.md | sonnet | general-purpose | Step 1のJSON + feature-slug |
 | 2b DESIGN | (code-simplifier) | opus | code-simplifier | DESIGN.mdのパス + 整理観点 |
 | 3 IMPROVE | propose-manage.md | sonnet | general-purpose | Step 1-2の結果 + feature-slug |
@@ -49,6 +51,31 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 ---
 
 ## 実行手順（必ずこの順序で実行）
+
+### Step 0: SELECT（対象計画の選択）
+
+`docs/features/` 配下を走査し、ユーザーにフィードバック対象を選ばせる。
+
+#### 0a: feature 選択
+
+1. `Glob("docs/features/*/")` で feature ディレクトリ一覧を取得
+2. feature が **1つだけ** → 自動選択（確認メッセージのみ出す）
+3. feature が **2つ以上** → **AskUserQuestion** で選択させる
+   - 各 option: `{ label: "{feature-slug}", description: "docs/features/{feature-slug}" }`
+4. 選択結果を `feature-slug` として保持
+
+#### 0b: story 選択
+
+1. `Glob("docs/features/{feature-slug}/stories/*/story-analysis.json")` で story 一覧を取得
+2. 各 `story-analysis.json` を Read し、`story.title`（または `story` フィールド）を取得して選択肢の description に使う
+3. story が **1つだけ** → 自動選択
+4. story が **2つ以上** → **AskUserQuestion** で選択させる
+   - 各 option: `{ label: "{story-slug}", description: story.title }`
+5. 選択結果を `story-slug` として保持
+
+**ゲート**: `feature-slug` + `story-slug` が確定
+
+---
 
 ### Step 1: REVIEW（品質ゲート + 変更分析）
 
@@ -94,6 +121,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 完了条件
 
+- [ ] feature-slug + story-slug が確定した（Step 0）
 - [ ] 実装レビュー + 変更分析が完了した（Step 1）
 - [ ] 機能DESIGN.mdが更新された（Step 2a）
 - [ ] 総合DESIGN.mdが更新・整理された（Step 2a + 2b）
