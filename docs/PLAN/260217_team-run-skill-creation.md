@@ -59,6 +59,7 @@ opencode を使用せず Claude Code のネイティブ機能のみで動作す�
 
 14. **TeammateIdle**: exit code 2でTeammateを継続させる（品質未達時）
 15. **TaskCompleted**: exit code 2でタスク完了をブロック（テスト未通過時）
+16. **Stop hook（スキルスコープ）**: SKILL.md frontmatter で定義。スキル実行中のみ動作し、全Step完了前の中断を防止（ralph-loop パターン）
 
 ---
 
@@ -145,6 +146,10 @@ Step 7: 結果集約 + TeamDelete
   ├── 結果集約 → ユーザーに提示
   ├── metadata.status を "completed" に更新
   └── TeamDelete
+
+※ Stop hook（prompt ベース）がスキル実行中は常時監視。
+  Step 1-7 が未完了なら中断をブロックし、次のアクションを指示。
+  stop_hook_active=true（2回連続停止試行）またはユーザー明示キャンセル時は停止を許可。
 ```
 
 ---
@@ -182,6 +187,30 @@ allowed-tools:
   - TeamCreate
   - TeamDelete
   - SendMessage
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: |
+            Evaluate whether the team-run skill execution is complete.
+            Context: $ARGUMENTS
+
+            The team-run skill has 7 steps. Check if ALL are done:
+            1. Plan selected and validated
+            2. Git worktree created
+            3. Team created and tasks registered
+            4. ALL waves executed (all tasks completed)
+            5. Review/feedback loop done (or skipped)
+            6. PR created via gh pr create
+            7. TeamDelete called and results presented
+
+            IMPORTANT:
+            - If stop_hook_active is true, allow stopping to prevent infinite loops.
+            - If execution failed with an unrecoverable error, allow stopping.
+            - If user explicitly requested cancellation, allow stopping.
+
+            Return {"ok": false, "reason": "Step N incomplete. Next: [action]"} to continue,
+            or {"ok": true} to allow stopping.
 ---
 ```
 
@@ -917,7 +946,7 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 | Plan Approval | なし | あり（requirePlanApproval: true のタスク） |
 | Self-claim | なし | あり（同一 Wave 内） |
 | Teammate間メッセージ | 一方通行（Wave→Wave） | 双方向（SendMessage） |
-| hooks | なし | TeammateIdle + TaskCompleted |
+| hooks | なし | Stop（スキルスコープ, prompt型）+ TeammateIdle + TaskCompleted |
 | 最終成果物 | コミット済みコード | PR（gh pr create） |
 | fileOwnership | 論理的（plan で定義） | 論理的（プロンプトで指示）。公式推奨の方式 |
 
