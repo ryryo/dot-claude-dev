@@ -1,13 +1,13 @@
 # Task Breakdown 手順書
 
-リーダー（Claude Code）が直接実行するタスク分解手順。Phase 0-3 で使用。
+リーダー（Claude Code）が直接実行するタスク分解手順。Step 4 で使用。
 
 ## 変数
 
 | 変数 | 説明 | 値の取得元 |
 |------|------|-----------|
 | `{story_analysis}` | story-analysis.json の内容 | `{plan_dir}/story-analysis.json` |
-| `{plan_dir}` | 計画ディレクトリパス | `$PLAN_DIR`（Phase 0-0 で取得） |
+| `{plan_dir}` | 計画ディレクトリパス | `$PLAN_DIR`（Step 1 で取得） |
 
 ## タスクスキーマ契約
 
@@ -22,14 +22,14 @@
 | `needsPriorContext` | boolean | 前Waveの成果物を参照するか。Wave 1は原則 `false` |
 | `inputs` | string[] | 入力ファイルパス。なければ空配列 `[]` |
 | `outputs` | string[] | 出力ファイルパス。なければ空配列 `[]` |
-| `opencodePrompt` | string | opencode に渡す**具体的な実装指示**。ファイルパス・操作内容・期待結果を含む |
+| `taskPrompt` | string | Teammate に渡す**具体的な実装指示**。ファイルパス・操作内容・期待結果を含む |
 
 ### FORBIDDEN フィールド（これらが存在したら不合格）
 
 | フィールド | 理由 |
 |-----------|------|
 | `title` | `name` と重複。`name` を使う |
-| `acceptanceCriteria` | `opencodePrompt` に含める |
+| `acceptanceCriteria` | `taskPrompt` に含める |
 | `context`（タスクレベル） | トップレベル `context` のみ使用 |
 | `deliverables` | `outputs` と重複。`outputs` を使う |
 
@@ -75,9 +75,9 @@ story-analysis.json のチーム設計（ロール・Wave構造）に基づき�
 
 各タスクは以下を満たすこと:
 - 8つの必須フィールドのみ（FORBIDDEN フィールドを含めない）
-- `opencodePrompt` は具体的な実装指示（ファイルパス・操作内容・期待結果を含む）
-- `opencodePrompt` は曖昧でない（「機能を実装」「バグを修正」のような指示でない）
-- reviewer/tester ロールの `opencodePrompt` は `"IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only."` で始め、`"コードの修正は行わないでください。"` で終える
+- `taskPrompt` は具体的な実装指示（ファイルパス・操作内容・期待結果を含む）
+- `taskPrompt` は曖昧でない（「機能を実装」「バグを修正」のような指示でない）
+- reviewer/tester ロールの `taskPrompt` は `"IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only."` で始め、`"コードの修正は行わないでください。"` で終える
 
 ### Step 3: task-list.json の出力
 
@@ -106,7 +106,7 @@ Write ツールで `{plan_dir}/task-list.json` を出力する。
           "needsPriorContext": false,
           "inputs": ["src/styles/tokens.css"],
           "outputs": ["src/styles/tokens.css"],
-          "opencodePrompt": "src/styles/tokens.css を開き、:root ブロックに以下のCSS変数を追加してください:\n--color-card-bg: #ffffff\n--color-card-border: #e5e7eb\n--spacing-card: 1.5rem\n既存の変数と命名規則を揃えてください。"
+          "taskPrompt": "src/styles/tokens.css を開き、:root ブロックに以下のCSS変数を追加してください:\n--color-card-bg: #ffffff\n--color-card-border: #e5e7eb\n--spacing-card: 1.5rem\n既存の変数と命名規則を揃えてください。"
         }
       ]
     },
@@ -121,7 +121,7 @@ Write ツールで `{plan_dir}/task-list.json` を出力する。
           "needsPriorContext": true,
           "inputs": ["src/styles/tokens.css"],
           "outputs": ["src/components/Card/Card.tsx", "src/components/Card/index.ts"],
-          "opencodePrompt": "src/components/Card/Card.tsx を新規作成してください。\nPropsは { title: string; children: React.ReactNode } です。\nsrc/styles/tokens.css のCSS変数 --color-card-bg, --color-card-border, --spacing-card を使い、Tailwind v4 の変数ショートハンド構文 bg-(--color-card-bg) 形式でスタイリングしてください。\nindex.ts でnamed exportしてください。"
+          "taskPrompt": "src/components/Card/Card.tsx を新規作成してください。\nPropsは { title: string; children: React.ReactNode } です。\nsrc/styles/tokens.css のCSS変数 --color-card-bg, --color-card-border, --spacing-card を使い、Tailwind v4 の変数ショートハンド構文 bg-(--color-card-bg) 形式でスタイリングしてください。\nindex.ts でnamed exportしてください。"
         }
       ]
     },
@@ -136,7 +136,7 @@ Write ツールで `{plan_dir}/task-list.json` を出力する。
           "needsPriorContext": true,
           "inputs": ["src/styles/tokens.css", "src/components/Card/Card.tsx"],
           "outputs": [],
-          "opencodePrompt": "IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only.\n\n以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。コードの修正は行わないでください。"
+          "taskPrompt": "IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only.\n\n以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。コードの修正は行わないでください。"
         }
       ]
     }

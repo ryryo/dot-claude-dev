@@ -44,7 +44,7 @@ allowed-tools:
 ```
 docs/features/team/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析結果（チーム設計、ロール定義含む）
-└── task-list.json         # タスク定義（waves/roles 形式、承認済み、各タスクに opencodePrompt 含む）
+└── task-list.json         # タスク定義（waves/roles 形式、承認済み、各タスクに taskPrompt 含む）
 ```
 
 ---
@@ -98,17 +98,17 @@ Q: opencode run で使用するモデルは？（計画時: {metadata.ocModel}�
 
 ### 検証チェックリスト
 
-- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `opencodePrompt`
+- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `taskPrompt`
 - [ ] 禁止フィールドが存在しない: `title`, `acceptanceCriteria`, `context`（タスクレベル）, `deliverables`
 - [ ] Wave構造が `waves[].tasks[]` フラット配列 + `role` フィールド形式である
-- [ ] `opencodePrompt` が具体的な実装指示を含む（ファイルパス・操作内容が明記されている）
+- [ ] `taskPrompt` が具体的な実装指示を含む（ファイルパス・操作内容が明記されている）
 
 ### 判定
 
 - **全タスク合格** → Phase 1 へ進む
 - **1つでも不合格** → **即座に停止**。不合格タスクのIDと欠損フィールドをユーザーに報告し、`dev:team-plan` での修正を案内する
 
-**禁止**: `opencodePrompt` が欠損・曖昧なタスクに対して、exec 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
+**禁止**: `taskPrompt` が欠損・曖昧なタスクに対して、exec 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
 
 ---
 
@@ -139,9 +139,9 @@ TeamCreate({ team_name: "team-opencode-{timestamp}", description: "opencode並�
 1. `references/agent-prompt-template.md` を Read で読み込む
 2. `references/role-catalog.md` から該当ロールの `role_directive` を取得
 3. `$PLAN_DIR/story-analysis.json` から該当ロールの `customDirective` を取得
-4. `$PLAN_DIR/task-list.json` からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
+4. `$PLAN_DIR/task-list.json` からタスクの `description`, `inputs`, `outputs`, `taskPrompt` を取得
 5. task-list.json の `name` を `{task_name}` として置換
-6. `needsPriorContext: true` の場合、`{opencodePrompt}` の先頭に以下を付加してから置換する:
+6. `needsPriorContext: true` の場合、`{taskPrompt}` の先頭に以下を付加してから置換する:
 
    ```
    Before starting, check what was changed by the previous task:
@@ -155,7 +155,7 @@ TeamCreate({ team_name: "team-opencode-{timestamp}", description: "opencode並�
    `needsPriorContext` が未指定または false の場合はそのまま置換する
 
 7. テンプレートの変数を置換してエージェントプロンプトとして使用
-8. `role` が `reviewer` または `tester` の場合、`{opencodePrompt}` が `"IMPORTANT: Do NOT modify any files."` で始まることを確認する。始まっていない場合、先頭に `"IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only.\n\n"` を付加する
+8. `role` が `reviewer` または `tester` の場合、`{taskPrompt}` が `"IMPORTANT: Do NOT modify any files."` で始まることを確認する。始まっていない場合、先頭に `"IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only.\n\n"` を付加する
 
 **必須**: テンプレートの文言を改変・省略・要約しない。変数（`{...}`）のみ置換する。
 
@@ -224,7 +224,7 @@ Q: レビュワーから以下の改善候補が挙がりました。修正す�
    - 修正内容の具体的な指示
    - 適切なロール（通常は `frontend-developer`）
 
-2. fix タスクの `opencodePrompt` をリーダーが構築:
+2. fix タスクの `taskPrompt` をリーダーが構築:
    ```
    以下のレビュー指摘に基づいて修正してください:
 
@@ -250,7 +250,7 @@ Q: レビュワーから以下の改善候補が挙がりました。修正す�
          "needsPriorContext": true,
          "inputs": ["{対象ファイル}"],
          "outputs": ["{対象ファイル}"],
-         "opencodePrompt": "{上記で構築したプロンプト}"
+         "taskPrompt": "{上記で構築したプロンプト}"
        }
      ]
    }
@@ -292,7 +292,7 @@ Q: Fix が完了しました。再レビューを実施しますか？
 
 **禁止事項:**
 
-- リーダーが fix タスクの `opencodePrompt` を曖昧にする（「改善してください」等）
+- リーダーが fix タスクの `taskPrompt` を曖昧にする（「改善してください」等）
 - fix wave で reviewer をスポーンしない（再レビューは 2-7 でユーザーが判断）
 - ユーザー未選択の改善候補を勝手に fix に含める
 

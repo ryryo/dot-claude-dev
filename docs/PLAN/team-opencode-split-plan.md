@@ -260,7 +260,7 @@ exec は plan が生成した waves/roles 形式の task-list.json のみ受け�
             "needsPriorContext": false,
             "inputs": [],
             "outputs": [],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           }
         ]
       }

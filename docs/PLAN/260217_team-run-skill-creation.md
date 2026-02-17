@@ -48,7 +48,7 @@ opencode を使用せず Claude Code のネイティブ機能のみで動作す�
 #### Subagents ドキュメントより
 
 10. **レビュー系ロールはSubagent**: Read-only tools限定。結果をsummaryで返す
-11. **model選択**: レビューの分析品質にはsonnet/opus、実装にはsonnet
+11. **model選択**: 基本は opus。明らかに軽量なタスクのみ sonnet/haiku
 
 #### Best Practices ドキュメントより
 
@@ -67,14 +67,14 @@ opencode を使用せず Claude Code のネイティブ機能のみで動作す�
 ```
 docs/features/team/{YYMMDD}_{slug}/
 ├── story-analysis.json    # チーム設計（ロール、Wave構造、fileOwnership）
-└── task-list.json         # タスク定義（8必須フィールド + opencodePrompt）
+└── task-list.json         # タスク定義（8必須フィールド + taskPrompt）
 ```
 
 team-plan で事前に設計された:
 - **ロール構成**: role-catalog.md ベースのロール割当
 - **Wave構造**: 依存関係付きの順次実行構造
 - **fileOwnership**: ロールごとのファイル所有権
-- **opencodePrompt**: 各タスクの実装指示（team-run では Teammate への直接プロンプトとして使用）
+- **taskPrompt**: 各タスクの実装指示（team-run では Teammate への直接プロンプトとして使用）
 
 ### task-list.json のタスクスキーマ（8必須フィールド）
 
@@ -87,11 +87,11 @@ team-plan で事前に設計された:
   "needsPriorContext": false,
   "inputs": ["docs/features/team/copy-hero.md"],
   "outputs": ["src/components/lp/HeroSection.tsx"],
-  "opencodePrompt": "以下の仕様でHeroSectionを実装..."
+  "taskPrompt": "以下の仕様でHeroSectionを実装..."
 }
 ```
 
-team-run では `opencodePrompt` を opencode に渡すのではなく、Teammate への直接実装指示として使用する。
+team-run では `taskPrompt` を opencode に渡すのではなく、Teammate への直接実装指示として使用する。
 
 ---
 
@@ -224,16 +224,16 @@ Q: 実行する計画を選択してください。
 
 `$PLAN_DIR/task-list.json` を Read で読み込み、以下の検証を**全タスク**に対して実施する:
 
-- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `opencodePrompt`
+- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `taskPrompt`
 - [ ] Wave構造が `waves[].tasks[]` フラット配列 + `role` フィールド形式である
-- [ ] `opencodePrompt` が具体的な実装指示を含む（ファイルパス・操作内容が明記されている）
+- [ ] `taskPrompt` が具体的な実装指示を含む（ファイルパス・操作内容が明記されている）
 - [ ] `story-analysis.json` の `fileOwnership` が存在し、各ロールのファイル所有範囲が定義されている
 
 判定:
 - **全タスク合格** → Step 2 へ進む
 - **1つでも不合格** → **即座に停止**。不合格タスクのIDと欠損フィールドをユーザーに報告し、`dev:team-plan` での修正を案内する
 
-**禁止**: `opencodePrompt` が欠損・曖昧なタスクに対して、team-run 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
+**禁止**: `taskPrompt` が欠損・曖昧なタスクに対して、team-run 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
 
 #### Step 2: 環境セットアップ
 
@@ -300,7 +300,7 @@ Lead は以下の役割に限定する:
 1. `references/agent-prompt-template.md` を Read で読み込む
 2. `references/role-catalog.md` から該当ロールの `role_directive` を取得
 3. `$PLAN_DIR/story-analysis.json` から該当ロールの `customDirective` と `fileOwnership` を取得
-4. `$PLAN_DIR/task-list.json` からタスクの `description`, `inputs`, `outputs`, `opencodePrompt` を取得
+4. `$PLAN_DIR/task-list.json` からタスクの `description`, `inputs`, `outputs`, `taskPrompt` を取得
 5. `needsPriorContext: true` の場合、プロンプトの先頭に以下を付加:
 
    ```
@@ -317,7 +317,7 @@ Lead は以下の役割に限定する:
 **Teammate スポーン設定**:
 
 ```
-model: sonnet  （実装系はsonnet。ロール別の最適化は後述）
+model: opus  （基本は opus。明らかに軽量なタスクのみ sonnet）
 run_in_background: true
 cwd: $WORKTREE_PATH  ← 全 Teammate が共通の worktree で作業（fileOwnership で論理分離）
 ```
@@ -326,11 +326,12 @@ cwd: $WORKTREE_PATH  ← 全 Teammate が共通の worktree で作業（fileOwne
 
 | ロール | モデル | 理由 |
 |--------|--------|------|
-| designer, architect | sonnet | 設計判断が必要 |
-| frontend-developer, backend-developer, fullstack-developer | sonnet | 実装品質 |
-| tdd-developer | sonnet | TDD の RED/GREEN/REFACTOR サイクルに判断力が必要 |
-| copywriter | sonnet | 文章品質 |
-| researcher | sonnet | 分析品質 |
+| designer, architect | opus | 設計判断に高い推論力が必要 |
+| frontend-developer, backend-developer, fullstack-developer | opus | 実装品質・複雑な判断 |
+| tdd-developer | opus | TDD の RED/GREEN/REFACTOR サイクルに高い判断力が必要 |
+| copywriter | sonnet | 文章生成は sonnet で十分 |
+| researcher | opus | 分析・調査に高い推論力が必要 |
+| reviewer（Subagent） | opus | レビュー品質に高い分析力が必要 |
 
 **Plan Approval フロー**（`requirePlanApproval: true` のタスクのみ）:
 
@@ -355,7 +356,7 @@ Teammate が自分のタスクを完了した後、同一 Wave 内に未割り�
 Task({
   description: "{レビュープロンプト}",
   allowed_tools: ["Read", "Glob", "Grep", "Bash"],
-  model: "sonnet"
+  model: "opus"
 })
 ```
 
@@ -367,7 +368,7 @@ Task({
 レビュー Subagent のプロンプトには以下を含める:
 - レビュー対象のファイル一覧（worktree 内の差分で特定）
 - role-catalog.md の reviewer/tester の role_directive
-- task-list.json の当該タスクの description と opencodePrompt
+- task-list.json の当該タスクの description と taskPrompt
 - **出力形式**: 改善候補を重要度（高/中/低）付きで報告
 
 **4-3: hooks**
@@ -436,7 +437,7 @@ Q: レビュワーから以下の改善候補が挙がりました。修正す�
 ユーザーが選択した改善候補ごとに fix タスクを生成:
 
 1. 各改善候補から対象ファイル・修正内容・適切なロールを特定
-2. fix タスクの `opencodePrompt` を Lead が構築:
+2. fix タスクの `taskPrompt` を Lead が構築:
 
    ```
    以下のレビュー指摘に基づいて修正してください:
@@ -588,7 +589,7 @@ team-opencode-exec の `agent-prompt-template.md` をベースに、opencode 部
 
 2. 以下の実装指示に従って、ネイティブに実装してください:
 
-{opencodePrompt}
+{taskPrompt}
 
 利用可能なツール: Glob, Grep, Read, Edit, Write, Bash
 - Read で既存ファイルを確認してから Edit/Write で変更する
@@ -647,7 +648,7 @@ git commit -m "feat({agent_name}): {task_name}"
 | `{output_files}` | task-list.json の `outputs` | `src/components/AuthForm.tsx` |
 | `{file_ownership}` | story-analysis.json の `fileOwnership[role]` | `src/components/**`, `src/pages/**` |
 | `{id}` | TaskCreate で生成 | `1`, `2`, `3` |
-| `{opencodePrompt}` | task-list.json の `opencodePrompt` | `以下の仕様で認証フォームを実装...` |
+| `{taskPrompt}` | task-list.json の `taskPrompt` | `以下の仕様で認証フォームを実装...` |
 | `{task_name}` | task-list.json の `name` | `認証フォームの実装` |
 | `{plan_approval_section}` | requirePlanApproval に応じて挿入/空文字 | （上記セクション） |
 
@@ -872,8 +873,8 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 | 項目 | team-opencode-exec | team-run |
 |------|-------------------|----------|
 | 実行エンジン | opencode run (外部モデル) | Claude Code ネイティブ |
-| CC側モデル | haiku 固定 | sonnet（ロール別最適化可） |
-| レビュー系ロール | Agent Teams (haiku + opencode) | Subagent (Task, sonnet) |
+| CC側モデル | haiku 固定 | opus（基本）/ sonnet（軽量タスク） |
+| レビュー系ロール | Agent Teams (haiku + opencode) | Subagent (Task, opus) |
 | ファイル分離 | なし（同一ディレクトリ） | Git Worktree（チーム全体で1つ）+ fileOwnership（論理分離） |
 | Delegate mode | なし（Lead が代行可能） | あり（Lead は調整専任） |
 | Plan Approval | なし | あり（requirePlanApproval: true のタスク） |

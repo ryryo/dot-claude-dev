@@ -18,7 +18,7 @@
           "needsPriorContext": false,
           "inputs": ["src/styles/tokens.css"],
           "outputs": ["src/styles/tokens.css"],
-          "opencodePrompt": "src/styles/tokens.css を開き、:root ブロックに以下のCSS変数を追加してください:\n--color-card-bg: #ffffff\n--color-card-border: #e5e7eb\n--spacing-card: 1.5rem\n既存の変数と命名規則を揃えてください。"
+          "taskPrompt": "src/styles/tokens.css を開き、:root ブロックに以下のCSS変数を追加してください:\n--color-card-bg: #ffffff\n--color-card-border: #e5e7eb\n--spacing-card: 1.5rem\n既存の変数と命名規則を揃えてください。"
         }
       ]
     },
@@ -33,7 +33,7 @@
           "needsPriorContext": true,
           "inputs": ["src/styles/tokens.css"],
           "outputs": ["src/components/Card/Card.tsx", "src/components/Card/index.ts"],
-          "opencodePrompt": "src/components/Card/Card.tsx を新規作成してください。\nPropsは { title: string; children: React.ReactNode } です。\nsrc/styles/tokens.css のCSS変数 --color-card-bg, --color-card-border, --spacing-card を使い、Tailwind v4 の変数ショートハンド構文 bg-(--color-card-bg) 形式でスタイリングしてください。\nindex.ts でnamed exportしてください。"
+          "taskPrompt": "src/components/Card/Card.tsx を新規作成してください。\nPropsは { title: string; children: React.ReactNode } です。\nsrc/styles/tokens.css のCSS変数 --color-card-bg, --color-card-border, --spacing-card を使い、Tailwind v4 の変数ショートハンド構文 bg-(--color-card-bg) 形式でスタイリングしてください。\nindex.ts でnamed exportしてください。"
         }
       ]
     },
@@ -48,7 +48,7 @@
           "needsPriorContext": true,
           "inputs": ["src/styles/tokens.css", "src/components/Card/Card.tsx"],
           "outputs": [],
-          "opencodePrompt": "以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。"
+          "taskPrompt": "以下のファイルをレビューしてください:\n1. src/styles/tokens.css - CSS変数の命名規則・値の妥当性\n2. src/components/Card/Card.tsx - コンポーネント設計・アクセシビリティ・Tailwind記法\n\n改善候補を重要度(高/中/低)付きで報告してください。"
         }
       ]
     }

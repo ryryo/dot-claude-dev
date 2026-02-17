@@ -166,7 +166,7 @@ dev:story の story-analysis.json に `teamDesign` セクションを追加し�
 dev:story の task-list.json との差分:
 
 - `phases` → `waves`（直列/並列制御を明示）
-- 各タスクに `opencodePrompt` フィールド追加
+- 各タスクに `taskPrompt` フィールド追加
 - `inputs` / `outputs` でWave間のデータフローを明示
 - Wave内のタスクをロール別配列で管理（`roles: { [roleName]: Task[] }`）
 
@@ -188,21 +188,21 @@ dev:story の task-list.json との差分:
             "name": "HeroSectionのコピー作成",
             "description": "PASBECONAのP（Problem）A（Affinity）を反映したヘッダーコピー",
             "outputs": ["docs/features/team-opencode/copy-hero.md"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           },
           {
             "id": "task-1-2",
             "name": "EvidenceSectionのコピー作成",
             "description": "E（Evidence）に対応する実績・根拠セクションのコピー",
             "outputs": ["docs/features/team-opencode/copy-evidence.md"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           },
           {
             "id": "task-1-3",
             "name": "CTASectionのコピー作成",
             "description": "N（Narrow down）A（Action）に対応するCTAコピー",
             "outputs": ["docs/features/team-opencode/copy-cta.md"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           }
         ],
         "designer": [
@@ -211,21 +211,21 @@ dev:story の task-list.json との差分:
             "name": "HeroSectionのデザイン仕様",
             "description": "ヒーロー領域のコンポーネント構造・レスポンシブ仕様",
             "outputs": ["docs/features/team-opencode/design-hero.md"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           },
           {
             "id": "task-2-2",
             "name": "EvidenceSectionのデザイン仕様",
             "description": "実績セクションのカード・グリッド構造・Tailwindクラス",
             "outputs": ["docs/features/team-opencode/design-evidence.md"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           },
           {
             "id": "task-2-3",
             "name": "CTASectionのデザイン仕様",
             "description": "CTAボタン・フォーム領域のコンポーネント構造",
             "outputs": ["docs/features/team-opencode/design-cta.md"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           }
         ]
       }
@@ -241,7 +241,7 @@ dev:story の task-list.json との差分:
             "description": "copy-hero.md + design-hero.md に基づくReactコンポーネント実装",
             "inputs": ["docs/features/team-opencode/copy-hero.md", "docs/features/team-opencode/design-hero.md"],
             "outputs": ["src/components/lp/HeroSection.tsx"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           },
           {
             "id": "task-3-2",
@@ -249,7 +249,7 @@ dev:story の task-list.json との差分:
             "description": "copy-evidence.md + design-evidence.md に基づく実装",
             "inputs": ["docs/features/team-opencode/copy-evidence.md", "docs/features/team-opencode/design-evidence.md"],
             "outputs": ["src/components/lp/EvidenceSection.tsx"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           },
           {
             "id": "task-3-3",
@@ -257,7 +257,7 @@ dev:story の task-list.json との差分:
             "description": "copy-cta.md + design-cta.md に基づく実装",
             "inputs": ["docs/features/team-opencode/copy-cta.md", "docs/features/team-opencode/design-cta.md"],
             "outputs": ["src/components/lp/CTASection.tsx"],
-            "opencodePrompt": "..."
+            "taskPrompt": "..."
           }
         ]
       }
@@ -480,7 +480,7 @@ role_directive: |
 
 2. 以下のコマンドをそのまま実行してください。モデルやコマンドを変更しないでください:
 
-opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
+opencode run -m {OC_MODEL} "{taskPrompt}" 2>&1
 
 3. opencode の出力結果を確認する
 
@@ -514,7 +514,7 @@ opencode run -m {OC_MODEL} "{opencodePrompt}" 2>&1
 | `{output_files}`     | task-list.json の `outputs`              |
 | `{id}`               | TaskCreate で生成                        |
 | `{OC_MODEL}`         | Phase 0 で選択                           |
-| `{opencodePrompt}`   | task-list.json の `opencodePrompt`       |
+| `{taskPrompt}`   | task-list.json の `taskPrompt`       |
 
 ### TDD テンプレートの統合
 
@@ -655,7 +655,7 @@ AskUserQuestion でユーザーに提示
 - [ ] [TASK] `references/role-catalog.md` 新規作成（Webアプリ開発汎用ロール: 実装系4 + 設計系3 + 品質系2 + 調査系1）
 - [ ] [TASK] `references/templates/` にテンプレート雛形を作成:
   - `story-analysis.template.json`（teamDesign セクション付き）
-  - `task-list.template.json`（waves + roles + opencodePrompt）
+  - `task-list.template.json`（waves + roles + taskPrompt）
 - [ ] [TASK] `scripts/init-team-workspace.sh` 作成（クリーンアップ + テンプレートコピー）
 
 ### Phase C: エージェントプロンプト統一

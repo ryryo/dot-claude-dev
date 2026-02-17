@@ -95,10 +95,10 @@ Write the file {plan_dir}/story-analysis.json with this structure:
 ### 現行 task-breakdown.md プロンプト（要点）
 
 - opencode にコードベース探索からタスク分解まで一貫実行させる
-- タスクスキーマ: 8必須フィールド（id, name, role, description, needsPriorContext, inputs, outputs, opencodePrompt）
+- タスクスキーマ: 8必須フィールド（id, name, role, description, needsPriorContext, inputs, outputs, taskPrompt）
 - 禁止フィールド: title, acceptanceCriteria, context（タスクレベル）, deliverables
 - Wave構造: `waves[].tasks[]` フラット配列 + `role` フィールド
-- `opencodePrompt` は具体的な実装指示（ファイルパス・操作内容・期待結果を含む）
+- `taskPrompt` は具体的な実装指示（ファイルパス・操作内容・期待結果を含む）
 
 ### 現行 task-review.md プロンプト
 
@@ -116,7 +116,7 @@ Analyze:
 4. Missing tasks
 5. Risk
 6. Schema compliance
-7. opencodePrompt quality
+7. taskPrompt quality
 8. Reviewer constraint
 
 Respond with: APPROVED or NEEDS_REVISION + recommendations
@@ -242,7 +242,7 @@ Q: チーム構成テンプレートを選択してください。
 #### task-breakdown.md → native 実行向けに修正
 
 - 「Explore the codebase」を Glob/Grep/Read での明示的探索手順に変更
-- `opencodePrompt` フィールドは**維持**（exec フェーズで opencode が使用するため）
+- `taskPrompt` フィールドは**維持**（exec フェーズで opencode が使用するため）
 - `{designSystemRefs}` をリーダー自身が DESIGN.md やデザイントークンファイルから Read で取得する手順に変更
 
 #### task-review.md → 変更なし
@@ -313,7 +313,7 @@ Q: チーム構成テンプレートを選択してください。
   - コードベース探索の具体的手順（Glob/Grep/Read）を追加
 - [ ] `references/prompts/task-breakdown.md` を native 実行向けに修正
   - 「Explore the codebase」を Glob/Grep/Read での明示的探索手順に変更
-  - `opencodePrompt` フィールドは維持（exec 用）
+  - `taskPrompt` フィールドは維持（exec 用）
   - `{designSystemRefs}` 取得手順をリーダー自身の Read 操作に変更
 
 ### Phase 4: チーム構成テンプレート作成

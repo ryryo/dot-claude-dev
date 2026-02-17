@@ -40,7 +40,7 @@ allowed-tools:
 ```
 docs/features/team/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件、チーム設計）
-└── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当、各タスクに opencodePrompt 含む）
+└── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当、各タスクに taskPrompt 含む）
 ```
 
 命名規則: `{YYMMDD}_{slug}`（YYMMDD: 作成日、slug: kebab-case 英数字+ハイフン、最大40文字）
@@ -134,13 +134,13 @@ Q: チーム構成テンプレートを選択してください。
 
 **スキーマ検証チェックリスト（全タスクに対して実施）**:
 
-- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `opencodePrompt`
+- [ ] 8必須フィールドが存在する: `id`, `name`, `role`, `description`, `needsPriorContext`, `inputs`, `outputs`, `taskPrompt`
 - [ ] 禁止フィールドが存在しない: `title`, `acceptanceCriteria`, `context`（タスクレベル）, `deliverables`
 - [ ] Wave構造が `waves[].tasks[]` フラット配列 + `role` フィールド形式である（旧 `roles.{roleName}` 形式でない）
-- [ ] `opencodePrompt` が具体的な実装指示を含む（ファイルパス・操作内容・期待結果）
-- [ ] `opencodePrompt` が曖昧でない（「機能を実装」「バグを修正」のような指示でない）
+- [ ] `taskPrompt` が具体的な実装指示を含む（ファイルパス・操作内容・期待結果）
+- [ ] `taskPrompt` が曖昧でない（「機能を実装」「バグを修正」のような指示でない）
 
-5. 不備があればリーダーが修正する。特に `opencodePrompt` の欠損・曖昧さは必ず修正する
+5. 不備があればリーダーが修正する。特に `taskPrompt` の欠損・曖昧さは必ず修正する
 
 ### Step 5: opencode でタスクレビュー
 
