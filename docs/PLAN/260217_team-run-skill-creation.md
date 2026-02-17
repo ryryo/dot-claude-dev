@@ -8,7 +8,7 @@
 
 ## 概要
 
-opencode を使用せず Claude Code のネイティブ機能のみで動作する新しいチーム実行スキル `dev:team-run` を作成する。Agent Teams の公式ベストプラクティス（Delegate mode, Plan Approval, Teammate間メッセージ, Self-claim, hooks）にフル準拠し、Git Worktree による物理的なファイル分離で衝突リスクを排除する。
+opencode を使用せず Claude Code のネイティブ機能のみで動作する新しいチーム実行スキル `dev:team-run` を作成する。Agent Teams の公式ベストプラクティス（Delegate mode, Plan Approval, Teammate間メッセージ, Self-claim, hooks）にフル準拠し、チーム全体で1つの Git Worktree を使用してユーザーの作業ディレクトリから隔離する。Teammate 間のファイル衝突は fileOwnership（論理的分離）で防止する。
 
 ## 背景
 
@@ -27,7 +27,7 @@ opencode を使用せず Claude Code のネイティブ機能のみで動作す�
 |------|------|
 | スキル名 | `dev:team-run` |
 | ディレクトリ | `.claude/skills/dev/team-run/` |
-| Git分離方式 | **Git Worktree** + 最終PR。各Teammateに専用worktree+サブブランチ。全Wave完了後にfeatureブランチにマージし、`gh pr create` でPR作成 |
+| Git分離方式 | **Git Worktree**（チーム全体で1つ）+ 最終PR。`feature/{slug}` ブランチで1つの worktree を作成し、全 Teammate が同じ worktree で作業。ファイル衝突は fileOwnership（論理的分離）で防止。全Wave完了後に `gh pr create` でPR作成 |
 | 実行方式 | **ハイブリッド**: 実装系ロール（designer, frontend-developer, backend-developer等）は Agent Teams の Teammate（独立した Claude Code セッション）、レビュー系ロール（reviewer, tester）は Subagent（Task ツール） |
 | Agent Teams公式機能 | **フル導入**: Delegate mode, Plan Approval（複雑タスク）, Teammate間メッセージ, Self-claim, TeammateIdle/TaskCompleted hooks。team-plan の計画を活かして効率化 |
 
@@ -43,7 +43,7 @@ opencode を使用せず Claude Code のネイティブ機能のみで動作す�
 6. **TaskCompleted hook**: タスク完了前にlint/build チェック
 7. **十分なコンテキスト**: スポーン時にタスク固有の詳細をプロンプトに含める
 8. **適切なタスクサイズ**: 5-6タスク/Teammateで生産性維持
-9. **ファイル衝突回避**: Worktreeで物理分離 + fileOwnershipで論理分離
+9. **ファイル衝突回避**: fileOwnership で論理分離（公式推奨）。Git Worktree はユーザー作業ディレクトリからのチーム隔離用
 
 #### Subagents ドキュメントより
 
@@ -100,14 +100,12 @@ team-run では `opencodePrompt` を opencode に渡すのではなく、Teammat
 ```
 Step 1: 計画選択 + 検証
   ├── docs/features/team/ から計画選択（AskUserQuestion）
-  ├── Pre-flight 検証（8必須フィールド、Wave構造、fileOwnership）
-  └── Git Worktree 用のブランチ構造を計算
+  └── Pre-flight 検証（8必須フィールド、Wave構造、fileOwnership）
 
 Step 2: 環境セットアップ
   ├── feature/{slug} ブランチ作成
-  ├── 各ロール用サブブランチ作成（feature/{slug}/{role}）
-  ├── scripts/setup-worktrees.sh 実行 → 各ロール用 worktree 作成
-  └── worktree パスをマッピングテーブルに記録
+  ├── scripts/setup-worktree.sh 実行 → チーム全体で1つの worktree 作成
+  └── worktree パスを記録（.worktrees/{slug}/）
 
 Step 3: チーム作成 + タスク登録
   ├── TeamCreate({ team_name: "team-run-{slug}" })
@@ -116,7 +114,8 @@ Step 3: チーム作成 + タスク登録
 
 Step 4: Wave 実行ループ（全Wave完走まで繰り返し）
   ├── 実装系ロール → Agent Teams Teammate をスポーン
-  │   ├── 各 Teammate の cwd を専用 worktree に設定
+  │   ├── 全 Teammate の cwd を共通の worktree に設定
+  │   ├── fileOwnership でファイル衝突を論理的に防止
   │   ├── Plan Approval（requirePlanApproval: true の場合）
   │   ├── ネイティブ実装（Glob/Grep/Read/Edit/Write/Bash）
   │   ├── Self-claim（同一 Wave 内の未割り当てタスク）
@@ -134,13 +133,13 @@ Step 5: レビュー・フィードバックループ
   ├── Fix Teammate スポーン → 修正実装
   └── 再レビュー判断（最大3ラウンド）
 
-Step 6: マージ + PR作成
-  ├── 各サブブランチを feature/{slug} にマージ（scripts/merge-worktrees.sh）
-  ├── コンフリクト発生時: AskUserQuestion でユーザーに報告、手動解決を案内
+Step 6: PR作成 + クリーンアップ
+  ├── worktree 内の変更が全てコミット済みであることを確認
+  ├── feature/{slug} ブランチを push
   ├── gh pr create でPR作成
-  └── scripts/cleanup-worktrees.sh で worktree クリーンアップ
+  └── scripts/cleanup-worktree.sh で worktree 削除
 
-Step 7: クリーンアップ
+Step 7: 結果集約 + TeamDelete
   ├── 結果集約 → ユーザーに提示
   ├── metadata.status を "completed" に更新
   └── TeamDelete
@@ -190,9 +189,8 @@ allowed-tools:
 |----------|-------------------|------|
 | `references/agent-prompt-template.md` | Step 4（Teammate スポーン前） | 統一 Teammate プロンプト |
 | `references/role-catalog.md` | Step 4（role_directive 取得） | ロール定義の参照 |
-| `scripts/setup-worktrees.sh` | Step 2（環境セットアップ） | Worktree 一括セットアップ |
-| `scripts/merge-worktrees.sh` | Step 6（マージ） | サブブランチのマージ |
-| `scripts/cleanup-worktrees.sh` | Step 6/7（クリーンアップ） | Worktree 削除 |
+| `scripts/setup-worktree.sh` | Step 2（環境セットアップ） | Worktree セットアップ（チーム全体で1つ） |
+| `scripts/cleanup-worktree.sh` | Step 6/7（クリーンアップ） | Worktree 削除 |
 
 **Teammate スポーン時、必ず `agent-prompt-template.md` を Read で読み込んでからプロンプトを構築すること。記憶や要約で代替しない。**
 
@@ -237,55 +235,30 @@ Q: 実行する計画を選択してください。
 
 **禁止**: `opencodePrompt` が欠損・曖昧なタスクに対して、team-run 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
 
-**1-3: ブランチ構造の計算**
-
-task-list.json から全ロールを抽出し、以下のブランチ構造を計算:
-
-```
-feature/{slug}                     ← メインフィーチャーブランチ
-  ├── feature/{slug}/designer      ← designer ロールの作業ブランチ
-  ├── feature/{slug}/frontend-dev  ← frontend-developer ロールの作業ブランチ
-  ├── feature/{slug}/backend-dev   ← backend-developer ロールの作業ブランチ
-  └── ...
-```
-
-Worktree パスのマッピングテーブル:
-
-```
-{role} → .worktrees/{slug}/{role}/   （プロジェクトルート相対）
-```
-
 #### Step 2: 環境セットアップ
 
-**2-1: feature ブランチ作成**
+**2-1: Worktree セットアップ**
+
+`scripts/setup-worktree.sh` を実行:
 
 ```bash
-git checkout -b feature/{slug}
-```
-
-現在の HEAD から feature ブランチを作成。
-
-**2-2: Worktree セットアップ**
-
-`scripts/setup-worktrees.sh` を実行:
-
-```bash
-bash .claude/skills/dev/team-run/scripts/setup-worktrees.sh {slug} "{role1} {role2} {role3} ..."
+WORKTREE_PATH=$(bash .claude/skills/dev/team-run/scripts/setup-worktree.sh {slug})
 ```
 
 スクリプトの処理内容:
-1. 各ロールに対してサブブランチ `feature/{slug}/{role}` を作成
-2. `.worktrees/{slug}/{role}/` に worktree を作成
-3. 各 worktree でサブブランチをチェックアウト
+1. 現在の HEAD から `feature/{slug}` ブランチを作成
+2. `.worktrees/{slug}/` にチーム全体で1つの worktree を作成
+3. worktree の絶対パスを出力
 
-**2-3: Worktree パスの検証**
+`$WORKTREE_PATH` を以降のすべてのステップで Teammate の cwd として使用する。
 
-各 worktree ディレクトリが存在し、正しいブランチをチェックアウトしていることを確認:
+**2-2: Worktree パスの検証**
+
+worktree ディレクトリが存在し、正しいブランチをチェックアウトしていることを確認:
 
 ```bash
-for role in {roles}; do
-  git -C .worktrees/{slug}/${role} branch --show-current
-done
+git -C .worktrees/{slug} branch --show-current
+# → feature/{slug} であること
 ```
 
 #### Step 3: チーム作成 + タスク登録
@@ -303,7 +276,6 @@ TeamCreate({ team_name: "team-run-{slug}", description: "ネイティブ並行�
 タスク登録時、以下のメタデータを付与:
 - `wave`: Wave番号
 - `role`: ロール名
-- `worktree_path`: 対応する worktree の絶対パス
 - `requirePlanApproval`: true/false（task-list.json から取得、未設定は false）
 
 **3-3: Delegate mode の宣言**
@@ -347,7 +319,7 @@ Lead は以下の役割に限定する:
 ```
 model: sonnet  （実装系はsonnet。ロール別の最適化は後述）
 run_in_background: true
-cwd: {worktree_path}  ← 各 Teammate は専用 worktree で作業
+cwd: $WORKTREE_PATH  ← 全 Teammate が共通の worktree で作業（fileOwnership で論理分離）
 ```
 
 **モデル選択戦略**:
@@ -393,7 +365,7 @@ Task({
 - 結果を summary で Lead に返却でき、構造化された報告が得られる
 
 レビュー Subagent のプロンプトには以下を含める:
-- レビュー対象のファイル一覧（worktree からの差分で特定）
+- レビュー対象のファイル一覧（worktree 内の差分で特定）
 - role-catalog.md の reviewer/tester の role_directive
 - task-list.json の当該タスクの description と opencodePrompt
 - **出力形式**: 改善候補を重要度（高/中/低）付きで報告
@@ -422,7 +394,7 @@ Teammate が待機状態に入る前に以下を検証:
 
 - [ ] 当該 Wave の**全タスク**が TaskList で `completed` になっている
 - [ ] 各タスクの成果物（outputs）が**ファイルとして実際に存在する**ことを確認
-- [ ] 実装系 Teammate の worktree にコミットがある
+- [ ] worktree にコミットがある（`git log` で確認）
 
 判定合格 → 次 Wave の Teammate をスポーン（4-1 に戻る）
 全 Wave 完了 → Step 5 へ
@@ -484,7 +456,7 @@ Q: レビュワーから以下の改善候補が挙がりました。修正す�
 **5-5: Fix Teammate スポーン**
 
 Step 4-1 と同じ手順で fix タスクの Teammate をスポーン:
-- 専用 worktree で作業（既存の worktree を再利用）
+- 共通の worktree で作業（既存の worktree を再利用）
 - `needsPriorContext: true` なので git diff プレフィックスを付加
 
 **5-6: Fix 完了確認**
@@ -506,27 +478,25 @@ Q: Fix が完了しました。再レビューを実施しますか？
 
 **ループ制限**: 最大3ラウンド（fix + 再レビュー）。超過時はユーザーに継続可否を確認。
 
-#### Step 6: マージ + PR作成
+#### Step 6: PR作成 + クリーンアップ
 
-**6-1: サブブランチのマージ**
+**6-1: コミット状態の確認**
 
-`scripts/merge-worktrees.sh` を実行:
+worktree 内で全変更がコミット済みであることを確認:
 
 ```bash
-bash .claude/skills/dev/team-run/scripts/merge-worktrees.sh {slug} "{role1} {role2} {role3} ..."
+git -C $WORKTREE_PATH status --porcelain
 ```
 
-スクリプトの処理:
-1. `feature/{slug}` ブランチにチェックアウト
-2. 各サブブランチ `feature/{slug}/{role}` を順次マージ（Wave 順）
-3. コンフリクト発生時: マージを中止し、コンフリクトの詳細を出力して exit 1
-
-コンフリクト発生時の対応:
-- AskUserQuestion でユーザーに報告
-- 「手動で解決する」「スキップする」「中止する」の選択肢を提示
-- 手動解決の場合: Lead はユーザーの指示に従い Bash でマージ解決を実行
+未コミットの変更がある場合: AskUserQuestion でユーザーに報告し対応を確認。
 
 **6-2: PR 作成**
+
+feature ブランチを push:
+
+```bash
+git -C $WORKTREE_PATH push -u origin feature/{slug}
+```
 
 ```bash
 gh pr create --title "feat: {slug}" --body "$(cat <<'EOF'
@@ -547,10 +517,10 @@ EOF
 **6-3: Worktree クリーンアップ**
 
 ```bash
-bash .claude/skills/dev/team-run/scripts/cleanup-worktrees.sh {slug}
+bash .claude/skills/dev/team-run/scripts/cleanup-worktree.sh {slug}
 ```
 
-#### Step 7: クリーンアップ
+#### Step 7: 結果集約 + TeamDelete
 
 **7-1: 結果集約**
 
@@ -712,155 +682,86 @@ ln -s ../../team-opencode-exec/references/role-catalog.md .claude/skills/dev/tea
 
 ---
 
-### 4. `.claude/skills/dev/team-run/scripts/setup-worktrees.sh`（新規作成）
+### 4. `.claude/skills/dev/team-run/scripts/setup-worktree.sh`（新規作成）
 
 ```bash
 #!/bin/bash
-# Git Worktree 一括セットアップスクリプト
-# Usage: setup-worktrees.sh <slug> "<role1> <role2> ..."
+# チーム全体で1つの Git Worktree をセットアップするスクリプト
+# Usage: setup-worktree.sh <slug>
 #
-# 前提: feature/{slug} ブランチが既に存在し、チェックアウトされていること
+# 処理:
+# 1. feature/{slug} ブランチを作成
+# 2. .worktrees/{slug}/ に worktree を作成
+# 3. worktree の絶対パスを stdout に出力
 
 set -euo pipefail
 
 SLUG="$1"
-ROLES="$2"
-WORKTREE_BASE=".worktrees/${SLUG}"
+WORKTREE_PATH=".worktrees/${SLUG}"
 FEATURE_BRANCH="feature/${SLUG}"
 
-echo "=== Worktree Setup: ${SLUG} ==="
+# feature ブランチが既に存在する場合はスキップ
+if git show-ref --verify --quiet "refs/heads/${FEATURE_BRANCH}"; then
+    echo "Branch ${FEATURE_BRANCH} already exists, reusing" >&2
+else
+    git branch "${FEATURE_BRANCH}"
+    echo "Created branch: ${FEATURE_BRANCH}" >&2
+fi
 
-# worktree ベースディレクトリ作成
-mkdir -p "${WORKTREE_BASE}"
+# worktree が既に存在する場合はスキップ
+if [ -d "${WORKTREE_PATH}" ]; then
+    echo "Worktree ${WORKTREE_PATH} already exists, reusing" >&2
+else
+    git worktree add "${WORKTREE_PATH}" "${FEATURE_BRANCH}"
+    echo "Created worktree: ${WORKTREE_PATH}" >&2
+fi
 
-for ROLE in ${ROLES}; do
-    SUB_BRANCH="${FEATURE_BRANCH}/${ROLE}"
-    WORKTREE_PATH="${WORKTREE_BASE}/${ROLE}"
-
-    echo "--- Setting up: ${ROLE} ---"
-
-    # サブブランチが既に存在する場合はスキップ
-    if git show-ref --verify --quiet "refs/heads/${SUB_BRANCH}"; then
-        echo "  Branch ${SUB_BRANCH} already exists, skipping creation"
-    else
-        # feature ブランチからサブブランチを作成
-        git branch "${SUB_BRANCH}" "${FEATURE_BRANCH}"
-        echo "  Created branch: ${SUB_BRANCH}"
-    fi
-
-    # worktree が既に存在する場合はスキップ
-    if [ -d "${WORKTREE_PATH}" ]; then
-        echo "  Worktree ${WORKTREE_PATH} already exists, skipping"
-    else
-        git worktree add "${WORKTREE_PATH}" "${SUB_BRANCH}"
-        echo "  Created worktree: ${WORKTREE_PATH}"
-    fi
-done
-
-echo ""
-echo "=== Setup Complete ==="
-echo "Worktrees:"
-git worktree list
+# 絶対パスを stdout に出力（Lead が $WORKTREE_PATH として使用）
+cd "${WORKTREE_PATH}" && pwd
 ```
 
 ---
 
-### 5. `.claude/skills/dev/team-run/scripts/merge-worktrees.sh`（新規作成）
-
-```bash
-#!/bin/bash
-# 各サブブランチを feature ブランチにマージするスクリプト
-# Usage: merge-worktrees.sh <slug> "<role1> <role2> ..."
-#
-# ロールの順序は Wave 順（依存関係の順）で指定すること
-
-set -euo pipefail
-
-SLUG="$1"
-ROLES="$2"
-FEATURE_BRANCH="feature/${SLUG}"
-
-echo "=== Merging Worktrees: ${SLUG} ==="
-
-# feature ブランチにチェックアウト
-git checkout "${FEATURE_BRANCH}"
-
-for ROLE in ${ROLES}; do
-    SUB_BRANCH="${FEATURE_BRANCH}/${ROLE}"
-
-    echo "--- Merging: ${ROLE} (${SUB_BRANCH}) ---"
-
-    # マージ実行
-    if git merge "${SUB_BRANCH}" --no-edit -m "merge: ${ROLE} into ${FEATURE_BRANCH}"; then
-        echo "  Merged successfully: ${ROLE}"
-    else
-        echo "  CONFLICT detected while merging ${ROLE}"
-        echo "  Conflicting files:"
-        git diff --name-only --diff-filter=U
-        echo ""
-        echo "  Aborting merge. Please resolve conflicts manually."
-        git merge --abort
-        exit 1
-    fi
-done
-
-echo ""
-echo "=== Merge Complete ==="
-echo "All sub-branches merged into ${FEATURE_BRANCH}"
-git log --oneline -10
-```
-
----
-
-### 6. `.claude/skills/dev/team-run/scripts/cleanup-worktrees.sh`（新規作成）
+### 5. `.claude/skills/dev/team-run/scripts/cleanup-worktree.sh`（新規作成）
 
 ```bash
 #!/bin/bash
 # Worktree クリーンアップスクリプト
-# Usage: cleanup-worktrees.sh <slug>
+# Usage: cleanup-worktree.sh <slug>
+#
+# 処理:
+# 1. .worktrees/{slug}/ の worktree を削除
+# 2. worktree を prune
+# 注意: feature/{slug} ブランチは PR 用に残す
 
 set -euo pipefail
 
 SLUG="$1"
-WORKTREE_BASE=".worktrees/${SLUG}"
-FEATURE_BRANCH="feature/${SLUG}"
+WORKTREE_PATH=".worktrees/${SLUG}"
 
-echo "=== Cleanup Worktrees: ${SLUG} ==="
+echo "=== Cleanup Worktree: ${SLUG} ==="
 
 # worktree の削除
-if [ -d "${WORKTREE_BASE}" ]; then
-    for WORKTREE_DIR in "${WORKTREE_BASE}"/*/; do
-        if [ -d "${WORKTREE_DIR}" ]; then
-            ROLE=$(basename "${WORKTREE_DIR}")
-            echo "--- Removing worktree: ${ROLE} ---"
-            git worktree remove "${WORKTREE_DIR}" --force 2>/dev/null || true
-        fi
-    done
-
-    # ベースディレクトリの削除
-    rm -rf "${WORKTREE_BASE}"
-    echo "Removed worktree directory: ${WORKTREE_BASE}"
+if [ -d "${WORKTREE_PATH}" ]; then
+    git worktree remove "${WORKTREE_PATH}" --force 2>/dev/null || true
+    echo "Removed worktree: ${WORKTREE_PATH}"
 fi
 
-# サブブランチの削除
-echo ""
-echo "--- Cleaning up sub-branches ---"
-for BRANCH in $(git branch --list "${FEATURE_BRANCH}/*"); do
-    BRANCH=$(echo "${BRANCH}" | tr -d ' *')
-    echo "  Deleting branch: ${BRANCH}"
-    git branch -D "${BRANCH}" 2>/dev/null || true
-done
+# .worktrees ディレクトリが空なら削除
+if [ -d ".worktrees" ] && [ -z "$(ls -A .worktrees 2>/dev/null)" ]; then
+    rmdir .worktrees
+    echo "Removed empty .worktrees directory"
+fi
 
 # worktree の整理
 git worktree prune
 
-echo ""
 echo "=== Cleanup Complete ==="
 ```
 
 ---
 
-### 7. `.claude/commands/dev/team-run.md`（新規作成）
+### 6. `.claude/commands/dev/team-run.md`（新規作成）
 
 ```markdown
 ---
@@ -902,7 +803,7 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 
 ---
 
-### 8. `CLAUDE.md`（更新）
+### 7. `CLAUDE.md`（更新）
 
 #### スキルテーブル「チーム実行」セクション
 
@@ -943,7 +844,6 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 | Teammate 無応答（5分） | SendMessage で状況確認 |
 | 状況確認後も無応答（5分） | Teammate を再スポーン（下記参照） |
 | Worktree セットアップ失敗 | エラーメッセージをユーザーに報告、手動対応を案内 |
-| マージコンフリクト | AskUserQuestion でユーザーに報告、解決方針を確認 |
 | Plan Approval 3回拒否 | 自動承認し、リスクをユーザーに報告 |
 | lint/build 失敗（TaskCompleted hook） | Teammate に修正を指示（最大3回） |
 | 3回リトライ失敗 | ユーザーに報告、指示を仰ぐ |
@@ -974,14 +874,14 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 | 実行エンジン | opencode run (外部モデル) | Claude Code ネイティブ |
 | CC側モデル | haiku 固定 | sonnet（ロール別最適化可） |
 | レビュー系ロール | Agent Teams (haiku + opencode) | Subagent (Task, sonnet) |
-| ファイル分離 | なし（同一ディレクトリ） | Git Worktree |
+| ファイル分離 | なし（同一ディレクトリ） | Git Worktree（チーム全体で1つ）+ fileOwnership（論理分離） |
 | Delegate mode | なし（Lead が代行可能） | あり（Lead は調整専任） |
 | Plan Approval | なし | あり（requirePlanApproval: true のタスク） |
 | Self-claim | なし | あり（同一 Wave 内） |
 | Teammate間メッセージ | 一方通行（Wave→Wave） | 双方向（SendMessage） |
 | hooks | なし | TeammateIdle + TaskCompleted |
 | 最終成果物 | コミット済みコード | PR（gh pr create） |
-| fileOwnership | 論理的（plan で定義） | 物理的（Worktree） + 論理的（プロンプト） |
+| fileOwnership | 論理的（plan で定義） | 論理的（プロンプトで指示）。公式推奨の方式 |
 
 ---
 
@@ -992,9 +892,8 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 | `.claude/skills/dev/team-run/SKILL.md` | 新規作成 | メインスキル定義 |
 | `.claude/skills/dev/team-run/references/agent-prompt-template.md` | 新規作成 | Teammate 用プロンプトテンプレート |
 | `.claude/skills/dev/team-run/references/role-catalog.md` | 新規作成（コピー） | ロール定義 |
-| `.claude/skills/dev/team-run/scripts/setup-worktrees.sh` | 新規作成 | Worktree セットアップ |
-| `.claude/skills/dev/team-run/scripts/merge-worktrees.sh` | 新規作成 | サブブランチマージ |
-| `.claude/skills/dev/team-run/scripts/cleanup-worktrees.sh` | 新規作成 | Worktree クリーンアップ |
+| `.claude/skills/dev/team-run/scripts/setup-worktree.sh` | 新規作成 | Worktree セットアップ（チーム全体で1つ） |
+| `.claude/skills/dev/team-run/scripts/cleanup-worktree.sh` | 新規作成 | Worktree クリーンアップ |
 | `.claude/commands/dev/team-run.md` | 新規作成 | コマンドファイル |
 | `CLAUDE.md` | 更新 | スキルテーブル・コマンドテーブルに追加 |
 | `.gitignore` | 更新 | `.worktrees/` を追加 |
@@ -1009,9 +908,8 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 > スクリプトは独立ファイルのため並列作成可能。
 
 - [ ] `.claude/skills/dev/team-run/` ディレクトリ構造を作成
-- [ ] `.claude/skills/dev/team-run/scripts/setup-worktrees.sh` を作成 `[PARALLEL]`
-- [ ] `.claude/skills/dev/team-run/scripts/merge-worktrees.sh` を作成 `[PARALLEL]`
-- [ ] `.claude/skills/dev/team-run/scripts/cleanup-worktrees.sh` を作成 `[PARALLEL]`
+- [ ] `.claude/skills/dev/team-run/scripts/setup-worktree.sh` を作成 `[PARALLEL]`
+- [ ] `.claude/skills/dev/team-run/scripts/cleanup-worktree.sh` を作成 `[PARALLEL]`
 - [ ] スクリプトに実行権限を付与（`chmod +x`）
 - [ ] `.gitignore` に `.worktrees/` を追加
 
@@ -1026,13 +924,13 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 - [ ] `.claude/skills/dev/team-run/SKILL.md` を作成
   - frontmatter（name, description, trigger, allowed-tools）
   - 必須リソーステーブル
-  - Step 1: 計画選択 + Pre-flight 検証 + ブランチ構造計算
+  - Step 1: 計画選択 + Pre-flight 検証
   - Step 2: 環境セットアップ（Worktree）
   - Step 3: チーム作成 + タスク登録 + Delegate mode 宣言
   - Step 4: Wave 実行ループ（Teammate スポーン、Subagent レビュー、hooks、Self-claim、Plan Approval）
   - Step 5: レビュー・フィードバックループ
-  - Step 6: マージ + PR作成
-  - Step 7: クリーンアップ
+  - Step 6: PR作成 + クリーンアップ
+  - Step 7: 結果集約 + TeamDelete
   - エラーハンドリング
   - 重要な注意事項
 
@@ -1046,9 +944,8 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 
 - [ ] `.claude/skills/dev/team-run/` 以下の全ファイルが正しく配置されていることを Glob で確認
 - [ ] SKILL.md 内の相対パス参照（`references/...`, `scripts/...`）が正しいことを確認
-- [ ] `setup-worktrees.sh` の構文チェック（`bash -n`）
-- [ ] `merge-worktrees.sh` の構文チェック（`bash -n`）
-- [ ] `cleanup-worktrees.sh` の構文チェック（`bash -n`）
+- [ ] `setup-worktree.sh` の構文チェック（`bash -n`）
+- [ ] `cleanup-worktree.sh` の構文チェック（`bash -n`）
 - [ ] CLAUDE.md のスキル一覧・コマンド一覧に不整合がないことを確認
 - [ ] agent-prompt-template.md の変数一覧が SKILL.md の変数置換手順と一致することを確認
 - [ ] `.gitignore` に `.worktrees/` が含まれていることを確認
