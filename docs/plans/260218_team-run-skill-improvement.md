@@ -178,16 +178,16 @@ DO:
 - [x] dev:story / dev:developing の成功パターン分析
 - [x] 参照ファイル（template, catalog, scripts）の内容確認
 
-### Phase 2: 実装
+### Phase 2: 実装（完了）
 
-- [ ] `references/teammate-spawn-protocol.md` 新規作成（~60行）
-- [ ] `references/error-handling.md` 新規作成（~40行）
-- [ ] `SKILL.md` 全面書き換え（525行 → ~100行オーケストレータ）
+- [x] `references/teammate-spawn-protocol.md` 新規作成（~60行）
+- [x] `references/error-handling.md` 新規作成（~40行）
+- [x] `SKILL.md` 全面書き換え（525行 → ~174行オーケストレータ、frontmatter 50行含む）
 
-### Phase 3: 検証
+### Phase 3: 検証（完了）
 
-- [ ] 新旧対照確認: 現行の全ステップ・ゲートが新構成で網羅されているか `[BG:sonnet:Explore]`
-- [ ] 各参照ファイルの Read() パスが正しいか確認
+- [x] 新旧対照確認: 現行の全ステップ・ゲートが新構成で網羅されているか → 全110+項目網羅確認済み
+- [x] 各参照ファイルの Read() パスが正しいか確認 → 全6パス一致確認済み
 
 ## 新 SKILL.md の設計案
 
