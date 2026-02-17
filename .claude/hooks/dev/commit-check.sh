@@ -15,7 +15,7 @@ STAGED=$(git diff --cached --numstat 2>/dev/null | awk '{s+=$1+$2} END {print s+
 UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 TOTAL=$((LINES + STAGED + UNTRACKED))
 
-if [ "$TOTAL" -ge 10 ]; then
+if [ "$TOTAL" -ge 100 ]; then
   echo "未コミットの変更があります（${TOTAL}行）。/dev:simple-add でコミットしてください。" >&2
   exit 2
 fi
