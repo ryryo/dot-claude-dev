@@ -103,9 +103,11 @@ Step 1: 計画選択 + 検証
   └── Pre-flight 検証（8必須フィールド、Wave構造、fileOwnership）
 
 Step 2: 環境セットアップ
-  ├── feature/{slug} ブランチ作成
-  ├── scripts/setup-worktree.sh 実行 → チーム全体で1つの worktree 作成
-  └── worktree パスを記録（.worktrees/{slug}/）
+  ├── Git 環境クリーン化（2-1）
+  │   ├── 未コミット確認 → push → pull --rebase → 最終確認
+  │   └── 問題あれば AskUserQuestion でユーザーに確認
+  ├── scripts/setup-worktree.sh 実行（2-2）→ チーム全体で1つの worktree 作成
+  └── worktree 検証（2-3）→ worktree パスを記録（.worktrees/{slug}/）
 
 Step 3: チーム作成 + タスク登録
   ├── TeamCreate({ team_name: "team-run-{slug}" })
@@ -237,7 +239,42 @@ Q: 実行する計画を選択してください。
 
 #### Step 2: 環境セットアップ
 
-**2-1: Worktree セットアップ**
+**2-1: Git 環境のクリーン化**
+
+Worktree 作成前に、Git の状態をクリーンにする。
+
+1. **未コミット変更の確認**:
+
+```bash
+git status --porcelain
+```
+
+- クリーン → 次へ
+- 変更あり → AskUserQuestion でユーザーに確認:
+  - 「コミットする」→ Lead が git add + git commit を実行
+  - 「スタッシュする」→ `git stash` を実行
+  - 「中止する」→ スキル実行を中止
+
+2. **リモートとの同期**:
+
+```bash
+git push
+git pull --rebase
+```
+
+- push/pull 成功 → 次へ
+- コンフリクト発生 → AskUserQuestion でユーザーに報告し、手動解決を案内。解決後に再実行
+- リモート未設定（新規ローカルブランチ等）→ スキップして次へ
+
+3. **最終確認**:
+
+```bash
+git status
+```
+
+ワーキングツリーがクリーンであること、かつリモートと同期済みであることを確認してから 2-2 に進む。
+
+**2-2: Worktree セットアップ**
 
 `scripts/setup-worktree.sh` を実行:
 
@@ -252,7 +289,7 @@ WORKTREE_PATH=$(bash .claude/skills/dev/team-run/scripts/setup-worktree.sh {slug
 
 `$WORKTREE_PATH` を以降のすべてのステップで Teammate の cwd として使用する。
 
-**2-2: Worktree パスの検証**
+**2-3: Worktree パスの検証**
 
 worktree ディレクトリが存在し、正しいブランチをチェックアウトしていることを確認:
 
@@ -666,13 +703,13 @@ git commit -m "feat({agent_name}): {task_name}"
 
 ### 3. `.claude/skills/dev/team-run/references/role-catalog.md`
 
-team-opencode-exec の `role-catalog.md` と同一内容。シンボリックリンクで共有する:
+team-opencode-exec の `role-catalog.md` と同一内容を**コピーで配置**する（シンボリックリンクではなく実ファイルをコピー）。
 
 ```bash
-ln -s ../../team-opencode-exec/references/role-catalog.md .claude/skills/dev/team-run/references/role-catalog.md
+cp .claude/skills/dev/team-opencode-exec/references/role-catalog.md .claude/skills/dev/team-run/references/role-catalog.md
 ```
 
-ただし、team-opencode-exec が将来削除される可能性を考慮し、**コピーを推奨**する。内容は以下のロール定義:
+内容は以下のロール定義:
 
 - **実装系**: frontend-developer, backend-developer, tdd-developer, fullstack-developer
 - **設計・企画系**: designer, copywriter, architect
@@ -892,7 +929,7 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 |---------|------|------|
 | `.claude/skills/dev/team-run/SKILL.md` | 新規作成 | メインスキル定義 |
 | `.claude/skills/dev/team-run/references/agent-prompt-template.md` | 新規作成 | Teammate 用プロンプトテンプレート |
-| `.claude/skills/dev/team-run/references/role-catalog.md` | 新規作成（コピー） | ロール定義 |
+| `.claude/skills/dev/team-run/references/role-catalog.md` | コピー作成 | ロール定義（team-opencode-exec からコピー。実ファイル） |
 | `.claude/skills/dev/team-run/scripts/setup-worktree.sh` | 新規作成 | Worktree セットアップ（チーム全体で1つ） |
 | `.claude/skills/dev/team-run/scripts/cleanup-worktree.sh` | 新規作成 | Worktree クリーンアップ |
 | `.claude/commands/dev/team-run.md` | 新規作成 | コマンドファイル |
