@@ -1,5 +1,5 @@
 ---
-description: "ストーリーからチーム実行計画を作成。ストーリー分析・タスク分解（native）→レビュー（opencode）→承認"
+description: "ストーリーからチーム実行計画を作成。ストーリー分析→タスク分解→レビュー（opencode）→承認"
 argument-hint: "[ストーリー or DESIGN.mdパス]"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "[ストーリー or DESIGN.mdパス]"
 ## 概要
 
 ストーリーを分析し、Agent Teams で並行実行するための計画（task-list.json）を作成します。
-ストーリー分析・タスク分解は native 実行、レビューのみ opencode を活用します。
+レビューのみ opencode を活用します。
 計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数保持可能です。
 
 ## 使い方

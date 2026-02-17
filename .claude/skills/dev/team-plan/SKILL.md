@@ -1,7 +1,7 @@
 ---
 name: dev:team-plan
 description: |
-  チーム実装計画を作成。ストーリー分析・タスク分解は native 実行、レビューのみ opencode 活用。
+  チーム実装計画を作成。ストーリー分析→タスク分解→レビュー（opencode）。
   計画は docs/features/team/{YYMMDD}_{slug}/ に永続化され、複数保持可能。
 
   Trigger:
@@ -20,7 +20,7 @@ allowed-tools:
 
 ## 概要
 
-ストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解）を Claude Code が native 実行し、レビューのみ opencode を活用する。計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数の計画を保持できる。
+ストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解）を実行し、レビューのみ opencode を活用する。計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数の計画を保持できる。
 
 承認済み計画の実行は `dev:team-opencode-exec` で行う。
 
@@ -29,8 +29,8 @@ allowed-tools:
 | リソース                               | 読み込みタイミング            | 用途                           |
 | -------------------------------------- | ----------------------------- | ------------------------------ |
 | `references/role-catalog.md`           | Phase 0-2（ロール設計時）     | ロール定義の参照               |
-| `references/prompts/story-analysis.md` | Phase 0-2（ストーリー分析時） | native 実行の手順書            |
-| `references/prompts/task-breakdown.md` | Phase 0-3（タスク分解時）     | native 実行の手順書            |
+| `references/prompts/story-analysis.md` | Phase 0-2（ストーリー分析時） | ストーリー分析の手順書         |
+| `references/prompts/task-breakdown.md` | Phase 0-3（タスク分解時）     | タスク分解の手順書             |
 | `references/prompts/task-review.md`    | Phase 0-4（タスクレビュー時） | opencode 用プロンプト          |
 | `references/team-templates/*.json`     | Phase 0-1（テンプレート選択時） | チーム構成テンプレート       |
 | `references/templates/*.json`          | Phase 0-0（初期化時）         | テンプレート雛形               |
@@ -47,7 +47,7 @@ docs/features/team/{YYMMDD}_{slug}/
 
 ---
 
-## Phase 0: 計画（リーダー native 実行 + opencode レビュー）
+## Phase 0: 計画
 
 ### 0-0: ワークスペース初期化
 
@@ -80,7 +80,7 @@ Q: チーム構成テンプレートを選択してください。
 - テンプレート選択時: `references/team-templates/{name}.json` を Read で読み込み、そのロール構成・Wave構造・ファイル所有権をストーリー分析のヒントとして使用する。テンプレートは強制ではなく推奨デフォルト
 - カスタム選択時: 従来通りゼロからチーム構成を設計
 
-### 0-2: ストーリー分析 → story-analysis.json（native 実行）
+### 0-2: ストーリー分析 → story-analysis.json
 
 リーダー（Claude Code）が Glob/Grep/Read/Write を使って直接実行する。
 
@@ -111,7 +111,7 @@ Q: チーム構成テンプレートを選択してください。
 - Wave間の `blockedBy` で直列依存を明示する
 - 同一Wave内のロールは並行実行される
 
-### 0-3: タスク分解 → task-list.json（native 実行）
+### 0-3: タスク分解 → task-list.json
 
 リーダー（Claude Code）が Glob/Grep/Read/Write を使って直接実行する。
 
@@ -167,7 +167,7 @@ opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプ�
 
 ## 重要な注意事項
 
-1. **計画は native 実行、レビューのみ opencode 活用**: Phase 0-2（ストーリー分析）、0-3（タスク分解）はリーダーが Glob/Grep/Read/Write で直接実行。Phase 0-4（レビュー）のみ opencode で実行
+1. **レビューのみ opencode 活用**: Phase 0-2（ストーリー分析）、0-3（タスク分解）はリーダーが直接実行。Phase 0-4（レビュー）のみ opencode で実行
 2. **opencode コマンドは決め打ち**: Phase 0-4 のプロンプトテンプレートのコマンドをリーダーが改変しない
 3. **フォールバック禁止**: Phase 0-4 の opencode 失敗時に直接レビューしない。リトライのみ（最大3回）
 4. **リーダーは実装しない**: リーダーの役割は計画・調整。実装は exec フェーズのエージェントが担当
