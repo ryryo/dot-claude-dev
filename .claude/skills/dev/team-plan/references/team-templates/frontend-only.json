@@ -1,0 +1,28 @@
+{
+  "name": "frontend-only",
+  "description": "フロントエンド開発（デザイン→フロント実装→レビュー）",
+  "waves": [
+    {
+      "id": 1,
+      "roles": ["designer"],
+      "purpose": "UIデザイン仕様、コンポーネント設計"
+    },
+    {
+      "id": 2,
+      "roles": ["frontend-developer"],
+      "purpose": "フロントエンド実装",
+      "blockedBy": [1]
+    },
+    {
+      "id": 3,
+      "roles": ["reviewer"],
+      "purpose": "UI品質・アクセシビリティレビュー",
+      "blockedBy": [2]
+    }
+  ],
+  "fileOwnership": {
+    "designer": ["src/styles/**", "src/design/**", "docs/design/**"],
+    "frontend-developer": ["src/components/**", "src/pages/**", "src/hooks/**"],
+    "reviewer": []
+  }
+}

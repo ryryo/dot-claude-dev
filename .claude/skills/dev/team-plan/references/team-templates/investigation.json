@@ -1,0 +1,21 @@
+{
+  "name": "investigation",
+  "description": "調査・バグ調査（researcher x3 の競合仮説）",
+  "waves": [
+    {
+      "id": 1,
+      "roles": ["researcher", "researcher", "researcher"],
+      "purpose": "競合仮説による並行調査。各researcherが異なる仮説・観点から調査"
+    },
+    {
+      "id": 2,
+      "roles": ["reviewer"],
+      "purpose": "調査結果の統合レビュー、結論の導出",
+      "blockedBy": [1]
+    }
+  ],
+  "fileOwnership": {
+    "researcher": ["docs/**"],
+    "reviewer": []
+  }
+}

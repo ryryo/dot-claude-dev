@@ -1,0 +1,21 @@
+{
+  "name": "tdd-focused",
+  "description": "TDD重視の開発（TDD開発→レビュー）",
+  "waves": [
+    {
+      "id": 1,
+      "roles": ["tdd-developer"],
+      "purpose": "TDDサイクル（RED→GREEN→REFACTOR）による実装"
+    },
+    {
+      "id": 2,
+      "roles": ["reviewer"],
+      "purpose": "コード品質・テストカバレッジレビュー",
+      "blockedBy": [1]
+    }
+  ],
+  "fileOwnership": {
+    "tdd-developer": ["src/**", "tests/**"],
+    "reviewer": []
+  }
+}
