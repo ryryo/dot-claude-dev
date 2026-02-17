@@ -5,7 +5,7 @@ description: |
   Git Worktree でファイル分離。Delegate mode / Plan Approval / hooks にフル準拠。
 
   Trigger:
-  dev:team-run, /dev:team-run, チーム実行, team run, チーム実行(native)
+  dev:team-run, /dev:team-run, チーム実行, team run
 allowed-tools:
   - Read
   - Write
@@ -51,7 +51,6 @@ hooks:
 # dev:team-run スキル
 
 承認済みの team-plan 計画を Agent Teams + Subagent ハイブリッドで並行実行する。
-opencode を使用せず Claude Code ネイティブ機能のみで動作する。
 
 ## 必須リソース
 
