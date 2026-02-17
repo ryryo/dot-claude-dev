@@ -5,7 +5,24 @@
 
 ## 概要
 
-`dev:team-run` の SKILL.md を 525行から約150行に圧縮し、LLM が全ステップを忠実に実行できるよう「DO: + ゲート:」形式に統一する。
+`dev:team-run` の SKILL.md を **オーケストレータ（~100行）+ 参照ファイル分割** に再構成する。
+単純圧縮ではなく、dev:developing パターン（SKILL.md + agents/*.md）を踏襲し、
+詳細コンテキストは **Read() で必要なタイミングに読み込む参照ファイル** に分離する。
+
+```
+SKILL.md（~100行）← オーケストレータ：フロー制御 + FORBIDDEN + ゲート
+  │
+  ├── Read("references/agent-prompt-template.md")       ← 既存：Teammate プロンプトテンプレート
+  ├── Read("references/role-catalog.md")                ← 既存：ロール定義
+  ├── Read("references/teammate-spawn-protocol.md")     ← 新規：スポーン手順の詳細
+  ├── Read("references/error-handling.md")              ← 新規：エラー対応の詳細
+  ├── scripts/setup-worktree.sh                         ← 既存
+  └── scripts/cleanup-worktree.sh                       ← 既存
+```
+
+**なぜ分割か（圧縮との違い）:**
+- 圧縮: 情報を捨てる → コンテキスト喪失 → 実行精度低下
+- 分割: 情報を必要なタイミングで Read() → コンテキスト維持 + SKILL.md の注意力向上
 
 ## 背景
 
@@ -39,23 +56,28 @@
 
 ## 変更内容
 
-### 対象ファイル
+### ファイル一覧
 
-- **変更**: `.claude/skills/dev/team-run/SKILL.md`（525行 → 約150行）
+| ファイル | 操作 | 説明 |
+|----------|------|------|
+| `SKILL.md` | **全面書き換え** | 525行 → ~100行のオーケストレータ |
+| `references/teammate-spawn-protocol.md` | **新規作成** | Teammate スポーンの詳細手順（変数置換、cwd、needsPriorContext 等） |
+| `references/error-handling.md` | **新規作成** | エラー対応・エスカレーション手順の詳細 |
+| `references/agent-prompt-template.md` | 変更なし | Teammate プロンプトテンプレート |
+| `references/role-catalog.md` | 変更なし | ロール定義 |
+| `scripts/setup-worktree.sh` | 変更なし | Worktree セットアップ |
+| `scripts/cleanup-worktree.sh` | 変更なし | Worktree クリーンアップ |
+| `README.md` | 変更なし | hooks 設定ガイド |
 
-### 変更なし（参照のみ）
+### 変更1: SKILL.md → オーケストレータに再構成
 
-- `references/agent-prompt-template.md`
-- `references/role-catalog.md`
-- `scripts/setup-worktree.sh`
-- `scripts/cleanup-worktree.sh`
-- `README.md`
+**SKILL.md に残すもの（~100行）:**
+- ⛔ FORBIDDEN テーブル（F1-F5）
+- Teammate スポーン呼び出しパターン（1行の Read() 参照）
+- Step 1-7 の DO: 命令 + ゲート: 停止条件
+- エラーハンドリングの Read() 参照
 
-### 具体的な変更点
-
-#### 1. FORBIDDEN セクションを冒頭に配置
-
-テーブル形式で禁止事項と正しい方法を対比:
+**FORBIDDEN セクション（冒頭配置）:**
 
 | ID | 禁止 | 正しい方法 |
 |----|------|------------|
@@ -65,23 +87,15 @@
 | F4 | テンプレートのキャッシュ・即興生成 | 毎回 Read 必須 |
 | F5 | taskPrompt 欠損タスクの実行 | STOP して dev:team-plan で修正案内 |
 
-#### 2. Teammate スポーンパターンを共通定義
-
-dev:developing の「エージェント委譲ルール」に相当する共通パターンを定義:
-
+**Teammate スポーン呼び出し（SKILL.md 側）:**
 ```
-1. Read("references/agent-prompt-template.md")  -- 毎回必須
-2. Read("references/role-catalog.md") -> role_directive 取得
-3. story-analysis.json -> customDirective, fileOwnership
-4. task-list.json -> description, inputs, outputs, taskPrompt
-5. テンプレート変数置換 + cwd: $WORKTREE_PATH
-6. Task({ prompt: 構築済みプロンプト, model: "opus", run_in_background: true })
+protocol = Read("references/teammate-spawn-protocol.md")
+→ protocol に従って Teammate をスポーン
 ```
+dev:developing の `Read("agents/{agent}.md") → Task(...)` パターンと同じ。
+SKILL.md には呼び出し1行のみ。詳細は参照ファイルに委譲。
 
-#### 3. Step 1-7 を DO: + ゲート: 形式に統一
-
-各ステップの構造を以下に統一:
-
+**各 Step の形式:**
 ```
 ### Step N: タイトル
 
@@ -92,113 +106,147 @@ DO:
 ゲート: 条件を満たさなければ次に進まない
 ```
 
-#### 4. エラーハンドリングを1テーブルに圧縮
+### 変更2: references/teammate-spawn-protocol.md（新規）
 
-4パターンのみ:
+現行 SKILL.md の Step 4-1 から抽出。Teammate スポーン時に Read() で読み込む。
 
-| 状況 | 対応 |
-|------|------|
-| Teammate 無応答 10分 | 再スポーン（最大3回） |
-| Worktree セットアップ失敗 | ユーザーに報告、手動対応案内 |
-| Plan Approval 3回拒否 | 自動承認、リスク報告 |
-| 3回リトライ失敗 | AskUserQuestion でユーザーに報告 |
+**含める内容（~60行）:**
+- プロンプト構築手順（6ステップ）
+  1. agent-prompt-template.md を Read（毎回必須）
+  2. role-catalog.md から role_directive 取得
+  3. story-analysis.json から customDirective + fileOwnership 取得
+  4. task-list.json から description, inputs, outputs, taskPrompt 取得
+  5. テンプレート変数の置換ルール（変数一覧参照）
+  6. 作業ディレクトリ指定 + needsPriorContext 対応
+- Task() 呼び出しの具体的なパラメータ
+  - model: opus（全ロール共通）
+  - run_in_background: true
+  - subagent_type: "general-purpose"
+- レビュー系ロール（reviewer, tester）の Subagent パターン
+- Plan Approval フローの詳細（requirePlanApproval: true 時）
+- Self-claim Protocol の参照案内（→ agent-prompt-template.md に記載済み）
+- Teammate 間メッセージプロトコル
 
-#### 5. 削除する内容
+**なぜ分離するか:** Teammate スポーンは最も複雑な手順であり、SKILL.md に残すと
+注意力が分散する。Read() で必要時に読み込むことで、スポーン時のコンテキストを最大化。
 
-参照ファイルに既にある、または不要な説明文:
+### 変更3: references/error-handling.md（新規）
 
-- Plan Approval の詳細 → agent-prompt-template.md に記載済み
-- Self-claim Protocol の詳細 → agent-prompt-template.md に記載済み
-- Teammate 間メッセージプロトコルの詳細 → テンプレートで制御
-- hooks の詳細説明 → README.md に記載済み
-- エスカレーション手順の詳細 → テーブルで十分
-- モデル選択戦略テーブル → 全ロール opus なので1行で済む
-- 4-5 Teammate 間メッセージプロトコル → テンプレートに含まれている
-- 5-2 ~ 5-7 レビュー・フィードバック詳細 → 簡潔なフローに圧縮
+現行 SKILL.md のエラーハンドリングセクションから抽出。
+
+**含める内容（~40行）:**
+- エラーパターンテーブル（状況 → 対応 → エスカレーション基準）
+- Teammate 遅延・失敗時のエスカレーション手順
+  1. SendMessage で状況確認（5分無応答後）
+  2. 再スポーン（さらに5分無応答後）
+  3. AskUserQuestion でユーザーに報告（3回リトライ失敗後）
+- hooks 関連（TeammateIdle / TaskCompleted の検証内容）
+- Wave 完了判定の詳細チェックリスト
+
+### 変更4: 現行 SKILL.md から削除する内容
+
+以下は参照ファイルに既にあるか、新規参照ファイルに移動:
+
+| 現行の内容 | 移動先 |
+|-----------|--------|
+| Plan Approval 詳細 | → teammate-spawn-protocol.md |
+| Self-claim Protocol 詳細 | → agent-prompt-template.md に記載済み |
+| Teammate 間メッセージプロトコル | → teammate-spawn-protocol.md |
+| hooks 詳細説明 | → README.md に記載済み + error-handling.md |
+| エスカレーション手順詳細 | → error-handling.md |
+| モデル選択戦略テーブル | → 「全ロール opus」1行に圧縮 |
+| レビュー・フィードバック詳細（5-2～5-7） | → SKILL.md 内で簡潔化（Read 不要な程度） |
 
 ## 影響範囲
 
 | ファイル | 変更 | 影響 |
 |----------|------|------|
-| `.claude/skills/dev/team-run/SKILL.md` | 全面書き換え | スキル本体の動作変更 |
-| `references/agent-prompt-template.md` | なし | テンプレートはそのまま |
-| `references/role-catalog.md` | なし | ロール定義はそのまま |
-| `scripts/setup-worktree.sh` | なし | スクリプトはそのまま |
-| `scripts/cleanup-worktree.sh` | なし | スクリプトはそのまま |
-| `README.md` | なし | ドキュメントはそのまま |
-| CLAUDE.md | なし | スキル説明はそのまま（名称・トリガー変更なし） |
+| `SKILL.md` | 全面書き換え | 525行 → ~100行オーケストレータ |
+| `references/teammate-spawn-protocol.md` | 新規作成 | ~60行。Teammate スポーン詳細 |
+| `references/error-handling.md` | 新規作成 | ~40行。エラー対応詳細 |
+| `references/agent-prompt-template.md` | なし | テンプレートそのまま |
+| `references/role-catalog.md` | なし | ロール定義そのまま |
+| `scripts/*.sh` | なし | スクリプトそのまま |
+| `README.md` | なし | hooks ガイドそのまま |
+| `CLAUDE.md` | なし | スキル説明そのまま（名称・トリガー変更なし） |
 
 ## タスクリスト
 
-### Phase 1: 分析
+### Phase 1: 分析（完了）
 
-- [x] 現行 SKILL.md の全文読み込みと問題箇所の特定（この計画書で完了）
-- [x] dev:story / dev:developing の成功パターン分析（この計画書で完了）
-- [x] 参照ファイル（template, catalog, scripts）の内容確認（この計画書で完了）
+- [x] 現行 SKILL.md の全文読み込みと問題箇所の特定
+- [x] dev:story / dev:developing の成功パターン分析
+- [x] 参照ファイル（template, catalog, scripts）の内容確認
 
-### Phase 2: 設計
+### Phase 2: 実装
 
-- [ ] 新 SKILL.md の構造設計（セクション構成・行数目安） `[BG:haiku:Explore]`
+- [ ] `references/teammate-spawn-protocol.md` 新規作成（~60行）
+- [ ] `references/error-handling.md` 新規作成（~40行）
+- [ ] `SKILL.md` 全面書き換え（525行 → ~100行オーケストレータ）
 
-### Phase 3: 実装
+### Phase 3: 検証
 
-- [ ] SKILL.md の書き換え（525行 → 約150行）
-
-### Phase 4: 検証
-
-- [ ] 新旧 SKILL.md の対照確認（全ステップ・ゲートが網羅されているか） `[BG:sonnet:Explore]`
-- [ ] 行数・構造の最終チェック
+- [ ] 新旧対照確認: 現行の全ステップ・ゲートが新構成で網羅されているか `[BG:sonnet:Explore]`
+- [ ] 各参照ファイルの Read() パスが正しいか確認
 
 ## 新 SKILL.md の設計案
 
-以下に、書き換え後の SKILL.md の構造案を示す。
-
-### セクション構成（約150行）
+### 構造（~100行 + frontmatter ~50行）
 
 ```
 ---
-(frontmatter: 約50行 - 現行と同じ)
+(frontmatter: ~50行 - hooks 含む、現行ベース)
 ---
 
-# dev:team-run スキル（約5行）
-  1文の概要
+# dev:team-run（~3行）
+  1文の概要 + 引数説明
 
-## FORBIDDEN（約10行）
-  F1-F5 テーブル
+## ⛔ FORBIDDEN（~10行）
+  F1-F5 テーブル（禁止 | 正しい方法）
 
-## Teammate スポーンパターン（共通定義）（約15行）
-  6ステップの手順
+## Teammate スポーン（~8行）
+  Read("references/teammate-spawn-protocol.md") への委譲パターン
+  ※ dev:developing の Read("agents/{agent}.md") → Task(...) と同じ
 
-## Step 1: 計画選択 + Pre-flight（約15行）
-  DO: + ゲート:
+## Step 1: 計画選択 + Pre-flight（~12行）
+  DO: 引数 or Glob → Read → AskUserQuestion → 8フィールド検証
+  ゲート: Pre-flight 全合格
 
-## Step 2: Worktree セットアップ（約10行）
-  DO: + ゲート:
+## Step 2: Git Worktree セットアップ（~10行）
+  DO: git status → git push/pull → setup-worktree.sh → ブランチ確認
+  ゲート: $WORKTREE_PATH 有効 + 正しいブランチ
 
-## Step 3: チーム作成 + タスク登録（約10行）
-  DO: + ゲート:
+## Step 3: チーム作成 + タスク登録（~10行）
+  DO: TeamCreate → TaskCreate × N → blockedBy 設定 → TaskList 確認
+  ゲート: TeamCreate 成功 + 全タスク登録。以降 Delegate mode
 
-## Step 4: Wave 実行ループ（約20行）
-  DO: + ゲート:（Wave 完了判定含む）
+## Step 4: Wave 実行ループ（~15行）
+  DO: 各 Wave で →
+    実装系: Read("references/teammate-spawn-protocol.md") に従ってスポーン
+    レビュー系: Task(subagent_type: "general-purpose") で Subagent
+  VERIFY: 全タスク completed + outputs 存在 + コミットあり
+  → 次 Wave / 全完了 → Step 5
 
-## Step 5: レビュー・フィードバック（約15行）
-  DO: + ゲート:
+## Step 5: レビュー・フィードバック（~10行）
+  DO: 改善候補集約 → AskUserQuestion → fix タスク → 再レビュー（最大3回）
+  ゲート: ユーザー承認 or 3ラウンド超過
 
-## Step 6: PR + クリーンアップ（約10行）
-  DO: + ゲート:
+## Step 6: PR + クリーンアップ（~8行）
+  DO: git push → gh pr create → cleanup-worktree.sh
+  ゲート: PR URL 取得
 
-## Step 7: 結果集約 + TeamDelete（約10行）
-  DO: + ゲート:
+## Step 7: 結果集約 + TeamDelete（~8行）
+  DO: 結果テーブル → metadata.status 更新 → SendMessage shutdown → TeamDelete()
 
-## エラーハンドリング（約5行）
-  4パターンのテーブル
+## エラーハンドリング（~3行）
+  Read("references/error-handling.md") + 1行サマリ
 ```
 
 ### 設計原則
 
-1. **各ステップは「DO: 番号付き命令リスト + ゲート: 停止条件」で統一** — dev:story / dev:developing と同じ形式
-2. **説明文・理由・背景は削除** — LLM には「何をするか」だけ伝える
-3. **FORBIDDEN を冒頭に** — 最も重要な制約が最初に読まれる
-4. **Teammate スポーンパターンを共通定義** — Step 4 で参照するだけにする
+1. **オーケストレータ + 参照ファイル分離** — SKILL.md はフロー制御のみ。詳細は Read() で必要時に読み込む
+2. **dev:developing パターン踏襲** — `Read("agents/{agent}.md") → Task(...)` と同じ構造
+3. **DO: + ゲート: 形式統一** — 各ステップが命令 + 停止条件で構成
+4. **FORBIDDEN を冒頭に** — 最も重要な制約が最初に読まれる
 5. **テーブル形式を活用** — 散文よりテーブルの方が LLM の遵守率が高い
-6. **参照ファイルに委譲** — テンプレート詳細、ロール定義、スクリプト詳細は参照ファイルに既にある
+6. **情報ゼロロスの分割** — 圧縮（情報削除）ではなく分割（情報再配置）
