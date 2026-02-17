@@ -22,6 +22,7 @@ allowed-tools:
   - TeamCreate
   - TeamDelete
   - SendMessage
+model: opus
 hooks:
   Stop:
     - hooks:
@@ -173,6 +174,11 @@ git -C .worktrees/{slug} branch --show-current
 
 ## Step 3: チーム作成 + タスク登録
 
+### 3-0: 既存チーム確認
+
+TeamCreate の前に、既存チームが存在しないことを確認する（セッションあたり1チーム制限）。
+既存チームが残っている場合は TeamDelete でクリーンアップしてから新規作成する。
+
 ### 3-1: チーム作成
 
 ```
@@ -241,7 +247,7 @@ cwd: $WORKTREE_PATH  ← 全 Teammate が共通の worktree で作業（fileOwne
 | designer, architect | opus | 設計判断に高い推論力が必要 |
 | frontend-developer, backend-developer, fullstack-developer | opus | 実装品質・複雑な判断 |
 | tdd-developer | opus | TDD の RED/GREEN/REFACTOR サイクルに高い判断力が必要 |
-| copywriter | sonnet | 文章生成は sonnet で十分 |
+| copywriter | opus | 質の高い文章生成 |
 | researcher | opus | 分析・調査に高い推論力が必要 |
 | reviewer（Subagent） | opus | レビュー品質に高い分析力が必要 |
 
@@ -264,20 +270,23 @@ Teammate が自分のタスクを完了した後、同一 Wave 内に未割り�
 
 レビュー系ロール（reviewer, tester）は Subagent（Task ツール）で実行する。
 
+built-in の `Explore` サブエージェントタイプを使用する（Read-only tools に制限された高速エージェント）:
+
 ```
 Task({
-  description: "{レビュープロンプト}",
-  allowed_tools: ["Read", "Glob", "Grep", "Bash"],
+  prompt: "{レビュープロンプト}",
+  description: "Review: {task_name}",
+  subagent_type: "Explore",
   model: "opus"
 })
 ```
 
 理由:
-- Read-only 操作のみで十分
+- `Explore` は Read-only tools（Read, Glob, Grep）に制限されており、レビューに最適
 - Subagent はコンテキスト汚染を防ぐ
 - 結果を summary で Lead に返却でき、構造化された報告が得られる
 
-レビュー Subagent のプロンプトには以下を含める:
+レビュー Subagent の `prompt` には以下を含める:
 - レビュー対象のファイル一覧（worktree 内の差分で特定）
 - role-catalog.md の reviewer/tester の role_directive
 - task-list.json の当該タスクの description と taskPrompt
@@ -456,6 +465,17 @@ bash .claude/skills/dev/team-run/scripts/cleanup-worktree.sh {slug}
 ### 7-2: 計画ステータス更新
 
 `$PLAN_DIR/task-list.json` の `metadata.status` を `"completed"` に更新して Write で保存する。
+
+### 7-2.5: Teammate シャットダウン
+
+TeamDelete の前に、全 Teammate にシャットダウンリクエストを送信し、完了を待つ。
+Teammate が残った状態で TeamDelete を呼ぶと失敗するため、必ず先にシャットダウンする。
+
+```
+# 各 Teammate にシャットダウンリクエスト
+SendMessage(to: "{teammate_name}", message: "全タスク完了。シャットダウンしてください。")
+# → 全 Teammate が idle/shutdown になるまで待機
+```
 
 ### 7-3: TeamDelete
 
