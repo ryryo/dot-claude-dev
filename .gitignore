@@ -31,3 +31,6 @@ composer.lock
 
 # Claude Code - local settings only
 .claude/settings.local.json
+
+# Git Worktrees (team-run)
+.worktrees/
