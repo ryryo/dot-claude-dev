@@ -22,12 +22,13 @@
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | **dev:ideation** | プロダクトアイデアをJTBD分析→競合調査→SLC仕様書に構造化。何を作るべきかを明確にする。Triggers: /dev:ideation, アイデア整理, プロダクト企画 |
 
-### チーム実行（Agent Teams + opencode）
+### チーム実行（Agent Teams）
 
 | スキル                      | 用途                                                                                                                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **dev:team-plan**           | ストーリーからチーム実行計画を作成。ストーリー分析・タスク分解・レビュー（opencode）。計画は永続化され複数保持可能。Triggers: /dev:team-plan, チーム計画, team plan       |
-| **dev:team-opencode-exec**  | 承認済み計画をAgent Teamsで並行実行。Wave式実行→レビューフィードバック→クリーンアップ。Triggers: /dev:team-opencode-exec, チーム実行                                                        |
+| **dev:team-opencode-exec**  | 承認済み計画をAgent Teams+opencodeで並行実行。Wave式実行→レビューフィードバック→クリーンアップ。Triggers: /dev:team-opencode-exec, チーム実行                                               |
+| **dev:team-run**            | 承認済み計画をネイティブAgent Teams+Subagentハイブリッドで並行実行。Git Worktree分離。opencode不使用。Triggers: /dev:team-run, チーム実行(native), team run                                 |
 
 ### ユーティリティ
 
@@ -53,6 +54,7 @@
 | `/dev:feedback`            | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案    |
 | `/dev:team-plan`           | チーム実行計画を作成。ストーリー分析→タスク分解→レビュー（opencode）→承認 |
 | `/dev:team-opencode-exec`  | 承認済み計画をAgent Teamsで並行実行                                                  |
+| `/dev:team-run`            | 承認済み計画をネイティブAgent Teamsで並行実行。Git Worktree分離               |
 
 ## テスト環境
 
