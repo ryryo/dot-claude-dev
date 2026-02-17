@@ -1,0 +1,29 @@
+{
+  "name": "feature-dev",
+  "description": "標準的な機能開発（設計→実装→レビュー）",
+  "waves": [
+    {
+      "id": 1,
+      "roles": ["designer"],
+      "purpose": "UI/UX設計、デザイントークン定義"
+    },
+    {
+      "id": 2,
+      "roles": ["frontend-developer", "backend-developer"],
+      "purpose": "並列実装",
+      "blockedBy": [1]
+    },
+    {
+      "id": 3,
+      "roles": ["reviewer"],
+      "purpose": "品質レビュー",
+      "blockedBy": [2]
+    }
+  ],
+  "fileOwnership": {
+    "designer": ["src/styles/**", "src/design/**"],
+    "frontend-developer": ["src/components/**", "src/pages/**"],
+    "backend-developer": ["src/api/**", "src/services/**"],
+    "reviewer": []
+  }
+}

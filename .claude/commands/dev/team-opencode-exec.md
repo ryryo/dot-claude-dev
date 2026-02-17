@@ -7,7 +7,7 @@ argument-hint: "[計画ディレクトリパス]"
 
 ## 概要
 
-`dev:team-opencode-plan` で作成・承認済みの計画（task-list.json）を Agent Teams で並行実行します。
+`dev:team-plan` で作成・承認済みの計画（task-list.json）を Agent Teams で並行実行します。
 Wave 式のチーム実行→レビューフィードバック→クリーンアップまで一貫して行います。
 
 ## 使い方
@@ -15,7 +15,7 @@ Wave 式のチーム実行→レビューフィードバック→クリーンア
 ### 計画パス指定
 
 ```
-/dev:team-opencode-exec docs/features/team-opencode/260213_auth/
+/dev:team-opencode-exec docs/features/team/260213_auth/
 ```
 
 ### 引数なし

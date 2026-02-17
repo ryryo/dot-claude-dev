@@ -28,7 +28,7 @@ allowed-tools:
 
 ## 概要
 
-`dev:team-opencode-plan` が生成した承認済み task-list.json を入力として、Agent Teams で並行実装する。各エージェント（haiku）は `opencode run` で外部モデルに実装を委譲し、結果をコミットする。最終Waveにはレビュワーを必ず配置し、品質ゲートとフィードバックループで品質を担保する。
+`dev:team-plan` が生成した承認済み task-list.json を入力として、Agent Teams で並行実装する。各エージェント（haiku）は `opencode run` で外部モデルに実装を委譲し、結果をコミットする。最終Waveにはレビュワーを必ず配置し、品質ゲートとフィードバックループで品質を担保する。
 
 ## 必須リソース
 
@@ -42,7 +42,7 @@ allowed-tools:
 ## 計画入力元
 
 ```
-docs/features/team-opencode/{YYMMDD}_{slug}/
+docs/features/team/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析結果（チーム設計、ロール定義含む）
 └── task-list.json         # タスク定義（waves/roles 形式、承認済み、各タスクに opencodePrompt 含む）
 ```
@@ -51,7 +51,7 @@ docs/features/team-opencode/{YYMMDD}_{slug}/
 
 ## 計画選択 UI（起動時）
 
-1. `docs/features/team-opencode/` 以下のディレクトリを列挙する
+1. `docs/features/team/` 以下のディレクトリを列挙する
 2. 各ディレクトリの `task-list.json` を Read し、`metadata.status` が `"completed"` のものを除外する（未定義は `"pending"` 扱い）
 3. 残った計画の metadata を表示し、AskUserQuestion で選択:
 
@@ -69,7 +69,7 @@ Q: 実行する計画を選択してください。
 - パスを直接指定
 ```
 
-計画が0件の場合: 「先に `dev:team-opencode-plan` を実行して計画を作成してください」と案内して終了する。
+計画が0件の場合: 「先に `dev:team-plan` を実行して計画を作成してください」と案内して終了する。
 
 選択後、`task-list.json` のパスを `$PLAN_DIR` として保持し、以降の Phase 1-3 で使用する。
 
@@ -106,7 +106,7 @@ Q: opencode run で使用するモデルは？（計画時: {metadata.ocModel}�
 ### 判定
 
 - **全タスク合格** → Phase 1 へ進む
-- **1つでも不合格** → **即座に停止**。不合格タスクのIDと欠損フィールドをユーザーに報告し、`dev:team-opencode-plan` での修正を案内する
+- **1つでも不合格** → **即座に停止**。不合格タスクのIDと欠損フィールドをユーザーに報告し、`dev:team-plan` での修正を案内する
 
 **禁止**: `opencodePrompt` が欠損・曖昧なタスクに対して、exec 側でプロンプトを即興生成して補完すること。計画の品質問題は plan 側で修正する。
 

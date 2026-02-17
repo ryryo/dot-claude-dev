@@ -1,6 +1,6 @@
-# Task Breakdown Prompt
+# Task Breakdown 手順書
 
-opencode run で使用するタスク分解プロンプト。Phase 0-3 で使用。
+リーダー（Claude Code）が直接実行するタスク分解手順。Phase 0-3 で使用。
 
 ## 変数
 
@@ -8,7 +8,6 @@ opencode run で使用するタスク分解プロンプト。Phase 0-3 で使用
 |------|------|-----------|
 | `{story_analysis}` | story-analysis.json の内容 | `{plan_dir}/story-analysis.json` |
 | `{plan_dir}` | 計画ディレクトリパス | `$PLAN_DIR`（Phase 0-0 で取得） |
-| `{designSystemRefs}` | design system 参照情報 | DESIGN.md または design token 定義 |
 
 ## タスクスキーマ契約
 
@@ -53,48 +52,40 @@ opencode run で使用するタスク分解プロンプト。Phase 0-3 で使用
 - `waves[].tasks[]` フラット配列 + 各タスクの `role` フィールドでロールを指定
 - 旧 `roles.{roleName}` 形式は使わない
 
-## プロンプト
+## 実行手順
 
-```
-Based on the story analysis, perform the following:
+### Step 1: コードベース探索
 
-1. **Explore the codebase** to identify:
-   - Target files (components, pages, utilities related to the story)
-   - Current implementation status and issues
-   - Design system patterns (CSS variables, class naming conventions from {designSystemRefs})
-   - Existing tests and documentation
+story-analysis.json の内容に基づき、具体的なファイルパスと実装状況を把握する:
 
-2. **Break down into detailed tasks** following this STRICT schema:
+1. **Glob** で対象ファイルを特定（`src/components/**/*.tsx`, `src/styles/**/*.css` 等）
+2. **Grep** で関連するコード・パターンを検索
+3. **Read** で以下を確認:
+   - 対象ファイルの現在の実装内容
+   - デザインシステムのパターン（CSS変数、クラス命名規則）
+   - DESIGN.md やデザイントークン定義がある場合はその内容
+   - 既存のテスト・ドキュメント
+4. 探索結果から `context` セクション（targetFiles, relatedModules, technicalNotes, designSystemRefs）の情報を収集
 
-   Each task MUST have exactly these 8 fields (no more, no less):
-   - id: "task-{wave}-{seq}" format (e.g. "task-1-1")
-   - name: short descriptive name
-   - role: role name from story-analysis.json
-   - description: purpose and background
-   - needsPriorContext: boolean (Wave 1 tasks should be false)
-   - inputs: array of input file paths ([] if none)
-   - outputs: array of output file paths ([] if none)
-   - opencodePrompt: CONCRETE implementation instruction with specific file paths, operations, and expected results
+### Step 2: タスク分解
 
-   FORBIDDEN fields (do NOT include): title, acceptanceCriteria, context, deliverables
+story-analysis.json のチーム設計（ロール・Wave構造）に基づき、具体的なタスクに分解する:
 
-   opencodePrompt requirements:
-   - Must reference specific file paths
-   - Must describe the exact changes to make
-   - Must be executable as a single opencode call
-   - Must NOT be vague like "implement the feature" or "fix the bug"
-   - For reviewer/tester roles: MUST start with "IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only." and end with "コードの修正は行わないでください。"
+**story-analysis.json**: {story_analysis}
 
-3. **Output** the file {plan_dir}/task-list.json
+各タスクは以下を満たすこと:
+- 8つの必須フィールドのみ（FORBIDDEN フィールドを含めない）
+- `opencodePrompt` は具体的な実装指示（ファイルパス・操作内容・期待結果を含む）
+- `opencodePrompt` は曖昧でない（「機能を実装」「バグを修正」のような指示でない）
+- reviewer/tester ロールの `opencodePrompt` は `"IMPORTANT: Do NOT modify any files. This is a review-only task. Report findings only."` で始め、`"コードの修正は行わないでください。"` で終える
 
-## Story Analysis
-{story_analysis}
+### Step 3: task-list.json の出力
 
-## Design System References
-{designSystemRefs}
+Write ツールで `{plan_dir}/task-list.json` を出力する。
 
-## Output Format
-Write the file {plan_dir}/task-list.json with this structure:
+## 出力スキーマ
+
+```json
 {
   "context": {
     "description": "...",

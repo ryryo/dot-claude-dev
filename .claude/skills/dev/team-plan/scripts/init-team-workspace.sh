@@ -10,7 +10,7 @@ fi
 
 SLUG="$1"
 DATE=$(date +%y%m%d)
-WORKSPACE="docs/features/team-opencode/${DATE}_${SLUG}"
+WORKSPACE="docs/features/team/${DATE}_${SLUG}"
 SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TEMPLATES_DIR="$SKILL_DIR/references/templates"
 

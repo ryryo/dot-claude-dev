@@ -1,0 +1,28 @@
+{
+  "name": "refactor",
+  "description": "リファクタリング（設計→実装→テスト）",
+  "waves": [
+    {
+      "id": 1,
+      "roles": ["architect"],
+      "purpose": "リファクタリング設計、影響範囲分析"
+    },
+    {
+      "id": 2,
+      "roles": ["fullstack-developer"],
+      "purpose": "リファクタリング実装",
+      "blockedBy": [1]
+    },
+    {
+      "id": 3,
+      "roles": ["reviewer"],
+      "purpose": "品質レビュー、リグレッション確認",
+      "blockedBy": [2]
+    }
+  ],
+  "fileOwnership": {
+    "architect": ["docs/**"],
+    "fullstack-developer": ["src/**"],
+    "reviewer": []
+  }
+}
