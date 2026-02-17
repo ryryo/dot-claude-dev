@@ -20,20 +20,20 @@ allowed-tools:
 
 ## 概要
 
-ストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解）を実行し、レビューのみ opencode を活用する。計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数の計画を保持できる。
+ユーザーストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解）を実行し、レビューのみ opencode を活用する。計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数の計画を保持できる。
 
 承認済み計画の実行は `dev:team-opencode-exec` で行う。
 
 ## 必須リソース
 
-| リソース                               | 読み込みタイミング            | 用途                           |
-| -------------------------------------- | ----------------------------- | ------------------------------ |
-| `references/role-catalog.md`           | Phase 0-2（ロール設計時）     | ロール定義の参照               |
-| `references/prompts/story-analysis.md` | Phase 0-2（ストーリー分析時） | ストーリー分析の手順書         |
-| `references/prompts/task-breakdown.md` | Phase 0-3（タスク分解時）     | タスク分解の手順書             |
-| `references/prompts/task-review.md`    | Phase 0-4（タスクレビュー時） | opencode 用プロンプト          |
-| `references/team-templates/*.json`     | Phase 0-1（テンプレート選択時） | チーム構成テンプレート       |
-| `references/templates/*.json`          | Phase 0-0（初期化時）         | テンプレート雛形               |
+| リソース                               | 読み込みタイミング          | 用途                           |
+| -------------------------------------- | --------------------------- | ------------------------------ |
+| `references/role-catalog.md`           | Step 3（ロール設計時）      | ロール定義の参照               |
+| `references/prompts/story-analysis.md` | Step 3（ストーリー分析時）  | ストーリー分析の手順書         |
+| `references/prompts/task-breakdown.md` | Step 4（タスク分解時）      | タスク分解の手順書             |
+| `references/prompts/task-review.md`    | Step 5（タスクレビュー時）  | opencode 用プロンプト          |
+| `references/team-templates/*.json`     | Step 2（テンプレート選択時）| チーム構成テンプレート         |
+| `references/templates/*.json`          | Step 1（初期化時）          | テンプレート雛形               |
 
 ## 計画出力先
 
@@ -47,9 +47,9 @@ docs/features/team/{YYMMDD}_{slug}/
 
 ---
 
-## Phase 0: 計画
+## ステップ
 
-### 0-0: ワークスペース初期化
+### Step 1: ワークスペース初期化
 
 1. ユーザーにストーリー/指示を聞く
 2. ストーリータイトルから slug 候補を2-3個生成（kebab-case、英語、最大40文字）
@@ -62,14 +62,14 @@ PLAN_DIR=$(bash .claude/skills/dev/team-plan/scripts/init-team-workspace.sh {slu
 
 `$PLAN_DIR` を以降のすべてのステップでファイルパスとして使用する。
 
-### 0-1: テンプレート選択
+### Step 2: テンプレート選択
 
 AskUserQuestion でチーム構成テンプレートを選択:
 
 ```
 Q: チーム構成テンプレートを選択してください。
-選択肢:
-- feature-dev（推奨）: 設計→実装→レビューの3Wave構成
+選択肢（※ストーリーの内容に応じて最適なテンプレートを推奨すること）:
+- feature-dev: 設計→実装→レビューの3Wave構成
 - refactor: 設計→実装→テストの3Wave構成
 - investigation: researcher×3の競合仮説調査
 - tdd-focused: TDD開発→レビュー
@@ -80,7 +80,7 @@ Q: チーム構成テンプレートを選択してください。
 - テンプレート選択時: `references/team-templates/{name}.json` を Read で読み込み、そのロール構成・Wave構造・ファイル所有権をストーリー分析のヒントとして使用する。テンプレートは強制ではなく推奨デフォルト
 - カスタム選択時: 従来通りゼロからチーム構成を設計
 
-### 0-2: ストーリー分析 → story-analysis.json
+### Step 3: ストーリー分析 → story-analysis.json
 
 リーダー（Claude Code）が Glob/Grep/Read/Write を使って直接実行する。
 
@@ -94,8 +94,8 @@ Q: チーム構成テンプレートを選択してください。
 |------|-----------|
 | `{user_story}` | ユーザー入力 |
 | `{role_catalog}` | `references/role-catalog.md` の内容 |
-| `{plan_dir}` | `$PLAN_DIR`（0-0 で取得） |
-| `{template}` | Phase 0-1 で選択したテンプレートの内容（カスタムの場合は空） |
+| `{plan_dir}` | `$PLAN_DIR`（Step 1 で取得） |
+| `{template}` | Step 2 で選択したテンプレートの内容（カスタムの場合は空） |
 
 **実行手順**:
 
@@ -111,7 +111,7 @@ Q: チーム構成テンプレートを選択してください。
 - Wave間の `blockedBy` で直列依存を明示する
 - 同一Wave内のロールは並行実行される
 
-### 0-3: タスク分解 → task-list.json
+### Step 4: タスク分解 → task-list.json
 
 リーダー（Claude Code）が Glob/Grep/Read/Write を使って直接実行する。
 
@@ -122,7 +122,7 @@ Q: チーム構成テンプレートを選択してください。
 | 変数 | 値の取得元 |
 |------|-----------|
 | `{story_analysis}` | `$PLAN_DIR/story-analysis.json` の内容 |
-| `{plan_dir}` | `$PLAN_DIR`（0-0 で取得） |
+| `{plan_dir}` | `$PLAN_DIR`（Step 1 で取得） |
 
 **実行手順**:
 
@@ -142,7 +142,7 @@ Q: チーム構成テンプレートを選択してください。
 
 5. 不備があればリーダーが修正する。特に `opencodePrompt` の欠損・曖昧さは必ず修正する
 
-### 0-4: opencode でタスクレビュー
+### Step 5: opencode でタスクレビュー
 
 タスク分解の品質を opencode で検証する。`references/prompts/task-review.md` を Read で読み込み、変数を置換して実行。**モデルは `openai/gpt-5.3-codex` 固定**:
 
@@ -167,8 +167,8 @@ opencode run -m openai/gpt-5.3-codex "{task-review.md の変数置換済みプ�
 
 ## 重要な注意事項
 
-1. **レビューのみ opencode 活用**: Phase 0-2（ストーリー分析）、0-3（タスク分解）はリーダーが直接実行。Phase 0-4（レビュー）のみ opencode で実行
-2. **opencode コマンドは決め打ち**: Phase 0-4 のプロンプトテンプレートのコマンドをリーダーが改変しない
-3. **フォールバック禁止**: Phase 0-4 の opencode 失敗時に直接レビューしない。リトライのみ（最大3回）
+1. **レビューのみ opencode 活用**: Step 3（ストーリー分析）、Step 4（タスク分解）はリーダーが直接実行。Step 5（レビュー）のみ opencode で実行
+2. **opencode コマンドは決め打ち**: Step 5 のプロンプトテンプレートのコマンドをリーダーが改変しない
+3. **フォールバック禁止**: Step 5 の opencode 失敗時に直接レビューしない。リトライのみ（最大3回）
 4. **リーダーは実装しない**: リーダーの役割は計画・調整。実装は exec フェーズのエージェントが担当
-5. **Phase順序は絶対**: Phase 0-0→0-1→0-2→0-3→0-4 の順序を飛ばさない
+5. **Step順序は絶対**: Step 1→2→3→4→5 の順序を飛ばさない
