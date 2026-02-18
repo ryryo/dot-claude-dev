@@ -13,4 +13,6 @@
 
 ## ゲート
 
-全タスク登録済み。**以降 Delegate mode: Lead はコードを書かない（F1）**
+1. 全タスク登録済み（task-list.json のタスク数 = TaskList のタスク数）
+2. **全タスクの owner が空**（Lead に割り当てられていないこと）。owner が付いているタスクがあれば TaskUpdate で owner を空にリセット
+3. 以降 **Delegate mode: Lead はコードを書かない（F1）**

@@ -102,7 +102,7 @@ Read("references/step-3a-team-create.md") → 実行
 ```
 Read("references/step-3b-task-register.md") → 実行
 ```
-ゲート: 全タスク登録済み。**以降 Delegate mode（F1）**
+ゲート: 全タスク登録済み + **全タスク owner 空**（Lead 未割当）。以降 Delegate mode（F1）
 
 ---
 
