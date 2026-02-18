@@ -70,7 +70,6 @@ git commit -m "feat({agent_name}): {task_name}"
 
 ## 厳守事項
 
-- 直接実装する。opencode や外部ツールは使用しない
 - ファイル所有権の範囲外のファイルを編集しない
 - タスク#{id} 以外のタスクには手を出さない（Self-claim を除く）
 - 完了報告後、リーダーから追加指示がなければ待機する
@@ -94,20 +93,20 @@ git commit -m "feat({agent_name}): {task_name}"
 
 ## 変数一覧
 
-| 変数 | ソース | 例 |
-|------|--------|-----|
-| `{team_name}` | TeamCreate で生成 | `team-run-auth` |
-| `{agent_name}` | task-list.json の `role` | `frontend-developer` |
-| `{role_directive}` | role-catalog.md から取得 | （ロール定義文） |
-| `{custom_directive}` | story-analysis.json の `customDirective` | `敬語で統一。` |
-| `{タスク内容}` | task-list.json の `description` | `認証フォームの実装` |
-| `{input_files}` | task-list.json の `inputs` | `docs/auth-spec.md` |
-| `{output_files}` | task-list.json の `outputs` | `src/components/AuthForm.tsx` |
-| `{file_ownership}` | story-analysis.json の `fileOwnership[role]` | `src/components/**`, `src/pages/**` |
-| `{id}` | TaskCreate で生成 | `1`, `2`, `3` |
-| `{taskPrompt}` | task-list.json の `taskPrompt` | `以下の仕様で認証フォームを実装...` |
-| `{task_name}` | task-list.json の `name` | `認証フォームの実装` |
-| `{plan_approval_section}` | requirePlanApproval に応じて挿入/空文字 | （上記セクション） |
+| 変数                      | ソース                                       | 例                                  |
+| ------------------------- | -------------------------------------------- | ----------------------------------- |
+| `{team_name}`             | TeamCreate で生成                            | `team-run-auth`                     |
+| `{agent_name}`            | task-list.json の `role`                     | `frontend-developer`                |
+| `{role_directive}`        | role-catalog.md から取得                     | （ロール定義文）                    |
+| `{custom_directive}`      | story-analysis.json の `customDirective`     | `敬語で統一。`                      |
+| `{タスク内容}`            | task-list.json の `description`              | `認証フォームの実装`                |
+| `{input_files}`           | task-list.json の `inputs`                   | `docs/auth-spec.md`                 |
+| `{output_files}`          | task-list.json の `outputs`                  | `src/components/AuthForm.tsx`       |
+| `{file_ownership}`        | story-analysis.json の `fileOwnership[role]` | `src/components/**`, `src/pages/**` |
+| `{id}`                    | TaskCreate で生成                            | `1`, `2`, `3`                       |
+| `{taskPrompt}`            | task-list.json の `taskPrompt`               | `以下の仕様で認証フォームを実装...` |
+| `{task_name}`             | task-list.json の `name`                     | `認証フォームの実装`                |
+| `{plan_approval_section}` | requirePlanApproval に応じて挿入/空文字      | （上記セクション）                  |
 
 ## 使用ルール
 

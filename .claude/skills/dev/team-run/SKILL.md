@@ -55,13 +55,13 @@ hooks:
 
 ## ⛔ FORBIDDEN
 
-| ID | 禁止 | 正しい方法 |
-|----|------|------------|
-| F1 | Lead がコード編集・実装コード調査 | Teammate に委譲 |
-| F2 | TeamCreate 前に Teammate スポーン | 必ず Step 3 完了後 |
-| F3 | Worktree セットアップのスキップ | 必ず Step 2 で実行 |
-| F4 | テンプレートのキャッシュ・即興生成 | 毎回 Read() 必須 |
-| F5 | taskPrompt 欠損タスクの実行 | STOP → dev:team-plan で修正案内 |
+| ID  | 禁止                               | 正しい方法                      |
+| --- | ---------------------------------- | ------------------------------- |
+| F1  | Lead がコード編集・実装コード調査  | Teammate に委譲                 |
+| F2  | TeamCreate 前に Teammate スポーン  | 必ず Step 3 完了後              |
+| F3  | Worktree セットアップのスキップ    | 必ず Step 2 で実行              |
+| F4  | テンプレートのキャッシュ・即興生成 | 毎回 Read() 必須                |
+| F5  | taskPrompt 欠損タスクの実行        | STOP → dev:team-plan で修正案内 |
 
 ## Teammate スポーン
 
@@ -77,6 +77,7 @@ protocol = Read("references/teammate-spawn-protocol.md")
 ## Step 1: 計画選択 + Pre-flight
 
 DO:
+
 1. `docs/features/team/` 以下の `task-list.json` を Glob で列挙
 2. `metadata.status` が `"completed"` のものを除外し、AskUserQuestion で選択
 3. 選択した計画のパスを `$PLAN_DIR` として保持
@@ -93,8 +94,9 @@ DO:
 ## Step 2: Git Worktree セットアップ
 
 DO:
+
 1. `git status --porcelain` で未コミット変更を確認（変更あり → AskUserQuestion で対応選択）
-2. `git push && git pull --rebase` でリモート同期（コンフリクト → ユーザーに報告）
+2. `git push && git pull --rebase` でリモート同期（コンフリクト → ユーザーに報告 → AskUserQuestion で対応選択）
 3. `bash .claude/skills/dev/team-run/scripts/setup-worktree.sh {slug}` で Worktree 作成
 4. `$WORKTREE_PATH` を取得（スクリプトの stdout）
 
@@ -105,6 +107,7 @@ DO:
 ## Step 3: チーム作成 + タスク登録
 
 DO:
+
 1. 既存チーム確認 → 残っていれば TeamDelete でクリーンアップ
 2. `TeamCreate({ team_name: "team-run-{slug}" })`
 3. `$PLAN_DIR/task-list.json` の全タスクを TaskCreate で登録（wave, role, requirePlanApproval をメタデータ付与）
@@ -118,6 +121,7 @@ DO:
 ## Step 4: Wave 実行ループ
 
 DO: 各 Wave について →
+
 1. **実装系ロール**: `Read("references/teammate-spawn-protocol.md")` に従って Teammate をスポーン（run_in_background: true, cwd: $WORKTREE_PATH）
 2. **レビュー系ロール**: Task(subagent_type: "Explore", model: "opus") で Subagent 実行
 3. Wave 完了判定:
@@ -134,6 +138,7 @@ VERIFY: 完了 → 次 Wave（4-1 に戻る）/ 全 Wave 完了 → Step 5
 ## Step 5: レビュー・フィードバックループ
 
 DO:
+
 1. Reviewer 報告の改善候補を集約
 2. AskUserQuestion で重要度付きリストをユーザーに提示（対応する項目を選択 / 対応不要）
 3. 対応不要 → Step 6
@@ -147,6 +152,7 @@ DO:
 ## Step 6: PR作成 + クリーンアップ
 
 DO:
+
 1. `git -C $WORKTREE_PATH status --porcelain` で全コミット済み確認
 2. `git -C $WORKTREE_PATH push -u origin feature/{slug}`
 3. `gh pr create --title "feat: {slug}" --body "{Summary + Changes + Review Notes}"`
@@ -159,6 +165,7 @@ DO:
 ## Step 7: 結果集約 + TeamDelete
 
 DO:
+
 1. 結果テーブルをユーザーに提示（タスク / ロール / Wave / 状態 / 概要）
 2. `$PLAN_DIR/task-list.json` の `metadata.status` を `"completed"` に更新
 3. 全 Teammate に `SendMessage("全タスク完了。シャットダウンしてください。")` → 待機
