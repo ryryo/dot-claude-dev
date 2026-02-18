@@ -23,7 +23,13 @@ ls -d ~/dot-claude-dev/.claude/skills/dev/*/
 
 各スキルの SKILL.md から description を取得して一覧を作る。
 
-## Step 2: 参照先プロジェクトを検索
+## Step 2: 同期対象プロジェクトを収集
+
+### 2-1: 本家 CLAUDE.md（必須）
+
+`dot-claude-dev/CLAUDE.md` を同期対象に含める。Step 1 の最新スキル一覧と比較し、不足があれば追加対象とする。
+
+### 2-2: 外部プロジェクト
 
 `dot-claude-dev` のスキルを参照している CLAUDE.md を検索する。
 
@@ -45,15 +51,16 @@ cd {project_path} && git pull
 
 各プロジェクトの CLAUDE.md を Read し、現在のグローバルスキル参照テーブルと Step 1 の最新一覧を比較する。
 
-差分を一覧で表示:
+差分を一覧で表示（**本家を先頭に表示**）:
 
 ```
 ## 同期対象
 
 | プロジェクト | 追加 | 削除 | リネーム |
 |---|---|---|---|
-| meurai-editer | dev:team-run | - | - |
-| base-ui-design | dev:team-run | - | - |
+| dot-claude-dev（本家） | dev:new-skill | - | - |
+| meurai-editer | dev:new-skill | - | - |
+| base-ui-design | dev:new-skill | - | - |
 ```
 
 **AskUserQuestion で同期実行の確認を取る。**
