@@ -66,13 +66,39 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:XXXX
 - `200` → OK
 - それ以外 → AskUserQuestion で「開発サーバーを起動しますか？」
 
-## Step 1: Task サブエージェント起動
+## Step 1: レポートフォーマット選択
+
+ユーザーの検証指示を分析し、適切なフォーマットを1つ選択する。
+
+| フォーマット | ファイル | 選択基準 |
+|---|---|---|
+| **ui-layout** | `references/formats/ui-layout.md` | 表示崩れ、レイアウト、デザイン確認が目的 |
+| **interaction** | `references/formats/interaction.md` | フォーム入力、ボタン操作、画面遷移が目的 |
+| **api-integration** | `references/formats/api-integration.md` | API通信、SSE、エラーハンドリングが目的 |
+| **responsive** | `references/formats/responsive.md` | デバイスサイズ別の表示確認が目的 |
+
+複数の目的がある場合は、**最も重要な目的**に合うフォーマットを選ぶ。
+
+`Read` で該当フォーマットファイルを読み込む。
+
+## Step 2: スクリーンショットディレクトリ作成
+
+```bash
+mkdir -p /tmp/agent-browser/{YYYYMMDD}-{slug}
+```
+
+- `{YYYYMMDD}`: 実行日（例: 20260219）
+- `{slug}`: 検証内容を英語で短く表現（例: tarot-ui, login-form）
+
+## Step 3: Task サブエージェント起動
 
 1. `Read` で `references/subagent-prompt.md` を読み込む
 
 2. テンプレートのプレースホルダを置換：
    - `{PREFIX}` → Step 0-1 で確定した PREFIX
    - `{ユーザーの指示}` → ユーザーの検証指示
+   - `{SCREENSHOT_DIR}` → Step 2 で作成したディレクトリパス
+   - `{レポートフォーマット}` → Step 1 で選択したフォーマット定義
 
 3. Task を起動：
 
@@ -85,10 +111,10 @@ Task(
 )
 ```
 
-## Step 2: 結果報告
+## Step 4: 結果報告
 
-サブエージェントの結果をユーザーに簡潔に報告。
+サブエージェントの結果をユーザーに報告。
 
-- 検証 OK/NG/未実行
-- 発見した問題点
-- スクリーンショットのパス
+- サブエージェントのレポートをそのまま提示（省略しない）
+- スクリーンショットがある場合は Read で画像を表示
+- 検証 OK/NG/未実行 のサマリーを最後に添える
