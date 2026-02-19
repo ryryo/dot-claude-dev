@@ -34,9 +34,10 @@
 
 | スキル                 | 用途                                                                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **agent-browser**      | ブラウザ操作を自動化。Webテスト、フォーム入力、スクリーンショット、データ抽出。Triggers: ブラウザ操作, Webテスト, スクリーンショット |
+| **dev:agent-browser**  | agent-browser CLIでブラウザ検証をサブエージェント実行。E2Eテスト、UI確認、スクリーンショット取得。Triggers: agent-browser, ブラウザ検証, E2E確認 |
 | **dev:opencode-check** | opencode CLIの動作確認。インストール状態、runコマンド、モデル応答をチェック。Triggers: opencode動作確認, opencode check              |
 | **dev:claude-agent-sdk** | Claude Agent SDK（Python/TypeScript）の設計支援。ヒアリング→アーキテクチャ→実装パターン提案。Triggers: Agent SDK, エージェントSDK |
+| **dev:cleanup-branches** | 不要なローカル・リモートブランチとworktreeを一括削除。Triggers: ブランチ整理, 不要ブランチ削除 |
 
 ### メタスキル
 
