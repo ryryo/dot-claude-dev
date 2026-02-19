@@ -6,6 +6,13 @@
 
 ## 実装ステップ
 
+### Step 0: ユーザー指定パスの確認
+
+ユーザーが直接パス（例: `docs/features/auth/task-list.json`）を渡している場合:
+- そのパスを Read して存在・パース確認
+- 成功 → **Step 1〜3をスキップ**し、直接 Step 4 へ
+- 失敗 → エラー表示して終了
+
 ### Step 1: task-list.json を検索
 
 ```bash

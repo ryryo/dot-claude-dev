@@ -73,6 +73,34 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 | 4 SPOT  | spot-review.md                                  | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)             |
 | 4b FIX  | spot-fix.md                                     | opus   | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
 
+**IMPL→AUTO→FIX ループ実行手順:**
+
+```
+# Step 1 IMPL
+implAgent = Read("agents/e2e-impl.md")
+Task(prompt: implAgent + タスク情報, model: opus)
+
+# Step 2 AUTO + FIX ループ
+fix_count = 0
+loop:
+  format = select_report_format(task)  # interaction(デフォルト) / ui-layout / responsive / api-integration
+  formatContent = Read(".claude/skills/dev/agent-browser/references/formats/{format}.md")
+  template = Read(".claude/skills/dev/agent-browser/references/subagent-prompt.md")
+  prompt = template に {PREFIX}, {ユーザーの指示}, {SCREENSHOT_DIR}, {レポートフォーマット} を置換
+  autoResult = Task(prompt: prompt, model: haiku)
+
+  if autoResult == OK → break
+  fix_count += 1
+  if fix_count >= 3 → エスカレーション → break
+
+  # Step 2b FIX
+  fixAgent = Read("agents/e2e-impl.md")
+  Task(prompt: fixAgent + タスク情報 + autoResult(検証レポート), model: opus)
+  goto loop
+
+# Step 3 CHECK, 4 SPOT/FIX は共通フロー（テーブル通り）
+```
+
 ### TASKワークフロー（workflow: task）
 
 **SPOT/FIX以外はサブエージェント呼び出しなし。エージェントが直接実行。**
@@ -110,35 +138,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 #### タスク実行
 
-1. **実行順序**: workflow: task のタスクを最初に実行（環境構築が必要なため）
-2. 各タスクの `workflow` フィールドに応じて上記ワークフローを適用
-3. 各タスク完了時に **TaskUpdate(completed)**
-
-#### E2E IMPL→AUTO→FIX ループ擬似コード
-
-```
-# Step 1 IMPL
-implAgent = Read("agents/e2e-impl.md")
-Task(prompt: implAgent + タスク情報, model: opus)
-
-# Step 2 AUTO + FIX ループ
-fix_count = 0
-loop:
-  format = select_report_format(task)  # interaction(デフォルト) / ui-layout / responsive / api-integration
-  formatContent = Read(".claude/skills/dev/agent-browser/references/formats/{format}.md")
-  template = Read(".claude/skills/dev/agent-browser/references/subagent-prompt.md")
-  prompt = template に {PREFIX}, {ユーザーの指示}, {SCREENSHOT_DIR}, {レポートフォーマット} を置換
-  autoResult = Task(prompt: prompt, model: haiku)
-
-  if autoResult == OK → break
-  fix_count += 1
-  if fix_count >= 3 → エスカレーション → break
-
-  # Step 2b FIX
-  fixAgent = Read("agents/e2e-impl.md")
-  Task(prompt: fixAgent + タスク情報 + autoResult(検証レポート), model: opus)
-  goto loop
-```
+1. 各タスクの `workflow` フィールドに応じて上記「ワークフロー別ステップ・委譲先」を適用
+2. 各タスク完了時に **TaskUpdate(completed)**
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
 
