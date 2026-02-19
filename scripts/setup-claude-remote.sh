@@ -137,15 +137,79 @@ else
   fi
 fi
 
+# --- agent-browser + Xvfb セットアップ ---
+
+# agent-browser CLI インストール
+if ! command -v agent-browser &>/dev/null; then
+  echo "[setup-claude-remote] Installing agent-browser..."
+  npm install -g agent-browser 2>&1 | tail -1
+  if command -v agent-browser &>/dev/null; then
+    echo "[setup-claude-remote] ✓ agent-browser installed"
+  else
+    echo "[setup-claude-remote] WARNING: agent-browser installation failed"
+  fi
+else
+  echo "[setup-claude-remote] ✓ agent-browser already installed"
+fi
+
+# Xvfb 仮想ディスプレイ起動
+if command -v Xvfb &>/dev/null; then
+  if ! pgrep -x Xvfb > /dev/null 2>&1; then
+    Xvfb :99 -screen 0 1280x720x24 &>/dev/null &
+    echo "[setup-claude-remote] ✓ Xvfb started on :99"
+  else
+    echo "[setup-claude-remote] ✓ Xvfb already running"
+  fi
+  # DISPLAY を .bashrc に永続化
+  grep -q 'export DISPLAY=:99' ~/.bashrc 2>/dev/null || echo 'export DISPLAY=:99' >> ~/.bashrc
+else
+  echo "[setup-claude-remote] WARNING: Xvfb not available (apt install xvfb)"
+fi
+
+# Playwright Chromium バイナリ互換性
+# agent-browser が要求するリビジョンが存在しない場合、既存バイナリからシンボリックリンクを作成
+if command -v agent-browser &>/dev/null; then
+  node -e "
+    const fs = require('fs'), path = require('path'), os = require('os');
+    const abRoot = path.join('$(npm root -g)', 'agent-browser');
+    const browsersJson = require(path.join(abRoot, 'node_modules/playwright-core/browsers.json'));
+    const cacheDir = path.join(os.homedir(), '.cache/ms-playwright');
+    if (!fs.existsSync(cacheDir)) process.exit(0);
+    const dirs = fs.readdirSync(cacheDir);
+    for (const b of browsersJson.browsers) {
+      if (!['chromium','chromium-headless-shell'].includes(b.name)) continue;
+      const prefix = b.name === 'chromium' ? 'chromium-' : 'chromium_headless_shell-';
+      const req = prefix + b.revision;
+      if (dirs.includes(req)) continue;
+      const existing = dirs.find(d => d.startsWith(prefix) && d !== req && !d.startsWith('.'));
+      if (existing) console.log([req, existing, b.name].join('|'));
+    }
+  " 2>/dev/null | while IFS='|' read -r REQUIRED EXISTING BNAME; do
+    CACHE="$HOME/.cache/ms-playwright"
+    if [ "$BNAME" = "chromium-headless-shell" ] && [ -d "$CACHE/$EXISTING/chrome-linux" ] && [ ! -d "$CACHE/$EXISTING/chrome-headless-shell-linux64" ]; then
+      # ディレクトリ構造が変わった場合のマッピング（chrome-linux/ → chrome-headless-shell-linux64/）
+      mkdir -p "$CACHE/$REQUIRED/chrome-headless-shell-linux64"
+      ln -sf "$CACHE/$EXISTING/chrome-linux/headless_shell" "$CACHE/$REQUIRED/chrome-headless-shell-linux64/chrome-headless-shell"
+      for f in "$CACHE/$EXISTING/chrome-linux/"*; do
+        [ "$(basename "$f")" = "headless_shell" ] && continue
+        ln -sf "$f" "$CACHE/$REQUIRED/chrome-headless-shell-linux64/$(basename "$f")" 2>/dev/null
+      done
+      echo "[setup-claude-remote] ✓ Chromium headless shell: $EXISTING → $REQUIRED (mapped)"
+    else
+      ln -sfn "$CACHE/$EXISTING" "$CACHE/$REQUIRED"
+      echo "[setup-claude-remote] ✓ Chromium: $EXISTING → $REQUIRED (linked)"
+    fi
+  done
+fi
+
 # セットアップ完了メッセージ
 echo ""
 echo "[setup-claude-remote] ✓ Setup completed"
 if command -v opencode &>/dev/null; then
   echo "[setup-claude-remote] opencode is ready to use"
-  echo "[setup-claude-remote] Command available: opencode"
-else
-  echo "[setup-claude-remote] ⚠ opencode installed but not in current PATH"
-  echo "[setup-claude-remote] Try: ln -sf \$HOME/.opencode/bin/opencode \$HOME/.local/bin/opencode"
+fi
+if command -v agent-browser &>/dev/null; then
+  echo "[setup-claude-remote] agent-browser is ready to use (DISPLAY=:99)"
 fi
 
 exit 0
