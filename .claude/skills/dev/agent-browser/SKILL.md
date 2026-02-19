@@ -79,7 +79,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:XXXX
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "sonnet",
+  model: "haiku",
   description: "ブラウザ検証実行",
   prompt: <<置換済みテンプレート>>
 )
