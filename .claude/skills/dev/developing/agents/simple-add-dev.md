@@ -12,26 +12,29 @@ allowed_tools: Bash
 
 ## オプション
 
-| オプション | 説明 |
-|-----------|------|
-| `-p` | コミット後にプッシュも実行 |
+| オプション | 説明                       |
+| ---------- | -------------------------- |
+| `-p`       | コミット後にプッシュも実行 |
 
 引数に `-p` が含まれている場合は、コミット後に `git push` も実行します。
 
 ## 実行フロー
 
 ### Step 1: 状態確認（並列実行）
+
 ```bash
 git status
 git diff --stat
 git log --oneline -3
 ```
+
 これらを**並列実行**して現在の状態を素早く把握。
 
 ### Step 2: ステージング＆コミット（連結実行）
+
 ```bash
 git add . && git commit -m "$(cat <<'EOF'
-<emoji> <type>: <description>
+<emoji> <type>: <description(日本語)>
 
 - [変更点1]
 - [変更点2]
@@ -42,12 +45,15 @@ EOF
 ```
 
 ### Step 3: プッシュ（-p オプション時のみ）
+
 引数に `-p` が含まれている場合のみ実行：
+
 ```bash
 git push
 ```
 
 ### Step 4: 完了確認
+
 ```bash
 git status
 ```
@@ -73,17 +79,17 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## Type と Emoji の対応
 
-| Type | Emoji | 説明 |
-|------|-------|------|
-| `feat` | ✨ | 新機能 |
-| `fix` | 🐛 | バグ修正 |
-| `docs` | 📝 | ドキュメント |
-| `style` | 💄 | フォーマット・スタイル |
-| `refactor` | ♻️ | リファクタリング |
-| `perf` | ⚡️ | パフォーマンス改善 |
-| `test` | ✅ | テスト |
-| `chore` | 🔧 | ツール・設定 |
-| `ci` | 🚀 | CI/CD改善 |
+| Type       | Emoji | 説明                   |
+| ---------- | ----- | ---------------------- |
+| `feat`     | ✨    | 新機能                 |
+| `fix`      | 🐛    | バグ修正               |
+| `docs`     | 📝    | ドキュメント           |
+| `style`    | 💄    | フォーマット・スタイル |
+| `refactor` | ♻️    | リファクタリング       |
+| `perf`     | ⚡️    | パフォーマンス改善     |
+| `test`     | ✅    | テスト                 |
+| `chore`    | 🔧    | ツール・設定           |
+| `ci`       | 🚀    | CI/CD改善              |
 
 ### より具体的な Emoji（状況に応じて）
 
@@ -123,6 +129,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ```markdown
 ✅ COMMIT COMPLETE
+
 - Commit: {hash} {message}
 - Push: {pushed / skipped}
 ```
@@ -131,6 +138,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ```markdown
 ❌ COMMIT FAILED
+
 - 原因: {エラー内容}
 - 推奨: {修正方法}
 ```
