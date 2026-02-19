@@ -195,6 +195,22 @@ cat ~/.local/share/opencode/auth.json | base64 | pbcopy
 
 プロバイダを追加・変更した場合は再エンコードが必要です。詳細は [OpenCode CLI リファレンス](REFERENCE/opencode-cli.md#claude-code-webリモートでの利用) を参照してください。
 
+### agent-browser（E2Eワークフロー用）
+
+`setup-claude-remote.sh` はagent-browser環境も自動セットアップします。E2Eワークフローでlocalhostの開発サーバーをブラウザ検証する際に使用されます。
+
+SessionStartフックで以下が自動実行されます:
+
+| 項目 | 内容 | 初回 | 2回目以降 |
+|------|------|------|-----------|
+| agent-browser CLI | `npm install -g agent-browser` | ~10秒 | スキップ |
+| Xvfb仮想ディスプレイ | `Xvfb :99` 起動 + `DISPLAY=:99` を `.bashrc` に永続化 | <1秒 | スキップ（起動済み） |
+| Chromiumバイナリ互換 | ベースイメージのPlaywrightバイナリとagent-browserが要求するバージョン差をシンボリックリンクで吸収 | <1秒 | スキップ（リンク済み） |
+
+**注意事項**:
+- **外部サイトへのアクセスは不可**（リモート環境のネットワーク制限）。localhost上の開発サーバーに対してのみ使用可能
+- agent-browser呼び出し時は `export DISPLAY=:99` が必要（`.bashrc` に設定済みだが、Bashツールが読まない場合は明示的に指定）
+
 ## 更新
 
 ```bash
