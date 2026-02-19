@@ -47,9 +47,7 @@ agent-browser open about:blank 2>&1
 - **失敗**（`Executable doesn't exist`）→ Playwright ブラウザバイナリ不足。修復：
 
 ```bash
-AB_PATH=$(which agent-browser)
-AB_MODULE_DIR=$(dirname "$AB_PATH")/../lib/node_modules/agent-browser
-PW_VERSION=$(node -e "console.log(require('$AB_MODULE_DIR/node_modules/playwright-core/package.json').version)")
+PW_VERSION=$(node -e "console.log(require('$(npm root -g)/agent-browser/node_modules/playwright-core/package.json').version)")
 npx --package=playwright-core@$PW_VERSION -- playwright-core install chromium
 ```
 
@@ -68,15 +66,11 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:XXXX
 
 ## Step 1: Task サブエージェント起動
 
-1. `Read` で以下2ファイルを読み込む：
-   - `references/subagent-prompt.md`（プロンプトテンプレート）
-   - `references/command-reference.md`（コマンドリファレンス）
+1. `Read` で `references/subagent-prompt.md` を読み込む
 
 2. テンプレートのプレースホルダを置換：
-   - `{コマンドプレフィックス}` → Step 0 で確定したプレフィックス
-   - `{確定したプレフィックス}` → 同上
+   - `{コマンドプレフィックス}` / `{確定したプレフィックス}` / `{プレフィックス}` → Step 0 で確定したプレフィックス
    - `{ユーザーの指示}` → ユーザーの検証指示
-   - `{refs/command-reference.md の内容をここに貼る}` → 読み込んだコマンドリファレンス全文
 
 3. Task を起動：
 

@@ -40,7 +40,86 @@ Bash ツールで `{コマンドプレフィックス}` で始まるコマンド
 {ユーザーの指示}
 
 ## コマンドリファレンス
-{references/command-reference.md の内容をここに貼る}
+
+### コアワークフロー
+
+1. `open <url>` でページに移動
+2. `snapshot -i` で対話要素一覧を取得（`@e1`, `@e2` 形式の参照付き）
+3. 参照を使って対話（click, fill 等）
+4. ナビゲーションやDOM変更後は再度 `snapshot -i`
+
+### ナビゲーション
+
+```
+open <url>       URLに移動
+back             戻る
+forward          進む
+reload           再読み込み
+close            ブラウザを閉じる
+```
+
+### スナップショット
+
+```
+snapshot         完全なアクセシビリティツリー
+snapshot -i      対話要素のみ（推奨）
+snapshot -c      コンパクト出力
+```
+
+### 対話（@ref使用）
+
+```
+click @e1            クリック
+fill @e1 "text"      クリアして入力
+type @e1 "text"      追記入力
+press Enter          キー押下
+press Control+a      キー組み合わせ
+hover @e1            ホバー
+select @e1 "value"   ドロップダウン選択
+scroll down 500      スクロール
+scrollintoview @e1   要素までスクロール
+```
+
+### 情報取得
+
+```
+get text @e1     要素テキスト
+get value @e1    入力値
+get title        ページタイトル
+get url          現在URL
+```
+
+### スクリーンショット
+
+```
+screenshot               標準出力
+screenshot path.png      ファイル保存
+screenshot --full        フルページ
+```
+
+### 待機
+
+```
+wait @e1                 要素を待つ
+wait 2000                ミリ秒待つ
+wait --text "Success"    テキストを待つ
+wait --load networkidle  ネットワーク安定を待つ
+```
+
+### ビューポート
+
+```
+set viewport 375 667     モバイル
+set viewport 768 1024    タブレット
+set viewport 1280 800    デスクトップ
+```
+
+### デバッグ
+
+```
+console          コンソールメッセージ表示
+errors           ページエラー表示
+```
 
 ## 完了時
 - 検証結果（OK/NG/未実行）を各項目ごとに、agent-browser の実出力を引用して報告
