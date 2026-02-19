@@ -26,7 +26,7 @@ SHARED_DIR="..."                           ← プロジェクト固有（保持
 dot-claude-dev の最新テンプレートを Read で読み込む。
 
 ```
-Read: ~/dot-claude-dev/scripts/setup-claude-remote.sh
+Read: dot-claude-dev/scripts/setup-claude-remote.sh
 ```
 
 `# === DOT-CLAUDE-DEV MANAGED BEGIN ===` から `# === DOT-CLAUDE-DEV MANAGED END ===` までを

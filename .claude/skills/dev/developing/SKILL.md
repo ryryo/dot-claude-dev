@@ -133,7 +133,7 @@ loop:
 #### E2E環境セットアップ（E2Eタスクが存在する場合、Phase 2開始前に1回実行）
 
 1. `which agent-browser` → 未インストールなら AskUserQuestion で案内
-2. `agent-browser open http://example.com` → 失敗なら Playwright 修復を案内
+2. `agent-browser open 'data:text/html,<h1>OK</h1>'` → 失敗なら Playwright 修復を案内
 3. `mkdir -p /tmp/agent-browser/$(date +%Y%m%d)-{slug}` → SCREENSHOT_DIR 確定
 
 #### タスク実行
