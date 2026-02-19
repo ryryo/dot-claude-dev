@@ -96,17 +96,19 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:XXXX
 
 ## Step 1: Task サブエージェント起動
 
-**必ず Task ツールで general-purpose サブエージェント（model: haiku）を起動する。**
+**必ず Task ツールで general-purpose サブエージェント（model: sonnet）を起動する。**
 メインスレッドで agent-browser を直接実行しない（トークン節約のため）。
 
 ```
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "sonnet",
   description: "ブラウザ検証実行",
   prompt: <<下記テンプレートを使用>>
 )
 ```
+
+**Note:** 以前は haiku を使用していましたが、制約ルール（禁止コマンド、失敗時の行動規則）の遵守力が低く暴走リスクが高いため、sonnet に変更しました。
 
 **サブエージェントへのプロンプトテンプレート:**
 
