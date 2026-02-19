@@ -10,107 +10,64 @@
 
 ```bash
 files=$(Glob "docs/features/**/task-list.json")
-count=$(echo "$files" | wc -l)
 ```
 
-件数に応じて分岐。
-
-### Step 2: 件数別処理
-
-#### 0件の場合
-
-メッセージ表示して終了:
+0件の場合: メッセージ表示して終了:
 ```
 先に /dev:story を実行してタスクリストを作成してください。
 ```
 
-終了コード: 0（正常終了）
+### Step 2: 完了済みフィルタ＆タスク統計
 
-#### 1件の場合
+各 task-list.json を Read し、`metadata.status` が `"completed"` のものを除外する。
+※ `metadata.status` が未定義の場合は `"pending"` として扱う（未完了）。
 
-AskUserQuestion で確認（自動選択しない）:
-
-```json
-{
-  "question": "以下の計画を実行しますか?\n\n【パス】{path}\n【タスク数】{totalTasks} (TDD: {tddCount} / E2E: {e2eCount} / TASK: {taskCount})",
-  "choices": ["はい", "いいえ (パスを直接指定)"]
-}
-```
-
-- **はい**: Step 3へ
-- **いいえ**: パスを手動入力させる（入力後 Step 3へ）
-
-#### 2件以上の場合
-
-AskUserQuestion でリスト選択:
+残ったものについて統計を計算:
 
 ```json
 {
-  "question": "実行する計画を選択してください。\n\n{numList}\n\nいずれでもない場合はパスを直接指定してください。",
-  "choices": ["{choice1}", "{choice2}", ..., "パスを直接指定"]
+  "path": "docs/features/auth/task-list.json",
+  "totalTasks": 5,
+  "tddCount": 2,
+  "e2eCount": 2,
+  "taskCount": 1
 }
 ```
 
-選択肢は以下の形式で生成:
+### Step 3: 件数別処理
+
+**0件**: エラーメッセージ表示して終了
+
+**1件**: AskUserQuestion で確認（自動選択しない）
+
 ```
+Q: 以下の計画を実行しますか?
+
+【パス】docs/features/auth/task-list.json
+【タスク数】5 (TDD: 2 / E2E: 2 / TASK: 1)
+
+選択肢: はい / いいえ (パスを直接指定)
+```
+
+**2件以上**: AskUserQuestion でリスト選択
+
+```
+Q: 実行する計画を選択してください。
+
 1. docs/features/auth/task-list.json
    (5タスク: TDD 2 / E2E 2 / TASK 1)
 
 2. docs/features/profile/task-list.json
    (3タスク: TDD 1 / E2E 1 / TASK 1)
+
+選択肢: 1 / 2 / パスを直接指定
 ```
 
-- **番号選択**: 対応するパスを Step 3へ
-- **パスを直接指定**: ユーザーが手動入力（その後 Step 3へ）
-
-### Step 3: 環境変数を設定して返す
+### Step 4: 環境変数を設定して返す
 
 ```bash
 export TASK_LIST="{選択されたパス}"
-echo "TASK_LIST=$TASK_LIST"
 ```
-
-選択されたパスを返し、Phase 1で使用。
-
-## Helper: タスク統計を計算
-
-各 task-list.json から統計を抽出:
-
-```typescript
-interface TaskListStats {
-  path: string;
-  totalTasks: number;
-  tddCount: number;
-  e2eCount: number;
-  taskCount: number;
-}
-
-function getTaskListStats(path: string): TaskListStats {
-  const content = Read(path);
-  const json = JSON.parse(content);
-  const tasks = json.tasks || [];
-
-  const tddCount = tasks.filter((t: any) => t.workflow === 'tdd').length;
-  const e2eCount = tasks.filter((t: any) => t.workflow === 'e2e').length;
-  const taskCount = tasks.filter((t: any) => t.workflow === 'task').length;
-
-  return {
-    path,
-    totalTasks: tasks.length,
-    tddCount,
-    e2eCount,
-    taskCount
-  };
-}
-```
-
-## 完了条件
-
-- [ ] task-list.json が見つからない場合: メッセージ表示して終了
-- [ ] 1件: ユーザーが「はい」または手動指定パス入力
-- [ ] 2件以上: ユーザーが番号選択または手動指定パス入力
-- [ ] `$TASK_LIST` が環境変数として設定された
-- [ ] Phase 1へ引き継ぎ完了
 
 ## エラーハンドリング
 
