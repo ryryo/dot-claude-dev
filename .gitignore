@@ -34,12 +34,3 @@ composer.lock
 
 # Git Worktrees (team-run)
 .worktrees/
-
-# Symlinks created by setup-claude-remote.sh (pointing to ~/.dot-claude-dev)
-.claude/commands/dev/dev
-.claude/hooks/dev/dev
-.claude/rules/languages/languages
-.claude/rules/workflow/workflow
-.claude/skills/agent-browser/agent-browser
-.claude/skills/dev/dev
-.claude/skills/meta-skill-creator/meta-skill-creator
