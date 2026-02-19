@@ -59,6 +59,7 @@
 | `/dev:team-plan`           | チーム実行計画を作成。ストーリー分析→タスク分解→レビュー（opencode）→承認 |
 | `/dev:team-run`            | 承認済み計画をネイティブAgent Teamsで並行実行。Git Worktree分離               |
 | `/dev:team-opencode-exec`  | 承認済み計画をAgent Teamsで並行実行                                                  |
+| `/sync-setup-remote`       | 外部プロジェクトのsetup-claude-remote.shを最新テンプレートに同期             |
 
 ## テスト環境
 
