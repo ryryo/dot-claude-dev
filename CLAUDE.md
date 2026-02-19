@@ -46,6 +46,7 @@
 | **meta-skill-creator** | スキルを作成・更新・プロンプト改善するためのメタスキル。collaborativeモードでユーザーと対話しながら共創し、orchestrateモードでタスクの実行エンジンを選択。Triggers: スキル作成, スキル更新, プロンプト改善        |
 | **skill-refactorer**   | SKILL.mdを整理・圧縮するスキル。7つのリファクタリングパターン（圧縮・DRY化・LLM行動制御・ゲート条件・責務分離・廃止整理・構造化）をチェックリストとして適用。Triggers: スキル整理, SKILL.md圧縮, スキルリファクタ |
 | **sync-skills**        | グローバルスキル一覧を参照している外部プロジェクトのCLAUDE.mdを最新状態に同期。Triggers: /sync-skills, スキル同期                                                                                                 |
+| **sync-setup-remote** | 外部プロジェクトのsetup-claude-remote.shの共有セクションを最新テンプレートに同期。マーカーでプロジェクト固有部分を保持。Triggers: setup同期, setup-remote同期 |
 
 ## 利用可能なコマンド
 
@@ -58,6 +59,7 @@
 | `/dev:team-plan`           | チーム実行計画を作成。ストーリー分析→タスク分解→レビュー（opencode）→承認 |
 | `/dev:team-run`            | 承認済み計画をネイティブAgent Teamsで並行実行。Git Worktree分離               |
 | `/dev:team-opencode-exec`  | 承認済み計画をAgent Teamsで並行実行                                                  |
+| `/sync-setup-remote`       | 外部プロジェクトのsetup-claude-remote.shを最新テンプレートに同期             |
 
 ## テスト環境
 
