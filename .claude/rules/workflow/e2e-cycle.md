@@ -91,19 +91,21 @@ agent-browser screenshot
 ## エージェント構成
 
 ```
-e2e-cycle(sonnet) → quality-check(haiku) → spot-review(sonnet+OpenCode) → [FAIL時] spot-fix(opus)
+e2e-impl(sonnet) → agent-browser(haiku) → [NG時] e2e-impl(sonnet, FIX) → quality-check(haiku) → spot-review(sonnet+OpenCode) → [FAIL時] spot-fix(opus)
 ```
 
 | Step | Agent | 責務 |
 |------|-------|------|
-| 1 CYCLE | e2e-cycle | UI実装 → agent-browser検証ループ |
-| 2 CHECK | quality-check | lint/format/build |
-| 3 SPOT | spot-review | commit後の即時レビュー(+OpenCode)。検出のみ |
-| 3b FIX | spot-fix | SPOT FAIL時: 修正→CHECK→再SPOT（最大3回） |
+| 1 IMPL | e2e-impl | UI実装 |
+| 2 AUTO | agent-browser subagent | agent-browser CLI検証 |
+| 2b FIX | e2e-impl | AUTO NG時: 検証レポートで修正（最大3回） |
+| 3 CHECK | quality-check | lint/format/build |
+| 4 SPOT | spot-review | commit後の即時レビュー(+OpenCode)。検出のみ |
+| 4b FIX | spot-fix | SPOT FAIL時: 修正→CHECK→再SPOT（最大3回） |
 
 ## エラー時の対応
 
-1. **検証失敗**: 実装を修正 → 再検証（e2e-cycle内でループ）
+1. **検証失敗**: orchestratorがe2e-implに検証レポートを渡して修正
 2. **3回失敗**: 問題を報告、ユーザーに確認
 3. **ツールエラー**: 開発サーバー確認、再試行
 

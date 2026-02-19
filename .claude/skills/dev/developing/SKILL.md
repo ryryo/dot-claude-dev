@@ -64,10 +64,12 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 | Step | agent | model | type | 備考 |
 |------|-------|-------|------|------|
-| 1 CYCLE | e2e-cycle.md | sonnet | general-purpose | UI実装 → agent-browser検証ループ |
-| 2 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
-| 3 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
-| 3b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
+| 1 IMPL | e2e-impl.md | sonnet | general-purpose | UI実装 |
+| 2 AUTO | (agent-browser subagent-prompt.md) | haiku | general-purpose | agent-browser CLI検証 |
+| 2b FIX | e2e-impl.md | sonnet | general-purpose | AUTO NG時: 検証レポートで修正（最大3回） |
+| 3 CHECK | quality-check.md | haiku | general-purpose | lint/format/build |
+| 4 SPOT | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode) |
+| 4b FIX | spot-fix.md | opus | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
 
 ### TASKワークフロー（workflow: task）
 
@@ -160,9 +162,43 @@ export TASK_LIST="docs/features/auth/task-list.json"
 
 ### Phase 2: タスク実行（workflow別ワークフロー）
 
+#### E2E環境セットアップ（E2Eタスクが存在する場合、Phase 2開始前に1回実行）
+
+1. `which agent-browser` → 未インストールなら AskUserQuestion で案内
+2. `agent-browser open http://example.com` → 失敗なら Playwright 修復を案内
+3. `mkdir -p /tmp/agent-browser/$(date +%Y%m%d)-{slug}` → SCREENSHOT_DIR 確定
+
+#### タスク実行
+
 1. **実行順序**: workflow: task のタスクを最初に実行（環境構築が必要なため）
 2. 各タスクの `workflow` フィールドに応じて上記ワークフローを適用
 3. 各タスク完了時に **TaskUpdate(completed)**
+
+#### E2E IMPL→AUTO→FIX ループ擬似コード
+
+```
+# Step 1 IMPL
+implAgent = Read("agents/e2e-impl.md")
+Task(prompt: implAgent + タスク情報, model: sonnet)
+
+# Step 2 AUTO + FIX ループ
+fix_count = 0
+loop:
+  format = select_report_format(task)  # interaction(デフォルト) / ui-layout / responsive / api-integration
+  formatContent = Read(".claude/skills/dev/agent-browser/references/formats/{format}.md")
+  template = Read(".claude/skills/dev/agent-browser/references/subagent-prompt.md")
+  prompt = template に {PREFIX}, {ユーザーの指示}, {SCREENSHOT_DIR}, {レポートフォーマット} を置換
+  autoResult = Task(prompt: prompt, model: haiku)
+
+  if autoResult == OK → break
+  fix_count += 1
+  if fix_count >= 3 → エスカレーション → break
+
+  # Step 2b FIX
+  fixAgent = Read("agents/e2e-impl.md")
+  Task(prompt: fixAgent + タスク情報 + autoResult(検証レポート), model: sonnet)
+  goto loop
+```
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
 
@@ -177,12 +213,13 @@ export TASK_LIST="docs/features/auth/task-list.json"
 
 - [ ] すべてのtaskワークフローが完了（EXEC→VERIFY→SPOT）
 - [ ] すべてのtddワークフローが完了（CYCLE→REVIEW→CHECK→SPOT）
-- [ ] すべてのe2eワークフローが完了（CYCLE→CHECK→SPOT）
+- [ ] すべてのe2eワークフローが完了（IMPL→AUTO→CHECK→SPOT）
 - [ ] 全テストが成功
 - [ ] 品質チェックが通過
 - [ ] spot-reviewがパス（または3回失敗でエスカレーション）
 
 ## 参照
 
-- agents/: tdd-cycle.md, tdd-review.md, e2e-cycle.md, quality-check.md, simple-add-dev.md, spot-review.md, spot-fix.md
+- agents/: tdd-cycle.md, tdd-review.md, e2e-impl.md, quality-check.md, simple-add-dev.md, spot-review.md, spot-fix.md
+- cross-skill: .claude/skills/dev/agent-browser/references/subagent-prompt.md, .claude/skills/dev/agent-browser/references/formats/
 - rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md

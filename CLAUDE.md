@@ -13,7 +13,7 @@
 | スキル             | 用途                                                                                                                                                                                                     |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **dev:story**      | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解                                                 |
-| **dev:developing** | task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは3ステップ(CYCLE→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
+| **dev:developing** | task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは4ステップ(IMPL→AUTO→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
 | **dev:feedback**   | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成まで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック                                                          |
 
 ### アイデアワークフロー
@@ -89,7 +89,7 @@
 2. dev:developing でタスク実行
    ├── [TASK] EXEC → VERIFY → SPOT(+OpenCode)
    ├── [TDD] CYCLE(RED→GREEN→REFACTOR+OpenCode) → REVIEW(+OpenCode) → CHECK → SPOT(+OpenCode)
-   └── [E2E] CYCLE(UI実装→agent-browser検証) → CHECK → SPOT(+OpenCode)
+   └── [E2E] IMPL(UI実装) → AUTO(agent-browser検証, FIXループ最大3回) → CHECK → SPOT(+OpenCode)
 
 3. /dev:feedback 実行
    ├── DESIGN.md更新 → パターン検出 → スキル/ルール改善提案
@@ -109,7 +109,7 @@
 | カテゴリ | 対象                           | ワークフロー                                             |
 | -------- | ------------------------------ | -------------------------------------------------------- |
 | **TDD**  | ロジック、バリデーション、計算 | CYCLE(+OpenCode)→REVIEW(+OpenCode)→CHECK→SPOT(+OpenCode) |
-| **E2E**  | UIコンポーネント、レイアウト   | CYCLE→CHECK→SPOT(+OpenCode)                              |
+| **E2E**  | UIコンポーネント、レイアウト   | IMPL→AUTO→CHECK→SPOT(+OpenCode)                          |
 | **TASK** | 設定、セットアップ、インフラ   | EXEC→VERIFY→SPOT(+OpenCode)                              |
 
 ## OpenCode CLI協調
