@@ -34,6 +34,10 @@ fi
 SHARED_REPO="https://github.com/ryryo/dot-claude-dev.git"
 SHARED_DIR="$HOME/.dot-claude-dev"
 
+# === DOT-CLAUDE-DEV MANAGED BEGIN ===
+# このセクションは sync-setup-remote スキルで自動更新されます
+# 手動で編集した場合、次回の同期で上書きされます
+
 # --- dot-claude-dev セットアップ ---
 
 # クローン or アップデート
@@ -211,5 +215,11 @@ fi
 if command -v agent-browser &>/dev/null; then
   echo "[setup-claude-remote] agent-browser is ready to use (DISPLAY=:99)"
 fi
+
+# === DOT-CLAUDE-DEV MANAGED END ===
+
+# --- プロジェクト固有セットアップ ---
+# プロジェクト固有の処理をここに追加してください
+# 例: npm install, docker setup, 環境変数の設定など
 
 exit 0
