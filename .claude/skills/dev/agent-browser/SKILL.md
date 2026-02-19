@@ -42,7 +42,7 @@ which agent-browser 2>/dev/null && echo "FOUND" || echo "NOT_FOUND"
 ### 0-2. ブラウザ動作確認
 
 ```bash
-agent-browser open about:blank 2>&1
+agent-browser open http://example.com 2>&1
 ```
 
 - **成功**（`✓` 表示）→ `agent-browser close` → 0-3 へ
@@ -53,7 +53,7 @@ PW_VERSION=$(node -e "console.log(require('$(npm root -g)/agent-browser/node_mod
 npx --package=playwright-core@$PW_VERSION -- playwright-core install chromium
 ```
 
-修復後に再度 `agent-browser open about:blank` → 成功なら続行、**再失敗なら AskUserQuestion で報告して中断**
+修復後に再度 `agent-browser open http://example.com` → 成功なら続行、**再失敗なら AskUserQuestion で報告して中断**
 
 - **その他のエラー** → AskUserQuestion で報告して中断
 

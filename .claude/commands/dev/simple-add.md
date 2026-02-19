@@ -30,7 +30,7 @@ git log --oneline -3
 
 ```bash
 git add . && git commit -m "$(cat <<'EOF'
-<emoji> <type>: <description>
+<emoji> <type>: <description(日本語)>
 
 - [変更点1]
 - [変更点2]
