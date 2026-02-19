@@ -26,15 +26,15 @@ allowed-tools:
 
 **メインスレッドで実行。サブエージェントには委譲しない。**
 
-### 0-1. CLI 存在確認
+### 0-1. CLI 存在確認 → PREFIX 確定
 
 ```bash
 which agent-browser 2>/dev/null && echo "FOUND" || echo "NOT_FOUND"
 ```
 
-- `FOUND` → コマンドプレフィックス: `agent-browser`、0-2 へ
+- `FOUND` → **PREFIX = `agent-browser`**、0-2 へ
 - `NOT_FOUND` → **AskUserQuestion**: 「agent-browser CLI がありません。`npm install -g agent-browser` でインストールしますか？」
-  - 承認 → インストール → 0-2 へ
+  - 承認 → インストール実行 → **PREFIX = `agent-browser`**、0-2 へ
   - 拒否 → 中断
 
 ### 0-2. ブラウザ動作確認
@@ -69,7 +69,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:XXXX
 1. `Read` で `references/subagent-prompt.md` を読み込む
 
 2. テンプレートのプレースホルダを置換：
-   - `{コマンドプレフィックス}` / `{確定したプレフィックス}` / `{プレフィックス}` → Step 0 で確定したプレフィックス
+   - `{PREFIX}` → Step 0-1 で確定した PREFIX（例: `agent-browser`）
    - `{ユーザーの指示}` → ユーザーの検証指示
 
 3. Task を起動：
