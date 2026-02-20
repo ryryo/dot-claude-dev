@@ -71,14 +71,26 @@ export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
 git clone <this-repo-url> "$CLAUDE_SHARED_DIR"
 ```
 
-### 2. プロジェクトへの適用
+### 2. 参照先ディレクトリの確認（重要）
+
+`setup-claude.sh` は既定で `~/dot-claude-dev` を参照します。実際の配置が異なる場合は、事前に `CLAUDE_SHARED_DIR` を設定してください。
+
+```bash
+# 既定参照先（未設定時）
+echo "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}"
+
+# 例: /Users/<user>/dev/dot-claude-dev に配置している場合
+export CLAUDE_SHARED_DIR="$HOME/dev/dot-claude-dev"
+```
+
+### 3. プロジェクトへの適用
 
 ```bash
 cd /path/to/your-project
-bash ~/dot-claude-dev/setup-claude.sh
+bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/setup-claude.sh"
 ```
 
-### 3. 確認
+### 4. 確認
 
 ```bash
 ls -la .claude/rules/
@@ -86,7 +98,7 @@ ls -la .claude/skills/
 readlink .claude/rules/languages
 ```
 
-### 4. .gitignoreの設定
+### 5. .gitignoreの設定
 
 **重要**: `.claude/`全体を除外しないでください。プロジェクト固有の設定がgit管理できなくなります。
 
@@ -223,6 +235,6 @@ cd /path/to/your-project && bash ~/dot-claude-dev/setup-claude.sh
 
 ## チーム開発
 
-各メンバーが「インストール手順」のステップ1〜4 + 「settings.json設定」を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
+各メンバーが「インストール手順」のステップ1〜5 + 「settings.json設定」を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
 
 共通設定を変更する場合は `~/dot-claude-dev` で修正し、テストプロジェクトで確認してからプッシュしてください。
