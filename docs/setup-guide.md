@@ -17,7 +17,7 @@
 ### 共有リポジトリ（このリポジトリ）
 
 ```
-~/.dot-claude-dev/
+~/dot-claude-dev/
 ├── .claude/
 │   ├── rules/
 │   │   ├── languages/     # 言語別コーディング規約（共通）
@@ -41,18 +41,18 @@
 ```
 your-project/.claude/
 ├── rules/
-│   ├── languages -> ~/.dot-claude-dev/.claude/rules/languages  # リンク
-│   ├── workflow -> ~/.dot-claude-dev/.claude/rules/workflow    # リンク
+│   ├── languages -> ~/dot-claude-dev/.claude/rules/languages  # リンク
+│   ├── workflow -> ~/dot-claude-dev/.claude/rules/workflow    # リンク
 │   └── project/                                               # プロジェクト固有（任意）
 ├── skills/
-│   ├── dev -> ~/.dot-claude-dev/.claude/skills/dev             # リンク
+│   ├── dev -> ~/dot-claude-dev/.claude/skills/dev             # リンク
 │   ├── meta-skill-creator -> ...                              # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
 ├── commands/
-│   ├── dev -> ~/.dot-claude-dev/.claude/commands/dev           # リンク
+│   ├── dev -> ~/dot-claude-dev/.claude/commands/dev           # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
 ├── hooks/
-│   ├── dev -> ~/.dot-claude-dev/.claude/hooks                  # リンク
+│   ├── dev -> ~/dot-claude-dev/.claude/hooks                  # リンク
 │   └── project/                                               # プロジェクト固有（任意）
 ├── settings.json                                              # プロジェクト固有（フック設定等）
 └── settings.local.json                                        # ローカル設定
@@ -64,7 +64,7 @@ your-project/.claude/
 
 ```bash
 # デフォルトの場所（推奨）
-git clone <this-repo-url> ~/.dot-claude-dev
+git clone <this-repo-url> ~/dot-claude-dev
 
 # または任意の場所（環境変数で指定）
 export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
@@ -75,7 +75,7 @@ git clone <this-repo-url> "$CLAUDE_SHARED_DIR"
 
 ```bash
 cd /path/to/your-project
-bash ~/.dot-claude-dev/setup-claude.sh
+bash ~/dot-claude-dev/setup-claude.sh
 ```
 
 ### 3. 確認
@@ -165,14 +165,14 @@ readlink .claude/rules/languages
 
 ## リモート環境（Claude Code on the Web）での利用
 
-ウェブ上のClaude Codeではセッション毎にクリーンな環境が作られるため、`~/.dot-claude-dev/` が存在しません。settings.jsonのSessionStartフックで自動セットアップされます。
+ウェブ上のClaude Codeではセッション毎にクリーンな環境が作られるため、`~/dot-claude-dev/` が存在しません。settings.jsonのSessionStartフックで自動セットアップされます。
 
 ### 手順
 
 1. セットアップスクリプトをプロジェクトにコピーし、必要に応じて `SHARED_REPO` のURLを変更する
 
    ```bash
-   cp ~/.dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
+   cp ~/dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
    ```
 
 2. 「settings.json設定」セクションの設定を `.claude/settings.json` に適用する
@@ -215,14 +215,14 @@ SessionStartフックで以下が自動実行されます:
 
 ```bash
 # 共通設定の更新（全プロジェクトに自動反映）
-cd ~/.dot-claude-dev && git pull
+cd ~/dot-claude-dev && git pull
 
 # リンクが壊れた場合は再実行
-cd /path/to/your-project && bash ~/.dot-claude-dev/setup-claude.sh
+cd /path/to/your-project && bash ~/dot-claude-dev/setup-claude.sh
 ```
 
 ## チーム開発
 
 各メンバーが「インストール手順」のステップ1〜4 + 「settings.json設定」を実行するだけで、チーム全体で統一されたルールとワークフローを使用できます。
 
-共通設定を変更する場合は `~/.dot-claude-dev` で修正し、テストプロジェクトで確認してからプッシュしてください。
+共通設定を変更する場合は `~/dot-claude-dev` で修正し、テストプロジェクトで確認してからプッシュしてください。

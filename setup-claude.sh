@@ -3,7 +3,7 @@
 
 set -e
 
-SHARED_DIR="${CLAUDE_SHARED_DIR:-$HOME/.claude-shared}"
+SHARED_DIR="${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}"
 
 if [ ! -d "$SHARED_DIR" ]; then
   echo "Error: Shared directory not found: $SHARED_DIR"
