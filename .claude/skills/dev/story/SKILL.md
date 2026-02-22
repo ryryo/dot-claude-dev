@@ -40,7 +40,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## 出力先
 
-`docs/features/{feature-slug}/{YYMMDD}_{story-slug}/` に2ファイルを**順次**保存する。
+`docs/FEATURES/{feature-slug}/{YYMMDD}_{story-slug}/` に2ファイルを**順次**保存する。
 
 ---
 
@@ -56,7 +56,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
    ```bash
    bash .claude/skills/dev/story/scripts/init-story-workspace.sh {feature-slug} {story-slug}
    ```
-   出力の `docs/features/{feature-slug}/{YYMMDD}_{story-slug}` を以降のパスとして使用する。
+   出力の `docs/FEATURES/{feature-slug}/{YYMMDD}_{story-slug}` を以降のパスとして使用する。
 6. **Write** で `story-analysis.json` を保存
 
 **ゲート**: `story-analysis.json` が存在しなければ次に進まない。

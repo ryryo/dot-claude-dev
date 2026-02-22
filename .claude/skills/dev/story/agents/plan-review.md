@@ -28,8 +28,8 @@ task-list.jsonのタスク分解をOpenCode CLIでレビューする。
 ### Step 1: ファイル読み込み
 
 ```javascript
-Read({ file_path: "docs/features/{feature-slug}/{story-slug}/story-analysis.json" })
-Read({ file_path: "docs/features/{feature-slug}/{story-slug}/task-list.json" })
+Read({ file_path: "docs/FEATURES/{feature-slug}/{story-slug}/story-analysis.json" })
+Read({ file_path: "docs/FEATURES/{feature-slug}/{story-slug}/task-list.json" })
 ```
 
 ### Step 2: OpenCode CLIでレビュー実行

@@ -2,7 +2,7 @@
 name: dev:team-plan
 description: |
   チーム実装計画を作成。ストーリー分析→タスク分解→レビュー（opencode）。
-  計画は docs/features/team/{YYMMDD}_{slug}/ に永続化され、複数保持可能。
+  計画は docs/FEATURES/team/{YYMMDD}_{slug}/ に永続化され、複数保持可能。
 
   Trigger:
   dev:team-plan, /dev:team-plan, チーム計画, team plan
@@ -20,7 +20,7 @@ allowed-tools:
 
 ## 概要
 
-ユーザーストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解）を実行し、レビューのみ opencode を活用する。計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数の計画を保持できる。
+ユーザーストーリーまたは直接指示を受け取り、計画フェーズ（ストーリー分析・タスク分解）を実行し、レビューのみ opencode を活用する。計画は `docs/FEATURES/team/{YYMMDD}_{slug}/` に永続化され、複数の計画を保持できる。
 
 承認済み計画の実行は `dev:team-opencode-exec` で行う。
 
@@ -38,7 +38,7 @@ allowed-tools:
 ## 計画出力先
 
 ```
-docs/features/team/{YYMMDD}_{slug}/
+docs/FEATURES/team/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析（ゴール、スコープ、受入条件、チーム設計）
 └── task-list.json         # ロールごとのタスク定義（Wave構造 + ロール割当、各タスクに taskPrompt 含む）
 ```

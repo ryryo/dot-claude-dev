@@ -15,7 +15,7 @@ Wave 式のチーム実行→レビューフィードバック→クリーンア
 ### 計画パス指定
 
 ```
-/dev:team-opencode-exec docs/features/team/260213_auth/
+/dev:team-opencode-exec docs/FEATURES/team/260213_auth/
 ```
 
 ### 引数なし

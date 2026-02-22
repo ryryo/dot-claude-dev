@@ -2,13 +2,13 @@
 
 ## 責務
 
-`docs/features/` 以下の `task-list.json` を検索し、ユーザーに選択UIを提供。選択されたパスを環境変数 `$TASK_LIST` として返す。
+`docs/FEATURES/` 以下の `task-list.json` を検索し、ユーザーに選択UIを提供。選択されたパスを環境変数 `$TASK_LIST` として返す。
 
 ## 実装ステップ
 
 ### Step 0: ユーザー指定パスの確認
 
-ユーザーが直接パス（例: `docs/features/auth/task-list.json`）を渡している場合:
+ユーザーが直接パス（例: `docs/FEATURES/auth/task-list.json`）を渡している場合:
 - そのパスを Read して存在・パース確認
 - 成功 → **Step 1〜3をスキップ**し、直接 Step 4 へ
 - 失敗 → エラー表示して終了
@@ -16,7 +16,7 @@
 ### Step 1: task-list.json を検索
 
 ```bash
-files=$(Glob "docs/features/**/task-list.json")
+files=$(Glob "docs/FEATURES/**/task-list.json")
 ```
 
 0件の場合: メッセージ表示して終了:
@@ -33,7 +33,7 @@ files=$(Glob "docs/features/**/task-list.json")
 
 ```json
 {
-  "path": "docs/features/auth/task-list.json",
+  "path": "docs/FEATURES/auth/task-list.json",
   "totalTasks": 5,
   "tddCount": 2,
   "e2eCount": 2,
@@ -50,7 +50,7 @@ files=$(Glob "docs/features/**/task-list.json")
 ```
 Q: 以下の計画を実行しますか?
 
-【パス】docs/features/auth/task-list.json
+【パス】docs/FEATURES/auth/task-list.json
 【タスク数】5 (TDD: 2 / E2E: 2 / TASK: 1)
 
 選択肢: はい / いいえ (パスを直接指定)
@@ -61,10 +61,10 @@ Q: 以下の計画を実行しますか?
 ```
 Q: 実行する計画を選択してください。
 
-1. docs/features/auth/task-list.json
+1. docs/FEATURES/auth/task-list.json
    (5タスク: TDD 2 / E2E 2 / TASK 1)
 
-2. docs/features/profile/task-list.json
+2. docs/FEATURES/profile/task-list.json
    (3タスク: TDD 1 / E2E 1 / TASK 1)
 
 選択肢: 1 / 2 / パスを直接指定

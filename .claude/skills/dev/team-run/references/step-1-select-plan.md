@@ -2,7 +2,7 @@
 
 ## DO
 
-1. `docs/features/team/` 以下の `task-list.json` を Glob で列挙
+1. `docs/FEATURES/team/` 以下の `task-list.json` を Glob で列挙
 2. `metadata.status` が `"completed"` のものを除外し、AskUserQuestion で選択
 3. 選択した計画のパスを `$PLAN_DIR` として保持
 4. Pre-flight 検証（全タスクに対して）:

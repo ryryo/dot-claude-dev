@@ -42,7 +42,7 @@ allowed-tools:
 ## 計画入力元
 
 ```
-docs/features/team/{YYMMDD}_{slug}/
+docs/FEATURES/team/{YYMMDD}_{slug}/
 ├── story-analysis.json    # ストーリー分析結果（チーム設計、ロール定義含む）
 └── task-list.json         # タスク定義（waves/roles 形式、承認済み、各タスクに taskPrompt 含む）
 ```
@@ -51,7 +51,7 @@ docs/features/team/{YYMMDD}_{slug}/
 
 ## 計画選択 UI（起動時）
 
-1. `docs/features/team/` 以下のディレクトリを列挙する
+1. `docs/FEATURES/team/` 以下のディレクトリを列挙する
 2. 各ディレクトリの `task-list.json` を Read し、`metadata.status` が `"completed"` のものを除外する（未定義は `"pending"` 扱い）
 3. 残った計画の metadata を表示し、AskUserQuestion で選択:
 

@@ -70,7 +70,7 @@ Task({ subagent_type: "simple-add", model: "haiku", prompt: "タスク#{id}（{t
 | `{role_directive}`   | role-catalog.md から取得                 | （ロール定義文）                           |
 | `{custom_directive}` | story-analysis.json の `customDirective` | `敬語で統一。`                             |
 | `{タスク内容}`       | task-list.json の `description`          | `HeroSectionのコピー作成`                  |
-| `{input_files}`      | task-list.json の `inputs`               | `docs/features/team/copy-hero.md` |
+| `{input_files}`      | task-list.json の `inputs`               | `docs/FEATURES/team/copy-hero.md` |
 | `{output_files}`     | task-list.json の `outputs`              | `src/components/lp/HeroSection.tsx`        |
 | `{id}`               | TaskCreate で生成                        | `1`, `2`, `3`                              |
 | `{OC_MODEL}`         | Phase 0-1 で選択                         | `openai/gpt-5.3-codex`                     |

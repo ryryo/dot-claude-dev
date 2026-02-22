@@ -16,7 +16,7 @@ Git Worktree でファイル分離し、最終的に PR を作成します。
 ### 計画パス指定
 
 ```
-/dev:team-run docs/features/team/260217_auth/
+/dev:team-run docs/FEATURES/team/260217_auth/
 ```
 
 ### 引数なし

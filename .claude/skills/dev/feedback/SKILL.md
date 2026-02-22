@@ -44,9 +44,9 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 | ファイル | Step |
 |----------|------|
-| `docs/features/{feature-slug}/DESIGN.md` | 2a |
-| `docs/features/DESIGN.md` | 2a |
-| `docs/features/{feature-slug}/IMPROVEMENTS.md` | 3 |
+| `docs/FEATURES/{feature-slug}/DESIGN.md` | 2a |
+| `docs/FEATURES/DESIGN.md` | 2a |
+| `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` | 3 |
 
 ---
 
@@ -54,19 +54,19 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ### Step 0: SELECT（対象計画の選択）
 
-`docs/features/` 配下を走査し、ユーザーにフィードバック対象を選ばせる。
+`docs/FEATURES/` 配下を走査し、ユーザーにフィードバック対象を選ばせる。
 
 #### 0a: feature 選択
 
-1. `Glob("docs/features/*/")` で feature ディレクトリ一覧を取得
+1. `Glob("docs/FEATURES/*/")` で feature ディレクトリ一覧を取得
 2. feature が **1つだけ** → 自動選択（確認メッセージのみ出す）
 3. feature が **2つ以上** → **AskUserQuestion** で選択させる
-   - 各 option: `{ label: "{feature-slug}", description: "docs/features/{feature-slug}" }`
+   - 各 option: `{ label: "{feature-slug}", description: "docs/FEATURES/{feature-slug}" }`
 4. 選択結果を `feature-slug` として保持
 
 #### 0b: story 選択
 
-1. `Glob("docs/features/{feature-slug}/stories/*/story-analysis.json")` で story 一覧を取得
+1. `Glob("docs/FEATURES/{feature-slug}/stories/*/story-analysis.json")` で story 一覧を取得
 2. 各 `story-analysis.json` を Read し、`story.title`（または `story` フィールド）を取得して選択肢の description に使う
 3. story が **1つだけ** → 自動選択
 4. story が **2つ以上** → **AskUserQuestion** で選択させる
@@ -95,8 +95,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 #### 2a: 機能DESIGN.md + 総合DESIGN.md更新
 
 1. → **エージェント委譲**（update-design.md / sonnet）
-2. `docs/features/{feature-slug}/DESIGN.md` に追記・保存
-3. `docs/features/DESIGN.md` に重要な判断を追記
+2. `docs/FEATURES/{feature-slug}/DESIGN.md` に追記・保存
+3. `docs/FEATURES/DESIGN.md` に重要な判断を追記
 
 #### 2b: 総合DESIGNの整理
 
@@ -112,7 +112,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 ### Step 3: IMPROVE（スキル/ルール化検討 + テスト管理）
 
 1. → **エージェント委譲**（propose-manage.md / sonnet）
-2. `docs/features/{feature-slug}/IMPROVEMENTS.md` に保存
+2. `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に保存
 3. TDDタスクがあった場合:
    - → **AskUserQuestion** でテスト整理方針を確認（整理する/すべて保持/スキップ）
    - 選択に応じてテストの簡素化・削除を実行

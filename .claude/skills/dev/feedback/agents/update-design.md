@@ -17,16 +17,16 @@ DESIGN.mdを更新し、設計判断と学習事項を蓄積する。
 
 ## 出力
 
-- `docs/features/{feature-slug}/DESIGN.md` の更新
-- `docs/features/DESIGN.md` の更新（重要な判断のみ）
+- `docs/FEATURES/{feature-slug}/DESIGN.md` の更新
+- `docs/FEATURES/DESIGN.md` の更新（重要な判断のみ）
 
 ## 実行フロー
 
 ### Step 1: 既存DESIGN.md読み込み
 
 ```javascript
-Read({ file_path: "docs/features/{feature-slug}/DESIGN.md" })  // なければ新規作成
-Read({ file_path: "docs/features/DESIGN.md" })                  // なければ新規作成
+Read({ file_path: "docs/FEATURES/{feature-slug}/DESIGN.md" })  // なければ新規作成
+Read({ file_path: "docs/FEATURES/DESIGN.md" })                  // なければ新規作成
 ```
 
 ### Step 2: 機能別DESIGN.md更新
@@ -45,7 +45,7 @@ Read({ file_path: "docs/features/DESIGN.md" })                  // なければ�
 
 ## テンプレート
 
-### 機能別DESIGN.md (`docs/features/{feature-slug}/DESIGN.md`)
+### 機能別DESIGN.md (`docs/FEATURES/{feature-slug}/DESIGN.md`)
 
 ```markdown
 # {機能名} 設計ドキュメント
@@ -88,7 +88,7 @@ Read({ file_path: "docs/features/DESIGN.md" })                  // なければ�
 - {警告内容}
 ```
 
-### 総合DESIGN.md (`docs/features/DESIGN.md`)
+### 総合DESIGN.md (`docs/FEATURES/DESIGN.md`)
 
 ```markdown
 # プロジェクト設計ドキュメント
@@ -103,7 +103,7 @@ Read({ file_path: "docs/features/DESIGN.md" })                  // なければ�
 
 | コンポーネント | 責務 | 参照 |
 |---------------|------|------|
-| {コンポーネント名} | {責務} | [詳細](features/{feature-slug}/DESIGN.md) |
+| {コンポーネント名} | {責務} | [詳細](FEATURES/{feature-slug}/DESIGN.md) |
 
 ## 全体設計判断
 
@@ -115,7 +115,7 @@ Read({ file_path: "docs/features/DESIGN.md" })                  // なければ�
 
 ## 機能別ドキュメント
 
-- [{機能名}](features/{feature-slug}/DESIGN.md)
+- [{機能名}](FEATURES/{feature-slug}/DESIGN.md)
 
 ## 更新履歴
 

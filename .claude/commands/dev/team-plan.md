@@ -9,7 +9,7 @@ argument-hint: "[ストーリー or DESIGN.mdパス]"
 
 ストーリーを分析し、Agent Teams で並行実行するための計画（task-list.json）を作成します。
 レビューのみ opencode を活用します。
-計画は `docs/features/team/{YYMMDD}_{slug}/` に永続化され、複数保持可能です。
+計画は `docs/FEATURES/team/{YYMMDD}_{slug}/` に永続化され、複数保持可能です。
 
 ## 使い方
 
@@ -22,7 +22,7 @@ argument-hint: "[ストーリー or DESIGN.mdパス]"
 ### DESIGN.md パス指定
 
 ```
-/dev:team-plan docs/features/auth/DESIGN.md
+/dev:team-plan docs/FEATURES/auth/DESIGN.md
 ```
 
 ### 引数なし

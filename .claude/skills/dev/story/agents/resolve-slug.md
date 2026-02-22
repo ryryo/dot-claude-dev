@@ -16,7 +16,7 @@
 
 ## 処理
 
-1. `Glob("docs/features/*/")` で既存feature-slugディレクトリを一覧取得
+1. `Glob("docs/FEATURES/*/")` で既存feature-slugディレクトリを一覧取得
 2. 各既存slugについて、story-analysis.jsonのslugCandidatesと意味的に類似するか判定
 3. 類似するものがあれば「既存slugを再利用」を推奨候補の先頭に配置
 

@@ -22,7 +22,7 @@
 ### Step 1: コンテキスト収集
 
 ```javascript
-Read({ file_path: "docs/features/{feature-slug}/DESIGN.md" })
+Read({ file_path: "docs/FEATURES/{feature-slug}/DESIGN.md" })
 Glob({ pattern: ".claude/skills/**/*.md" })
 Glob({ pattern: ".claude/rules/**/*.md" })
 ```
@@ -131,7 +131,7 @@ TDDで作成されたテストを以下の観点で分類:
 
 ## 出力
 
-- `docs/features/{feature-slug}/IMPROVEMENTS.md`
+- `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md`
 - テスト整理方針の提案（TDD時、ユーザー確認用）
 
 ## 注意事項
