@@ -8,7 +8,7 @@
 
 | 環境              | 内容                                         | 参照セクション           |
 | ----------------- | -------------------------------------------- | ------------------------ |
-| **ローカル**      | クローン、リンク作成、.gitignore設定         | 「インストール手順」     |
+| **ローカル**      | クローン、リンク作成、リモートスクリプトコピー、.gitignore設定 | 「インストール手順」     |
 | **settings.json** | フック設定（コミット促進、コンパクト提案等） | 「settings.json設定」    |
 | **リモート**      | SessionStartフックで自動セットアップ         | 「リモート環境での利用」 |
 
@@ -73,15 +73,20 @@ git clone <this-repo-url> "$CLAUDE_SHARED_DIR"
 
 ### 2. 参照先ディレクトリの確認（重要）
 
-`setup-claude.sh` は既定で `~/dot-claude-dev` を参照します。実際の配置が異なる場合は、事前に `CLAUDE_SHARED_DIR` を設定してください。
+`setup-claude.sh` は既定で `~/dot-claude-dev` を参照します。実際の配置が異なる場合は、`CLAUDE_SHARED_DIR` を shell config に**永続化**してください。
 
 ```bash
-# 既定参照先（未設定時）
+# 既定参照先の確認（未設定時）
 echo "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}"
 
 # 例: /Users/<user>/dev/dot-claude-dev に配置している場合
-export CLAUDE_SHARED_DIR="$HOME/dev/dot-claude-dev"
+# → .zshrc に永続化（一度だけ実行）
+echo 'export CLAUDE_SHARED_DIR="$HOME/dev/dot-claude-dev"' >> ~/.zshrc
+source ~/.zshrc
 ```
+
+> **Note**: `setup-claude.sh` はデフォルトパスと異なる場合に自動で永続化も行います。
+> ただし手動セットアップや自動化スクリプト経由の場合は、この手順を明示的に実施してください。
 
 ### 3. プロジェクトへの適用
 
@@ -98,7 +103,18 @@ ls -la .claude/skills/
 readlink .claude/rules/languages
 ```
 
-### 5. .gitignoreの設定
+### 5. リモート環境用スクリプトのコピー
+
+SessionStartフックで使用するスクリプトをプロジェクトにコピーします。
+
+```bash
+cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude-remote.sh" scripts/
+```
+
+> **Note**: `settings.json` の SessionStart フックはこのスクリプトを参照しています。
+> コピーを忘れると、リモート環境（Claude Code on the Web）でのセッション開始時にエラーになります。
+
+### 6. .gitignoreの設定
 
 **重要**: `.claude/`全体を除外しないでください。プロジェクト固有の設定がgit管理できなくなります。
 

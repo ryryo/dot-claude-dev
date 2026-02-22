@@ -12,6 +12,27 @@ if [ ! -d "$SHARED_DIR" ]; then
   exit 1
 fi
 
+# デフォルトパスと異なる場合、CLAUDE_SHARED_DIR を shell config に自動永続化
+DEFAULT_DIR="$HOME/dot-claude-dev"
+if [ "$SHARED_DIR" != "$DEFAULT_DIR" ]; then
+  if [ -f "$HOME/.zshrc" ]; then
+    SHELL_RC="$HOME/.zshrc"
+  elif [ -f "$HOME/.bashrc" ]; then
+    SHELL_RC="$HOME/.bashrc"
+  else
+    SHELL_RC="$HOME/.profile"
+  fi
+
+  if ! grep -q "CLAUDE_SHARED_DIR" "$SHELL_RC" 2>/dev/null; then
+    echo "" >> "$SHELL_RC"
+    echo "# Claude Code - shared configuration directory" >> "$SHELL_RC"
+    echo "export CLAUDE_SHARED_DIR=\"$SHARED_DIR\"" >> "$SHELL_RC"
+    echo "✓ Persisted CLAUDE_SHARED_DIR to $SHELL_RC (run: source $SHELL_RC)"
+  else
+    echo "✓ CLAUDE_SHARED_DIR already set in $SHELL_RC"
+  fi
+fi
+
 # .claude ディレクトリを作成
 mkdir -p .claude/rules
 mkdir -p .claude/skills
