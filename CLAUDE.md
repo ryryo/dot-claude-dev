@@ -22,21 +22,12 @@
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | **dev:ideation** | プロダクトアイデアをJTBD分析→競合調査→SLC仕様書に構造化。何を作るべきかを明確にする。Triggers: /dev:ideation, アイデア整理, プロダクト企画 |
 
-### チーム実行（Agent Teams）
-
-| スキル                      | 用途                                                                                                                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **dev:team-plan**           | ストーリーからチーム実行計画を作成。ストーリー分析・タスク分解・レビュー（opencode）。計画は永続化され複数保持可能。Triggers: /dev:team-plan, チーム計画, team plan       |
-| **dev:team-opencode-exec**  | 承認済み計画をAgent Teams+opencodeで並行実行。Wave式実行→レビューフィードバック→クリーンアップ。Triggers: /dev:team-opencode-exec, チーム実行                                               |
-| **dev:team-run**            | 承認済み計画をネイティブAgent Teams+Subagentハイブリッドで並行実行。Git Worktree分離。opencode不使用。Triggers: /dev:team-run, チーム実行(native), team run                                 |
-
 ### ユーティリティ
 
 | スキル                 | 用途                                                                                                                                 |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | **dev:agent-browser**  | agent-browser CLIでブラウザ検証をサブエージェント実行。E2Eテスト、UI確認、スクリーンショット取得。Triggers: agent-browser, ブラウザ検証, E2E確認 |
 | **dev:opencode-check** | opencode CLIの動作確認。インストール状態、runコマンド、モデル応答をチェック。Triggers: opencode動作確認, opencode check              |
-| **dev:claude-agent-sdk** | Claude Agent SDK（Python/TypeScript）の設計支援。ヒアリング→アーキテクチャ→実装パターン提案。Triggers: Agent SDK, エージェントSDK |
 | **dev:cleanup-branches** | 不要なローカル・リモートブランチとworktreeを一括削除。Triggers: ブランチ整理, 不要ブランチ削除 |
 
 ### メタスキル
@@ -56,9 +47,6 @@
 | `/dev:story`               | ストーリーからタスクリスト生成。dev:storyスキルを起動                        |
 | `/dev:developing`          | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
 | `/dev:feedback`            | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案    |
-| `/dev:team-plan`           | チーム実行計画を作成。ストーリー分析→タスク分解→レビュー（opencode）→承認 |
-| `/dev:team-run`            | 承認済み計画をネイティブAgent Teamsで並行実行。Git Worktree分離               |
-| `/dev:team-opencode-exec`  | 承認済み計画をAgent Teamsで並行実行                                                  |
 | `/sync-setup-remote`       | 外部プロジェクトのsetup-claude-remote.shを最新テンプレートに同期             |
 
 ## テスト環境
@@ -78,7 +66,7 @@
 - TypeScript/JavaScript: `*.test.ts` / `*.test.tsx` / `*.spec.ts` / `*.spec.tsx`
 - PHP: `tests/**/*Test.php`
 
-この命名規則により、TDDワークフロールール（`tdd-workflow.md`）が自動適用されます。
+この命名規則に従うこと。
 
 ## 開発ワークフロー
 
