@@ -60,6 +60,21 @@ cat > "$LEARNINGS" << EOF
 ## 環境・セットアップメモ
 
 <!-- 🔧 環境固有の設定、ワークアラウンド -->
+
+---
+
+## ルール・ドキュメント更新の提案
+
+<!-- 📋 実装中に気づいた .claude/rules/ や CLAUDE.md への追加・変更提案 -->
+<!-- dev:feedback の IMPROVEMENTS.md 生成時にここを参照する -->
+<!-- 例:
+### .claude/rules/ への追加
+- \`frameworks/xxx.md\`: ○○の落とし穴ルール（「発見」セクションの△△を元に）
+
+### CLAUDE.md への反映
+- 環境変数テーブルに □□ を追加
+- 参照ドキュメントに ×× を追加
+-->
 EOF
 
 echo "作成: $LEARNINGS"
