@@ -130,7 +130,7 @@ loop:
    ~/.claude/hooks/dev/init-learnings.sh <ストーリーディレクトリ>
    ```
 
-**ゲート**: タスクが登録されなければ次に進まない。
+**ゲート**: タスクが登録され、`LEARNINGS.md` が作成されていなければ次に進まない。
 
 ### Phase 2: タスク実行（workflow別ワークフロー）
 
