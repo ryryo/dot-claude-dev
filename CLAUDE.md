@@ -10,11 +10,11 @@
 
 ### 開発ワークフロー（Big 3）
 
-| スキル             | 用途                                                                                                                                                                                                     |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **dev:story**      | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解                                                 |
+| スキル             | 用途                                                                                                                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **dev:story**      | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解                                                     |
 | **dev:developing** | task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは4ステップ(IMPL→AUTO→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
-| **dev:feedback**   | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成まで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック                                                          |
+| **dev:feedback**   | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成まで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック                                                              |
 
 ### アイデアワークフロー
 
@@ -24,11 +24,11 @@
 
 ### ユーティリティ
 
-| スキル                 | 用途                                                                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **dev:agent-browser**  | agent-browser CLIでブラウザ検証をサブエージェント実行。E2Eテスト、UI確認、スクリーンショット取得。Triggers: agent-browser, ブラウザ検証, E2E確認 |
-| **dev:opencode-check** | opencode CLIの動作確認。インストール状態、runコマンド、モデル応答をチェック。Triggers: opencode動作確認, opencode check              |
-| **dev:cleanup-branches** | 不要なローカル・リモートブランチとworktreeを一括削除。Triggers: ブランチ整理, 不要ブランチ削除 |
+| スキル                   | 用途                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **dev:agent-browser**    | agent-browser CLIでブラウザ検証をサブエージェント実行。E2Eテスト、UI確認、スクリーンショット取得。Triggers: agent-browser, ブラウザ検証, E2E確認 |
+| **dev:opencode-check**   | opencode CLIの動作確認。インストール状態、runコマンド、モデル応答をチェック。Triggers: opencode動作確認, opencode check                          |
+| **dev:cleanup-branches** | 不要なローカル・リモートブランチとworktreeを一括削除。Triggers: ブランチ整理, 不要ブランチ削除                                                   |
 
 ### メタスキル
 
@@ -37,36 +37,17 @@
 | **meta-skill-creator** | スキルを作成・更新・プロンプト改善するためのメタスキル。collaborativeモードでユーザーと対話しながら共創し、orchestrateモードでタスクの実行エンジンを選択。Triggers: スキル作成, スキル更新, プロンプト改善        |
 | **skill-refactorer**   | SKILL.mdを整理・圧縮するスキル。7つのリファクタリングパターン（圧縮・DRY化・LLM行動制御・ゲート条件・責務分離・廃止整理・構造化）をチェックリストとして適用。Triggers: スキル整理, SKILL.md圧縮, スキルリファクタ |
 | **sync-skills**        | グローバルスキル一覧を参照している外部プロジェクトのCLAUDE.mdを最新状態に同期。Triggers: /sync-skills, スキル同期                                                                                                 |
-| **sync-setup-remote** | 外部プロジェクトのsetup-claude-remote.shの共有セクションを最新テンプレートに同期。マーカーでプロジェクト固有部分を保持。Triggers: setup同期, setup-remote同期 |
+| **sync-setup-remote**  | 外部プロジェクトのsetup-claude-remote.shの共有セクションを最新テンプレートに同期。マーカーでプロジェクト固有部分を保持。Triggers: setup同期, setup-remote同期                                                     |
 
 ## 利用可能なコマンド
 
-| コマンド                   | 説明                                                                         |
-| -------------------------- | ---------------------------------------------------------------------------- |
-| `/dev:ideation`            | アイデアからプロダクト仕様書生成。JTBD分析→競合調査→SLC仕様                  |
-| `/dev:story`               | ストーリーからタスクリスト生成。dev:storyスキルを起動                        |
-| `/dev:developing`          | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
-| `/dev:feedback`            | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案    |
-| `/sync-setup-remote`       | 外部プロジェクトのsetup-claude-remote.shを最新テンプレートに同期             |
-
-## テスト環境
-
-### テストフレームワーク
-
-| 言語/FW                   | テストフレームワーク           | 理由                                                |
-| ------------------------- | ------------------------------ | --------------------------------------------------- |
-| **TypeScript/JavaScript** | Vitest                         | 高速、ESM/TypeScriptネイティブ対応、Vite統合        |
-| **React**                 | Vitest + React Testing Library | ユーザー視点のテスト、アクセシビリティ重視          |
-| **PHP**                   | Pest                           | describe/it/expect構文でVitest/Jestと統一、モダンDX |
-
-### テストファイル命名規則
-
-テストファイルは必ず以下の命名規則に従うこと:
-
-- TypeScript/JavaScript: `*.test.ts` / `*.test.tsx` / `*.spec.ts` / `*.spec.tsx`
-- PHP: `tests/**/*Test.php`
-
-この命名規則に従うこと。
+| コマンド             | 説明                                                                         |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `/dev:ideation`      | アイデアからプロダクト仕様書生成。JTBD分析→競合調査→SLC仕様                  |
+| `/dev:story`         | ストーリーからタスクリスト生成。dev:storyスキルを起動                        |
+| `/dev:developing`    | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
+| `/dev:feedback`      | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案    |
+| `/sync-setup-remote` | 外部プロジェクトのsetup-claude-remote.shを最新テンプレートに同期             |
 
 ## 開発ワークフロー
 
@@ -102,35 +83,8 @@
 | **E2E**  | UIコンポーネント、レイアウト   | IMPL→AUTO→CHECK→SPOT(+OpenCode)                          |
 | **TASK** | 設定、セットアップ、インフラ   | EXEC→VERIFY→SPOT(+OpenCode)                              |
 
-## OpenCode CLI協調
-
-特定のエージェントはOpenCode CLIを使用して、実装バイアスを排除した客観的な分析を行います。
-
-### OpenCode使用エージェント
-
-| エージェント       | 用途                           | タイミング                            |
-| ------------------ | ------------------------------ | ------------------------------------- |
-| **plan-review**    | タスク分解の品質レビュー       | dev:story Step 4                      |
-| **tdd-cycle**      | TDDリファクタリング分析        | dev:developing TDD CYCLE Phase 3      |
-| **tdd-review**     | TDDレビュー分析                | dev:developing TDD REVIEW Step 2      |
-| **spot-review**    | commit後の即時レビュー（検出） | dev:developing 各ワークフローCOMMIT後 |
-| **review-analyze** | 実装後の品質チェック           | dev:feedback Step 1                   |
-| **propose-manage** | トレードオフ分析・改善提案     | dev:feedback Step 3                   |
-
 ### OpenCode呼び出しパターン
 
 ```bash
 opencode run -m openai/gpt-5.3-codex "{prompt}" 2>&1
 ```
-
-### 言語プロトコル
-
-- **OpenCodeへの質問**: 英語
-- **ユーザーへの報告**: 日本語
-
-### フォールバック
-
-OpenCode CLIが利用不可の場合（環境変数 `USE_OPENCODE=false` またはコマンドエラー）:
-
-- 従来のClaude opusベースの分析にフォールバック
-- 各エージェントのチェックリストに基づいて手動分析
