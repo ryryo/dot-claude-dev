@@ -125,15 +125,10 @@ loop:
 1. `$TASK_LIST` を読み込み、全タスクを **TaskCreate** で登録
 2. 依存関係があれば **TaskUpdate(addBlockedBy)** で設定
 3. **TaskList** で登録確認
-4. ストーリーディレクトリ（`$TASK_LIST` と同階層）に `LEARNINGS.md` を作成（既存なら追記モード）
-
-```markdown
-# 実装メモ（LEARNINGS.md）
-
-> 自動生成: dev:developing 実行中に記録
-
----
-```
+4. `LEARNINGS.md` を作成:
+   ```bash
+   ~/.claude/hooks/dev/init-learnings.sh <ストーリーディレクトリ>
+   ```
 
 **ゲート**: タスクが登録されなければ次に進まない。
 
