@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/setup-claude-remote.sh
-# リモート環境（ウェブ上のClaude Code）で ~/dot-claude-dev を再現する
+# リモート環境（ウェブ上のClaude Code）で ~/.dot-claude-dev を再現する
 #
 # 使い方:
 #   1. このファイルを各プロジェクトの scripts/ にコピー
@@ -32,7 +32,7 @@ if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
 fi
 
 SHARED_REPO="https://github.com/ryryo/dot-claude-dev.git"
-SHARED_DIR="$HOME/dot-claude-dev"
+SHARED_DIR="$HOME/.dot-claude-dev"
 
 # === DOT-CLAUDE-DEV MANAGED BEGIN ===
 # このセクションは sync-setup-remote スキルで自動更新されます
@@ -42,7 +42,7 @@ SHARED_DIR="$HOME/dot-claude-dev"
 
 # クローン or アップデート
 if [ -d "$SHARED_DIR" ]; then
-  echo "[setup-claude-remote] ~/dot-claude-dev already exists, updating..."
+  echo "[setup-claude-remote] ~/.dot-claude-dev already exists, updating..."
   cd "$SHARED_DIR" && git pull origin master 2>&1 | grep -v "Already up to date" || echo "[setup-claude-remote] Updated to latest"
   cd - > /dev/null
 else
