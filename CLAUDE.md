@@ -38,6 +38,7 @@
 | **skill-refactorer**   | SKILL.mdを整理・圧縮するスキル。7つのリファクタリングパターン（圧縮・DRY化・LLM行動制御・ゲート条件・責務分離・廃止整理・構造化）をチェックリストとして適用。Triggers: スキル整理, SKILL.md圧縮, スキルリファクタ |
 | **sync-skills**        | グローバルスキル一覧を参照している外部プロジェクトのCLAUDE.mdを最新状態に同期。Triggers: /sync-skills, スキル同期                                                                                                 |
 | **sync-setup-remote**  | 外部プロジェクトのsetup-claude-remote.shの共有セクションを最新テンプレートに同期。マーカーでプロジェクト固有部分を保持。Triggers: setup同期, setup-remote同期                                                     |
+| **setup-project**      | 指定プロジェクトにdot-claude-devの共通設定をセットアップ。シンボリックリンク作成、remote script コピー、.gitignore更新、settings.json作成まで一括実行。Triggers: /setup-project, セットアップ, プロジェクトにセットアップ |
 
 ## 利用可能なコマンド
 
