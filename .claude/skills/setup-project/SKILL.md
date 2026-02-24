@@ -83,9 +83,4 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 | scripts/setup-claude-remote.sh | ✓ |
 | .gitignore 更新 | ✓ |
 | .claude/settings.json | ✓ 新規作成 / ⚠️ 既存（要確認） |
-
-### 次のステップ
-- チーム開発の場合: 他メンバーも同手順を実行
-- 更新時: `cd ~/dot-claude-dev && git pull`
-- リンク修復時: 本スキルを再実行
 ```
