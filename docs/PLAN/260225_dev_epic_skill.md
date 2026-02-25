@@ -31,7 +31,7 @@
 - 背景 ← plan-doc 継承
 - 変更内容 ← plan-doc 継承
 - 影響範囲 ← plan-doc 継承
-- **ストーリー一覧**（優先度・依存関係付き） ← dev:epic で追加
+- **ストーリー一覧**（executionType・優先度・依存関係付き） ← dev:epic で追加
 - 実行戦略付きタスクリスト（モデル選択基準・実行方式記法） ← plan-doc 継承
 
 ※ plan-doc の構成・記法をそのまま継承し、ストーリー一覧セクションのみ追加。plan-doc 側の改善にも追従しやすい。
@@ -49,7 +49,26 @@
       "slug": "login-form",
       "title": "ログインフォーム",
       "description": "...",
+      "executionType": "developing",
       "priority": 1,
+      "dependencies": [],
+      "status": "pending"
+    },
+    {
+      "slug": "oauth-dashboard-setup",
+      "title": "OAuthプロバイダー設定",
+      "description": "Google Cloud ConsoleでOAuthクライアントIDを作成し、リダイレクトURIを設定",
+      "executionType": "manual",
+      "priority": 2,
+      "dependencies": [],
+      "status": "pending"
+    },
+    {
+      "slug": "env-config",
+      "title": "環境変数設定ファイル追加",
+      "description": ".env.exampleにOAuth関連の環境変数を追加",
+      "executionType": "coding",
+      "priority": 2,
       "dependencies": [],
       "status": "pending"
     },
@@ -57,8 +76,9 @@
       "slug": "social-login",
       "title": "ソーシャルログイン",
       "description": "...",
-      "priority": 2,
-      "dependencies": ["login-form"],
+      "executionType": "developing",
+      "priority": 3,
+      "dependencies": ["login-form", "oauth-dashboard-setup", "env-config"],
       "status": "pending"
     }
   ],
@@ -68,6 +88,19 @@
   }
 }
 ```
+
+**executionType の定義**:
+
+| executionType | 意味 | 実行方法 |
+|---------------|------|----------|
+| `manual` | ユーザーが手動で実行 | ダッシュボード設定、外部サービス操作など。PLAN.md に手順を記載 |
+| `developing` | dev:developing で実装 | dev:story → task-list.json → dev:developing のフルフロー |
+| `coding` | AI で通常コーディング | dev:story 不要。直接コーディングで対応 |
+
+analyze-epic エージェントが各ストーリーの executionType を判定する基準:
+- **developing**: ビジネスロジック、UI、テスト可能な機能 → TDD/E2E/TASK 分類が意味を持つもの
+- **manual**: 外部サービスの操作、GUI での設定、人間の判断が必要なもの
+- **coding**: 設定ファイル追加、定型的なコード変更など、タスク分解するほどでもないもの
 
 **ワークフロー**:
 1. ユーザーからフィーチャーの要件を聞き取る
@@ -96,7 +129,7 @@ plan.json チェック:
    → docs/FEATURES/{feature-slug}/plan.json を Read
 2. plan.json が存在する場合:
    a. feature-slug は確定済み → resolve-slug の feature 部分をスキップ
-   b. plan.json の stories 配列から未完了ストーリーを AskUserQuestion で選択
+   b. plan.json の stories 配列から executionType: "developing" かつ未完了のストーリーを AskUserQuestion で選択
    c. 選択された story 情報を analyze-story のコンテキストとして渡す
    d. story-slug は plan.json の slug を使用 → resolve-slug の story 部分もスキップ可
 3. plan.json が存在しない場合:

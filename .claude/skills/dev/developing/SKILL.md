@@ -159,6 +159,11 @@ loop:
 
 ### Phase 2: タスク実行（workflow別ワークフロー）
 
+**planPath 参照**: task-list.json の `context.planPath` が存在する場合、設計判断やスコープ確認が必要な際にそのパスを Read して全体計画を参照すること。特に以下の場面で有用:
+- 実装方針に迷った場合
+- スコープの境界が不明確な場合
+- 他ストーリーとの依存関係を確認したい場合
+
 #### E2E環境セットアップ（E2Eタスクが存在する場合、Phase 2開始前に1回実行）
 
 1. `which agent-browser` → 未インストールなら AskUserQuestion で案内

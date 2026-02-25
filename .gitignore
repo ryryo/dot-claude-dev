@@ -21,6 +21,7 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+.tmp/
 
 package-lock.json
 node_modules/

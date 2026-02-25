@@ -22,6 +22,7 @@
 ```json
 {
   "context": {
+    "planPath": "docs/FEATURES/{feature-slug}/PLAN.md（plan.json が存在する場合のみ）",
     "description": "ストーリー全体の技術的な説明",
     "targetFiles": {
       "src/path/to/file.ts": "このファイルの現状と変更内容の要約"
@@ -173,6 +174,7 @@ contextセクションは必須です。
 ## 注意事項
 
 - **contextセクションは省略不可**: 後続エージェントの自律実行に必要
+- **planPath**: plan.json が存在する場合（dev:epic 連携時）、`context.planPath` に `docs/FEATURES/{feature-slug}/PLAN.md` のパスを含めること。dev:developing が全体計画を参照する際に使用
 - 依存関係は明確に定義する
 - フェーズは依存関係に基づいて順序付け
 - 各タスクは独立してテスト可能な粒度にする

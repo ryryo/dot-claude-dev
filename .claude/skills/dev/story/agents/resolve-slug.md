@@ -13,6 +13,7 @@
 
 - story-analysis.jsonの内容（slugCandidates含む）
 - 既存feature-slugの一覧（Globで取得）
+- （任意）plan.json 経由で feature-slug / story-slug が既に確定している場合、該当部分の候補生成・選択をスキップする
 
 ## 処理
 

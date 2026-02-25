@@ -8,12 +8,13 @@
 
 ## 利用可能なスキル
 
-### 開発ワークフロー（Big 3）
+### 開発ワークフロー
 
 | スキル             | 用途                                                                                                                                                                                                         |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **dev:story**      | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成。ストーリー駆動開発の起点。Triggers: /dev:story, ストーリーからタスク, タスク分解                                                     |
-| **dev:developing** | task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。TDDは4ステップ(CYCLE→REVIEW→CHECK→SPOT)、E2Eは4ステップ(IMPL→AUTO→CHECK→SPOT)、TASKは3ステップ(EXEC→VERIFY→SPOT) |
+| **dev:epic**       | フィーチャー全体の設計・ストーリー分割。PLAN.md + plan.json を生成し、dev:story の上位レイヤーとして機能。各ストーリーに executionType（manual/developing/coding）を付与。Triggers: /dev:epic, フィーチャー計画, エピック作成 |
+| **dev:story**      | ストーリーからTDD/E2E/TASK分岐付きタスクリスト（task-list.json）を生成。plan.json がある場合はそこからストーリーを選択。Triggers: /dev:story, ストーリーからタスク, タスク分解                                  |
+| **dev:developing** | task-list.jsonのタスクを実行。workflowフィールド（tdd/e2e/task）に応じたワークフローで実装。planPath があれば全体計画を参照可能。Triggers: /dev:developing, 実装, 開発                                         |
 | **dev:feedback**   | 実装完了後、学んだことをDESIGN.mdに蓄積し、スキル/ルールの自己改善を提案。PR作成まで実行。Triggers: /dev:feedback, 実装振り返り, フィードバック                                                              |
 
 ### アイデアワークフロー
@@ -45,6 +46,7 @@
 | コマンド             | 説明                                                                         |
 | -------------------- | ---------------------------------------------------------------------------- |
 | `/dev:ideation`      | アイデアからプロダクト仕様書生成。JTBD分析→競合調査→SLC仕様                  |
+| `/dev:epic`          | フィーチャー全体設計・ストーリー分割。PLAN.md + plan.json 生成               |
 | `/dev:story`         | ストーリーからタスクリスト生成。dev:storyスキルを起動                        |
 | `/dev:developing`    | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
 | `/dev:feedback`      | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案    |
@@ -55,10 +57,14 @@
 ### ストーリー駆動開発フロー
 
 ```
-1. /dev:story 実行
-   └── ストーリー入力 → task-list.json生成（workflowフィールド付き）
+0. /dev:epic 実行（任意、大きなフィーチャー向け）
+   └── 要件入力 → PLAN.md + plan.json 生成（ストーリー一覧、executionType付き）
 
-2. dev:developing でタスク実行
+1. /dev:story 実行
+   ├── plan.json あり → ストーリー選択 → タスク分解
+   └── plan.json なし → ストーリー入力 → task-list.json生成（workflowフィールド付き）
+
+2. dev:developing でタスク実行（planPath で全体計画を参照可能）
    ├── [TASK] EXEC → VERIFY → SPOT(+OpenCode)
    ├── [TDD] CYCLE(RED→GREEN→REFACTOR+OpenCode) → REVIEW(+OpenCode) → CHECK → SPOT(+OpenCode)
    └── [E2E] IMPL(UI実装) → AUTO(agent-browser検証, FIXループ最大3回) → CHECK → SPOT(+OpenCode)

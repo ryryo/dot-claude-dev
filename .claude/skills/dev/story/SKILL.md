@@ -48,6 +48,14 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ### Step 1: ストーリー分析 → story-analysis.json
 
+0. **plan.json チェック**（dev:epic 連携）:
+   - ユーザーが feature-slug を指定 or 引数で渡している場合 → `docs/FEATURES/{feature-slug}/plan.json` を Read
+   - plan.json が存在する場合:
+     a. feature-slug は確定済み → 手順3の resolve-slug の feature 部分をスキップ
+     b. plan.json の stories 配列から `executionType: "developing"` かつ未完了のストーリーを AskUserQuestion で選択
+     c. 選択された story 情報を手順2の analyze-story のコンテキストとして渡す
+     d. story-slug は plan.json の slug を使用 → 手順3の resolve-slug の story 部分もスキップ可
+   - plan.json が存在しない場合 → 従来通り手順1から実行
 1. ユーザーからストーリーを聞き取る
 2. → **エージェント委譲**（analyze-story.md / opus）
 3. → **エージェント委譲**（resolve-slug.md / haiku）— 既存slugとの類似判定・候補整理
