@@ -27,8 +27,8 @@ allowed-tools:
 
 | ファイル | 用途 |
 |----------|------|
-| `PLAN.md` | 人間用の設計ドキュメント（ストーリー一覧 + フェーズ別実行計画） |
-| `plan.json` | 構造化データ（stories 配列、executionType、依存関係、優先度） |
+| `PLAN.md` | 人間用の設計ドキュメント（ストーリー一覧 + フェーズ別ストーリー詳細） |
+| `plan.json` | 構造化データ（stories 配列、executionType、依存関係、技術詳細） |
 
 ---
 
@@ -61,9 +61,22 @@ allowed-tools:
 
 **ゲート**: PLAN.md と plan.json が配置されていなければ次に進まない。
 
-### Step 4: PLAN.md と plan.json の作成
+### Step 4: 構造計画（"what" レベル）
 
-Step 1 で把握した要件・調査結果を元に、Step 3 で配置済みの PLAN.md と plan.json を Read し、その構成に従って Write で上書きする。
+Step 1 で把握した要件・調査結果を元に、ストーリー構成とフェーズ構造を策定する。
+
+#### 書くもの
+
+**PLAN.md**:
+- 概要、背景、変更内容、影響範囲
+- ストーリー一覧テーブル（#、ストーリー名、executionType、Phase、依存、状態）
+- Phase 見出し + ストーリー名（詳細ブロックは空のまま — Step 5 で埋める）
+
+**plan.json**:
+- feature 情報（slug, title, description）
+- stories 配列（基本属性のみ: slug, title, description, executionType, phase, dependencies, status）
+  - 詳細フィールド（acceptanceCriteria, affectedFiles, testImpact, newDependencies, technicalNotes, referenceImplementation）は空配列のまま
+- phases 配列
 
 #### ストーリーの属性
 
@@ -82,16 +95,46 @@ Step 1 で把握した要件・調査結果を元に、Step 3 で配置済みの
 - 粒度: 「1つの dev:story セッションで完結できる」サイズ
 - フェーズ: 依存関係に基づいて分割。同一フェーズ内は並列実行可能
 
-**ゲート**: PLAN.md と plan.json がテンプレートから更新されていなければ次に進まない。
+**ゲート**: PLAN.md にストーリー一覧テーブルがあり、plan.json の stories 配列が空でないこと。
 
-### Step 5: プランレビュー
+### Step 5: ストーリー詳細化（"how" レベル）
+
+plan.json の stories を順に処理し、各ストーリーの技術詳細を埋める。
+
+#### 処理手順
+
+1. plan.json の stories 配列を Read で取得
+2. 各ストーリーについて **Task（Explore）** でコードベース探索:
+   - 影響ファイルを具体パスまで特定（ディレクトリ指定禁止）
+   - 隣接する `.test.*` / `.spec.*` を検索
+   - `.reference/` 内の参照実装パスの存在確認
+   - 新規依存のバージョン確認
+3. plan.json の詳細フィールドを埋める:
+   - `acceptanceCriteria`: 検証可能な受入条件（「〜できる」「〜が表示される」形式）
+   - `affectedFiles`: 具体的ファイルパス + 操作（new/edit）+ 変更内容
+   - `testImpact`: テストファイルパス + 状態（既存/新規）+ 対応（更新/新規作成）
+   - `newDependencies`: パッケージ名 + バージョン範囲 + 用途
+   - `technicalNotes`: API変更、破壊的変更、マイグレーション等の注意事項
+   - `referenceImplementation`: `.reference/` 内の具体パス
+4. PLAN.md の Phase セクション内の各ストーリーを構造化ブロックに展開（テンプレートの形式に従う）
+
+#### 品質基準
+
+- ファイルパスはディレクトリではなく具体的ファイルまで指定
+- acceptanceCriteria は「〜できる」「〜が表示される」等の検証可能な形式
+- affectedFiles に隣接テストがある場合 testImpact に必ず含める
+- テーブルの該当行がない場合（例: 新規依存なし）はセクションごと省略可
+
+**ゲート**: 全ストーリーで acceptanceCriteria >= 2、affectedFiles >= 1 であること。
+
+### Step 6: プランレビュー
 
 1. → **Task（sonnet）** に委譲（agents/review-plan.md）
-   - PLAN.md と plan.json を読み取り、構成・一貫性・実行可能性をチェック
+   - PLAN.md と plan.json を読み取り、構成・一貫性・詳細度・パス検証をチェック
    - PASS / FAIL + 問題リストを返却
 2. FAIL の場合、問題リストを元に PLAN.md / plan.json を修正し、再度レビュー（最大2回）
 
-### Step 6: ユーザー確認
+### Step 7: ユーザー確認
 
 1. PLAN.md の概要とストーリー一覧をユーザーに提示
 2. AskUserQuestion で確認:
@@ -122,10 +165,11 @@ Step 1 で把握した要件・調査結果を元に、Step 3 で配置済みの
 - `docs/FEATURES/{feature-slug}/PLAN.md` が作成されている
 - `docs/FEATURES/{feature-slug}/plan.json` が作成されている
 - 各ストーリーに `executionType` が付与されている
+- 各ストーリーに `acceptanceCriteria`（2つ以上）と `affectedFiles`（1つ以上）がある
 - ユーザーが承認済み
 
 ## 参照
 
 - agents/resolve-feature-slug.md — slug 候補生成（Step 2）
-- agents/review-plan.md — プランレビュー（Step 5）
+- agents/review-plan.md — プランレビュー（Step 6）
 - scripts/init-feature-workspace.sh — ワークスペース初期化（テンプレート配置）
