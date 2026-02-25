@@ -13,16 +13,24 @@ AGENT_NAME="$1"
 LEARNINGS_PATH="$2"
 shift 2
 
+AGENT_FILE="$SKILL_DIR/agents/$AGENT_NAME.md"
+FOOTER_FILE="$SKILL_DIR/references/learnings-footer.md"
+
+if [ ! -f "$AGENT_FILE" ]; then
+  echo "ERROR: agent not found: $AGENT_FILE" >&2
+  exit 1
+fi
+
 # 1. agent本文
-cat "$SKILL_DIR/agents/$AGENT_NAME.md"
+cat "$AGENT_FILE"
 
 # 2. 追加コンテキスト（引数で渡された分だけ付与）
 for ctx in "$@"; do
   echo ""
   echo "---"
-  echo "$ctx"
+  echo -e "$ctx"
 done
 
 # 3. LEARNINGS_FOOTER（LEARNINGS_PATH を置換して付与）
 echo ""
-sed "s|{LEARNINGS_PATH}|$LEARNINGS_PATH|g" "$SKILL_DIR/references/learnings-footer.md"
+sed "s|{LEARNINGS_PATH}|$LEARNINGS_PATH|g" "$FOOTER_FILE"
