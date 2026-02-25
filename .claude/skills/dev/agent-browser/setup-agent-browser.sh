@@ -46,7 +46,21 @@ fi
 # 2. ブラウザ起動テスト
 # ============================================================
 try_browser() {
-  $PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1
+  local result
+  # data: URL（外部ネットワーク不要、一部環境では https:// プリフィックスで失敗）
+  result=$($PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1)
+  if echo "$result" | grep -q "✓"; then
+    echo "$result"
+    return 0
+  fi
+  # fallback: 外部URL（Cloud Code Web では外部ブロックで失敗する場合あり）
+  result=$($PREFIX open 'https://example.com' 2>&1)
+  if echo "$result" | grep -q "✓"; then
+    echo "$result"
+    return 0
+  fi
+  echo "$result"
+  return 1
 }
 
 close_browser() {
@@ -64,11 +78,18 @@ else
   # 3. 修復: 既存バイナリ流用 → ダウンロード試行
   # ============================================================
 
-  # 要求バージョンをエラーメッセージから取得
-  ERROR_MSG=$($PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1 || true)
+  # 要求バージョンをエラーメッセージから取得（data: URL と外部URLの両方を試行）
+  ERROR_MSG=$($PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1 || $PREFIX open 'https://example.com' 2>&1 || true)
   close_browser
   REQUIRED_VER=$(echo "$ERROR_MSG" | grep -oP 'chromium_headless_shell-\K[0-9]+' | head -1)
-  PW_CACHE="/root/.cache/ms-playwright"
+  # Playwright cache path（WSL/Mac/Cloud Code Web 対応）
+  if [[ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]]; then
+    PW_CACHE="$PLAYWRIGHT_BROWSERS_PATH"
+  elif [[ -d "$HOME/Library/Caches/ms-playwright" ]]; then
+    PW_CACHE="$HOME/Library/Caches/ms-playwright"
+  else
+    PW_CACHE="$HOME/.cache/ms-playwright"
+  fi
 
   REPAIRED=false
 
