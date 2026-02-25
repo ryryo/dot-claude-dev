@@ -26,7 +26,24 @@ log() { echo "[agent-browser-setup] $*"; }
 fail() { echo "FAIL:$1"; exit 1; }
 
 # ============================================================
-# 1. CLI 存在確認
+# 1. Xvfb 仮想ディスプレイ（Cloud Code Web のみ）
+# ============================================================
+if [[ "${CLAUDE_CODE_REMOTE:-}" == "true" ]]; then
+  if command -v Xvfb &>/dev/null; then
+    if ! pgrep -x Xvfb > /dev/null 2>&1; then
+      Xvfb :99 -screen 0 1280x720x24 &>/dev/null &
+      log "✓ Xvfb started on :99"
+    else
+      log "✓ Xvfb already running"
+    fi
+    export DISPLAY=:99
+  else
+    log "⚠ Xvfb not available (apt install xvfb)"
+  fi
+fi
+
+# ============================================================
+# 2. CLI 存在確認
 # ============================================================
 if command -v agent-browser &>/dev/null; then
   PREFIX="agent-browser"
@@ -43,7 +60,7 @@ else
 fi
 
 # ============================================================
-# 2. ブラウザ起動テスト
+# 3. ブラウザ起動テスト
 # ============================================================
 try_browser() {
   local result
@@ -75,7 +92,7 @@ else
   log "Browser test failed, attempting repair..."
 
   # ============================================================
-  # 3. 修復: 既存バイナリ流用 → ダウンロード試行
+  # 4. 修復: 既存バイナリ流用 → ダウンロード試行
   # ============================================================
 
   # Playwright cache path（WSL/Mac/Cloud Code Web 対応）
@@ -147,7 +164,7 @@ else
   fi
 
   # ============================================================
-  # 4. 修復後の再テスト
+  # 5. 修復後の再テスト
   # ============================================================
   if try_browser | grep -q "✓"; then
     close_browser
@@ -159,7 +176,7 @@ else
 fi
 
 # ============================================================
-# 5. 対象URL疎通確認（オプション）
+# 6. 対象URL疎通確認（オプション）
 # ============================================================
 if [[ -n "$CHECK_URL" ]]; then
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$CHECK_URL" 2>/dev/null || echo "000")

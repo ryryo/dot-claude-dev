@@ -18,13 +18,7 @@
 #        }
 #      }
 #
-# opencode連携（オプション）:
-#   OPENCODE_AUTH_JSON 環境変数にbase64エンコードしたauth.jsonを設定すると、
-#   opencode CLIをインストールし、OpenAI Plus/ProのOAuth認証を引き継ぐ。
-#
-#   ローカルで準備:
-#     cat ~/.local/share/opencode/auth.json | base64 | pbcopy
-#   → Claude Code Webのシークレットに OPENCODE_AUTH_JSON として設定
+# opencode連携は scripts/setup-opencode.sh に分離済み
 
 # ローカル環境ではスキップ
 if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
@@ -62,123 +56,9 @@ else
   echo "[setup-claude-remote] WARNING: setup-claude.sh not found in shared repo."
 fi
 
-# --- opencode CLI セットアップ ---
-
-# OPENCODE_AUTH_JSON 環境変数の存在確認
-if [ -n "$OPENCODE_AUTH_JSON" ]; then
-  echo "[setup-claude-remote] ✓ OPENCODE_AUTH_JSON is set (OAuth credentials available)"
-else
-  echo "[setup-claude-remote] ✗ OPENCODE_AUTH_JSON is not set (free models only)"
-fi
-
-if [ -n "$OPENCODE_AUTH_JSON" ]; then
-  echo "[setup-claude-remote] Setting up opencode CLI..."
-
-  # opencode インストール（未インストールの場合）
-  if ! command -v opencode &>/dev/null; then
-    echo "[setup-claude-remote] Installing opencode..."
-    curl -fsSL https://opencode.ai/install | bash 2>/dev/null
-
-    # PATHに追加（現在のセッション）
-    export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
-
-    # シンボリックリンクを既存PATH内に作成
-    # Claude Code の Bash ツールは ~/.profile や ~/.bashrc を読まないため、
-    # プロファイル設定ではPATHが反映されない。
-    # 代わりに、デフォルトPATHに含まれる ~/.local/bin/ にリンクを置く。
-    OPENCODE_BIN=$(command -v opencode 2>/dev/null)
-    if [ -n "$OPENCODE_BIN" ] && [ -d "$HOME/.local/bin" ]; then
-      ln -sf "$OPENCODE_BIN" "$HOME/.local/bin/opencode"
-      echo "[setup-claude-remote] opencode symlinked to ~/.local/bin/opencode"
-    fi
-
-    if ! command -v opencode &>/dev/null; then
-      echo "[setup-claude-remote] WARNING: opencode installation failed."
-    else
-      echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
-    fi
-  else
-    echo "[setup-claude-remote] opencode already installed: $(opencode -v 2>/dev/null)"
-  fi
-
-  # auth.json を復元（OAuth refresh token を引き継ぐ）
-  OPENCODE_DATA_DIR="$HOME/.local/share/opencode"
-  mkdir -p "$OPENCODE_DATA_DIR"
-
-  echo "$OPENCODE_AUTH_JSON" | base64 -d > "$OPENCODE_DATA_DIR/auth.json" 2>/dev/null
-
-  if [ $? -eq 0 ] && [ -s "$OPENCODE_DATA_DIR/auth.json" ]; then
-    chmod 600 "$OPENCODE_DATA_DIR/auth.json"
-    echo "[setup-claude-remote] opencode auth.json restored."
-  else
-    echo "[setup-claude-remote] WARNING: Failed to decode OPENCODE_AUTH_JSON."
-    rm -f "$OPENCODE_DATA_DIR/auth.json"
-  fi
-else
-  echo "[setup-claude-remote] OPENCODE_AUTH_JSON not set, skipping OAuth setup."
-  echo "[setup-claude-remote] Free models (opencode/*) are available without auth."
-
-  # 無料モデル用にopencode本体だけインストール
-  if ! command -v opencode &>/dev/null; then
-    echo "[setup-claude-remote] Installing opencode (free models only)..."
-    curl -fsSL https://opencode.ai/install | bash 2>/dev/null
-
-    # PATHに追加（現在のセッション）
-    export PATH="$HOME/.local/share/opencode/bin:$HOME/.opencode/bin:$HOME/bin:$PATH"
-
-    # シンボリックリンクを既存PATH内に作成
-    OPENCODE_BIN=$(command -v opencode 2>/dev/null)
-    if [ -n "$OPENCODE_BIN" ] && [ -d "$HOME/.local/bin" ]; then
-      ln -sf "$OPENCODE_BIN" "$HOME/.local/bin/opencode"
-      echo "[setup-claude-remote] opencode symlinked to ~/.local/bin/opencode"
-    fi
-
-    if command -v opencode &>/dev/null; then
-      echo "[setup-claude-remote] opencode installed: $(opencode -v 2>/dev/null)"
-    else
-      echo "[setup-claude-remote] WARNING: opencode installation may have failed."
-    fi
-  fi
-fi
-
-# --- agent-browser + Xvfb セットアップ ---
-
-# agent-browser CLI インストール
-if ! command -v agent-browser &>/dev/null; then
-  echo "[setup-claude-remote] Installing agent-browser..."
-  npm install -g agent-browser 2>&1 | tail -1
-  if command -v agent-browser &>/dev/null; then
-    echo "[setup-claude-remote] ✓ agent-browser installed"
-  else
-    echo "[setup-claude-remote] WARNING: agent-browser installation failed"
-  fi
-else
-  echo "[setup-claude-remote] ✓ agent-browser already installed"
-fi
-
-# Xvfb 仮想ディスプレイ起動
-if command -v Xvfb &>/dev/null; then
-  if ! pgrep -x Xvfb > /dev/null 2>&1; then
-    Xvfb :99 -screen 0 1280x720x24 &>/dev/null &
-    echo "[setup-claude-remote] ✓ Xvfb started on :99"
-  else
-    echo "[setup-claude-remote] ✓ Xvfb already running"
-  fi
-  # DISPLAY を .bashrc に永続化
-  grep -q 'export DISPLAY=:99' ~/.bashrc 2>/dev/null || echo 'export DISPLAY=:99' >> ~/.bashrc
-else
-  echo "[setup-claude-remote] WARNING: Xvfb not available (apt install xvfb)"
-fi
-
 # セットアップ完了メッセージ
 echo ""
 echo "[setup-claude-remote] ✓ Setup completed"
-if command -v opencode &>/dev/null; then
-  echo "[setup-claude-remote] opencode is ready to use"
-fi
-if command -v agent-browser &>/dev/null; then
-  echo "[setup-claude-remote] agent-browser is ready to use (DISPLAY=:99)"
-fi
 
 # === DOT-CLAUDE-DEV MANAGED END ===
 
