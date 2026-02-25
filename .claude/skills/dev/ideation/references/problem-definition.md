@@ -22,7 +22,7 @@
 
 ## 出力構造
 
-`{dir}/PROBLEM_DEFINITION.md` に作成する。構造は `references/templates/PROBLEM_DEFINITION.template.md` を参照。
+init スクリプトで配置済みの `{dir}/PROBLEM_DEFINITION.md` を Read し、各セクションの内容を埋めて Write で上書きする。
 
 ## 完了条件
 

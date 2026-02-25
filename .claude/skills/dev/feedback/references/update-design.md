@@ -37,7 +37,7 @@ Read("docs/FEATURES/DESIGN.md")                  // なければ新規作成
 
 ## テンプレート
 
-機能別DESIGN.md の構造は `references/templates/DESIGN.template.md` を参照。
+init スクリプトで配置済みの `docs/FEATURES/{feature-slug}/DESIGN.md` を Read し、各セクションの内容を埋めて Write で上書きする。新規作成の場合はテンプレート構造が既に入っている。
 
 ## 粒度ルール
 
@@ -51,7 +51,7 @@ Read("docs/FEATURES/DESIGN.md")                  // なければ新規作成
 
 ## 更新フォーマット
 
-テンプレートの「更新履歴」セクションに準拠する（`references/templates/DESIGN.template.md` 参照）。
+配置済み DESIGN.md の「更新履歴」セクションのフォーマットに準拠する。
 
 ## 注意事項
 

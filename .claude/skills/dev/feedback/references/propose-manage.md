@@ -111,7 +111,7 @@ TDDで作成されたテストを以下の観点で分類する:
 
 ### 5. IMPROVEMENTS.md作成
 
-`docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に Write する。構造は `references/templates/IMPROVEMENTS.template.md` を参照。
+init スクリプトで配置済みの `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` を Read し、各セクションの内容を埋めて Write で上書きする。
 
 ## 注意事項
 
