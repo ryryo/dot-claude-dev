@@ -122,9 +122,8 @@ loop:
 
 ### Phase 0: 計画選択
 
-1. ユーザーが直接パスを渡している場合:
-   - **ディレクトリパス**の場合 → そのディレクトリ内の `task-list.json` と `story-analysis.json` を読み込む
-   - **task-list.json ファイルパス**の場合 → そのファイルと同じディレクトリの `story-analysis.json` を読み込む（下位互換）
+1. ユーザーが直接ディレクトリパスを渡している場合:
+   - そのディレクトリ内の `task-list.json` と `story-analysis.json` を読み込む
    - Read で存在確認し、直接 Phase 1 へ
 2. `Glob("docs/FEATURES/**/task-list.json")` で検索
 3. 0件 → 「先に /dev:story を実行してタスクリストを作成してください。」と案内して終了
