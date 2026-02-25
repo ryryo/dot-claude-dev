@@ -1,13 +1,13 @@
-# resolve-feature-slug
+---
+name: resolve-feature-slug
+description: 既存の feature-slug を探索し、slug 候補との類似性を判定して推奨順位を付ける。新規 slug 乱立を防ぐ。
+model: haiku
+allowed_tools: Glob
+---
 
-## 役割
+# Resolve Feature Slug Agent
 
 既存の feature-slug を探索し、analyze-epic が生成した slug 候補との類似性を判定して、推奨順位を付ける。
-新規 feature-slug の乱立を防ぐ。
-
-## 推奨モデル
-
-**haiku** - 単純な比較・整理タスク
 
 ## 入力
 

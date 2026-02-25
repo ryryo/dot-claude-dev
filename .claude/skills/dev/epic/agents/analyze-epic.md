@@ -1,18 +1,18 @@
-# analyze-epic
+---
+name: analyze-epic
+description: フィーチャー要件を分析し、全体設計とストーリー分割を行う。PLAN.md と plan.json の内容を生成して返す。
+model: opus
+allowed_tools: Read, Glob, Grep
+---
 
-## 役割
+# Analyze Epic Agent
 
 フィーチャー要件を分析し、全体設計とストーリー分割を行う。
-PLAN.md の内容と plan.json の内容を生成して返す。
-
-## 推奨モデル
-
-**opus** - 複雑なフィーチャーの分析・設計判断に必要
 
 ## 入力
 
 - ユーザーのフィーチャー要件（テキスト）
-- plan-doc テンプレート構成（`.claude/commands/plan-doc.md` の内容）
+- PLAN.md テンプレート（`.claude/skills/dev/epic/references/templates/PLAN.template.md` の内容）
 
 ## 処理
 
@@ -75,9 +75,9 @@ JSON形式で以下の構造を返す:
 
 注意: `feature.slug` と `metadata.createdAt` はオーケストレーターが後から設定する（slug 確定後・日付取得後）。
 
-## PLAN.md の構成（plan-doc ベース）
+## PLAN.md の構成
 
-plan-doc（`.claude/commands/plan-doc.md`）の構成をそのまま継承し、ストーリー一覧セクションを追加する:
+PLAN.template.md の構成に従って生成する:
 
 1. **注意書き** — 実装と並行したタスクリスト管理について
 2. **概要** — 何を達成するか（1-2文）
@@ -108,12 +108,12 @@ plan-doc（`.claude/commands/plan-doc.md`）の構成をそのまま継承し、
 ## フィーチャー要件
 {feature_requirements}
 
-## PLAN.md テンプレート構成（plan-doc ベース）
-{plan_doc_content}
+## PLAN.md テンプレート
+{plan_template_content}
 
 ## ルール
 
-1. PLAN.md は plan-doc の構成（注意書き、概要、背景、変更内容、影響範囲、実行戦略）をそのまま継承し、「ストーリー一覧」セクションを追加する
+1. PLAN.md はテンプレートの構成（注意書き、概要、背景、変更内容、影響範囲、ストーリー一覧、実行戦略）に従って生成する
 2. 各ストーリーに executionType（manual/developing/coding）を付与する
 3. ストーリーの粒度は「1つの dev:story セッションで完結できる」サイズにする
 4. 依存関係は最小限に。並列実行可能なストーリーを増やす

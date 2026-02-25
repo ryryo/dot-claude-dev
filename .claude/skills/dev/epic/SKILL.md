@@ -60,12 +60,12 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ### Step 2: フィーチャー分析・ストーリー分割 → PLAN.md / plan.json の内容生成
 
-1. plan-doc テンプレート構成を Read:
+1. PLAN.md テンプレートを Read:
    ```
-   Read(".claude/commands/plan-doc.md")
+   Read(".claude/skills/dev/epic/references/templates/PLAN.template.md")
    ```
 2. → **エージェント委譲**（analyze-epic.md / opus）
-   - plan-doc の構成をベースに PLAN.md の内容を生成
+   - テンプレートの構成に従って PLAN.md の内容を生成
    - ストーリー一覧（executionType 付き）を生成
    - plan.json の内容を生成
 
@@ -129,5 +129,4 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 - agents/: analyze-epic.md, resolve-feature-slug.md
 - scripts/: init-feature-workspace.sh
-- references/templates/: plan.template.json
-- ベース構成: `.claude/commands/plan-doc.md`（PLAN.md のテンプレート元）
+- references/templates/: plan.template.json, PLAN.template.md

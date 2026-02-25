@@ -19,8 +19,12 @@ TEMPLATES_DIR="$SKILL_DIR/references/templates"
 mkdir -p "$WORKSPACE"
 
 # テンプレート雛形を配置（既存ファイルがなければ）
-if [[ ! -f "$WORKSPACE/plan.json" ]]; then
-  cp "$TEMPLATES_DIR/plan.template.json" "$WORKSPACE/plan.json"
-fi
+for tmpl in plan.template.json PLAN.template.md; do
+  # plan.template.json → plan.json, PLAN.template.md → PLAN.md
+  dest="$WORKSPACE/${tmpl//.template/}"
+  if [[ ! -f "$dest" ]]; then
+    cp "$TEMPLATES_DIR/$tmpl" "$dest"
+  fi
+done
 
 echo "✓ Feature workspace initialized: $WORKSPACE"
