@@ -2,7 +2,7 @@
 # scripts/setup-self-remote.sh
 # dot-claude-dev プロジェクト自身のリモート環境セットアップ
 #
-# setup-claude-remote.sh との違い:
+# .claude/skills/setup-project/scripts/setup-claude-remote.sh との違い:
 #   - dot-claude-dev のクローン・シンボリックリンク作成をスキップ
 #     （このプロジェクト自体が dot-claude-dev なので不要）
 #   - opencode CLI セットアップは setup-opencode.sh に委譲

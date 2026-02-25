@@ -1,9 +1,10 @@
 #!/bin/bash
-# scripts/setup-claude-remote.sh
+# setup-claude-remote.sh
 # リモート環境（ウェブ上のClaude Code）で ~/.dot-claude-dev を再現する
+# テンプレート: setup-project スキルで各プロジェクトの scripts/ にコピーされる
 #
 # 使い方:
-#   1. このファイルを各プロジェクトの scripts/ にコピー
+#   1. setup-project スキルで自動コピー、または手動で各プロジェクトの scripts/ にコピー
 #   2. SHARED_REPO を自分のdot-claude-devリポジトリURLに変更
 #   3. .claude/settings.json の SessionStart フックに登録:
 #      {

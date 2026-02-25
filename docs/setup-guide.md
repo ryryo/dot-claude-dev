@@ -108,7 +108,7 @@ readlink .claude/rules/languages
 SessionStartフックで使用するスクリプトをプロジェクトにコピーします。
 
 ```bash
-cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude-remote.sh" scripts/
+cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/setup-claude-remote.sh" scripts/
 ```
 
 > **Note**: `settings.json` の SessionStart フックはこのスクリプトを参照しています。
@@ -200,7 +200,7 @@ cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude-remote.sh" s
 1. セットアップスクリプトをプロジェクトにコピーし、必要に応じて `SHARED_REPO` のURLを変更する
 
    ```bash
-   cp ~/dot-claude-dev/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
+   cp ~/dot-claude-dev/.claude/skills/setup-project/scripts/setup-claude-remote.sh /path/to/your-project/scripts/
    ```
 
 2. 「settings.json設定」セクションの設定を `.claude/settings.json` に適用する

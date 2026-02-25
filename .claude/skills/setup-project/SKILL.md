@@ -55,7 +55,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/check-claude-setup.sh" 
 
 ```bash
 mkdir -p "{PROJECT_PATH}/scripts"
-cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude-remote.sh" "{PROJECT_PATH}/scripts/"
+cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/setup-claude-remote.sh" "{PROJECT_PATH}/scripts/"
 cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-opencode.sh" "{PROJECT_PATH}/scripts/"
 ```
 
