@@ -30,6 +30,10 @@ cat > "$SETTINGS" << 'EOF'
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-opencode.sh"
           }
         ]
       }

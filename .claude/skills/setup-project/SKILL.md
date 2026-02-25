@@ -51,11 +51,12 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/check-claude-setup.sh" 
 
 終了コードが 1 の場合はエラー内容をユーザーに報告して停止する。
 
-## Step 3: setup-claude-remote.sh のコピー
+## Step 3: リモートセットアップスクリプトのコピー
 
 ```bash
 mkdir -p "{PROJECT_PATH}/scripts"
 cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude-remote.sh" "{PROJECT_PATH}/scripts/"
+cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-opencode.sh" "{PROJECT_PATH}/scripts/"
 ```
 
 ## Step 4: .gitignore の更新
@@ -81,6 +82,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 |------|------|
 | シンボリックリンク（setup-claude.sh） | ✓ |
 | scripts/setup-claude-remote.sh | ✓ |
+| scripts/setup-opencode.sh | ✓ |
 | .gitignore 更新 | ✓ |
 | .claude/settings.json | ✓ 新規作成 / ⚠️ 既存（要確認） |
 ```
