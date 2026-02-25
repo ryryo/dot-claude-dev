@@ -58,8 +58,9 @@ references/decompose-tasks.md を参照し、コードベースを Glob/Read で
 
 1. コード探索: 対象ファイルの特定、現状の把握、関連モジュール・既存テストの確認
 2. story-analysis.json のスコープに基づいてタスクを分解し、各タスクに `workflow` フィールド（tdd/e2e/task）を付与
-3. 技術選定・方針に判断が必要ならAskUserQuestionで確認（自明ならスキップ可）
-4. **Write** で `task-list.json` を保存
+3. **planPath 設定**: plan.json が存在する場合（dev:epic 連携時）、`context.planPath` に `docs/FEATURES/{feature-slug}/PLAN.md` のパスを設定する
+4. 技術選定・方針に判断が必要ならAskUserQuestionで確認（自明ならスキップ可）
+5. **Write** で `task-list.json` を保存
 
 **ゲート**: `task-list.json` が存在しなければ次に進まない。
 
