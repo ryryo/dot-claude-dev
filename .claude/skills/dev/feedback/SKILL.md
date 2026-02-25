@@ -94,14 +94,15 @@ references/update-design.md を参照し、Step 1 の分析結果を元に DESIG
 
 **ゲート**: 機能DESIGN.md + 総合DESIGN.md更新完了
 
-### Step 3: IMPROVE（スキル/ルール化検討 + テスト管理）
+### Step 3: IMPROVE（ルール化検討 + CLAUDE.md更新 + テスト管理）
 
-references/propose-manage.md を参照し、Step 1-2 の結果からスキル/ルール化候補を検討して IMPROVEMENTS.md を Write する。
+references/propose-manage.md を参照し、Step 1-2 の結果からルール化候補・CLAUDE.md更新候補を検討して IMPROVEMENTS.md を Write する。
 
-1. 既存スキル/ルール一覧を Glob で収集
+1. 既存ルール一覧を `Glob(".claude/rules/**/*.md")` で収集、CLAUDE.md を Read
 2. OpenCode CLI（またはフォールバック基準）で改善分析
-3. `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に保存
-4. TDDタスクがあった場合:
+3. 候補ごとに具体的な当てはめ先（`.claude/rules/{category}/{name}.md` or `CLAUDE.md` の該当セクション）を明記
+4. `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に保存
+5. TDDタスクがあった場合:
    - → **AskUserQuestion** でテスト整理方針を確認（整理する/すべて保持/スキップ）
    - 選択に応じてテストの簡素化・削除を実行
 
@@ -113,7 +114,7 @@ references/propose-manage.md を参照し、Step 1-2 の結果からスキル/�
 - [ ] 実装レビュー + 変更分析が完了した（Step 1）
 - [ ] 機能DESIGN.mdが更新された（Step 2a）
 - [ ] 総合DESIGN.mdが更新・整理された（Step 2a + 2b）
-- [ ] スキル/ルール化候補が検討された（Step 3）
+- [ ] ルール化候補・CLAUDE.md更新候補が検討された（Step 3）
 - [ ] テスト資産が整理された（TDD時）（Step 3）
 
 ## 参照
