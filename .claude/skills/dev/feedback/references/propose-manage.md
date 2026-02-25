@@ -111,32 +111,7 @@ TDDで作成されたテストを以下の観点で分類する:
 
 ### 5. IMPROVEMENTS.md作成
 
-以下の構造で `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に Write する:
-
-```markdown
-# ルール化・CLAUDE.md更新提案 ({feature-slug})
-
-## 1. ルール化候補
-- {ルール名}（出現回数: {N}回）
-  - 出現場所: {ファイル/ストーリー}
-  - 背景 / 文脈
-  - 期待される効果
-  - 当てはめ先: `.claude/rules/{category}/{name}.md`（新規 or 既存ファイル名）
-
-## 2. CLAUDE.md更新候補
-- {更新内容}
-  - 対象セクション: CLAUDE.md の「{セクション名}」
-  - 背景 / 文脈
-  - 具体的な追記・変更内容
-
-## 3. テスト資産の評価（TDD時のみ）
-- 保持推奨: [テスト名一覧と理由]
-- 簡素化候補: [テスト名一覧と理由]
-- 削除候補: [テスト名一覧と理由]
-
-## 4. メモ / 補足
-- 後続作業で知っておくべき前提・注意点
-```
+`docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に Write する。構造は `references/templates/IMPROVEMENTS.template.md` を参照。
 
 ## 注意事項
 
