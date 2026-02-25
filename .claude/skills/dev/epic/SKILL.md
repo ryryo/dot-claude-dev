@@ -21,21 +21,6 @@ allowed-tools:
 
 # フィーチャー計画（dev:epic）
 
-## エージェント委譲ルール
-
-**⚠️ 分析・slug解決は必ずTaskエージェントに委譲する。自分で実行しない。**
-
-呼び出しパターン（全ステップ共通）:
-```
-agentContent = Read(".claude/skills/dev/epic/agents/{agent}.md")
-Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-purpose", model: {指定モデル} })
-```
-
-| Step | agent | model | 追加コンテキスト |
-|------|-------|-------|-----------------|
-| 2 | resolve-feature-slug.md | haiku | ユーザーのフィーチャー要件 + 既存 feature 一覧 |
-| 4 | analyze-epic.md | opus | ユーザーのフィーチャー要件 + 確定slug + 配置済み PLAN.md |
-
 ## 出力先
 
 `docs/FEATURES/{feature-slug}/` に2ファイルを保存する。
@@ -49,22 +34,22 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## ★ 実行手順（必ずこの順序で実行）
 
-### Step 1: フィーチャー要件の聞き取り
+### Step 1: フィーチャー要件の把握
 
 1. ユーザーからフィーチャーの要件を聞き取る（引数 or 対話）
    - 何を実現したいか
    - 背景・動機
    - スコープ（含む / 含まない）
+2. 要件が不明確な場合は AskUserQuestion で段階的にヒアリング
+3. 必要に応じて Task（Explore）でコードベース調査を行い、現状を把握する
 
-要件が不明確な場合は AskUserQuestion で段階的にヒアリング。
+### Step 2: feature-slug 決定
 
-### Step 2: feature-slug 解決
-
-1. → **エージェント委譲**（resolve-feature-slug.md / haiku）
+1. → **Task（haiku）** に委譲（agents/resolve-feature-slug.md）
    - フィーチャー要件から slug 候補を3つ生成
-   - 既存 feature との重複チェック
+   - 既存 feature との重複チェック（Glob で自動取得）
    - 推奨順位付きで返却
-2. **AskUserQuestion** で feature-slug をユーザーが最終確定（resolve の推奨順で選択肢提示）
+2. **AskUserQuestion** で feature-slug をユーザーが最終確定（推奨順で選択肢提示）
 
 ### Step 3: ワークスペース初期化
 
@@ -74,24 +59,44 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
    ```
    → `docs/FEATURES/{feature-slug}/` に PLAN.md（テンプレート）と plan.json（テンプレート）が配置される
 
-**ゲート**: PLAN.md と plan.json のテンプレートが配置されていなければ次に進まない。
+**ゲート**: PLAN.md と plan.json が配置されていなければ次に進まない。
 
-### Step 4: フィーチャー分析・ストーリー分割
+### Step 4: PLAN.md と plan.json の作成
 
-1. → **エージェント委譲**（analyze-epic.md / opus）
-   - 配置済み PLAN.md を Read して構成を把握
-   - テンプレート構成に従って PLAN.md の内容を生成・**直接 Write で上書き**
-   - ストーリー一覧（executionType 付き）を生成
-   - plan.json の内容を生成・**直接 Write で上書き**
+Step 1 で把握した要件・調査結果を元に、Step 3 で配置済みの PLAN.md と plan.json を Read し、その構成に従って Write で上書きする。
+
+#### ストーリーの属性
+
+| 属性 | 形式 | 例 |
+|------|------|-----|
+| slug | ハイフンケース、英小文字 | `login-form` |
+| title | 日本語、20文字以内 | `ログインフォーム` |
+| description | 日本語、100文字以内 | `OAuth対応のログインフォームを...` |
+| executionType | `manual` / `developing` / `coding` | `developing` |
+| phase | フェーズ番号（1〜） | `1` |
+| dependencies | 依存する slug の配列 | `["login-form"]` |
+| status | 初期値は `pending` | `pending` |
+
+#### ストーリー粒度・フェーズ分割
+
+- 粒度: 「1つの dev:story セッションで完結できる」サイズ
+- フェーズ: 依存関係に基づいて分割。同一フェーズ内は並列実行可能
 
 **ゲート**: PLAN.md と plan.json がテンプレートから更新されていなければ次に進まない。
 
-### Step 5: ユーザー確認
+### Step 5: プランレビュー
+
+1. → **Task（sonnet）** に委譲（agents/review-plan.md）
+   - PLAN.md と plan.json を読み取り、構成・一貫性・実行可能性をチェック
+   - PASS / FAIL + 問題リストを返却
+2. FAIL の場合、問題リストを元に PLAN.md / plan.json を修正し、再度レビュー（最大2回）
+
+### Step 6: ユーザー確認
 
 1. PLAN.md の概要とストーリー一覧をユーザーに提示
 2. AskUserQuestion で確認:
    - **承認** → 完了。dev:story で個別ストーリーの詳細化へ
-   - **修正が必要** → ユーザー指示に従い修正 → Step 4 から再実行
+   - **修正が必要** → ユーザー指示に従い修正
 
 ---
 
@@ -114,18 +119,13 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## 完了条件
 
-以下2ファイルがすべて保存されていること:
-
-| ファイル | Step |
-|----------|------|
-| `PLAN.md` | Step 3（テンプレート配置） → Step 4（内容生成・上書き） |
-| `plan.json` | Step 3（テンプレート配置） → Step 4（内容生成・上書き） |
-
+- `docs/FEATURES/{feature-slug}/PLAN.md` が作成されている
+- `docs/FEATURES/{feature-slug}/plan.json` が作成されている
 - 各ストーリーに `executionType` が付与されている
 - ユーザーが承認済み
 
 ## 参照
 
-- agents/: analyze-epic.md, resolve-feature-slug.md
-- scripts/: init-feature-workspace.sh
-- references/templates/: plan.template.json, PLAN.template.md
+- agents/resolve-feature-slug.md — slug 候補生成（Step 2）
+- agents/review-plan.md — プランレビュー（Step 5）
+- scripts/init-feature-workspace.sh — ワークスペース初期化（テンプレート配置）
