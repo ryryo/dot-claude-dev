@@ -28,11 +28,13 @@ hooks:
 
 # 実装（dev:developing）
 
-## エージェント委譲ルール
+## 実行方法
 
-**各ステップの実行は必ずTaskエージェントに委譲する。自分で実装・テスト・レビューしない。**
+ワークフロー別の実行方法:
+- **TDD/E2E**: 各ステップは Task エージェントに委譲する（実装・テスト・レビューは独立性が高い）
+- **TASK**: EXEC/VERIFY はメインで直接実行し、SPOT/FIX のみ Task エージェントに委譲する
 
-呼び出しパターン（全ステップ共通）:
+エージェント委譲の呼び出しパターン:
 
 ```
 agentContent = Read(".claude/skills/dev/developing/agents/{agent}.md")

@@ -181,29 +181,29 @@ Phase 1 は各スキルの SKILL.md を読んで判定するだけなので、1�
 ### Phase 2: 修正
 
 #### 2A. dev:ideation（Step 1 メイン化）
-- [ ] 2A.1 `agents/problem-definition.md` → `references/problem-definition.md` に移動
-- [ ] 2A.2 SKILL.md 再構築: 冒頭の強制委譲ルール削除、Step 1 をメイン直接実行に変更
-- [ ] 2A.3 動作確認（SKILL.md の整合性チェック）
+- [x] 2A.1 `agents/problem-definition.md` → `references/problem-definition.md` に移動
+- [x] 2A.2 SKILL.md 再構築: 冒頭の強制委譲ルール削除、Step 1 をメイン直接実行に変更
+- [x] 2A.3 動作確認（SKILL.md の整合性チェック）
 
 #### 2B. dev:story（Step 1 analyze + Step 2 decompose メイン化）
-- [ ] 2B.1 `agents/analyze-story.md` → `references/analyze-story.md` に移動
-- [ ] 2B.2 `agents/decompose-tasks.md` → `references/decompose-tasks.md` に移動
-- [ ] 2B.3 SKILL.md 再構築: 冒頭の強制委譲ルール削除、Step 1/2 をメイン直接実行に変更
-- [ ] 2B.4 動作確認
+- [x] 2B.1 `agents/analyze-story.md` → `references/analyze-story.md` に移動
+- [x] 2B.2 `agents/decompose-tasks.md` → `references/decompose-tasks.md` に移動
+- [x] 2B.3 SKILL.md 再構築: 冒頭の強制委譲ルール削除、Step 1/2 をメイン直接実行に変更
+- [x] 2B.4 動作確認
 
 #### 2C. dev:feedback（Step 1-3 全てメイン化）
-- [ ] 2C.1 `agents/review-analyze.md` → `references/review-analyze.md` に移動
-- [ ] 2C.2 `agents/update-design.md` → `references/update-design.md` に移動
-- [ ] 2C.3 `agents/propose-manage.md` → `references/propose-manage.md` に移動
-- [ ] 2C.4 SKILL.md 再構築: 冒頭の強制委譲ルール削除、Step 1/2a/3 をメイン直接実行に変更
-- [ ] 2C.5 動作確認
+- [x] 2C.1 `agents/review-analyze.md` → `references/review-analyze.md` に移動
+- [x] 2C.2 `agents/update-design.md` → `references/update-design.md` に移動
+- [x] 2C.3 `agents/propose-manage.md` → `references/propose-manage.md` に移動
+- [x] 2C.4 SKILL.md 再構築: 冒頭の強制委譲ルール削除、Step 1/2a/3 をメイン直接実行に変更
+- [x] 2C.5 動作確認
 
 #### 2D. dev:developing（冒頭ルール矛盾解消）
-- [ ] 2D.1 冒頭「全て委譲」ルールをワークフロー別の正確な記述に修正
-- [ ] 2D.2 動作確認
+- [x] 2D.1 冒頭「全て委譲」ルールをワークフロー別の正確な記述に修正
+- [x] 2D.2 動作確認
 
 #### 2E. セルフレビュー
-- [ ] 2E.1 全修正スキルの一貫性確認（dev:epic パターンとの整合性）
+- [x] 2E.1 全修正スキルの一貫性確認（dev:epic パターンとの整合性）
 
 ### Phase 3: CLAUDE.md ルール更新
 

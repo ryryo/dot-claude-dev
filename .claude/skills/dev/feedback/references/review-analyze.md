@@ -1,13 +1,7 @@
-# review-analyze
+# レビュー・分析仕様（review-analyze）
 
-## 役割
-
-実装レビュー + 変更分析を一体で実施。git diffを読み、マージ可否の品質ゲート判定と学習事項の抽出を行う。
+実装レビュー + 変更分析を一体で実施する。git diffを読み、マージ可否の品質ゲート判定と学習事項の抽出を行う。
 改善提案（リファクタリング・スキル/ルール化）はStep 3の責務。ここでは「この実装、マージして大丈夫か？」だけを判定する。
-
-## 推奨モデル
-
-**sonnet** - サブエージェントとしてOpenCode呼び出し
 
 ## 入力
 
@@ -16,7 +10,7 @@
 
 ## 実行フロー
 
-### Step 1: 差分取得
+### 1. 差分取得
 
 ```bash
 git diff main...HEAD
@@ -24,7 +18,7 @@ git diff main...HEAD --stat
 git log main...HEAD --oneline
 ```
 
-### Step 2: OpenCode CLIで実装レビュー
+### 2. OpenCode CLIで実装レビュー
 
 ```bash
 opencode run -m openai/gpt-5.3-codex "
@@ -51,7 +45,7 @@ Focus only on correctness, safety, and merge-readiness.
 " 2>&1
 ```
 
-### Step 3: フォールバック（OpenCode利用不可時）
+### 3. フォールバック（OpenCode利用不可時）
 
 環境変数 `USE_OPENCODE=false` またはコマンドエラーの場合、以下のチェックリストで手動レビュー:
 
@@ -64,9 +58,9 @@ Focus only on correctness, safety, and merge-readiness.
 - [ ] N+1クエリ、不要な再レンダリング、メモリリーク
 - [ ] 未テストのパス、欠落しているエラーケース
 
-### Step 4: 変更内容を分析 → JSON出力
+### 4. 変更内容を分析 → JSON出力
 
-git diffとレビュー結果から以下のJSON形式で分析結果を生成:
+git diffとレビュー結果から以下のJSON形式で分析結果を生成する:
 
 ```json
 {
@@ -93,7 +87,7 @@ git diffとレビュー結果から以下のJSON形式で分析結果を生成:
 4. **技術的な発見**: 新しく学んだこと
 5. **注意点・ハマりどころ**: 将来の開発者への警告
 
-### Step 5: 結果を日本語で報告
+### 5. 結果を日本語で報告
 
 ## 報告形式
 
@@ -135,21 +129,6 @@ Critical Issuesがある場合、**AskUserQuestion** で次のアクションを
 - `/plan-doc` で修正計画書を作成（別スレッドで修正作業）
 - `/dev:story` で修正タスクリストを生成（別スレッドで修正作業）
 - そのまま続行（軽微な場合）
-
-ユーザーが `/plan-doc` or `/dev:story` を選択した場合:
-- Critical Issuesの内容をまとめて報告し、このフィードバックセッションは終了
-- 修正作業は別スレッドでユーザーが実施
-
-ユーザーが「そのまま続行」を選択した場合:
-- 分析JSONと共にStep 2へ進む
-
-### 分析JSON（常に出力）
-{上記JSON}
-
-## 出力
-
-- レビュー結果（PASS / NEEDS ATTENTION）
-- 分析JSON（changedFiles, addedFeatures, designDecisions, discoveries, warnings）
 
 ## 注意事項
 

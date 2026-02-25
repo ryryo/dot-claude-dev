@@ -23,22 +23,6 @@ allowed-tools:
 
 # アイデア → プロダクト仕様書（dev:ideation）
 
-## エージェント委譲ルール
-
-**⚠️ 分析・調査・設計は必ずTaskエージェントに委譲する。自分で実行しない。**
-
-呼び出しパターン（全ステップ共通）:
-```
-agentContent = Read(".claude/skills/dev/ideation/agents/{agent}.md")
-Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-purpose", model: {指定モデル} })
-```
-
-| Step | agent | model | 追加コンテキスト |
-|------|-------|-------|-----------------|
-| 1 | problem-definition.md | opus | ユーザーのアイデア |
-| 2 | competitor-analysis.md | sonnet | PROBLEM_DEFINITION.mdのパス |
-| 3 | slc-ideation.md | opus | PROBLEM_DEFINITION.md + COMPETITOR_ANALYSIS.mdのパス |
-
 ## 出力先
 
 `docs/ideation/{YYMMDD}-{slug}/` に3ファイルを**順次**保存する。
@@ -64,15 +48,16 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ### Step 1: 問題定義 → PROBLEM_DEFINITION.md
 
-1. → **エージェント委譲**（problem-definition.md / opus）
-   - 追加コンテキスト: ユーザーのアイデア + 出力先 `{dir}/PROBLEM_DEFINITION.md`
-2. **Write** で `{dir}/PROBLEM_DEFINITION.md` を保存
+references/problem-definition.md を Read し、その構成に従って **Write** で `{dir}/PROBLEM_DEFINITION.md` を作成する。
+
+- Step 0 で把握したユーザーのアイデアを元に、JTBDフレームワークで分析
+- AskUserQuestion でペインの優先度やターゲットユーザーの認識を確認
 
 **ゲート**: `{dir}/PROBLEM_DEFINITION.md` が存在しなければ次に進まない。
 
 ### Step 2: 競合分析 → COMPETITOR_ANALYSIS.md
 
-1. → **エージェント委譲**（competitor-analysis.md / sonnet）
+1. → **Task（sonnet）** に委譲（agents/competitor-analysis.md）
    - 追加コンテキスト: `{dir}/PROBLEM_DEFINITION.md` のパス
 2. **Write** で `{dir}/COMPETITOR_ANALYSIS.md` を保存
 
@@ -80,7 +65,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ### Step 3: SLCプロダクト仕様 → PRODUCT_SPEC.md
 
-1. → **エージェント委譲**（slc-ideation.md / opus）
+1. → **Task（opus）** に委譲（agents/slc-ideation.md）
    - 追加コンテキスト: `{dir}/PROBLEM_DEFINITION.md` + `{dir}/COMPETITOR_ANALYSIS.md` のパス
 2. **Write** で `{dir}/PRODUCT_SPEC.md` を保存
 
@@ -104,5 +89,5 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## 参照
 
-- agents/: problem-definition.md, competitor-analysis.md, slc-ideation.md
-- references/: jtbd-framework.md, slc-framework.md, product-spec-template.md
+- agents/: competitor-analysis.md, slc-ideation.md
+- references/: problem-definition.md, jtbd-framework.md, slc-framework.md, product-spec-template.md

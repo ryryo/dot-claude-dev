@@ -1,17 +1,11 @@
-# propose-manage
+# スキル/ルール化提案仕様（propose-manage）
 
-## 役割
-
-スキル/ルール化候補の検出 + テスト資産管理を実施。繰り返しパターンからスキル化・ルール化を提案する。
+スキル/ルール化候補の検出 + テスト資産管理を実施する。繰り返しパターンからスキル化・ルール化を提案する。
 コードの品質・正しさのレビューはStep 1の責務。ここでは「今後の開発を効率化するメタ改善」だけを扱う。
-
-## 推奨モデル
-
-**sonnet** - サブエージェントとしてOpenCode呼び出し
 
 ## 入力
 
-- Step 1（review-analyze.md）の分析JSON
+- Step 1（review-analyze）の分析JSON
 - Step 2のDESIGN.md更新内容
 - 既存のルール/スキル一覧
 - feature-slug
@@ -19,15 +13,15 @@
 
 ## 実行フロー
 
-### Step 1: コンテキスト収集
+### 1. コンテキスト収集
 
-```javascript
-Read({ file_path: "docs/FEATURES/{feature-slug}/DESIGN.md" })
-Glob({ pattern: ".claude/skills/**/*.md" })
-Glob({ pattern: ".claude/rules/**/*.md" })
+```
+Read("docs/FEATURES/{feature-slug}/DESIGN.md")
+Glob(".claude/skills/**/*.md")
+Glob(".claude/rules/**/*.md")
 ```
 
-### Step 2: OpenCode CLIで改善分析
+### 2. OpenCode CLIで改善分析
 
 ```bash
 opencode run -m openai/gpt-5.3-codex "
@@ -58,9 +52,9 @@ Provide:
 " 2>&1
 ```
 
-### Step 3: フォールバック（OpenCode利用不可時）
+### 3. フォールバック（OpenCode利用不可時）
 
-以下のパターン検出基準に基づいて手動分析:
+以下のパターン検出基準に基づいて手動分析する:
 
 #### ルール化基準
 
@@ -70,8 +64,6 @@ Provide:
 | 2回 | 監視 | パターンとして認識 |
 | 3回以上 | ルール化候補 | 提案を生成 |
 
-パターンタイプ: コーディングパターン、命名規則、設計判断
-
 #### スキル化基準
 
 | 出現回数 | 判定 | アクション |
@@ -79,17 +71,15 @@ Provide:
 | 1回 | 記録のみ | DESIGN.mdに記載 |
 | 2回以上 | スキル化候補 | 提案を生成 |
 
-パターンタイプ: 実装フロー（複数ステップ手順）、セットアップ手順
-
 #### 除外条件
 
 - プロジェクト固有すぎる（他で使えない）
 - 一時的なパターン（実験的、将来変更予定）
 - 既存と重複（既存ルール/スキルでカバー済み）
 
-### Step 4: テスト評価（TDDタスクがあった場合のみ）
+### 4. テスト評価（TDDタスクがあった場合のみ）
 
-TDDで作成されたテストを以下の観点で分類:
+TDDで作成されたテストを以下の観点で分類する:
 
 | 判断基準 | アクション |
 |---------|-----------|
@@ -101,7 +91,9 @@ TDDで作成されたテストを以下の観点で分類:
 - **メンテナンスコスト**: 実装変更のたびにテスト修正が必要か
 - **ドキュメントとしての価値**: テストが仕様を伝えているか
 
-### Step 5: IMPROVEMENTS.md作成
+### 5. IMPROVEMENTS.md作成
+
+以下の構造で `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に Write する:
 
 ```markdown
 # スキル/ルール化提案 ({feature-slug})
@@ -128,11 +120,6 @@ TDDで作成されたテストを以下の観点で分類:
 ## 4. メモ / 補足
 - 後続エージェントが知っておくべき前提・注意点
 ```
-
-## 出力
-
-- `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md`
-- テスト整理方針の提案（TDD時、ユーザー確認用）
 
 ## 注意事項
 

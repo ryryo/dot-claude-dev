@@ -21,25 +21,6 @@ allowed-tools:
 
 # フィードバック → 仕様書蓄積（dev:feedback）
 
-## エージェント委譲ルール
-
-**分析・更新・提案は必ずTaskエージェントに委譲する。自分で実行しない。**
-**Step 0 のみ SKILL.md 自身が Glob + AskUserQuestion で直接実行する。**
-
-呼び出しパターン（Step 1以降）:
-```
-agentContent = Read(".claude/skills/dev/feedback/agents/{agent}.md")
-Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, model: {指定モデル} })
-```
-
-| Step | agent | model | type | 追加コンテキスト |
-|------|-------|-------|------|-----------------|
-| 0 SELECT | (自身で実行) | — | — | Glob → AskUserQuestion |
-| 1 REVIEW | review-analyze.md | sonnet | general-purpose | git diff, feature-slug, story-slug |
-| 2a DESIGN | update-design.md | sonnet | general-purpose | Step 1のJSON + feature-slug |
-| 2b DESIGN | (code-simplifier) | opus | code-simplifier | DESIGN.mdのパス + 整理観点 |
-| 3 IMPROVE | propose-manage.md | sonnet | general-purpose | Step 1-2の結果 + feature-slug |
-
 ## 出力先
 
 | ファイル | Step |
@@ -79,11 +60,13 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ### Step 1: REVIEW（品質ゲート + 変更分析）
 
-1. → **エージェント委譲**（review-analyze.md / sonnet）
-   - 「この実装、マージして大丈夫か？」の品質ゲート判定
-   - 変更内容を分析し、学習事項を抽出 → 分析JSON
-2. レビュー結果をユーザーに提示
-3. Critical issuesがあれば → **AskUserQuestion** で次のアクションを確認:
+references/review-analyze.md を参照し、git diff を分析して品質ゲート判定 + 分析JSONを作成する。
+
+1. git diff main...HEAD で差分を取得
+2. OpenCode CLI（または手動チェックリスト）で実装レビュー
+3. 変更内容を分析し、学習事項を抽出 → 分析JSON
+4. レビュー結果をユーザーに提示
+5. Critical issuesがあれば → **AskUserQuestion** で次のアクションを確認:
    - `/plan-doc` で修正計画書を作成（別スレッドで修正作業）
    - `/dev:story` で修正タスクリストを生成（別スレッドで修正作業）
    - そのまま続行（軽微な場合）
@@ -94,13 +77,15 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 #### 2a: 機能DESIGN.md + 総合DESIGN.md更新
 
-1. → **エージェント委譲**（update-design.md / sonnet）
+references/update-design.md を参照し、Step 1 の分析結果を元に DESIGN.md を更新する。
+
+1. 既存の DESIGN.md を Read（なければ新規作成）
 2. `docs/FEATURES/{feature-slug}/DESIGN.md` に追記・保存
 3. `docs/FEATURES/DESIGN.md` に重要な判断を追記
 
 #### 2b: 総合DESIGNの整理
 
-1. → **エージェント委譲**（code-simplifier / opus）
+1. → **Task（opus）** に委譲（code-simplifier スキル）
 2. 整理観点:
    - 用語・表現の一貫性
    - セクション構造の論理性
@@ -111,9 +96,12 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ### Step 3: IMPROVE（スキル/ルール化検討 + テスト管理）
 
-1. → **エージェント委譲**（propose-manage.md / sonnet）
-2. `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に保存
-3. TDDタスクがあった場合:
+references/propose-manage.md を参照し、Step 1-2 の結果からスキル/ルール化候補を検討して IMPROVEMENTS.md を Write する。
+
+1. 既存スキル/ルール一覧を Glob で収集
+2. OpenCode CLI（またはフォールバック基準）で改善分析
+3. `docs/FEATURES/{feature-slug}/IMPROVEMENTS.md` に保存
+4. TDDタスクがあった場合:
    - → **AskUserQuestion** でテスト整理方針を確認（整理する/すべて保持/スキップ）
    - 選択に応じてテストの簡素化・削除を実行
 
@@ -130,4 +118,5 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: {type}, m
 
 ## 参照
 
-- agents/: review-analyze.md, update-design.md, propose-manage.md
+- agents/: code-simplifier（Step 2b 委譲先）
+- references/: review-analyze.md, update-design.md, propose-manage.md

@@ -21,23 +21,6 @@ allowed-tools:
 
 # ストーリー → タスク生成（dev:story）
 
-## エージェント委譲ルール
-
-**⚠️ 分析・分解・分類は必ずTaskエージェントに委譲する。自分で実行しない。**
-
-呼び出しパターン（全ステップ共通）:
-```
-agentContent = Read(".claude/skills/dev/story/agents/{agent}.md")
-Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-purpose", model: {指定モデル} })
-```
-
-| Step | agent | model | 追加コンテキスト |
-|------|-------|-------|-----------------|
-| 1a | analyze-story.md | opus | ユーザーのストーリー |
-| 1b | resolve-slug.md | haiku | story-analysis.json + 既存slug一覧 |
-| 2 | decompose-tasks.md | sonnet | story-analysis.jsonのパス |
-| 3 | plan-review.md | sonnet | story-analysis.json + task-list.json（OpenCode CLI使用） |
-
 ## 出力先
 
 `docs/FEATURES/{feature-slug}/{YYMMDD}_{story-slug}/` に2ファイルを**順次**保存する。
@@ -53,12 +36,12 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
    - plan.json が存在する場合:
      a. feature-slug は確定済み → 手順3の resolve-slug の feature 部分をスキップ
      b. plan.json の stories 配列から `executionType: "developing"` かつ未完了のストーリーを phase 順で AskUserQuestion に選択肢提示
-     c. 選択された story 情報を手順2の analyze-story のコンテキストとして渡す
+     c. 選択された story 情報を手順2の分析のコンテキストとして渡す
      d. story-slug は plan.json の slug を使用 → 手順3の resolve-slug の story 部分もスキップ可
    - plan.json が存在しない場合 → 従来通り手順1から実行
 1. ユーザーからストーリーを聞き取る
-2. → **エージェント委譲**（analyze-story.md / opus）
-3. → **エージェント委譲**（resolve-slug.md / haiku）— 既存slugとの類似判定・候補整理
+2. references/analyze-story.md を参照し、ストーリーを分析して story-analysis.json の内容を構成する
+3. → **Task（haiku）** に委譲（agents/resolve-slug.md）— 既存slugとの類似判定・候補整理
 4. **AskUserQuestion** で feature-slug / story-slug を確定（resolve-slugの推奨順で選択肢提示）
 5. ワークスペース初期化スクリプトを実行（`YYMMDD` 日付付きディレクトリが作成される）:
    ```bash
@@ -71,17 +54,18 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ### Step 2: タスク分解 + ワークフロー分類 → task-list.json
 
-1. → **エージェント委譲**（decompose-tasks.md / sonnet）
-   - エージェント内でGlob/Readによるコード探索・context作成を行う
-   - 各タスクに `workflow` フィールド（tdd/e2e/task）を付与
-2. 技術選定・方針に判断が必要ならAskUserQuestionで確認（自明ならスキップ可）
-3. **Write** で `task-list.json` を保存
+references/decompose-tasks.md を参照し、コードベースを Glob/Read で探索してタスク分解を行う。
+
+1. コード探索: 対象ファイルの特定、現状の把握、関連モジュール・既存テストの確認
+2. story-analysis.json のスコープに基づいてタスクを分解し、各タスクに `workflow` フィールド（tdd/e2e/task）を付与
+3. 技術選定・方針に判断が必要ならAskUserQuestionで確認（自明ならスキップ可）
+4. **Write** で `task-list.json` を保存
 
 **ゲート**: `task-list.json` が存在しなければ次に進まない。
 
 ### Step 3: 計画レビュー（OpenCode）
 
-1. → **エージェント委譲**（plan-review.md / sonnet）
+1. → **Task（sonnet）** に委譲（agents/plan-review.md）
    - OpenCode CLIを使用してtask-list.jsonのタスク分解をレビュー
    - タスク粒度、依存関係、ワークフロー分類、漏れ、リスクを検証
 2. レビュー結果をユーザーに提示
@@ -110,6 +94,6 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ## 参照
 
-- agents/: analyze-story.md, decompose-tasks.md, plan-review.md
-- references/: tdd-criteria.md, e2e-criteria.md, task-criteria.md
+- agents/: resolve-slug.md, plan-review.md
+- references/: analyze-story.md, decompose-tasks.md, tdd-criteria.md, e2e-criteria.md, task-criteria.md
 - ルール: `.claude/rules/workflow/workflow-branching.md`（自動適用）
