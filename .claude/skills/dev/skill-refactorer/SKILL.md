@@ -39,7 +39,7 @@ allowed-tools:
 
 ### Phase 1: 分析
 
-1. Read で対象SKILL.mdと関連ファイル（agents/, references/, scripts/, templates/）を読み込む
+1. Read で対象SKILL.mdと関連ファイル（agents/, references/, scripts/）を読み込む
 2. Read で `references/patterns.md` を読み込む
 3. 7ステップのチェック項目に沿って問題点を洗い出す
 4. **AskUserQuestion** で分析結果をユーザーと共有し、方針を合意する
