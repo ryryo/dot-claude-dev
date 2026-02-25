@@ -78,18 +78,13 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 ### Step 4: フィーチャー分析・ストーリー分割
 
-1. 配置済みの PLAN.md を Read:
-   ```
-   Read("docs/FEATURES/{feature-slug}/PLAN.md")
-   ```
-2. → **エージェント委譲**（analyze-epic.md / opus）
-   - 配置済み PLAN.md の構成に従って内容を生成
+1. → **エージェント委譲**（analyze-epic.md / opus）
+   - 配置済み PLAN.md を Read して構成を把握
+   - テンプレート構成に従って PLAN.md の内容を生成・**直接 Write で上書き**
    - ストーリー一覧（executionType 付き）を生成
-   - plan.json の内容を生成
-3. **Write** で `PLAN.md` を上書き保存（生成内容で更新）
-4. **Write** で `plan.json` を上書き保存（生成内容で更新）
+   - plan.json の内容を生成・**直接 Write で上書き**
 
-**ゲート**: analyze-epic の出力に PLAN.md 内容と plan.json 内容が含まれなければ保存しない。
+**ゲート**: PLAN.md と plan.json がテンプレートから更新されていなければ次に進まない。
 
 ### Step 5: ユーザー確認
 

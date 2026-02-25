@@ -1,8 +1,8 @@
 ---
 name: analyze-epic
-description: フィーチャー要件を分析し、全体設計とストーリー分割を行う。配置済みの PLAN.md と plan.json を更新する内容を生成して返す。
+description: フィーチャー要件を分析し、全体設計とストーリー分割を行う。配置済みの PLAN.md と plan.json を直接更新する。
 model: opus
-allowed_tools: Read, Glob, Grep
+allowed_tools: Read, Write, Glob, Grep
 ---
 
 # Analyze Epic Agent
@@ -27,8 +27,8 @@ allowed_tools: Read, Glob, Grep
    - phase（所属フェーズ番号。1から順に）
    - dependencies（依存するストーリーの slug 配列）
 4. ストーリーをフェーズにグルーピングする（依存関係に基づく実行順序）
-5. PLAN.md のテンプレート構成に従って内容を作成
-6. plan.json の内容を作成（phases 配列を含む）
+5. PLAN.md のテンプレート構成に従って内容を作成し、**Write で直接上書き保存**
+6. plan.json の内容を作成し、**Write で直接上書き保存**
 
 ## executionType 判定基準
 
@@ -40,59 +40,63 @@ allowed_tools: Read, Glob, Grep
 
 ## 出力
 
-JSON形式で以下の構造を返す:
+エージェントが直接ファイルを書き込む:
+
+1. **Write** で `docs/FEATURES/{feature-slug}/PLAN.md` を上書き
+2. **Write** で `docs/FEATURES/{feature-slug}/plan.json` を上書き
+
+plan.json の構造:
 
 ```json
 {
-  "planMdContent": "# フィーチャー名\n\n## 注意書き\n...(PLAN.md の全文)",
-  "planJson": {
-    "feature": {
-      "slug": "user-auth",
-      "title": "ユーザー認証機能",
-      "description": "..."
+  "feature": {
+    "slug": "user-auth",
+    "title": "ユーザー認証機能",
+    "description": "..."
+  },
+  "stories": [
+    {
+      "slug": "login-form",
+      "title": "ログインフォーム",
+      "description": "...",
+      "executionType": "developing",
+      "phase": 1,
+      "dependencies": [],
+      "status": "pending"
     },
-    "stories": [
-      {
-        "slug": "login-form",
-        "title": "ログインフォーム",
-        "description": "...",
-        "executionType": "developing",
-        "phase": 1,
-        "dependencies": [],
-        "status": "pending"
-      },
-      {
-        "slug": "oauth-setup",
-        "title": "OAuthプロバイダー設定",
-        "description": "...",
-        "executionType": "manual",
-        "phase": 1,
-        "dependencies": [],
-        "status": "pending"
-      },
-      {
-        "slug": "social-login",
-        "title": "ソーシャルログイン",
-        "description": "...",
-        "executionType": "developing",
-        "phase": 2,
-        "dependencies": ["login-form", "oauth-setup"],
-        "status": "pending"
-      }
-    ],
-    "phases": [
-      { "number": 1, "name": "基盤構築", "description": "認証基盤とOAuth設定" },
-      { "number": 2, "name": "拡張機能", "description": "Phase 1 の完了が前提" }
-    ],
-    "metadata": {
-      "createdAt": "",
-      "status": "active"
+    {
+      "slug": "oauth-setup",
+      "title": "OAuthプロバイダー設定",
+      "description": "...",
+      "executionType": "manual",
+      "phase": 1,
+      "dependencies": [],
+      "status": "pending"
+    },
+    {
+      "slug": "social-login",
+      "title": "ソーシャルログイン",
+      "description": "...",
+      "executionType": "developing",
+      "phase": 2,
+      "dependencies": ["login-form", "oauth-setup"],
+      "status": "pending"
     }
+  ],
+  "phases": [
+    { "number": 1, "name": "基盤構築", "description": "認証基盤とOAuth設定" },
+    { "number": 2, "name": "拡張機能", "description": "Phase 1 の完了が前提" }
+  ],
+  "metadata": {
+    "createdAt": "",
+    "status": "active"
   }
 }
 ```
 
 注意: `metadata.createdAt` はオーケストレーターが後から設定する（日付取得後）。
+
+書き込み完了後、保存したファイルパスを返す。
 
 ## PLAN.md の構成
 
@@ -130,8 +134,11 @@ JSON形式で以下の構造を返す:
 6. feature.slug には確定済みの slug を設定する
 7. metadata.createdAt は空文字にしておく（後で設定される）
 8. plan.json には stories 配列に加えて phases 配列も含める
+9. 生成した内容を Write で直接ファイルに書き込む（PLAN.md と plan.json の両方）
 
-## 出力形式
+## 出力
 
-JSON形式で出力してください。
+Write で以下のファイルを直接保存し、保存したファイルパスを返してください:
+- `docs/FEATURES/{feature-slug}/PLAN.md`
+- `docs/FEATURES/{feature-slug}/plan.json`
 ```
