@@ -11,7 +11,7 @@ cd my-new-project
 git init
 
 # 2. Claude設定をリンク
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 
 # 3. プロジェクトのCLAUDE.mdを作成（任意）
 cat > CLAUDE.md << 'EOF'
@@ -43,7 +43,7 @@ cd /path/to/existing-project
 mv .claude .claude.backup
 
 # 共通設定をリンク
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 
 # プロジェクト固有の設定を復元（必要に応じて）
 cp .claude.backup/settings.local.json .claude/
@@ -117,7 +117,7 @@ EOF
 
 ```bash
 cd ~/projects/react-app
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 
 # プロジェクト固有
 mkdir -p .claude/rules/project
@@ -128,7 +128,7 @@ echo "# Reactプロジェクト特有のルール" > .claude/rules/project/react
 
 ```bash
 cd ~/projects/laravel-api
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 
 # プロジェクト固有
 mkdir -p .claude/rules/project
@@ -155,7 +155,7 @@ git clone https://github.com/yourname/dot-claude-dev.git .claude-shared
 
 # Windowsプロジェクトでも使える
 cd /mnt/c/Users/yourname/projects/my-project
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 ```
 
 ### Windows側で確認
@@ -177,7 +177,7 @@ git clone https://github.com/your-team/claude-shared.git ~/.claude-shared
 
 # 2. プロジェクトで適用
 cd /path/to/team-project
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 
 # 3. プロジェクト固有設定（各自）
 cat > .claude/settings.local.json << 'EOF'
@@ -212,7 +212,7 @@ ls -la .claude/skills/
 find .claude -type l ! -exec test -e {} \; -delete
 
 # 再リンク
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 ```
 
 ### 共有ディレクトリ移動
@@ -228,5 +228,5 @@ echo 'export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"' >> ~/.bashrc
 # 全プロジェクトで再リンク
 cd /path/to/project1
 find .claude -type l -delete
-bash "$CLAUDE_SHARED_DIR/setup-claude.sh"
+bash "$CLAUDE_SHARED_DIR/scripts/setup-claude.sh"
 ```

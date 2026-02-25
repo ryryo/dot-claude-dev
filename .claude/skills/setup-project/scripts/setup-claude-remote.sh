@@ -33,9 +33,9 @@ else
 fi
 
 # setup-claude.sh を実行（初回 or アップデート後）
-if [ -f "$SHARED_DIR/setup-claude.sh" ]; then
+if [ -f "$SHARED_DIR/scripts/setup-claude.sh" ]; then
   echo "[setup-claude-remote] Running setup-claude.sh..."
-  CLAUDE_SHARED_DIR="$SHARED_DIR" bash "$SHARED_DIR/setup-claude.sh"
+  CLAUDE_SHARED_DIR="$SHARED_DIR" bash "$SHARED_DIR/scripts/setup-claude.sh"
 else
   echo "[setup-claude-remote] WARNING: setup-claude.sh not found in shared repo."
 fi

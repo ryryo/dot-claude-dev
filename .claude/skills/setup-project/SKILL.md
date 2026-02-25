@@ -40,7 +40,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/check-claude-setup.sh" 
 ## Step 2: setup-claude.sh 実行
 
 ```bash
-cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/setup-claude.sh"
+cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
 実行後、リンクが正しく作成されたか再確認:

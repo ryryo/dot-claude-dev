@@ -28,7 +28,7 @@ git clone https://github.com/ryryo/dot-claude-dev.git "$CLAUDE_SHARED_DIR"
 ```bash
 # 2. プロジェクトディレクトリで実行
 cd /path/to/your-project
-bash ~/.claude-shared/setup-claude.sh
+bash ~/.claude-shared/scripts/setup-claude.sh
 
 # WSL環境でも同様に動作
 ```

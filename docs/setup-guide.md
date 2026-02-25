@@ -33,7 +33,8 @@
 │           ├── commit-check.sh
 │           ├── memory-persistence/
 │           └── strategic-compact/
-└── setup-claude.sh        # セットアップスクリプト
+└── scripts/
+    └── setup-claude.sh    # セットアップスクリプト
 ```
 
 ### 各プロジェクト（シンボリックリンク後）
@@ -92,7 +93,7 @@ source ~/.zshrc
 
 ```bash
 cd /path/to/your-project
-bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/setup-claude.sh"
+bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
 ### 4. 確認
@@ -246,7 +247,7 @@ SessionStartフックで以下が自動実行されます:
 cd ~/dot-claude-dev && git pull
 
 # リンクが壊れた場合は再実行
-cd /path/to/your-project && bash ~/dot-claude-dev/setup-claude.sh
+cd /path/to/your-project && bash ~/dot-claude-dev/scripts/setup-claude.sh
 ```
 
 ## チーム開発
