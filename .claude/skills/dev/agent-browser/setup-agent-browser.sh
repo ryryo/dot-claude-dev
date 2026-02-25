@@ -78,10 +78,6 @@ else
   # 3. 修復: 既存バイナリ流用 → ダウンロード試行
   # ============================================================
 
-  # 要求バージョンをエラーメッセージから取得（data: URL と外部URLの両方を試行）
-  ERROR_MSG=$($PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1 || $PREFIX open 'https://example.com' 2>&1 || true)
-  close_browser
-  REQUIRED_VER=$(echo "$ERROR_MSG" | grep -oP 'chromium_headless_shell-\K[0-9]+' | head -1)
   # Playwright cache path（WSL/Mac/Cloud Code Web 対応）
   if [[ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ]]; then
     PW_CACHE="$PLAYWRIGHT_BROWSERS_PATH"
@@ -92,36 +88,44 @@ else
   fi
 
   REPAIRED=false
+  AB_ROOT="$(npm root -g)/agent-browser"
 
-  # 3a. 別バージョンの既存バイナリがあればシンボリックリンクで流用
-  if [[ -n "$REQUIRED_VER" && -d "$PW_CACHE" ]]; then
-    log "Required: chromium_headless_shell-$REQUIRED_VER"
+  # 3a. browsers.json から要求リビジョンを取得し、既存バイナリでシンボリックリンク作成
+  if [[ -d "$PW_CACHE" ]]; then
+    LINK_OUTPUT=$(node -e "
+      const fs = require('fs'), path = require('path'), os = require('os');
+      const browsersJson = require(path.join('$AB_ROOT', 'node_modules/playwright-core/browsers.json'));
+      const cacheDir = '$PW_CACHE';
+      if (!fs.existsSync(cacheDir)) process.exit(0);
+      const dirs = fs.readdirSync(cacheDir);
+      for (const b of browsersJson.browsers) {
+        if (!['chromium','chromium-headless-shell'].includes(b.name)) continue;
+        const prefix = b.name === 'chromium' ? 'chromium-' : 'chromium_headless_shell-';
+        const req = prefix + b.revision;
+        if (dirs.includes(req)) continue;
+        const existing = dirs.find(d => d.startsWith(prefix) && d !== req && !d.startsWith('.'));
+        if (existing) console.log([req, existing, b.name].join('|'));
+      }
+    " 2>/dev/null || true)
 
-    # 既存の chromium_headless_shell バイナリを探す（要求バージョン以外）
-    for DIR in "$PW_CACHE"/chromium_headless_shell-*/; do
-      [[ -d "$DIR" ]] || continue
-      EXISTING_VER=$(basename "$DIR" | grep -oP '\d+')
-      [[ "$EXISTING_VER" == "$REQUIRED_VER" ]] && continue
-
-      # バイナリの実体を探す（ディレクトリ構造がバージョンで異なる）
-      EXISTING_BINARY=""
-      for CANDIDATE in \
-        "$DIR/chrome-linux/headless_shell" \
-        "$DIR/chrome-headless-shell-linux64/chrome-headless-shell"; do
-        if [[ -f "$CANDIDATE" ]]; then
-          EXISTING_BINARY="$CANDIDATE"
-          break
+    if [[ -n "$LINK_OUTPUT" ]]; then
+      echo "$LINK_OUTPUT" | while IFS='|' read -r REQUIRED EXISTING BNAME; do
+        if [[ "$BNAME" == "chromium-headless-shell" ]] && [[ -d "$PW_CACHE/$EXISTING/chrome-linux" ]] && [[ ! -d "$PW_CACHE/$EXISTING/chrome-headless-shell-linux64" ]]; then
+          # ディレクトリ構造変更のマッピング（chrome-linux/ → chrome-headless-shell-linux64/）
+          mkdir -p "$PW_CACHE/$REQUIRED/chrome-headless-shell-linux64"
+          ln -sf "$PW_CACHE/$EXISTING/chrome-linux/headless_shell" "$PW_CACHE/$REQUIRED/chrome-headless-shell-linux64/chrome-headless-shell"
+          for f in "$PW_CACHE/$EXISTING/chrome-linux/"*; do
+            [[ "$(basename "$f")" == "headless_shell" ]] && continue
+            ln -sf "$f" "$PW_CACHE/$REQUIRED/chrome-headless-shell-linux64/$(basename "$f")" 2>/dev/null
+          done
+          log "✓ $BNAME: $EXISTING → $REQUIRED (mapped)"
+        else
+          ln -sfn "$PW_CACHE/$EXISTING" "$PW_CACHE/$REQUIRED"
+          log "✓ $BNAME: $EXISTING → $REQUIRED (linked)"
         fi
       done
-      [[ -z "$EXISTING_BINARY" ]] && continue
-
-      REQUIRED_DIR="$PW_CACHE/chromium_headless_shell-${REQUIRED_VER}/chrome-headless-shell-linux64"
-      mkdir -p "$REQUIRED_DIR"
-      ln -sf "$EXISTING_BINARY" "$REQUIRED_DIR/chrome-headless-shell"
-      log "✓ Symlink: v$REQUIRED_VER → v$EXISTING_VER ($EXISTING_BINARY)"
       REPAIRED=true
-      break
-    done
+    fi
   fi
 
   # 3b. 既存バイナリがなければダウンロード試行
