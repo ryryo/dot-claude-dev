@@ -44,7 +44,38 @@ agent-browser open 'data:text/html,<h1>OK</h1>' 2>&1
 ```
 
 - **成功**（`✓` 表示）→ `agent-browser close` → 0-3 へ
-- **失敗**（`Executable doesn't exist`）→ Playwright ブラウザバイナリ不足。修復：
+- **失敗**（`Executable doesn't exist`）→ Playwright ブラウザバイナリ不足。環境を判定して修復：
+
+#### 環境判定
+
+```bash
+echo "${CLAUDE_CODE_REMOTE:-false}"
+```
+
+- `true` → **Cloud Code Web 環境** → 0-2a へ
+- `false` → **ローカルマシン** → 0-2b へ
+
+#### 0-2a. Cloud Code Web 環境の修復
+
+Cloud Code Web では `storage.googleapis.com` への接続がブロックされ、Playwright のブラウザダウンロードが失敗する。
+代わりに、環境にプリインストールされた古いバージョンのブラウザバイナリをシンボリックリンクで流用する。
+
+```bash
+# 1. agent-browser が要求するバージョンをエラーメッセージから特定
+#    例: "chromium_headless_shell-1208" → REQUIRED_VER=1208
+# 2. プリインストール済みバージョンを検索
+ls /root/.cache/ms-playwright/ | grep chromium_headless_shell
+#    例: chromium_headless_shell-1194 → EXISTING_VER=1194
+# 3. シンボリックリンクを作成
+REQUIRED_DIR="/root/.cache/ms-playwright/chromium_headless_shell-${REQUIRED_VER}/chrome-headless-shell-linux64"
+EXISTING_BINARY="/root/.cache/ms-playwright/chromium_headless_shell-${EXISTING_VER}/chrome-linux/headless_shell"
+mkdir -p "$REQUIRED_DIR"
+ln -sf "$EXISTING_BINARY" "$REQUIRED_DIR/chrome-headless-shell"
+```
+
+シンボリックリンク作成後に再度 `agent-browser open 'data:text/html,<h1>OK</h1>'` → 成功なら `agent-browser close` して続行、**再失敗なら AskUserQuestion で報告して中断**
+
+#### 0-2b. ローカルマシンの修復
 
 ```bash
 PW_VERSION=$(node -e "console.log(require('$(npm root -g)/agent-browser/node_modules/playwright-core/package.json').version)")
