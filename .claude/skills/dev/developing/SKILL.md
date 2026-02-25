@@ -150,9 +150,9 @@ loop:
 
 **planPath 参照**: task-list.json の `context.planPath` が存在する場合:
 1. Phase 2 開始時に planPath を Read し、当該ストーリーの設計情報（acceptanceCriteria, technicalNotes 等）を `$PLAN_CONTEXT` として保持する
-2. サブエージェント呼び出し時、タスクの実装にストーリー全体の設計情報が必要な場合は build-prompt.sh の追加コンテキストに `$PLAN_CONTEXT` を含める:
+2. サブエージェント呼び出し時、タスクの実装にストーリー全体の設計情報が必要な場合は build-prompt.sh の追加コンテキストに `$PLAN_CONTEXT` を含める。その際、用途を明示するヘッダーを付けること:
    ```
-   prompt = Bash("bash scripts/build-prompt.sh {agent} $LEARNINGS_PATH \"タスク: {name}\n{description}\" \"$PLAN_CONTEXT\"")
+   prompt = Bash("bash scripts/build-prompt.sh {agent} $LEARNINGS_PATH \"タスク: {name}\n{description}\" \"## 全体計画（設計判断・スコープ確認に参照）\n$PLAN_CONTEXT\"")
    ```
 3. メイン自身も実装方針やスコープ判断に迷った際に planPath を参照する
 
