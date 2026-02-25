@@ -390,7 +390,51 @@ git clean -f scripts/setup-opencode.sh scripts/setup-local.sh
 
 ## チェックリスト
 
-- [ ] slide_ad2: スクリプト更新 + settings.json 更新
-- [ ] ai-codlnk.com: スクリプト更新 + settings.json 更新（permissions 保持）
-- [ ] base-ui-design: スクリプト更新 + setup-local.sh カスタマイズ + settings.json 更新（enabledPlugins 保持）
-- [ ] meurai-editer: スクリプト更新 + setup-local.sh カスタマイズ + settings.json 更新（permissions 保持, matcher 統一）
+- [x] slide_ad2: スクリプト更新 + settings.json 更新
+- [x] ai-codlnk.com: スクリプト更新 + settings.json 更新（permissions 保持）
+- [x] base-ui-design: スクリプト更新 + setup-local.sh カスタマイズ + settings.json 更新（enabledPlugins 保持）
+- [x] meurai-editer: スクリプト更新 + setup-local.sh カスタマイズ + settings.json 更新（permissions 保持, matcher 統一）
+
+## 実行結果
+
+### 2026-02-26 実施
+
+#### Phase 1: SessionStart フック3分割 + settings.json 更新
+
+全4プロジェクトに対して以下を実施し、コミット＆プッシュ済み。
+
+| プロジェクト | コミット | ブランチ | 固有設定保持 | setup-local.sh カスタム |
+|---|---|---|---|---|
+| slide_ad2 | `79dae40` | master | なし | なし |
+| ai-codlnk.com | `13c84d6` | master | `permissions.defaultMode` | なし |
+| base-ui-design | `dfe4a5f` | main | `enabledPlugins` | pnpm install |
+| meurai-editer | `884a673` | develop | `permissions.defaultMode` | npm install x7 + types ビルド + git fetch |
+
+**共通変更内容:**
+- `setup-claude-remote.sh` → 新テンプレート（46行）に置換
+- `setup-opencode.sh` → 新規追加（opencode CLI セットアップ専用）
+- `setup-local.sh` → 新規作成（プロジェクト固有処理を旧スクリプトから移植）
+- `settings.json` → SessionStart 3フック構成に変更、PreToolUse (suggest-compact.sh) 削除
+- meurai-editer: `matcher: "startup"` → `matcher: ""` に統一
+
+#### Phase 2: セッション起動クラッシュ防止
+
+ai-codlnk.com の Cloud Code Web 環境で発見されたクラッシュ問題への対策を、dot-claude-dev 本体 + 全プロジェクトに適用。
+
+| ファイル | 問題 | 修正 |
+|---|---|---|
+| `scripts/setup-claude.sh` | `ln -sf` がディレクトリに対して循環symlink作成 | `ln -sfn` に変更（4箇所） |
+| `scripts/setup-opencode.sh` | エラー発生時にセッション起動がクラッシュ | `set +e` + `trap ERR` 追加 |
+| `setup-claude-remote.sh` | `cd`/`cd -` でCWD変更 + エラーでクラッシュ | `git -C` に変更 + `set +e` + `trap ERR` 追加 |
+
+| プロジェクト | コミット | ブランチ |
+|---|---|---|
+| dot-claude-dev | `55386ce` | master |
+| slide_ad2 | `11e6541` | master |
+| ai-codlnk.com | （既に適用済み） | master |
+| base-ui-design | `bfcab09` | main |
+| meurai-editer | `65a88d3` | develop |
+
+#### 追加対応: nvm
+
+slide_ad2 の `.nvmrc` が v22.12.0 を要求しており、コミット時に nvm の cd フックでエラーが発生。`nvm install 22.12.0` で解決。
