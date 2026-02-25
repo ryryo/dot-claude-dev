@@ -148,10 +148,13 @@ loop:
 
 ### Phase 2: タスク実行（workflow別ワークフロー）
 
-**planPath 参照**: task-list.json の `context.planPath` が存在する場合、設計判断やスコープ確認が必要な際にそのパスを Read して全体計画を参照すること。特に以下の場面で有用:
-- 実装方針に迷った場合
-- スコープの境界が不明確な場合
-- 他ストーリーとの依存関係を確認したい場合
+**planPath 参照**: task-list.json の `context.planPath` が存在する場合:
+1. Phase 2 開始時に planPath を Read し、当該ストーリーの設計情報（acceptanceCriteria, technicalNotes 等）を `$PLAN_CONTEXT` として保持する
+2. サブエージェント呼び出し時、タスクの実装にストーリー全体の設計情報が必要な場合は build-prompt.sh の追加コンテキストに `$PLAN_CONTEXT` を含める:
+   ```
+   prompt = Bash("bash scripts/build-prompt.sh {agent} $LEARNINGS_PATH \"タスク: {name}\n{description}\" \"$PLAN_CONTEXT\"")
+   ```
+3. メイン自身も実装方針やスコープ判断に迷った際に planPath を参照する
 
 #### E2E環境セットアップ（E2Eタスクが存在する場合、Phase 2開始前に1回実行）
 
