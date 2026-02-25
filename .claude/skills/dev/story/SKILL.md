@@ -36,7 +36,7 @@ allowed-tools:
    - plan.json が存在する場合:
      a. feature-slug は確定済み → 手順3の resolve-slug の feature 部分をスキップ
      b. plan.json の stories 配列から `executionType: "developing"` かつ未完了のストーリーを phase 順で AskUserQuestion に選択肢提示
-     c. 選択された story 情報を手順2の分析のコンテキストとして渡す
+     c. 選択された story のフィールド（description, acceptanceCriteria, affectedFiles, testImpact, technicalNotes, referenceImplementation）を `$STORY_PLAN` として保持し、手順2の分析のコンテキストとして使う
      d. story-slug は plan.json の slug を使用 → 手順3の resolve-slug の story 部分もスキップ可
    - plan.json が存在しない場合 → 従来通り手順1から実行
 1. ユーザーからストーリーを聞き取る
@@ -56,9 +56,10 @@ allowed-tools:
 
 references/decompose-tasks.md を参照し、コードベースを Glob/Read で探索してタスク分解を行う。
 
-1. コード探索: 対象ファイルの特定、現状の把握、関連モジュール・既存テストの確認
-2. story-analysis.json のスコープに基づいてタスクを分解し、各タスクに `workflow` フィールド（tdd/e2e/task）を付与
-3. **planPath 設定**: plan.json が存在する場合（dev:epic 連携時）、`context.planPath` に `docs/FEATURES/{feature-slug}/PLAN.md` のパスを設定する
+1. **plan.json の story 詳細を活用**（`$STORY_PLAN` が存在する場合）: affectedFiles をコード探索の起点に、technicalNotes を設計判断の参考に、acceptanceCriteria をタスクの網羅性チェックに使う
+2. コード探索: 対象ファイルの特定、現状の把握、関連モジュール・既存テストの確認
+3. story-analysis.json のスコープに基づいてタスクを分解し、各タスクに `workflow` フィールド（tdd/e2e/task）を付与
+4. **planPath 設定**: plan.json が存在する場合（dev:epic 連携時）、`context.planPath` に `docs/FEATURES/{feature-slug}/PLAN.md` のパスを設定する
 4. 技術選定・方針に判断が必要ならAskUserQuestionで確認（自明ならスキップ可）
 5. **Write** で `task-list.json` を保存
 
@@ -69,6 +70,7 @@ references/decompose-tasks.md を参照し、コードベースを Glob/Read で
 1. → **Task（sonnet）** に委譲（agents/plan-review.md）
    - OpenCode CLIを使用してtask-list.jsonのタスク分解をレビュー
    - タスク粒度、依存関係、ワークフロー分類、漏れ、リスクを検証
+   - `$STORY_PLAN` が存在する場合、plan-review のプロンプトに追加コンテキストとして渡す（acceptanceCriteria との整合性チェックに使用）
 2. レビュー結果をユーザーに提示
 3. 修正が必要なら Step 2 に戻る
 

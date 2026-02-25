@@ -22,6 +22,7 @@ task-list.jsonのタスク分解をOpenCode CLIでレビューする。
 
 - story-analysis.json
 - task-list.json
+- plan.json（dev:epic 連携時、オーケストレーターが追加コンテキストとして渡す）
 
 ## 実行フロー
 
@@ -46,6 +47,9 @@ Review this task breakdown:
 ## Task List
 {task-list.json内容}
 
+## Original Plan (if provided)
+{plan.json の当該ストーリー情報: acceptanceCriteria, affectedFiles, technicalNotes — なければ 'N/A'}
+
 Analyze:
 1. Task granularity - Too big? Too small?
    - Each task should be completable in 1-2 hours
@@ -68,7 +72,11 @@ Analyze:
    - Testing tasks
    - Documentation tasks
 
-5. Risk assessment - Potential blockers?
+5. Plan alignment (if Original Plan provided) - Do tasks cover all acceptanceCriteria?
+   - Are affectedFiles from the plan reflected in task files?
+   - Are technicalNotes addressed?
+
+6. Risk assessment - Potential blockers?
    - External dependencies
    - Technical unknowns
    - Integration points
