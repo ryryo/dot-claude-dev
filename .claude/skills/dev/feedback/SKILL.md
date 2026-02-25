@@ -56,6 +56,14 @@ allowed-tools:
 
 **ゲート**: `feature-slug` + `story-slug` が確定
 
+#### 0c: ワークスペース初期化
+
+```bash
+bash .claude/skills/dev/feedback/scripts/init-feedback-workspace.sh {feature-slug}
+```
+
+DESIGN.md / IMPROVEMENTS.md が未作成の場合のみテンプレートを配置する（既存ファイルは上書きしない）。
+
 ---
 
 ### Step 1: REVIEW（品質ゲート + 変更分析）
@@ -94,9 +102,9 @@ references/update-design.md を参照し、Step 1 の分析結果を元に DESIG
 
 **ゲート**: 機能DESIGN.md + 総合DESIGN.md更新完了
 
-### Step 3: IMPROVE（ルール化検討 + CLAUDE.md更新 + テスト管理）
+### Step 3: IMPROVE（ルール化検討 + CLAUDE.md更新検討 + テスト管理）
 
-references/propose-manage.md を参照し、Step 1-2 の結果からルール化候補・CLAUDE.md更新候補を検討して IMPROVEMENTS.md を Write する。
+references/propose-manage.md を参照し、Step 1-2 の結果からルール化・CLAUDE.md更新の候補を検討して IMPROVEMENTS.md を Write する。
 
 1. 既存ルール一覧を `Glob(".claude/rules/**/*.md")` で収集、CLAUDE.md を Read
 2. OpenCode CLI（またはフォールバック基準）で改善分析
@@ -114,10 +122,12 @@ references/propose-manage.md を参照し、Step 1-2 の結果からルール化
 - [ ] 実装レビュー + 変更分析が完了した（Step 1）
 - [ ] 機能DESIGN.mdが更新された（Step 2a）
 - [ ] 総合DESIGN.mdが更新・整理された（Step 2a + 2b）
-- [ ] ルール化候補・CLAUDE.md更新候補が検討された（Step 3）
+- [ ] ルール化・CLAUDE.md更新の候補が検討された（Step 3）
 - [ ] テスト資産が整理された（TDD時）（Step 3）
 
 ## 参照
 
 - agents/: code-simplifier（Step 2b 委譲先）
 - references/: review-analyze.md, update-design.md, propose-manage.md
+- references/templates/: DESIGN.template.md, IMPROVEMENTS.template.md
+- scripts/: init-feedback-workspace.sh
