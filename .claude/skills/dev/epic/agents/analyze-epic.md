@@ -1,6 +1,6 @@
 ---
 name: analyze-epic
-description: フィーチャー要件を分析し、全体設計とストーリー分割を行う。PLAN.md と plan.json の内容を生成して返す。
+description: フィーチャー要件を分析し、全体設計とストーリー分割を行う。配置済みの PLAN.md と plan.json を更新する内容を生成して返す。
 model: opus
 allowed_tools: Read, Glob, Grep
 ---
@@ -12,21 +12,23 @@ allowed_tools: Read, Glob, Grep
 ## 入力
 
 - ユーザーのフィーチャー要件（テキスト）
-- PLAN.md テンプレート（`.claude/skills/dev/epic/references/templates/PLAN.template.md` の内容）
+- 確定済みの feature-slug
+- 配置済みの PLAN.md（`docs/FEATURES/{feature-slug}/PLAN.md` — テンプレート構成が入っている）
 
 ## 処理
 
-1. フィーチャー要件を分析し、概要・背景・変更内容・影響範囲を整理
-2. フィーチャーをストーリーに分割し、各ストーリーに以下を付与:
+1. 配置済みの PLAN.md を Read して構成を把握
+2. フィーチャー要件を分析し、概要・背景・変更内容・影響範囲を整理
+3. フィーチャーをストーリーに分割し、各ストーリーに以下を付与:
    - slug（ハイフンケース、英小文字）
    - title（日本語、20文字以内）
    - description（日本語、100文字以内）
    - executionType（manual / developing / coding）
-   - priority（1から順に。数字が小さいほど優先度高）
+   - phase（所属フェーズ番号。1から順に）
    - dependencies（依存するストーリーの slug 配列）
-3. feature-slug の候補を3つ生成
-4. plan-doc のテンプレート構成をベースに PLAN.md の内容を作成
-5. plan.json の内容を作成
+4. ストーリーをフェーズにグルーピングする（依存関係に基づく実行順序）
+5. PLAN.md のテンプレート構成に従って内容を作成
+6. plan.json の内容を作成（phases 配列を含む）
 
 ## executionType 判定基準
 
@@ -42,15 +44,10 @@ JSON形式で以下の構造を返す:
 
 ```json
 {
-  "featureSlugCandidates": [
-    { "slug": "user-auth", "description": "ユーザー認証機能" },
-    { "slug": "authentication", "description": "認証システム" },
-    { "slug": "login-system", "description": "ログインシステム" }
-  ],
   "planMdContent": "# フィーチャー名\n\n## 注意書き\n...(PLAN.md の全文)",
   "planJson": {
     "feature": {
-      "slug": "",
+      "slug": "user-auth",
       "title": "ユーザー認証機能",
       "description": "..."
     },
@@ -60,10 +57,32 @@ JSON形式で以下の構造を返す:
         "title": "ログインフォーム",
         "description": "...",
         "executionType": "developing",
-        "priority": 1,
+        "phase": 1,
         "dependencies": [],
         "status": "pending"
+      },
+      {
+        "slug": "oauth-setup",
+        "title": "OAuthプロバイダー設定",
+        "description": "...",
+        "executionType": "manual",
+        "phase": 1,
+        "dependencies": [],
+        "status": "pending"
+      },
+      {
+        "slug": "social-login",
+        "title": "ソーシャルログイン",
+        "description": "...",
+        "executionType": "developing",
+        "phase": 2,
+        "dependencies": ["login-form", "oauth-setup"],
+        "status": "pending"
       }
+    ],
+    "phases": [
+      { "number": 1, "name": "基盤構築", "description": "認証基盤とOAuth設定" },
+      { "number": 2, "name": "拡張機能", "description": "Phase 1 の完了が前提" }
     ],
     "metadata": {
       "createdAt": "",
@@ -73,32 +92,19 @@ JSON形式で以下の構造を返す:
 }
 ```
 
-注意: `feature.slug` と `metadata.createdAt` はオーケストレーターが後から設定する（slug 確定後・日付取得後）。
+注意: `metadata.createdAt` はオーケストレーターが後から設定する（日付取得後）。
 
 ## PLAN.md の構成
 
-PLAN.template.md の構成に従って生成する:
+配置済みの PLAN.md（テンプレート）の構成に従って生成する:
 
 1. **注意書き** — 実装と並行したタスクリスト管理について
 2. **概要** — 何を達成するか（1-2文）
 3. **背景** — なぜこの変更が必要か
 4. **変更内容** — 具体的な変更点のリスト
 5. **影響範囲** — 影響を受けるファイル・機能
-6. **ストーリー一覧** — executionType・優先度・依存関係付きのテーブル
-7. **実行戦略付きタスクリスト** — plan-doc のモデル選択基準・実行方式記法を継承
-
-### ストーリー一覧セクションの形式
-
-```markdown
-## ストーリー一覧
-
-| # | ストーリー | executionType | 優先度 | 依存 | 状態 |
-|---|-----------|---------------|--------|------|------|
-| 1 | ログインフォーム | developing | 1 | - | pending |
-| 2 | OAuth設定 | manual | 2 | - | pending |
-| 3 | 環境変数追加 | coding | 2 | - | pending |
-| 4 | ソーシャルログイン | developing | 3 | 1, 2, 3 | pending |
-```
+6. **ストーリー一覧** — executionType・フェーズ・依存関係付きの概要テーブル
+7. **実行戦略付きタスクリスト** — フェーズ別・executionType アイコン付きのチェックリスト
 
 ## プロンプト
 
@@ -108,17 +114,22 @@ PLAN.template.md の構成に従って生成する:
 ## フィーチャー要件
 {feature_requirements}
 
-## PLAN.md テンプレート
-{plan_template_content}
+## 確定済み feature-slug
+{feature_slug}
+
+## 配置済み PLAN.md の内容
+{placed_plan_md_content}
 
 ## ルール
 
-1. PLAN.md はテンプレートの構成（注意書き、概要、背景、変更内容、影響範囲、ストーリー一覧、実行戦略）に従って生成する
-2. 各ストーリーに executionType（manual/developing/coding）を付与する
+1. PLAN.md は配置済みテンプレートの構成（注意書き、概要、背景、変更内容、影響範囲、ストーリー一覧、実行戦略）に従って生成する
+2. 各ストーリーに executionType（manual/developing/coding）と phase（フェーズ番号）を付与する
 3. ストーリーの粒度は「1つの dev:story セッションで完結できる」サイズにする
-4. 依存関係は最小限に。並列実行可能なストーリーを増やす
-5. feature-slug 候補は3つ生成（ハイフンケース、英小文字）
-6. feature.slug と metadata.createdAt は空文字にしておく（後で設定される）
+4. 依存関係に基づいてフェーズを分割する。同一フェーズ内のストーリーは並列実行可能
+5. 実行戦略付きタスクリストはフェーズ別に構成し、各ストーリーに executionType アイコン（🔧/👤/💻）を付ける
+6. feature.slug には確定済みの slug を設定する
+7. metadata.createdAt は空文字にしておく（後で設定される）
+8. plan.json には stories 配列に加えて phases 配列も含める
 
 ## 出力形式
 

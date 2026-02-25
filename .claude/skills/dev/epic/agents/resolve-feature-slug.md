@@ -1,24 +1,25 @@
 ---
 name: resolve-feature-slug
-description: 既存の feature-slug を探索し、slug 候補との類似性を判定して推奨順位を付ける。新規 slug 乱立を防ぐ。
+description: フィーチャー要件から slug 候補を生成し、既存 feature-slug との類似性を判定して推奨順位を付ける。
 model: haiku
 allowed_tools: Glob
 ---
 
 # Resolve Feature Slug Agent
 
-既存の feature-slug を探索し、analyze-epic が生成した slug 候補との類似性を判定して、推奨順位を付ける。
+フィーチャーの基本要件から slug 候補を生成し、既存の feature-slug と比較して推奨順位を付ける。
 
 ## 入力
 
-- analyze-epic の出力（featureSlugCandidates）
+- ユーザーのフィーチャー要件（テキスト）
 - 既存 feature-slug の一覧（Glob で取得）
 
 ## 処理
 
-1. `Glob("docs/FEATURES/*/")` で既存 feature-slug ディレクトリを一覧取得
-2. 各既存 slug について、analyze-epic の featureSlugCandidates と意味的に類似するか判定
-3. 類似するものがあれば「既存 slug を再利用」を推奨候補の先頭に配置
+1. フィーチャー要件から slug 候補を3つ生成（ハイフンケース、英小文字）
+2. `Glob("docs/FEATURES/*/")` で既存 feature-slug ディレクトリを一覧取得
+3. 各既存 slug について、生成した候補と意味的に類似するか判定
+4. 類似するものがあれば「既存 slug を再利用」を推奨候補の先頭に配置
 
 ## 出力
 
@@ -38,20 +39,21 @@ JSON形式:
 ## プロンプト
 
 ```
-既存の feature-slug と新しい slug 候補を比較し、推奨順位を付けてください。
+フィーチャー要件から slug 候補を生成し、既存 slug と比較して推奨順位を付けてください。
+
+## フィーチャー要件
+{feature_requirements}
 
 ## 既存 feature-slug 一覧
 {existing_slugs}
 
-## analyze-epic の slug 候補
-{slug_candidates}
-
 ## ルール
 
-1. 既存 slug と意味的に同じ・類似するものがあれば、既存 slug を推奨（isExisting: true, recommended: true）
-2. 新規 slug は既存と重複しない場合のみ候補に含める
-3. featureOptions は推奨順にソート（recommended=true が先頭）
-4. 既存 slug がない場合は、候補をそのまま返す（最初の候補を recommended: true に）
+1. フィーチャー要件の内容を端的に表す slug 候補を3つ生成する（ハイフンケース、英小文字、2-4語）
+2. 既存 slug と意味的に同じ・類似するものがあれば、既存 slug を推奨（isExisting: true, recommended: true）
+3. 新規 slug は既存と重複しない場合のみ候補に含める
+4. featureOptions は推奨順にソート（recommended=true が先頭）
+5. 既存 slug がない場合は、生成した候補をそのまま返す（最初の候補を recommended: true に）
 
 ## 出力形式
 

@@ -2,8 +2,8 @@
 name: dev:epic
 description: |
   フィーチャー全体の設計・ストーリー分割を行い、PLAN.md と plan.json を生成。
-  plan-doc の構成を継承しつつ、ストーリー駆動開発フローと統合する。
-  dev:story の上位レイヤーとして、フィーチャーレベルの計画を立てる。
+  ストーリー駆動開発フローと統合し、dev:story の上位レイヤーとして機能する。
+  各ストーリーに executionType とフェーズを付与し、実行計画を構造化する。
 
   Trigger:
   フィーチャー計画, エピック作成, 全体設計, /dev:epic
@@ -33,8 +33,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 | Step | agent | model | 追加コンテキスト |
 |------|-------|-------|-----------------|
-| 1 | analyze-epic.md | opus | ユーザーのフィーチャー要件 + plan-doc テンプレート構成 |
-| 2 | resolve-feature-slug.md | haiku | analyze-epic の slug 候補 + 既存 feature 一覧 |
+| 2 | resolve-feature-slug.md | haiku | ユーザーのフィーチャー要件 + 既存 feature 一覧 |
+| 4 | analyze-epic.md | opus | ユーザーのフィーチャー要件 + 確定slug + 配置済み PLAN.md |
 
 ## 出力先
 
@@ -42,7 +42,7 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 | ファイル | 用途 |
 |----------|------|
-| `PLAN.md` | 人間用の設計ドキュメント（plan-doc 構成ベース + ストーリー一覧） |
+| `PLAN.md` | 人間用の設計ドキュメント（ストーリー一覧 + フェーズ別実行計画） |
 | `plan.json` | 構造化データ（stories 配列、executionType、依存関係、優先度） |
 
 ---
@@ -58,41 +58,45 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 要件が不明確な場合は AskUserQuestion で段階的にヒアリング。
 
-### Step 2: フィーチャー分析・ストーリー分割 → PLAN.md / plan.json の内容生成
+### Step 2: feature-slug 解決
 
-1. PLAN.md テンプレートを Read:
-   ```
-   Read(".claude/skills/dev/epic/references/templates/PLAN.template.md")
-   ```
-2. → **エージェント委譲**（analyze-epic.md / opus）
-   - テンプレートの構成に従って PLAN.md の内容を生成
-   - ストーリー一覧（executionType 付き）を生成
-   - plan.json の内容を生成
-
-**ゲート**: analyze-epic の出力に PLAN.md 内容と plan.json 内容が含まれなければ次に進まない。
-
-### Step 3: feature-slug 解決・確定
-
-1. → **エージェント委譲**（resolve-feature-slug.md / haiku）— 既存 feature との重複チェック
+1. → **エージェント委譲**（resolve-feature-slug.md / haiku）
+   - フィーチャー要件から slug 候補を3つ生成
+   - 既存 feature との重複チェック
+   - 推奨順位付きで返却
 2. **AskUserQuestion** で feature-slug をユーザーが最終確定（resolve の推奨順で選択肢提示）
 
-### Step 4: ワークスペース初期化・ファイル保存
+### Step 3: ワークスペース初期化
 
 1. ワークスペース初期化スクリプトを実行:
    ```bash
    bash .claude/skills/dev/epic/scripts/init-feature-workspace.sh {feature-slug}
    ```
-2. **Write** で `PLAN.md` を保存
-3. **Write** で `plan.json` を保存
+   → `docs/FEATURES/{feature-slug}/` に PLAN.md（テンプレート）と plan.json（テンプレート）が配置される
 
-**ゲート**: PLAN.md と plan.json が両方存在しなければ次に進まない。
+**ゲート**: PLAN.md と plan.json のテンプレートが配置されていなければ次に進まない。
+
+### Step 4: フィーチャー分析・ストーリー分割
+
+1. 配置済みの PLAN.md を Read:
+   ```
+   Read("docs/FEATURES/{feature-slug}/PLAN.md")
+   ```
+2. → **エージェント委譲**（analyze-epic.md / opus）
+   - 配置済み PLAN.md の構成に従って内容を生成
+   - ストーリー一覧（executionType 付き）を生成
+   - plan.json の内容を生成
+3. **Write** で `PLAN.md` を上書き保存（生成内容で更新）
+4. **Write** で `plan.json` を上書き保存（生成内容で更新）
+
+**ゲート**: analyze-epic の出力に PLAN.md 内容と plan.json 内容が含まれなければ保存しない。
 
 ### Step 5: ユーザー確認
 
 1. PLAN.md の概要とストーリー一覧をユーザーに提示
 2. AskUserQuestion で確認:
    - **承認** → 完了。dev:story で個別ストーリーの詳細化へ
-   - **修正が必要** → ユーザー指示に従い修正 → Step 4 から再保存
+   - **修正が必要** → ユーザー指示に従い修正 → Step 4 から再実行
 
 ---
 
@@ -119,8 +123,8 @@ Task({ prompt: agentContent + 追加コンテキスト, subagent_type: "general-
 
 | ファイル | Step |
 |----------|------|
-| `PLAN.md` | Step 4 |
-| `plan.json` | Step 4 |
+| `PLAN.md` | Step 3（テンプレート配置） → Step 4（内容生成・上書き） |
+| `plan.json` | Step 3（テンプレート配置） → Step 4（内容生成・上書き） |
 
 - 各ストーリーに `executionType` が付与されている
 - ユーザーが承認済み
