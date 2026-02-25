@@ -1,9 +1,8 @@
 ---
 name: skill-refactorer
 description: |
-  SKILL.mdファイルを整理・圧縮するスキル。
-  10のリファクタリングパターンをチェックリストとして適用し、
-  SKILL.mdをオーケストレータとして200行未満に再構成する。
+  SKILL.mdを最も効率的に動作するよう整理するスキル。
+  7ステップのリファクタリング手順でスキルの実行効率・コンテキスト効率を最適化する。
 
   Trigger:
   スキル整理, SKILL.md圧縮, スキルリファクタ, skill refactor, refactor skill
@@ -20,53 +19,41 @@ allowed-tools:
 
 # SKILL.md整理（skill-refactorer）
 
-## 10パターン
+## リファクタリング手順
 
-詳細・チェック項目は [references/patterns.md](.claude/skills/dev/skill-refactorer/references/patterns.md) を必ず参照。
+詳細は [references/patterns.md](.claude/skills/dev/skill-refactorer/references/patterns.md) を必ず参照。
 
-| # | パターン | 要点 |
-|---|----------|------|
-| 1 | 圧縮 | 詳細を外部に移し200行未満に |
-| 2 | DRY化 | 繰り返しを冒頭定義+テーブルに集約 |
-| 3 | LLM行動制御 | 委譲処理に「自分でやらない」明示+呼び出しコード |
-| 4 | ゲート条件 | 各ステップ末尾にファイル存在チェック |
-| 5 | 責務分離 | SKILL.mdはオーケストレータ、詳細はagents/references/ |
-| 6 | 廃止・整理 | 未使用参照・冗長例を削除 |
-| 7 | 構造化 | frontmatter→ルール→手順→完了条件の統一構成 |
-| 8 | 委譲適切性 | 各Stepのメイン/委譲を判定、スキル構造に応じた記述 |
-| 9 | テンプレート化 | 新規ファイルはテンプレート+initスクリプトで事前配置 |
-| 10 | agents/references配置 | 委譲用→agents/、参照用→references/、雛形→templates/ |
+| Step | 内容 | 判断ポイント |
+|------|------|-------------|
+| 1 | 各Stepの実行方式を判定 | メイン実行 vs Task委譲、スキル全体の記述方式 |
+| 2 | ファイル配置を整理 | agents/ vs references/ vs templates/ の判定フロー |
+| 3 | SKILL.mdから詳細を分離 | 何を外部に移すか、テンプレート化の判断 |
+| 4 | 繰り返し構造をDRY化 | 冒頭テーブル集約、1行参照化 |
+| 5 | LLMの行動制御 | 委譲の明示、ゲート条件の配置 |
+| 6 | 全体構造を整える | 理想構造への再構成 |
+| 7 | 不要なものを削除 | 未使用参照・冗長記述の除去 |
 
 ---
 
-## 実行手順
+## 実行フロー
 
-### Step 1: 現状分析
+### Phase 1: 分析
 
-1. Read で対象SKILL.mdと関連ファイル（agents/, references/）を読み込む
+1. Read で対象SKILL.mdと関連ファイル（agents/, references/, scripts/, templates/）を読み込む
 2. Read で `references/patterns.md` を読み込む
-3. **AskUserQuestion** で問題点をユーザーと共有:
-   - 行数、外部ファイル構成、Stepごとの実行方式
-   - 10パターンのうちどれが該当するかチェックリストで提示
+3. 7ステップのチェック項目に沿って問題点を洗い出す
+4. **AskUserQuestion** で分析結果をユーザーと共有し、方針を合意する
 
-### Step 2: 整理方針の合意
+### Phase 2: 適用
 
-1. 各パターンの適用箇所を具体的に提示
-2. **AskUserQuestion** で方針確認:
-   - 削除するセクション
-   - agents/ / references/ / templates/ / scripts/ への切り出し対象
-   - メイン化/委譲維持の判断
-
-### Step 3: 適用
-
-1. SKILL.md書き換え（Edit/Write）
-2. ファイル移動・新規作成（agents/, references/, templates/, scripts/）
-3. **AskUserQuestion** で結果確認
+1. 合意した方針に基づき、Step 1→7 の順に適用する
+2. ファイル移動・新規作成・SKILL.md書き換えを実行
+3. **AskUserQuestion** で結果を確認する
 
 ---
 
 ## 完了条件
 
-- [ ] SKILL.mdが200行未満
-- [ ] 10パターンのチェック項目をすべて確認済み
+- [ ] スキルの実行効率・コンテキスト効率が改善されている
+- [ ] 7ステップのチェック項目をすべて確認済み
 - [ ] ユーザーが承認済み
