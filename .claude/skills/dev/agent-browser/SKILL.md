@@ -24,76 +24,20 @@ allowed-tools:
 
 ## Step 0: 環境セットアップ
 
-### 0-1. CLI 存在確認 → PREFIX 確定
-
-実行可能なコマンド名を特定し、以降のステップで使う **PREFIX** として保持する。
+セットアップスクリプトを実行する。CLI インストール、ブラウザバイナリ修復、環境判定（ローカル / Cloud Code Web）をすべて自動処理する。
 
 ```bash
-which agent-browser 2>/dev/null && echo "FOUND" || echo "NOT_FOUND"
+# SKILL_DIR はこの SKILL.md と同じディレクトリ
+bash "${SKILL_DIR}/setup-agent-browser.sh" [--check-url URL]
 ```
 
-- `FOUND` → **PREFIX** にコマンド名を設定、0-2 へ
-- `NOT_FOUND` → **AskUserQuestion**: 「agent-browser CLI がありません。`npm install -g agent-browser` でインストールしますか？」
-  - 承認 → インストール実行 → **PREFIX** にコマンド名を設定、0-2 へ
-  - 拒否 → 中断
+- 最終行が `SUCCESS:<prefix>` → **PREFIX** を取得して Step 1 へ
+- 最終行が `FAIL:<reason>` → AskUserQuestion で `<reason>` を報告して中断
 
-### 0-2. ブラウザ動作確認
+### URL疎通確認
 
-```bash
-agent-browser open 'data:text/html,<h1>OK</h1>' 2>&1
-```
-
-- **成功**（`✓` 表示）→ `agent-browser close` → 0-3 へ
-- **失敗**（`Executable doesn't exist`）→ Playwright ブラウザバイナリ不足。環境を判定して修復：
-
-#### 環境判定
-
-```bash
-echo "${CLAUDE_CODE_REMOTE:-false}"
-```
-
-- `true` → **Cloud Code Web 環境** → 0-2a へ
-- `false` → **ローカルマシン** → 0-2b へ
-
-#### 0-2a. Cloud Code Web 環境の修復
-
-Cloud Code Web では `storage.googleapis.com` への接続がブロックされ、Playwright のブラウザダウンロードが失敗する。
-代わりに、環境にプリインストールされた古いバージョンのブラウザバイナリをシンボリックリンクで流用する。
-
-```bash
-# 1. agent-browser が要求するバージョンをエラーメッセージから特定
-#    例: "chromium_headless_shell-1208" → REQUIRED_VER=1208
-# 2. プリインストール済みバージョンを検索
-ls /root/.cache/ms-playwright/ | grep chromium_headless_shell
-#    例: chromium_headless_shell-1194 → EXISTING_VER=1194
-# 3. シンボリックリンクを作成
-REQUIRED_DIR="/root/.cache/ms-playwright/chromium_headless_shell-${REQUIRED_VER}/chrome-headless-shell-linux64"
-EXISTING_BINARY="/root/.cache/ms-playwright/chromium_headless_shell-${EXISTING_VER}/chrome-linux/headless_shell"
-mkdir -p "$REQUIRED_DIR"
-ln -sf "$EXISTING_BINARY" "$REQUIRED_DIR/chrome-headless-shell"
-```
-
-シンボリックリンク作成後に再度 `agent-browser open 'data:text/html,<h1>OK</h1>'` → 成功なら `agent-browser close` して続行、**再失敗なら AskUserQuestion で報告して中断**
-
-#### 0-2b. ローカルマシンの修復
-
-```bash
-PW_VERSION=$(node -e "console.log(require('$(npm root -g)/agent-browser/node_modules/playwright-core/package.json').version)")
-npx --package=playwright-core@$PW_VERSION -- playwright-core install chromium
-```
-
-修復後に再度 `agent-browser open 'data:text/html,<h1>OK</h1>'` → 成功なら続行、**再失敗なら AskUserQuestion で報告して中断**
-
-- **その他のエラー** → AskUserQuestion で報告して中断
-
-### 0-3. 対象URLの疎通確認（省略可）
-
-```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:XXXX
-```
-
-- `200` → OK
-- それ以外 → AskUserQuestion で「開発サーバーを起動しますか？」
+対象URLがある場合は `--check-url` オプションで渡す。スクリプトが疎通結果をログ出力する。
+サーバーが起動していない場合は AskUserQuestion で「開発サーバーを起動しますか？」と確認する。
 
 ## Step 1: レポートフォーマット選択
 
