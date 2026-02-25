@@ -121,16 +121,7 @@ dot-claude-dev で以下のリファクタリングを実施した:
 
 各プロジェクトに対して以下の順序で実行する。
 
-#### Step 1: バックアップ
-
-```bash
-PROJECT="~/PROJECT_NAME"
-mkdir -p "$PROJECT/.backup-260225"
-cp "$PROJECT/.claude/settings.json" "$PROJECT/.backup-260225/settings.json"
-cp "$PROJECT/scripts/setup-claude-remote.sh" "$PROJECT/.backup-260225/setup-claude-remote.sh"
-```
-
-#### Step 2: setup-claude-remote.sh の置換
+#### Step 1: setup-claude-remote.sh の置換
 
 旧テンプレート（opencode + agent-browser 込み）を新テンプレート（共通部分のみ）に置換:
 
@@ -139,13 +130,13 @@ TEMPLATE_DIR="$HOME/dot-claude-dev/.claude/skills/setup-project/scripts"
 cp "$TEMPLATE_DIR/setup-claude-remote.sh" "$PROJECT/scripts/setup-claude-remote.sh"
 ```
 
-#### Step 3: setup-opencode.sh のコピー
+#### Step 2: setup-opencode.sh のコピー
 
 ```bash
 cp "$HOME/dot-claude-dev/scripts/setup-opencode.sh" "$PROJECT/scripts/setup-opencode.sh"
 ```
 
-#### Step 4: setup-local.sh の作成
+#### Step 3: setup-local.sh の作成
 
 - プロジェクト固有セットアップが**ない**場合: テンプレートをそのままコピー
 - プロジェクト固有セットアップが**ある**場合: テンプレートをベースにカスタム部分を移植
@@ -156,7 +147,7 @@ cp "$TEMPLATE_DIR/setup-local.sh" "$PROJECT/scripts/setup-local.sh"
 # → カスタム部分がある場合は手動で追記
 ```
 
-#### Step 5: settings.json の更新
+#### Step 4: settings.json の更新
 
 既存の固有設定（permissions, enabledPlugins 等）を保持しつつ、hooks セクションを更新:
 - SessionStart: 3 フック構成に変更
@@ -164,7 +155,7 @@ cp "$TEMPLATE_DIR/setup-local.sh" "$PROJECT/scripts/setup-local.sh"
 - Stop: commit-check.sh を保持
 - その他固有設定: そのまま保持
 
-#### Step 6: 確認
+#### Step 5: 確認
 
 ```bash
 # スクリプトの存在確認
@@ -179,9 +170,9 @@ cat "$PROJECT/.claude/settings.json"
 
 #### 1. ai-codlnk.com（難易度: 低）
 
-- Step 1-3: 共通手順通り
-- Step 4: テンプレートをそのままコピー（カスタム部分なし）
-- Step 5: settings.json 更新
+- Step 1-2: 共通手順通り
+- Step 3: テンプレートをそのままコピー（カスタム部分なし）
+- Step 4: settings.json 更新
   - `permissions.defaultMode: bypassPermissions` を保持
   - SessionStart → 3 フック構成
   - PreToolUse セクション削除
@@ -216,11 +207,11 @@ cat "$PROJECT/.claude/settings.json"
 
 #### 2. base-ui-design（難易度: 中）
 
-- Step 1-3: 共通手順通り
-- Step 4: setup-local.sh にプロジェクト固有セットアップを移植
+- Step 1-2: 共通手順通り
+- Step 3: setup-local.sh にプロジェクト固有セットアップを移植
   - 移植元: 旧 setup-claude-remote.sh 末尾の「プロジェクト固有セットアップ」セクション
   - 移植内容: pnpm install（node_modules 未存在時）
-- Step 5: settings.json 更新
+- Step 4: settings.json 更新
   - `enabledPlugins` を保持
   - SessionStart → 3 フック構成
   - PreToolUse セクション削除
@@ -271,11 +262,11 @@ fi
 
 #### 3. meurai-editer（難易度: 高）
 
-- Step 1-3: 共通手順通り
-- Step 4: setup-local.sh に大量のプロジェクト固有セットアップを移植
+- Step 1-2: 共通手順通り
+- Step 3: setup-local.sh に大量のプロジェクト固有セットアップを移植
   - 移植元: 旧 setup-claude-remote.sh 末尾
   - 移植内容: 複数サブディレクトリの npm install + types ビルド + git fetch
-- Step 5: settings.json 更新
+- Step 4: settings.json 更新
   - `permissions.defaultMode: bypassPermissions` を保持
   - SessionStart の `matcher: "startup"` → `matcher: ""` に変更（統一）
   - PreToolUse セクション削除
@@ -348,9 +339,9 @@ echo "[setup-local] git fetch: done."
 
 #### 4. slide_ad2（難易度: 低）
 
-- Step 1-3: 共通手順通り
-- Step 4: テンプレートをそのままコピー（カスタム部分なし）
-- Step 5: settings.json 更新
+- Step 1-2: 共通手順通り
+- Step 3: テンプレートをそのままコピー（カスタム部分なし）
+- Step 4: settings.json 更新
   - 固有設定なし
   - SessionStart → 3 フック構成
   - PreToolUse セクション削除
@@ -389,23 +380,12 @@ echo "[setup-local] git fetch: done."
 
 ### ロールバック手順
 
-問題が発生した場合:
+各プロジェクトはGit管理下のため、問題が発生した場合は `git checkout` で戻せる:
 
 ```bash
-PROJECT="~/PROJECT_NAME"
-cp "$PROJECT/.backup-260225/settings.json" "$PROJECT/.claude/settings.json"
-cp "$PROJECT/.backup-260225/setup-claude-remote.sh" "$PROJECT/scripts/setup-claude-remote.sh"
-rm -f "$PROJECT/scripts/setup-opencode.sh" "$PROJECT/scripts/setup-local.sh"
-```
-
-### バックアップの削除
-
-全プロジェクトの動作確認後:
-
-```bash
-for proj in ai-codlnk.com base-ui-design meurai-editer slide_ad2; do
-  rm -rf ~/"$proj"/.backup-260225
-done
+cd ~/PROJECT_NAME
+git checkout -- scripts/setup-claude-remote.sh .claude/settings.json
+git clean -f scripts/setup-opencode.sh scripts/setup-local.sh
 ```
 
 ## チェックリスト
@@ -414,4 +394,3 @@ done
 - [ ] ai-codlnk.com: スクリプト更新 + settings.json 更新（permissions 保持）
 - [ ] base-ui-design: スクリプト更新 + setup-local.sh カスタマイズ + settings.json 更新（enabledPlugins 保持）
 - [ ] meurai-editer: スクリプト更新 + setup-local.sh カスタマイズ + settings.json 更新（permissions 保持, matcher 統一）
-- [ ] 全プロジェクト: バックアップ削除

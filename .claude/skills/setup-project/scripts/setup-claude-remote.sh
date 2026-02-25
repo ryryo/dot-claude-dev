@@ -13,16 +13,19 @@ if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
   exit 0
 fi
 
+# セッション起動を妨げない
+set +e
+trap 'echo "[setup-claude-remote] WARNING: error occurred, continuing"; exit 0' ERR
+
 SHARED_REPO="https://github.com/ryryo/dot-claude-dev.git"
 SHARED_DIR="$HOME/.dot-claude-dev"
 
 # --- dot-claude-dev セットアップ ---
 
-# クローン or アップデート
+# クローン or アップデート（cd せず git -C を使い CWD を変えない）
 if [ -d "$SHARED_DIR" ]; then
   echo "[setup-claude-remote] ~/.dot-claude-dev already exists, updating..."
-  cd "$SHARED_DIR" && git pull origin master 2>&1 | grep -v "Already up to date" || echo "[setup-claude-remote] Updated to latest"
-  cd - > /dev/null
+  git -C "$SHARED_DIR" pull origin master 2>&1 | grep -v "Already up to date" || echo "[setup-claude-remote] Updated to latest"
 else
   echo "[setup-claude-remote] Cloning shared config..."
   git clone --depth 1 "$SHARED_REPO" "$SHARED_DIR"

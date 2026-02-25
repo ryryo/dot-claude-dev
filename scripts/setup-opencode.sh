@@ -11,6 +11,10 @@ if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
   exit 0
 fi
 
+# セッション起動を妨げない
+set +e
+trap 'echo "[setup-opencode] WARNING: error occurred, continuing"; exit 0' ERR
+
 log() { echo "[setup-opencode] $*"; }
 
 # ============================================================

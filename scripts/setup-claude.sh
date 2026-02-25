@@ -45,26 +45,26 @@ mkdir -p .claude/commands
 # fi
 
 if [ -d "$SHARED_DIR/.claude/rules/workflow" ]; then
-  ln -sf "$SHARED_DIR/.claude/rules/workflow" .claude/rules/workflow
+  ln -sfn "$SHARED_DIR/.claude/rules/workflow" .claude/rules/workflow
   echo "✓ Linked rules/workflow"
 fi
 
 # 共通スキルをリンク
 if [ -d "$SHARED_DIR/.claude/skills/dev" ]; then
-  ln -sf "$SHARED_DIR/.claude/skills/dev" .claude/skills/dev
+  ln -sfn "$SHARED_DIR/.claude/skills/dev" .claude/skills/dev
   echo "✓ Linked skills/dev"
 fi
 
 # 共通フックをリンク
 if [ -d "$SHARED_DIR/.claude/hooks/dev" ]; then
   mkdir -p .claude/hooks
-  ln -sf "$SHARED_DIR/.claude/hooks/dev" .claude/hooks/dev
+  ln -sfn "$SHARED_DIR/.claude/hooks/dev" .claude/hooks/dev
   echo "✓ Linked hooks/dev"
 fi
 
 # 共通コマンドをリンク
 if [ -d "$SHARED_DIR/.claude/commands/dev" ]; then
-  ln -sf "$SHARED_DIR/.claude/commands/dev" .claude/commands/dev
+  ln -sfn "$SHARED_DIR/.claude/commands/dev" .claude/commands/dev
   echo "✓ Linked commands/dev"
 fi
 
