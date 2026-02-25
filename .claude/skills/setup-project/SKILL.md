@@ -55,7 +55,9 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/check-claude-setup.sh" 
 
 ```bash
 mkdir -p "{PROJECT_PATH}/scripts"
-cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/setup-claude-remote.sh" "{PROJECT_PATH}/scripts/"
+TEMPLATE_DIR="${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts"
+cp "$TEMPLATE_DIR/setup-claude-remote.sh" "{PROJECT_PATH}/scripts/"
+cp "$TEMPLATE_DIR/setup-local.sh" "{PROJECT_PATH}/scripts/"
 cp "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-opencode.sh" "{PROJECT_PATH}/scripts/"
 ```
 
@@ -83,6 +85,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 | シンボリックリンク（setup-claude.sh） | ✓ |
 | scripts/setup-claude-remote.sh | ✓ |
 | scripts/setup-opencode.sh | ✓ |
+| scripts/setup-local.sh | ✓ |
 | .gitignore 更新 | ✓ |
 | .claude/settings.json | ✓ 新規作成 / ⚠️ 既存（要確認） |
 ```

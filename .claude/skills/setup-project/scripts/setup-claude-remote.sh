@@ -6,20 +6,7 @@
 # 使い方:
 #   1. setup-project スキルで自動コピー、または手動で各プロジェクトの scripts/ にコピー
 #   2. SHARED_REPO を自分のdot-claude-devリポジトリURLに変更
-#   3. .claude/settings.json の SessionStart フックに登録:
-#      {
-#        "hooks": {
-#          "SessionStart": [{
-#            "matcher": "startup",
-#            "hooks": [{
-#              "type": "command",
-#              "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-claude-remote.sh"
-#            }]
-#          }]
-#        }
-#      }
-#
-# opencode連携は scripts/setup-opencode.sh に分離済み
+#   3. .claude/settings.json の SessionStart フックに登録
 
 # ローカル環境ではスキップ
 if [ "$CLAUDE_CODE_REMOTE" != "true" ]; then
@@ -28,10 +15,6 @@ fi
 
 SHARED_REPO="https://github.com/ryryo/dot-claude-dev.git"
 SHARED_DIR="$HOME/.dot-claude-dev"
-
-# === DOT-CLAUDE-DEV MANAGED BEGIN ===
-# このセクションは sync-setup-remote スキルで自動更新されます
-# 手動で編集した場合、次回の同期で上書きされます
 
 # --- dot-claude-dev セットアップ ---
 
@@ -57,14 +40,6 @@ else
   echo "[setup-claude-remote] WARNING: setup-claude.sh not found in shared repo."
 fi
 
-# セットアップ完了メッセージ
-echo ""
 echo "[setup-claude-remote] ✓ Setup completed"
-
-# === DOT-CLAUDE-DEV MANAGED END ===
-
-# --- プロジェクト固有セットアップ ---
-# プロジェクト固有の処理をここに追加してください
-# 例: npm install, docker setup, 環境変数の設定など
 
 exit 0

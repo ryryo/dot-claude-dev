@@ -38,7 +38,6 @@
 | **meta-skill-creator** | スキルを作成・更新・プロンプト改善するためのメタスキル。collaborativeモードでユーザーと対話しながら共創し、orchestrateモードでタスクの実行エンジンを選択。Triggers: スキル作成, スキル更新, プロンプト改善        |
 | **skill-refactorer**   | SKILL.mdの実行効率・コンテキスト効率を最適化するスキル。7ステップのリファクタリング手順（実行方式判定→ファイル配置→詳細分離→DRY化→LLM行動制御→構造化→不要削除）を適用。Triggers: スキル整理, SKILL.md圧縮, スキルリファクタ |
 | **sync-skills**        | グローバルスキル一覧を参照している外部プロジェクトのCLAUDE.mdを最新状態に同期。Triggers: /sync-skills, スキル同期                                                                                                 |
-| **sync-setup-remote**  | 外部プロジェクトのsetup-claude-remote.shの共有セクションを最新テンプレートに同期。マーカーでプロジェクト固有部分を保持。Triggers: setup同期, setup-remote同期                                                     |
 | **setup-project**      | 指定プロジェクトにdot-claude-devの共通設定をセットアップ。シンボリックリンク作成、remote script コピー、.gitignore更新、settings.json作成まで一括実行。Triggers: /setup-project, セットアップ, プロジェクトにセットアップ |
 
 ## 利用可能なコマンド
@@ -50,7 +49,6 @@
 | `/dev:story`         | ストーリーからタスクリスト生成。dev:storyスキルを起動                        |
 | `/dev:developing`    | タスクリストからラベルに応じたワークフローで実装。dev:developingスキルを起動 |
 | `/dev:feedback`      | 実装完了後の振り返り。dev:feedbackスキルを起動してDESIGN.md更新と改善提案    |
-| `/sync-setup-remote` | 外部プロジェクトのsetup-claude-remote.shを最新テンプレートに同期             |
 
 ## 開発ワークフロー
 
