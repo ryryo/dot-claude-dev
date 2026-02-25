@@ -122,27 +122,34 @@ loop:
 
 ### Phase 0: 計画選択
 
-1. ユーザーが直接パスを渡している場合 → Read で存在確認し、直接 Phase 1 へ
+1. ユーザーが直接パスを渡している場合:
+   - **ディレクトリパス**の場合 → そのディレクトリ内の `task-list.json` と `story-analysis.json` を読み込む
+   - **task-list.json ファイルパス**の場合 → そのファイルと同じディレクトリの `story-analysis.json` を読み込む（下位互換）
+   - Read で存在確認し、直接 Phase 1 へ
 2. `Glob("docs/FEATURES/**/task-list.json")` で検索
 3. 0件 → 「先に /dev:story を実行してタスクリストを作成してください。」と案内して終了
 4. 各ファイルを Read し、`metadata.status` が `"completed"` のものを除外（未定義は `"pending"` 扱い）
 5. 残った候補を **AskUserQuestion** でユーザーに選択させる:
    - 1件: 確認（「この計画を実行しますか？」）
    - 2件以上: リスト選択（タスク数・TDD/E2E/TASK内訳を表示）
-6. 選択されたパスを `$TASK_LIST` として確定
+6. 選択されたディレクトリを `$STORY_DIR` として確定。`$STORY_DIR/task-list.json` を `$TASK_LIST` とする
 
 **ゲート**: `$TASK_LIST` が確定していなければ次に進まない。
 
-### Phase 1: タスク登録 + LEARNINGS.md 作成
+### Phase 1: タスク登録 + コンテキスト読み込み + LEARNINGS.md 作成
 
 1. `$TASK_LIST` を読み込み、全タスクを **TaskCreate** で登録
 2. 依存関係があれば **TaskUpdate(addBlockedBy)** で設定
 3. **TaskList** で登録確認
-4. `LEARNINGS.md` を作成:
+4. **story-analysis.json の読み込み**: `$STORY_DIR/story-analysis.json` を Read し、`$STORY_ANALYSIS` として保持する
+   - `goal`: ストーリーの達成目標
+   - `scope.included` / `scope.excluded`: スコープ境界（実装時のスコープクリープ防止に使用）
+   - story-analysis.json が存在しない場合はスキップ（下位互換）
+5. `LEARNINGS.md` を作成:
    ```bash
    ~/.claude/hooks/dev/init-learnings.sh <ストーリーディレクトリ>
    ```
-5. `$LEARNINGS_PATH` を作成した LEARNINGS.md の絶対パスに設定
+6. `$LEARNINGS_PATH` を作成した LEARNINGS.md の絶対パスに設定
 
 **ゲート**: タスクが登録され、`LEARNINGS.md` が作成されていなければ次に進まない。
 
@@ -155,6 +162,11 @@ loop:
    prompt = Bash("bash scripts/build-prompt.sh {agent} $LEARNINGS_PATH \"タスク: {name}\n{description}\" \"## 全体計画（設計判断・スコープ確認に参照）\n$PLAN_CONTEXT\"")
    ```
 3. メイン自身も実装方針やスコープ判断に迷った際に planPath を参照する
+
+**story-analysis.json 参照**: `$STORY_ANALYSIS` が存在する場合:
+- `scope.excluded` をスコープクリープ防止のガードレールとして使用。タスク実装中に scope 外の変更を行おうとしていないか確認する
+- `goal` をタスクの実装判断（方針に迷った際の判断基準）に使用する
+- サブエージェントへの追加コンテキストとしては通常不要（task-list.json の context で十分）。ただし、スコープの判断が難しいタスクでは `scope` 情報を追加コンテキストに含めてよい
 
 #### E2E環境セットアップ（E2Eタスクが存在する場合、Phase 2開始前に1回実行）
 

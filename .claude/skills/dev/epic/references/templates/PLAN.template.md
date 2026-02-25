@@ -124,6 +124,26 @@
 **参照実装**:
 - `{.reference/内の具体パス}`
 
+## 実行コマンド一覧
+
+各ストーリーの dev:developing を実行するコマンド。上から順に実行する。
+フォルダを指定すると、story-analysis.json と task-list.json を両方読み込む。
+
+> **Note**: dev:story 実行後、各ストーリーの task-list.json が生成されてから利用可能。
+> ワークスペースのディレクトリ名は `{YYMMDD}_{story-slug}` 形式。
+
+### Phase 1: {フェーズ名}
+
+```
+/dev:developing docs/FEATURES/{feature-slug}/{YYMMDD}_{story-slug}
+```
+
+### Phase 2: {フェーズ名}
+
+```
+/dev:developing docs/FEATURES/{feature-slug}/{YYMMDD}_{story-slug}
+```
+
 ### アイコン凡例
 
 | アイコン | executionType | 実行方法 |

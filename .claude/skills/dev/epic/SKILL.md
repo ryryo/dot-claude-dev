@@ -117,6 +117,9 @@ plan.json の stories を順に処理し、各ストーリーの技術詳細を�
    - `technicalNotes`: API変更、破壊的変更、マイグレーション等の注意事項
    - `referenceImplementation`: `.reference/` 内の具体パス
 4. PLAN.md の Phase セクション内の各ストーリーを構造化ブロックに展開（テンプレートの形式に従う）
+5. PLAN.md の末尾に「実行コマンド一覧」セクションを生成:
+   - `executionType: "developing"` のストーリーごとに `/dev:developing docs/FEATURES/{feature-slug}/{YYMMDD}_{story-slug}/task-list.json` のコマンドを Phase 別に記載
+   - `{YYMMDD}` は dev:story 実行時に決まるため、プレースホルダー `{YYMMDD}` のまま記載し、dev:story 実行後にパスが確定する旨を Note で補足する
 
 #### 品質基準
 
