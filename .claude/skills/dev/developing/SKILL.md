@@ -146,7 +146,7 @@ loop:
    - story-analysis.json が存在しない場合はスキップ（下位互換）
 5. `LEARNINGS.md` を作成:
    ```bash
-   ~/.claude/hooks/dev/init-learnings.sh <ストーリーディレクトリ>
+   bash scripts/init-learnings.sh <ストーリーディレクトリ>
    ```
 6. `$LEARNINGS_PATH` を作成した LEARNINGS.md の絶対パスに設定
 
@@ -202,7 +202,7 @@ loop:
 ## 参照
 
 - agents/: tdd-cycle.md, tdd-review.md, e2e-impl.md, quality-check.md, spot-review.md, spot-fix.md
-- scripts/: build-prompt.sh
+- scripts/: build-prompt.sh, init-learnings.sh
 - references/: learnings-footer.md
 - cross-skill: .claude/skills/dev/agent-browser/references/subagent-prompt.md, .claude/skills/dev/agent-browser/references/formats/
 - rules/: workflow/workflow-branching.md

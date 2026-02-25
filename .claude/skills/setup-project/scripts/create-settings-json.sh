@@ -42,17 +42,6 @@ cat > "$SETTINGS" << 'EOF'
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dev/suggest-compact.sh"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [

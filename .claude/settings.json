@@ -6,22 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-self-remote.sh"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-local.sh"
           },
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-opencode.sh"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dev/suggest-compact.sh"
           }
         ]
       }
