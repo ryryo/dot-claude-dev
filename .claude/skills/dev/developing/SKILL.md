@@ -34,37 +34,14 @@ hooks:
 - **TDD/E2E**: 各ステップは Task エージェントに委譲する（実装・テスト・レビューは独立性が高い）
 - **TASK**: EXEC/VERIFY はメインで直接実行し、SPOT/FIX のみ Task エージェントに委譲する
 
-エージェント委譲の呼び出しパターン:
+### エージェント呼び出しパターン
+
+`scripts/build-prompt.sh` でプロンプトを自動構築する。agent本文 + 追加コンテキスト + LEARNINGS_FOOTER が一括で組み立てられる。
 
 ```
-agentContent = Read(".claude/skills/dev/developing/agents/{agent}.md")
-Task({ prompt: agentContent + 追加コンテキスト + LEARNINGS_FOOTER, subagent_type: {type}, model: {指定モデル} })
+prompt = Bash("bash scripts/build-prompt.sh {agent} $LEARNINGS_PATH \"タスク: {name}\n{description}\"")
+Task({ prompt, subagent_type: "general-purpose", model: {指定モデル} })
 ```
-
-### LEARNINGS_FOOTER（全サブエージェント共通フッター）
-
-以下をすべての Task 呼び出しの prompt 末尾に付与する:
-
-```
----
-## 実装メモ記録（LEARNINGS.md）
-
-タスク完了時、以下に該当する事項があれば `{LEARNINGS_PATH}` の該当セクションに追記してください。
-何もなければ記録不要です。
-
-| セクション | 記録する内容 |
-|---|---|
-| 🔍 発見・技術的な学び | 想定外の挙動、フレームワーク・ライブラリの罠 |
-| 🔄 計画からの変更・妥協 | 当初計画からの逸脱とその理由 |
-| 💡 再利用できるパターン | 次回以降に使えるノウハウ・実装パターン |
-| ⚠️ 注意・落とし穴 | 将来ハマりそうな点 |
-| 🔧 環境・セットアップメモ | 環境固有の設定、ワークアラウンド |
-| 📋 ルール・ドキュメント更新の提案 | .claude/rules/ や CLAUDE.md への追加・変更提案 |
-
-追記フォーマット: 該当セクション内に `### {タスク名}` で小見出しを追加し、箇条書きで記録
-```
-
-`{LEARNINGS_PATH}` は Phase 1 で作成した LEARNINGS.md の絶対パスに置換する。
 
 ## エラーハンドリング
 
@@ -145,7 +122,16 @@ loop:
 
 ### Phase 0: 計画選択
 
-`agents/phase0-plan-selection.md` に従って実行。`$TASK_LIST` を確定する。
+1. ユーザーが直接パスを渡している場合 → Read で存在確認し、直接 Phase 1 へ
+2. `Glob("docs/FEATURES/**/task-list.json")` で検索
+3. 0件 → 「先に /dev:story を実行してタスクリストを作成してください。」と案内して終了
+4. 各ファイルを Read し、`metadata.status` が `"completed"` のものを除外（未定義は `"pending"` 扱い）
+5. 残った候補を **AskUserQuestion** でユーザーに選択させる:
+   - 1件: 確認（「この計画を実行しますか？」）
+   - 2件以上: リスト選択（タスク数・TDD/E2E/TASK内訳を表示）
+6. 選択されたパスを `$TASK_LIST` として確定
+
+**ゲート**: `$TASK_LIST` が確定していなければ次に進まない。
 
 ### Phase 1: タスク登録 + LEARNINGS.md 作成
 
@@ -156,6 +142,7 @@ loop:
    ```bash
    ~/.claude/hooks/dev/init-learnings.sh <ストーリーディレクトリ>
    ```
+5. `$LEARNINGS_PATH` を作成した LEARNINGS.md の絶対パスに設定
 
 **ゲート**: タスクが登録され、`LEARNINGS.md` が作成されていなければ次に進まない。
 
@@ -175,7 +162,7 @@ loop:
 #### タスク実行
 
 1. 各タスクの `workflow` フィールドに応じて上記「ワークフロー別ステップ・委譲先」を適用
-2. **LEARNINGS_FOOTER を全 Task 呼び出しの prompt 末尾に付与する**（サブエージェントが直接 LEARNINGS.md に記録）
+2. **build-prompt.sh を使って LEARNINGS_FOOTER を全 Task 呼び出しに自動付与する**
 3. 各タスク完了時に **TaskUpdate(completed)**
 
 **ゲート**: 全タスクが完了しなければ次に進まない。
@@ -199,6 +186,8 @@ loop:
 
 ## 参照
 
-- agents/: tdd-cycle.md, tdd-review.md, e2e-impl.md, quality-check.md, simple-add-dev.md, spot-review.md, spot-fix.md
+- agents/: tdd-cycle.md, tdd-review.md, e2e-impl.md, quality-check.md, spot-review.md, spot-fix.md
+- scripts/: build-prompt.sh
+- references/: learnings-footer.md
 - cross-skill: .claude/skills/dev/agent-browser/references/subagent-prompt.md, .claude/skills/dev/agent-browser/references/formats/
-- rules/: workflow/tdd-workflow.md, workflow/e2e-cycle.md, workflow/workflow-branching.md
+- rules/: workflow/workflow-branching.md

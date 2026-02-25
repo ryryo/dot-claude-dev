@@ -149,32 +149,8 @@ spot-fixエージェントに修正を委譲します。
 手動での確認と修正をお願いします。修正後、再度タスクを実行してください。
 ```
 
-## FAIL時の後続フロー（SKILL.mdが制御）
-
-spot-reviewがFAILを返した場合、SKILL.md（オーケストレーター）が以下のループを実行:
-
-```
-spot_count = 0
-loop:
-  spot_count += 1
-  result = spot-review(sonnet)  ← 検出のみ
-  if result == PASS → 終了
-  if spot_count >= 3 → エスカレーション（ユーザーに報告）→ 終了
-  spot-fix(opus)       ← 問題リストを渡して修正
-  quality-check(haiku)  ← lint/format/build
-  goto loop
-```
-
-- spot-reviewの報告（問題リスト）をspot-fixのプロンプトに追加コンテキストとして渡す
-
 ## 重要なポイント
 
-1. **検出専任**: 修正は行わない。spot-fixエージェントに委譲
-2. **Critical Issuesのみ**: 改善提案は出さない。バグ、セキュリティ、エッジケース、パフォーマンス問題のみ
-3. **dev:feedbackとの分離**: spot-reviewは「タスク単位・検出」、review-analyzeは「ブランチ全体・学習抽出」
-
-## 注意事項
-
-- 改善提案は出さない（dev:feedbackの役割）
-- 修正コードを書かない（spot-fixの役割）
-- OpenCode CLI利用不可時はチェックリストベースの手動分析にフォールバック
+1. **検出専任**: 修正は行わない（spot-fixが担当）。改善提案も出さない（dev:feedbackが担当）
+2. **Critical Issuesのみ**: バグ、セキュリティ、エッジケース、パフォーマンス問題のみ
+3. **OpenCode CLI利用不可時**: チェックリストベースの手動分析にフォールバック
