@@ -61,49 +61,64 @@ else
   log "Browser test failed, attempting repair..."
 
   # ============================================================
-  # 3. 環境判定 → 修復
+  # 3. 修復: 既存バイナリ流用 → ダウンロード試行
   # ============================================================
-  if [[ "${CLAUDE_CODE_REMOTE:-false}" == "true" ]]; then
-    # ---- Cloud Code Web 環境 ----
-    log "Cloud Code Web environment detected"
 
-    # 要求バージョンをエラーメッセージから取得
-    ERROR_MSG=$($PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1 || true)
-    close_browser
-    REQUIRED_VER=$(echo "$ERROR_MSG" | grep -oP 'chromium_headless_shell-\K[0-9]+' | head -1)
+  # 要求バージョンをエラーメッセージから取得
+  ERROR_MSG=$($PREFIX open 'data:text/html,<h1>OK</h1>' 2>&1 || true)
+  close_browser
+  REQUIRED_VER=$(echo "$ERROR_MSG" | grep -oP 'chromium_headless_shell-\K[0-9]+' | head -1)
+  PW_CACHE="/root/.cache/ms-playwright"
 
-    if [[ -z "$REQUIRED_VER" ]]; then
-      fail "要求ブラウザバージョンを特定できませんでした: $ERROR_MSG"
+  REPAIRED=false
+
+  # 3a. 別バージョンの既存バイナリがあればシンボリックリンクで流用
+  if [[ -n "$REQUIRED_VER" && -d "$PW_CACHE" ]]; then
+    log "Required: chromium_headless_shell-$REQUIRED_VER"
+
+    # 既存の chromium_headless_shell バイナリを探す（要求バージョン以外）
+    for DIR in "$PW_CACHE"/chromium_headless_shell-*/; do
+      [[ -d "$DIR" ]] || continue
+      EXISTING_VER=$(basename "$DIR" | grep -oP '\d+')
+      [[ "$EXISTING_VER" == "$REQUIRED_VER" ]] && continue
+
+      # バイナリの実体を探す（ディレクトリ構造がバージョンで異なる）
+      EXISTING_BINARY=""
+      for CANDIDATE in \
+        "$DIR/chrome-linux/headless_shell" \
+        "$DIR/chrome-headless-shell-linux64/chrome-headless-shell"; do
+        if [[ -f "$CANDIDATE" ]]; then
+          EXISTING_BINARY="$CANDIDATE"
+          break
+        fi
+      done
+      [[ -z "$EXISTING_BINARY" ]] && continue
+
+      REQUIRED_DIR="$PW_CACHE/chromium_headless_shell-${REQUIRED_VER}/chrome-headless-shell-linux64"
+      mkdir -p "$REQUIRED_DIR"
+      ln -sf "$EXISTING_BINARY" "$REQUIRED_DIR/chrome-headless-shell"
+      log "✓ Symlink: v$REQUIRED_VER → v$EXISTING_VER ($EXISTING_BINARY)"
+      REPAIRED=true
+      break
+    done
+  fi
+
+  # 3b. 既存バイナリがなければダウンロード試行
+  if [[ "$REPAIRED" != "true" ]]; then
+    log "No existing browser found, attempting download..."
+    PW_VERSION=$(node -e "console.log(require('$(npm root -g)/agent-browser/node_modules/playwright-core/package.json').version)" 2>/dev/null || echo "")
+    if [[ -n "$PW_VERSION" ]]; then
+      log "Installing Playwright chromium (v$PW_VERSION)..."
+      if npx --package="playwright-core@$PW_VERSION" -- playwright-core install chromium 2>&1; then
+        REPAIRED=true
+      else
+        log "Download failed"
+      fi
     fi
-    log "Required version: chromium_headless_shell-$REQUIRED_VER"
+  fi
 
-    # プリインストール済みバージョンを検索
-    PW_CACHE="/root/.cache/ms-playwright"
-    EXISTING_VER=$(ls "$PW_CACHE" 2>/dev/null | grep 'chromium_headless_shell-' | grep -oP '\d+' | head -1)
-
-    if [[ -z "$EXISTING_VER" ]]; then
-      fail "プリインストール済みブラウザが見つかりません"
-    fi
-    log "Found pre-installed: chromium_headless_shell-$EXISTING_VER"
-
-    # シンボリックリンクで流用
-    REQUIRED_DIR="$PW_CACHE/chromium_headless_shell-${REQUIRED_VER}/chrome-headless-shell-linux64"
-    EXISTING_BINARY="$PW_CACHE/chromium_headless_shell-${EXISTING_VER}/chrome-linux/headless_shell"
-
-    if [[ ! -f "$EXISTING_BINARY" ]]; then
-      fail "既存バイナリが見つかりません: $EXISTING_BINARY"
-    fi
-
-    mkdir -p "$REQUIRED_DIR"
-    ln -sf "$EXISTING_BINARY" "$REQUIRED_DIR/chrome-headless-shell"
-    log "✓ Symlink created: $REQUIRED_VER → $EXISTING_VER"
-
-  else
-    # ---- ローカルマシン ----
-    log "Local machine detected"
-    PW_VERSION=$(node -e "console.log(require('$(npm root -g)/agent-browser/node_modules/playwright-core/package.json').version)")
-    log "Installing Playwright chromium (v$PW_VERSION)..."
-    npx --package="playwright-core@$PW_VERSION" -- playwright-core install chromium 2>&1
+  if [[ "$REPAIRED" != "true" ]]; then
+    fail "ブラウザバイナリの修復に失敗しました"
   fi
 
   # ============================================================
