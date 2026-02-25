@@ -22,9 +22,7 @@ allowed-tools:
 - **mcp__claude-in-chrome__* ツールは絶対に使用しない**
 - agent-browser は **Bash で実行する CLI ツール**。MCP ツールではない
 
-## Step 0: 環境セットアップ（メインスレッドで実行）
-
-**メインスレッドで実行。サブエージェントには委譲しない。**
+## Step 0: 環境セットアップ
 
 ### 0-1. CLI 存在確認 → PREFIX 確定
 
