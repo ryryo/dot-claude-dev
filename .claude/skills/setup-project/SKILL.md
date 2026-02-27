@@ -31,7 +31,7 @@ allowed-tools: Bash, Read, Edit, Write, AskUserQuestion
 ls "{PROJECT_PATH}"
 
 # 現在のリンク状態を確認
-bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/check-claude-setup.sh" "{PROJECT_PATH}"
+bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/check-claude-setup.sh" "{PROJECT_PATH}"
 ```
 
 - **終了コード 0（全リンク正常）** → セットアップ済みである旨を伝え、再実行するか AskUserQuestion で確認
@@ -46,7 +46,7 @@ cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/
 実行後、リンクが正しく作成されたか再確認:
 
 ```bash
-bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/check-claude-setup.sh" "{PROJECT_PATH}"
+bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/check-claude-setup.sh" "{PROJECT_PATH}"
 ```
 
 終了コードが 1 の場合はエラー内容をユーザーに報告して停止する。
