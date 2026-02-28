@@ -31,8 +31,8 @@ hooks:
 ## 実行方法
 
 ワークフロー別の実行方法:
-- **TDD/E2E**: 各ステップは Task エージェントに委譲する（実装・テスト・レビューは独立性が高い）
-- **TASK**: EXEC/VERIFY はメインで直接実行し、SPOT/FIX のみ Task エージェントに委譲する
+- **TDD**: 各ステップは Task エージェントに委譲する（実装・テスト・レビューは独立性が高い）
+- **E2E/TASK**: メインで直接実行し、CHECK/SPOT/FIX のみ Task エージェントに委譲する
 
 ### エージェント呼び出しパターン
 
@@ -68,41 +68,42 @@ Task({ prompt, subagent_type: "general-purpose", model: {指定モデル} })
 
 ### E2Eワークフロー（workflow: e2e）
 
-| Step    | agent                                           | model  | type            | 備考                                          |
-| ------- | ----------------------------------------------- | ------ | --------------- | --------------------------------------------- |
-| 1 IMPL  | e2e-impl.md                                     | opus   | general-purpose | UI実装                                        |
-| 2 AUTO  | (cross-skill: agent-browser/subagent-prompt.md) | haiku  | general-purpose | agent-browser CLI検証                         |
-| 2b FIX  | e2e-impl.md                                     | sonnet | general-purpose | AUTO NG時: 検証レポートで修正（最大3回）      |
-| 3 CHECK | quality-check.md                                | haiku  | general-purpose | lint/format/build                             |
-| 4 SPOT  | spot-review.md                                  | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)             |
-| 4b FIX  | spot-fix.md                                     | opus   | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
+**CHECK/SPOT/FIX以外はサブエージェント呼び出しなし。メインが直接実行。**
+
+| Step    | agent          | model  | type            | 備考                                          |
+| ------- | -------------- | ------ | --------------- | --------------------------------------------- |
+| 1 IMPL  | -              | -      | -               | メインが直接UI実装                             |
+| 2 AUTO  | -              | -      | -               | メインが agent-browser CLI で直接検証          |
+| 2b FIX  | -              | -      | -               | AUTO NG時: メインが直接修正（最大3回）         |
+| 3 CHECK | quality-check.md | haiku | general-purpose | lint/format/build                             |
+| 4 SPOT  | spot-review.md | sonnet | general-purpose | commit後の即時レビュー(+OpenCode)             |
+| 4b FIX  | spot-fix.md    | opus   | general-purpose | SPOT FAIL時のみ: 修正→CHECK→再SPOT（最大3回） |
 
 **IMPL→AUTO→FIX ループ実行手順:**
 
 ```
-# Step 1 IMPL
-implAgent = Read("agents/e2e-impl.md")
-Task(prompt: implAgent + タスク情報, model: opus)
+# Step 1 IMPL（メイン直接実行）
+# メインが直接 Read/Write/Edit でUI実装する
 
-# Step 2 AUTO + FIX ループ
+# Step 2 AUTO + FIX ループ（メイン直接実行）
 fix_count = 0
 loop:
-  format = select_report_format(task)  # interaction(デフォルト) / ui-layout / responsive / api-integration
-  formatContent = Read(".claude/skills/dev/agent-browser/references/formats/{format}.md")
-  template = Read(".claude/skills/dev/agent-browser/references/subagent-prompt.md")
-  prompt = template に {PREFIX}, {ユーザーの指示}, {SCREENSHOT_DIR}, {レポートフォーマット} を置換
-  autoResult = Task(prompt: prompt, model: haiku)
+  # agent-browser CLI で直接検証
+  Bash("agent-browser open <対象URL>")
+  Bash("agent-browser snapshot -i")        # 対話要素確認
+  Bash("agent-browser screenshot <path>")  # スクリーンショット取得
+  # 操作・検証を実行し、結果を評価
+  Bash("agent-browser close")
 
-  if autoResult == OK → break
+  if 検証OK → break
   fix_count += 1
   if fix_count >= 3 → エスカレーション → break
 
-  # Step 2b FIX
-  fixAgent = Read("agents/e2e-impl.md")
-  Task(prompt: fixAgent + タスク情報 + autoResult(検証レポート), model: opus)
+  # Step 2b FIX（メイン直接実行）
+  # 検証で見つかった問題をメインが直接修正
   goto loop
 
-# Step 3 CHECK, 4 SPOT/FIX は共通フロー（テーブル通り）
+# Step 3 CHECK, 4 SPOT/FIX は共通フロー（Task委譲、テーブル通り）
 ```
 
 ### TASKワークフロー（workflow: task）
@@ -201,8 +202,7 @@ loop:
 
 ## 参照
 
-- agents/: tdd-cycle.md, tdd-review.md, e2e-impl.md, quality-check.md, spot-review.md, spot-fix.md
+- agents/: tdd-cycle.md, tdd-review.md, quality-check.md, spot-review.md, spot-fix.md
 - scripts/: build-prompt.sh, init-learnings.sh
 - references/: learnings-footer.md
-- cross-skill: .claude/skills/dev/agent-browser/references/subagent-prompt.md, .claude/skills/dev/agent-browser/references/formats/
 - rules/: workflow/workflow-branching.md
