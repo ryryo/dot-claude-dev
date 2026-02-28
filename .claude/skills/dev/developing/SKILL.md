@@ -170,10 +170,12 @@ loop:
 
 #### E2E環境セットアップ（E2Eタスクが存在する場合、Phase 2開始前に1回実行）
 
-1. `bash ".claude/skills/dev/agent-browser/setup-agent-browser.sh"` を実行
-   - `SUCCESS:<prefix>` → 成功、Step 2 へ
-   - `FAIL:<reason>` → AskUserQuestion で `<reason>` を報告して中断
-2. `mkdir -p /tmp/agent-browser/$(date +%Y%m%d)-{slug}` → SCREENSHOT_DIR 確定
+```bash
+bash ".claude/skills/dev/agent-browser/setup-agent-browser.sh"
+```
+
+- `SUCCESS:<prefix>` → agent-browser CLI 使用可能
+- `FAIL:<reason>` → AskUserQuestion で `<reason>` を報告して中断
 
 #### タスク実行
 
