@@ -52,16 +52,22 @@ allowed-tools:
 
 **ゲート**: `story-analysis.json` が存在しなければ次に進まない。
 
-### Step 2: タスク分解 + ワークフロー分類 → task-list.json
+### Step 2a: タスク分解（decomposition プロセス）
 
-references/decompose-tasks.md を参照し、コードベースを Glob/Read で探索してタスク分解を行う。
+`.claude/commands/dev/decomposition.md` を Read し、以下のプロセスに従ってタスク分解する:
 
-1. **plan.json の story 詳細を活用**（`$STORY_PLAN` が存在する場合）: affectedFiles をコード探索の起点に、technicalNotes を設計判断の参考に、acceptanceCriteria をタスクの網羅性チェックに使う
-2. コード探索: 対象ファイルの特定、現状の把握、関連モジュール・既存テストの確認
-3. story-analysis.json のスコープに基づいてタスクを分解し、各タスクに `workflow` フィールド（tdd/e2e/task）を付与
-4. **planPath 設定**: plan.json が存在する場合（dev:epic 連携時）、`context.planPath` に `docs/FEATURES/{feature-slug}/PLAN.md` のパスを設定する
-4. 技術選定・方針に判断が必要ならAskUserQuestionで確認（自明ならスキップ可）
-5. **Write** で `task-list.json` を保存
+- **ステップ1（コードベース探索）**: story-analysis.json のスコープ、`$STORY_PLAN` の affectedFiles を起点に探索
+- **ステップ3（不明点インタビュー）**: AskUserQuestion で技術選定・方針を確認
+- **ステップ4-5（詳細Todo作成）**: 各タスクが単独で実行可能な情報量を持つことを保証
+
+### Step 2b: task-list.json 変換 + ワークフロー分類
+
+references/decompose-tasks.md を参照し、Step 2a の分解結果を task-list.json に変換する:
+
+1. 各タスクに `workflow`（tdd/e2e/task）を付与
+2. `context` セクションにコード探索結果を記録
+3. **planPath 設定**: plan.json が存在する場合（dev:epic 連携時）、`context.planPath` に `docs/FEATURES/{feature-slug}/PLAN.md` のパスを設定する
+4. **Write** で `task-list.json` を保存
 
 **ゲート**: `task-list.json` が存在しなければ次に進まない。
 
