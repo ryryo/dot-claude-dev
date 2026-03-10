@@ -10,8 +10,6 @@ allowed-tools:
   - TodoRead
   - TodoWrite
   - AskUserQuestion
-context: fork
-agent: General-purpose
 ---
 
 # 深掘りインタビュー

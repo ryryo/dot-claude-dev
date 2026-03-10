@@ -1,8 +1,6 @@
 ---
 description: "プランモード向けに不明点を繰り返し明確化して詳細な仕様書を作成する。使用タイミング：プラン完成後、実装前に詳細な要件を明確化が必要な場合。"
 version: "1.0.5"
-context: fork
-agent: General-purpose
 allowed-tools:
   - Read
   - Write
