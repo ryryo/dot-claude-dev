@@ -19,7 +19,7 @@ allowed-tools:
 
 ## 禁止事項（最優先）
 
-- **mcp__claude-in-chrome__* ツールは絶対に使用しない**
+- **mcp**claude-in-chrome**\* ツールは絶対に使用しない**
 - agent-browser は **Bash で実行する CLI ツール**。MCP ツールではない
 
 ## Step 0: 環境セットアップ
@@ -43,12 +43,12 @@ bash "${SKILL_DIR}/setup-agent-browser.sh" [--check-url URL]
 
 ユーザーの検証指示を分析し、適切なフォーマットを1つ選択する。
 
-| フォーマット | ファイル | 選択基準 |
-|---|---|---|
-| **ui-layout** | `references/formats/ui-layout.md` | 表示崩れ、レイアウト、デザイン確認が目的 |
-| **interaction** | `references/formats/interaction.md` | フォーム入力、ボタン操作、画面遷移が目的 |
-| **api-integration** | `references/formats/api-integration.md` | API通信、SSE、エラーハンドリングが目的 |
-| **responsive** | `references/formats/responsive.md` | デバイスサイズ別の表示確認が目的 |
+| フォーマット        | ファイル                                | 選択基準                                 |
+| ------------------- | --------------------------------------- | ---------------------------------------- |
+| **ui-layout**       | `references/formats/ui-layout.md`       | 表示崩れ、レイアウト、デザイン確認が目的 |
+| **interaction**     | `references/formats/interaction.md`     | フォーム入力、ボタン操作、画面遷移が目的 |
+| **api-integration** | `references/formats/api-integration.md` | API通信、SSE、エラーハンドリングが目的   |
+| **responsive**      | `references/formats/responsive.md`      | デバイスサイズ別の表示確認が目的         |
 
 複数の目的がある場合は、**最も重要な目的**に合うフォーマットを選ぶ。
 
@@ -57,7 +57,7 @@ bash "${SKILL_DIR}/setup-agent-browser.sh" [--check-url URL]
 ## Step 2: スクリーンショットディレクトリ作成
 
 ```bash
-mkdir -p /tmp/agent-browser/{YYYYMMDD}-{slug}
+mkdir -p .tmp/agent-browser/{YYYYMMDD}-{slug}
 ```
 
 - `{YYYYMMDD}`: 実行日（例: 20260219）
