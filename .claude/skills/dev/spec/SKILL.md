@@ -73,6 +73,36 @@ allowed-tools:
 
 仕様書に載せるタスクリストを作成するために `/dev:decomposition` を実行する。
 
+### Step 2a: レビューチェックリスト生成
+
+タスク分解結果をもとに、各 Todo に対する**検証チェックリスト**を作成する。
+
+#### チェックリスト設計の原則
+
+1. **機械的に検証可能** — 人間の判断を排除し、コマンド実行結果で PASS/FAIL を判定できる項目のみ
+2. **具体的** — 「正しいこと」ではなく「grep で 0 ヒット」「JSON.parse が成功」「exit code 0」等
+3. **漏れなく** — 各 Todo の実装詳細と検証条件を網羅
+
+#### チェック項目の種類
+
+| 検証タイプ | 記法例 | 判定手段 |
+|-----------|--------|----------|
+| 禁止文字列 | `grep -c "メウライ" file` → 0 | Grep でヒット数が 0 |
+| 必須文字列 | `grep -c "特定のフレーズ" file` → 1 以上 | Grep でヒット数 > 0 |
+| JSON 構文 | `JSON.parse()` が成功 | Bash で node -e |
+| フィールド存在 | `jq '.keycard.symbolism'` が null でない | Bash で jq |
+| テスト通過 | `pnpm test -- --grep "xxx"` が全 PASS | Bash で exit code |
+| ファイル存在 | `path/to/file.ts` が存在 | Glob |
+| データ整合性 | ファイル A の値とファイル B の値が一致 | Bash で比較スクリプト |
+| 後方互換 | 既存テストが全 PASS | Bash でテスト実行 |
+
+#### Todo の Gate グループ化
+
+関連する Todo を Gate（ゲート）単位でグループ化する:
+- 同じ Gate 内の Todo は並行実行可能
+- Gate 間には依存関係がある（前の Gate 通過が次の Gate の前提条件）
+- 各 Todo の IMPL 完了後に Review を実行し、全 PASS で Gate 通過
+
 ### Step 3: 仕様書ドラフト作成
 
 1. 日付を取得:
@@ -83,6 +113,9 @@ allowed-tools:
 2. AskUserQuestion で仕様書の slug を確定する
 
 3. `references/template/spec-template.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}.md` に Write する
+   - **タスクリストは Gate/Review 形式で記述する**（テンプレートの「タスクリスト」セクション参照）
+   - 各 Todo に IMPL と Review の両方を含める
+   - 各 Review に機械的な検証チェックリストを記載する
 
 ### Step 4: 外部参照資料の同梱
 
@@ -123,6 +156,8 @@ allowed-tools:
 4. **参照の完全性** — 外部参照がすべてコピー済みか、パスが正しいか
 5. **漏れ** — セットアップ・エラーハンドリング・テストタスクの不足
 6. **リスク** — 残存リスクの緩和策は十分か
+7. **レビューループ品質** — 各 Todo に Review ステップと検証チェックリストが付いているか
+8. **チェックリストの検証可能性** — 各チェック項目が機械的に PASS/FAIL 判定できるか（「正しいこと」のような曖昧な項目がないか）
 
 ### Step 5a: レビュー修正ループ
 
@@ -152,11 +187,15 @@ allowed-tools:
 - [ ] `docs/PLAN/{YYMMDD}_{slug}.md` が存在する
 - [ ] 仕様書内の全参照ファイルがコードベース内パスで解決可能
 - [ ] 外部参照は `references/` にコピー済み、パスも修正済み
+- [ ] 各 Todo に IMPL + Review（検証チェックリスト付き）が定義されている
+- [ ] 各チェック項目が機械的に検証可能（grep / テスト / JSON パース等）
+- [ ] Gate 間の依存関係が依存関係図に図示されている
 - [ ] レビューが完了（APPROVED or ユーザー判断で続行）
 - [ ] ユーザーが承認済み
 
 ## 参照
 
-- `tasks/plan-review.md` — レビューエージェントの指示書
+- `tasks/plan-review.md` — 仕様書全体のレビューエージェント指示書（Step 5）
+- `tasks/todo-review.md` — 個別 Todo のレビューエージェント指示書（実装時に使用）
 - `/dev:dig` — Step 1a で要件の深掘りに使用
 - `/dev:decomposition` — Step 2 でタスク分解に使用
