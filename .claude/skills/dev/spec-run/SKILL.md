@@ -29,9 +29,10 @@ description: |
 
 ## Todo 実行の手順
 
-各 Todo は必ず以下の **3 ステップを順番に** 実行する。ステップを飛ばしてはならない。
+各 Todo は必ず以下を **順番に** 実行する。ステップを飛ばしてはならない。
 
 ```
+Step 0 — CONTEXT   仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
 Step 1 — IMPL      実装を行う
 Step 2 — REVIEW    Task(sonnet) で todo-review を実行し、結果を仕様書の記入欄に貼り付ける
 Step 3 — FIX       FAIL がある場合のみ修正（最大3ラウンド）。全 PASS なら不要
