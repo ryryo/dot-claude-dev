@@ -61,10 +61,9 @@ Read(CLAUDE.md)
 - [ ] テストタスク
 - [ ] 型定義/インターフェース変更タスク
 
-#### 実行プロトコルと Review 構造
+#### Gate 0 と Review 構造
 
-- [ ] 冒頭に「実行プロトコル（この仕様書の使い方）」セクションがある
-- [ ] Todo 実行手順（Step 1 → 2 → 3）と Gate 通過条件が記述されている
+- [ ] 冒頭に Gate 0（`/dev:spec-run` への参照）がある
 - [ ] 各 Todo が Step 1（IMPL）+ Step 2（Review 結果記入欄）の構造を持っている
 - [ ] Review 結果記入欄が blockquote 形式の空テーブルとして設置されている
 - [ ] 各 Gate 末尾に Gate 通過条件が明示されている
