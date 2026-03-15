@@ -12,18 +12,55 @@ description: |
 
 仕様書（`docs/PLAN/*.md`）に基づいて作業するエージェント向けの実行プロトコル。
 
-## 起動モード
+## 起動フロー
 
-### A. コンテキストから対象の仕様書が特定できる場合
+### ステップ 1: 仕様書の特定
 
-会話の文脈や Gate 0 からの参照で対象が明確。そのままプロトコルに従って実行する。
+#### A. コンテキストから特定できる場合
 
-### B. `/dev:spec-run` が単独で実行された場合
+会話の文脈や Gate 0 からの参照で対象が明確。そのままステップ 2 へ進む。
+
+#### B. `/dev:spec-run` が単独で実行された場合
 
 1. `docs/PLAN/*.md` を Glob で検索し、更新日順でソートする
 2. 上位 5 件を AskUserQuestion で提示する（最新を推奨マーク付き）
-3. ユーザーが選択した仕様書を対象として実行を開始する
-4. 選択した仕様書の Gate 0 通過条件（参照すべきファイルの読み込み等）を実行する
+3. ユーザーが選択した仕様書を対象とする
+
+### ステップ 2: 作業環境の選択
+
+仕様書が確定したら、AskUserQuestion で作業環境を選択させる:
+
+| 選択肢 | 説明 |
+|--------|------|
+| **現在のブランチで作業** | そのまま実行を開始する |
+| **新規ワークツリーを作成** | feature ブランチ + worktree を作成してから実行する |
+| **既存ワークツリーで継続** | 既に作成済みの worktree 内で作業を再開する |
+
+#### 現在のブランチで作業
+
+そのまま Gate 0 通過条件を実行し、Todo 実行に進む。
+
+#### 新規ワークツリーを作成
+
+```
+1. git status --porcelain で未コミット変更を確認
+   └── 変更あり → AskUserQuestion で対応を確認（stash / commit / abort）
+2. 仕様書ファイル名からスラッグを生成（例: 260315_auth-api.md → auth-api）
+3. git worktree add .worktrees/{slug} -b feature/{slug}
+4. .worktrees/{slug} に移動して作業開始
+```
+
+#### 既存ワークツリーで継続
+
+```
+1. git worktree list で一覧を取得
+2. AskUserQuestion で対象の worktree を選択させる
+3. 選択した worktree のパスに移動して作業を再開
+```
+
+### ステップ 3: 実行開始
+
+Gate 0 通過条件（参照すべきファイルの読み込み等）を実行し、Todo 実行に進む。
 
 ---
 
@@ -118,6 +155,26 @@ Task(model: sonnet) で以下を実行:
   > （未記入 — Task(sonnet) で todo-review を実行し、結果テーブルをここに貼り付ける）
 
 **Gate N 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+```
+
+## 全 Gate 通過後の完了処理
+
+### 現在のブランチで作業した場合
+
+全 Gate 通過を確認し、仕様書の実行完了を宣言する。
+
+### ワークツリーで作業した場合
+
+```
+1. worktree 内の全変更がコミット済みであることを確認
+   └── 未コミットあり → simple-add-dev でコミット
+2. AskUserQuestion で完了後のアクションを選択させる:
+   a) メインブランチにマージ
+      └── git checkout {main} && git merge feature/{slug} && git worktree remove .worktrees/{slug} && git branch -d feature/{slug}
+   b) PR を作成
+      └── git push -u origin feature/{slug} && gh pr create
+   c) ワークツリーを残して終了（後で再開する場合）
+      └── 何もしない
 ```
 
 ## 参照
