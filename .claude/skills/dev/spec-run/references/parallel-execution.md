@@ -97,6 +97,9 @@ Agent(
 3. マージ競合が発生した場合:
    a) AskUserQuestion で状況を報告
    b) ユーザーの指示に従って解決
+4. マージ完了後、残った worktree とブランチをクリーンアップ:
+   git worktree prune
+   git branch -d {branch-1} {branch-2} ...
 ```
 
 ## UPDATE
