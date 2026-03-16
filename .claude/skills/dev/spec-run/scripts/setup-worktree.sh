@@ -24,8 +24,8 @@ if [ -z "$CWD" ] || [ "$CWD" = "null" ]; then
   exit 1
 fi
 
-# worktree ディレクトリを決定
-DIR="$CWD/../worktrees/$NAME"
+# worktree ディレクトリを決定（Claude Code デフォルトと同じプロジェクト内配置）
+DIR="$CWD/.claude/worktrees/$NAME"
 mkdir -p "$(dirname "$DIR")"
 
 echo "Creating worktree at $DIR ..." >&2

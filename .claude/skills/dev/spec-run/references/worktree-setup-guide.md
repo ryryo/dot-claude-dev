@@ -8,6 +8,8 @@
 - Layer 1（汎用スクリプト）は `spec-run/scripts/setup-worktree.sh` に配置済み
 - `.claude/skills/dev` → `~/dot-claude-dev/.claude/skills/dev` の symlink が設定済み
 - Layer 2（プロジェクト固有）のみ新規作成が必要
+- worktree は `.claude/worktrees/{name}/` に作成される（Claude Code デフォルトと同じ配置）
+- `.gitignore` に `.claude/worktrees/` の追加が必要
 
 ## 1. settings.json への hook 追加
 
