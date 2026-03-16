@@ -76,6 +76,11 @@ allowed-tools:
 - 同一 Gate 内の Todo は並行実行可能
 - Gate 間は順序依存（前の Gate 通過が次の前提条件）
 - Todo の Step 手順・Gate 通過条件・Review 方法は `/dev:spec-run` スキルで定義。仕様書には Gate 0 として参照を記載するだけ
+- **`[PARALLEL]` タグの判断**: Gate 内の Todo が以下の条件をすべて満たす場合、Gate ヘッダに `[PARALLEL]` タグを付与する:
+  - Gate 内に独立した Todo が 2つ以上ある
+  - 各 Todo が複数ファイルにまたがる（1ファイル変更のみなら逐次で十分）
+  - Todo 間で変更対象ファイルが重複しない（競合回避）
+- `[PARALLEL]` タグ付き Gate の Todo は `dev:spec-run` が `Agent(isolation: worktree)` で並列実行する
 
 ### Step 5: 仕様書ドラフト作成
 
@@ -107,7 +112,7 @@ allowed-tools:
 
 ### Step 7: レビュー
 
-→ **Task（sonnet）** に委譲（`tasks/plan-review.md` を Read してプロンプトとして使用）
+→ **Agent（sonnet）** に委譲（`agents/plan-reviewer.md` を Read してプロンプトとして使用）
 
 レビューエージェントに渡す情報: 仕様書パス、CLAUDE.md パス（存在時）
 
@@ -137,6 +142,7 @@ allowed-tools:
 - **コミット** → `/dev:simple-add` でコミット
 - **修正** → 指示に従い修正
 - **実装へ進む** → 作業エージェントへの引き渡し方を案内
+  - `[PARALLEL]` タグ付き Gate がある場合、WorktreeCreate hook の設定が必要。`.claude/settings.json` を Read し、hook が未設定であれば `/dev:spec-run` の `references/worktree-setup-guide.md` を Read してプロジェクト分析→セットアップ提案を行う
 
 ---
 
@@ -153,7 +159,7 @@ allowed-tools:
 
 ## 参照
 
-- `tasks/plan-review.md` — 仕様書全体のレビューエージェント指示書（Step 7）
-- `/dev:spec-run` — 仕様書実行プロトコル（Gate 0 で参照。`todo-review.md` はこちらに同梱）
+- `agents/plan-reviewer.md` — 仕様書全体のレビューエージェント指示書（Step 7）
+- `/dev:spec-run` — 仕様書実行プロトコル（Gate 0 で参照。`agents/reviewer.md` に統合済み）
 - `/dev:dig` — Step 2 で要件の深掘りに使用
 - `/dev:decomposition` — Step 3 でタスク分解に使用

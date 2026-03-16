@@ -101,9 +101,6 @@ Gate B: {フェーズ名}（Gate A 完了後）
   - **依存**: {先行タスク — なければ「なし」}
 
 - [ ] **Step 2 — Review {GateID}{N}**
-  > **レビュー結果**:
-  >
-  > （未記入 — `/dev:spec-run` の手順に従って Review を実行し、結果テーブルをここに貼り付ける）
 
 **Gate N 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -128,7 +125,20 @@ Gate B: {フェーズ名}（Gate A 完了後）
 | -------------------- | ---------------------------------------------- |
 | （タグなし）         | メインスレッドで実行（デフォルト）             |
 | `[BG:haiku:Explore]` | バックグラウンドで haiku、Explore エージェント |
-| `[PARALLEL]`         | 次の複数タスクを並列実行                       |
+| `[PARALLEL]`         | Gate 内の複数 Todo を worktree 並列実行        |
+
+### [PARALLEL] タグの判断基準
+
+Gate ヘッダに `[PARALLEL]` タグを付与する条件:
+
+| 条件 | 並列化 |
+|------|--------|
+| Gate 内に独立した Todo が 2つ以上 AND 各 Todo が複数ファイルにまたがる | ✅ `[PARALLEL]` |
+| Gate 内に独立した Todo が 2つ以上だが各 Todo が 1 ファイル変更のみ | ❌ 逐次で十分 |
+| Gate 内の Todo 間にファイル重複がある | ❌ 逐次（競合回避） |
+| Gate 内の Todo が 1つだけ | ❌ 逐次 |
+
+`[PARALLEL]` タグ付き Gate の Todo は `dev:spec-run` が `Agent(isolation: worktree)` で並列実行する。各 Todo は独立した worktree で実行され、完了後にメインブランチへマージされる。
 
 ### モデル選択基準
 
