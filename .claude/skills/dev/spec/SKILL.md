@@ -80,7 +80,13 @@ allowed-tools:
   - Gate 内に独立した Todo が 2つ以上ある
   - 各 Todo が複数ファイルにまたがる（1ファイル変更のみなら逐次で十分）
   - Todo 間で変更対象ファイルが重複しない（競合回避）
-- `[PARALLEL]` タグ付き Gate の Todo は `dev:spec-run` が `Agent(isolation: worktree)` で並列実行する
+- `[PARALLEL]` タグ付き Gate の Todo は `dev:spec-run` が worktree で並列実行する（パラメータは `dev:spec-run` の SKILL.md テーブル参照）
+- **`[TDD]` ラベルの判断**: 各 Todo が以下の条件を満たす場合、Todo に `[TDD]` ラベルを付与する:
+  - 入出力が明確なロジック（バリデーション、計算、変換、ビジネスロジック等）
+  - アサーションで検証可能（`expect(result).toEqual(expected)` のような比較が書ける）
+- `[TDD]` ラベルは Todo 単位で付与する（Gate 単位の `[PARALLEL]` とは独立）
+- `[PARALLEL]` Gate 内で `[TDD]` と非`[TDD]` の Todo が混在してよい
+- `[TDD]` ラベル付き Todo は `dev:spec-run` が tdd-developer ロールで実装する
 
 ### Step 5: 仕様書ドラフト作成
 
