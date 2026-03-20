@@ -5,11 +5,37 @@
 
 ## 前提
 
-- Layer 1（汎用スクリプト）は `spec-run/scripts/setup-worktree.sh` に配置済み
-- `.claude/skills/dev` → `~/dot-claude-dev/.claude/skills/dev` の symlink が設定済み
-- Layer 2（プロジェクト固有）のみ新規作成が必要
+- WorktreeCreate hook は **置き換え型**: hook が `git worktree add` から stdout パス返却まで全て担当する
 - worktree は `.claude/worktrees/{name}/` に作成される（Claude Code デフォルトと同じ配置）
-- `.gitignore` に `.claude/worktrees/` の追加が必要
+- `.gitignore` に `**/.claude/worktrees` の追加が必要
+
+## .worktreeinclude
+
+`.worktreeinclude` はプロジェクトルートに作成し、worktree にコピーしたいファイルパターンを列挙する。
+
+- `.gitignore` と `.worktreeinclude` の **両方にマッチ** するファイルのみコピー対象
+- CLI v2.1.80 でサポート済み。ただし **置き換え型 hook を使用する場合、CLI の .worktreeinclude 処理はバイパスされる** ため、hook 内で自前コピーが必要
+
+### 対象ファイルの選定基準
+
+| 対象にすべきもの | 対象外にすべきもの |
+|---|---|
+| `.env.keys` 等の小さな秘密鍵ファイル | symlink（コピーでは不適切） |
+| `.env.local` 等の環境固有設定 | 巨大ディレクトリ（`.reference/` 等）→ hook で symlink |
+| `.claude/settings.local.json` | `node_modules/` → hook で `install` |
+
+### 例
+
+```
+.env.keys
+**/.env.keys
+*.local
+**/*.local
+.claude/settings.local.json
+**/.claude/settings.local.json
+```
+
+> **注意**: bash の glob で `**` を使うには `globstar` が必要だが、macOS のデフォルト bash（v3.2）は未サポート。hook 内では `find` コマンドで代替すること。
 
 ## 1. settings.json への hook 追加
 
@@ -18,74 +44,164 @@
 ```json
 {
   "hooks": {
-    "WorktreeCreate": [{
-      "hooks": [{
-        "type": "command",
-        "command": "bash .claude/skills/dev/spec-run/scripts/setup-worktree.sh"
-      }]
-    }]
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/worktree-setup.sh"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
 > 既存の hooks がある場合は `WorktreeCreate` キーをマージする。
+> `$CLAUDE_PROJECT_DIR` を使うことで worktree 内セッションからも正しくパスが解決される。
 
-## 2. プロジェクト固有セットアップの作成
+## 2. 統合スクリプトの作成
 
-`.claude/hooks/worktree-setup.sh` を作成する。Layer 1 が自動で呼び出す。
+`.claude/hooks/worktree-setup.sh` を作成する。このスクリプト1つで hook の全機能を担当する。
 
 ### テンプレート
 
 ```bash
 #!/bin/bash
-# {プロジェクト名} 固有の worktree セットアップ
+# {プロジェクト名} WorktreeCreate hook（統合スクリプト）
+#
+# stdin: JSON（name, cwd, session_id, hook_event_name）
+# stdout: worktree の絶対パスのみ
+# stderr: ログ出力用
 set -euo pipefail
 
-WORKTREE_DIR="$1"   # 新規 worktree の絶対パス
-MAIN_DIR="$2"       # メイン worktree の絶対パス
+# --- stdin JSON パース ---
+INPUT=$(cat)
+NAME=$(echo "$INPUT" | jq -r '.name')
+CWD=$(echo "$INPUT" | jq -r '.cwd')
 
-# --- 環境変数コピー ---
-# プロジェクトの .env ファイルをここに列挙
-# cp "$MAIN_DIR/.env" "$WORKTREE_DIR/"
-# cp "$MAIN_DIR/apps/xxx/.env.local" "$WORKTREE_DIR/apps/xxx/"
+if [ -z "$NAME" ] || [ "$NAME" = "null" ]; then
+  echo "ERROR: 'name' field is missing or null" >&2
+  exit 1
+fi
+if [ -z "$CWD" ] || [ "$CWD" = "null" ]; then
+  echo "ERROR: 'cwd' field is missing or null" >&2
+  exit 1
+fi
 
-# --- 大きなディレクトリの symlink ---
-# コピーすると遅いものは symlink
-# ln -sf "$MAIN_DIR/.reference" "$WORKTREE_DIR/.reference"
+# --- worktree 作成 ---
+DIR="$CWD/.claude/worktrees/$NAME"
+mkdir -p "$(dirname "$DIR")"
+git -C "$CWD" worktree add "$DIR" HEAD >&2
+
+# ロールバック用 trap
+cleanup() {
+  echo "ERROR: Setup failed, removing worktree ..." >&2
+  git -C "$CWD" worktree remove "$DIR" --force >&2 || true
+}
+trap cleanup ERR
+
+# --- .worktreeinclude コピー ---
+# 置き換え型 hook では CLI の .worktreeinclude 処理がバイパスされるため自前で処理
+if [ -f "$CWD/.worktreeinclude" ]; then
+  while IFS= read -r pattern || [ -n "$pattern" ]; do
+    [ -z "$pattern" ] && continue
+    [[ "$pattern" == \#* ]] && continue
+    cd "$CWD"
+    if [[ "$pattern" == *"**"* ]]; then
+      # macOS bash 3.2 は globstar 未サポートのため find で代替
+      find_pattern="${pattern//\*\*/\*}"
+      find . -path "./$find_pattern" -not -path "./.claude/worktrees/*" -not -path "./node_modules/*" -type f 2>/dev/null | while read -r file; do
+        file="${file#./}"
+        mkdir -p "$DIR/$(dirname "$file")"
+        cp -f "$file" "$DIR/$file"
+        echo "Copied $file (.worktreeinclude)" >&2
+      done
+    else
+      for file in $pattern; do
+        [ -f "$file" ] || continue
+        mkdir -p "$DIR/$(dirname "$file")"
+        cp -f "$file" "$DIR/$file"
+        echo "Copied $file (.worktreeinclude)" >&2
+      done
+    fi
+  done < "$CWD/.worktreeinclude"
+fi
+
+# --- プロジェクト固有のセットアップをここに追加 ---
+# 例: symlink 再作成、大きなディレクトリの symlink、依存インストール
 
 # --- 依存インストール ---
-cd "$WORKTREE_DIR" && npm install  # or pnpm install / yarn install
+# cd "$DIR" && npm install >&2  # or pnpm install / yarn install
+
+# trap 解除（正常完了）
+trap - ERR
+
+# stdout に絶対パスを出力（Claude Code が要求）
+cd "$DIR" && pwd
 ```
 
 ### プロジェクト分析で確認すべき項目
 
 | 確認項目 | 調べ方 | セットアップに反映 |
 |----------|--------|-------------------|
-| .env ファイルの場所 | `find . -name '.env*' -not -path '*/node_modules/*'` | cp 行を追加 |
-| gitignore されたディレクトリ | `.gitignore` を Read | symlink or cp が必要か判断 |
-| パッケージマネージャー | `package.json` の `packageManager` / lock ファイル | install コマンドを決定 |
-| サブモジュール / 参照ディレクトリ | `.gitmodules` / 大きな読み取り専用ディレクトリ | symlink で共有 |
-| wtp 設定 | `.wtp.yml` が存在すれば参考にする | hook の内容を合わせる |
-| モノレポ構成 | `pnpm-workspace.yaml` / `apps/` `packages/` | 各アプリの .env をコピー |
+| .env / .env.keys の場所 | `find . -name '.env*' -not -path '*/node_modules/*'` | .worktreeinclude に追加 |
+| .local ファイル | `.gitignore` で `*.local` が除外されているか | .worktreeinclude に追加 |
+| gitignore された symlink | `.gitignore` を Read | hook で symlink 再作成 |
+| 巨大ディレクトリ | `.gitmodules` / 大きな読み取り専用ディレクトリ | hook で symlink |
+| パッケージマネージャー | `package.json` の `packageManager` / lock ファイル | hook で install |
+| モノレポ構成 | `pnpm-workspace.yaml` / `apps/` `packages/` | 各アプリの .env を .worktreeinclude に |
 
 ## 3. 実例: ai-codlnk.com プロジェクト
+
+### .worktreeinclude
+
+```
+.env.keys
+**/.env.keys
+*.local
+**/*.local
+.claude/settings.local.json
+**/.claude/settings.local.json
+```
+
+### .claude/hooks/worktree-setup.sh
 
 ```bash
 #!/bin/bash
 set -euo pipefail
-WORKTREE_DIR="$1"
-MAIN_DIR="$2"
 
-# 環境変数（3箇所）
-cp "$MAIN_DIR/.env" "$WORKTREE_DIR/" 2>/dev/null
-[ -f "$MAIN_DIR/apps/chat-web/.env.local" ] && mkdir -p "$WORKTREE_DIR/apps/chat-web" && cp "$MAIN_DIR/apps/chat-web/.env.local" "$WORKTREE_DIR/apps/chat-web/"
-[ -f "$MAIN_DIR/apps/backend/.env.local" ] && mkdir -p "$WORKTREE_DIR/apps/backend" && cp "$MAIN_DIR/apps/backend/.env.local" "$WORKTREE_DIR/apps/backend/"
+INPUT=$(cat)
+NAME=$(echo "$INPUT" | jq -r '.name')
+CWD=$(echo "$INPUT" | jq -r '.cwd')
+# ... (テンプレートの JSON パース + worktree 作成 + .worktreeinclude コピー)
+
+# dot-claude-dev symlink の再作成
+for dir in rules skills hooks commands; do
+  src_dir="$CWD/.claude/$dir"
+  [ -d "$src_dir" ] || continue
+  for entry in "$src_dir"/*/; do
+    [ -d "$entry" ] || continue
+    entry_name=$(basename "$entry")
+    main_link="$CWD/.claude/$dir/$entry_name"
+    worktree_link="$DIR/.claude/$dir/$entry_name"
+    if [ -L "$main_link" ] && [ ! -e "$worktree_link" ]; then
+      target=$(readlink "$main_link")
+      mkdir -p "$DIR/.claude/$dir"
+      ln -s "$target" "$worktree_link"
+    fi
+  done
+done
 
 # 参照用 submodule（38MB+ → symlink）
-[ -d "$MAIN_DIR/.reference" ] && ln -sf "$MAIN_DIR/.reference" "$WORKTREE_DIR/.reference"
+[ -d "$CWD/.reference" ] && rm -rf "$DIR/.reference" && ln -s "$CWD/.reference" "$DIR/.reference"
 
 # 依存インストール
-cd "$WORKTREE_DIR" && pnpm install
+cd "$DIR" && pnpm install >&2
+
+trap - ERR
+cd "$DIR" && pwd
 ```
 
 ## 案内のフロー
@@ -95,6 +211,7 @@ dev:spec の Step 8 で以下の手順で案内する:
 1. `.claude/settings.json` を Read し、WorktreeCreate hook が設定済みか確認
 2. **未設定の場合**:
    a. プロジェクトを分析（上記「確認すべき項目」テーブルに従う）
-   b. 分析結果に基づいて `.claude/hooks/worktree-setup.sh` の内容を提案
-   c. `settings.json` への hook 追加方法を案内
+   b. `.worktreeinclude` の内容を提案
+   c. `.claude/hooks/worktree-setup.sh` の内容を提案（テンプレート + プロジェクト固有処理）
+   d. `settings.json` への hook 追加方法を案内
 3. **設定済みの場合**: スキップ
