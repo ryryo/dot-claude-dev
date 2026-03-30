@@ -39,7 +39,7 @@ Step 4 — UPDATE    仕様書のチェックボックスを更新する
 2. テンプレートの変数を埋めて `/tmp/codex-prompt.md` に書き出す
 3. 実行:
    ```bash
-   cat /tmp/codex-prompt.md | codex exec -m gpt-5.4 --sandbox workspace-write --full-auto - 2>/dev/null
+   cat /tmp/codex-prompt.md | codex exec -m gpt-5.4 --sandbox workspace-write --full-auto --ephemeral - 2>/dev/null
    ```
 4. 結果を確認:
    - 成功 → Claude がコミット
