@@ -79,13 +79,13 @@ Gate 内の全 Todo について:
 ### 従来モード
 
 - `references/execution.md` — 実行プロトコル
-- `references/agents/implementer.md` — 汎用実装ロール定義
-- `references/agents/tdd-developer.md` — TDD 実装ロール定義
+- `roles/implementer.md` — 汎用実装ロール定義
+- `roles/tdd-developer.md` — TDD 実装ロール定義
 
 ### Codex モード
 
 - `references/codex-execution.md` — Codex 実行プロトコル
-- `references/agents/codex-tdd-developer.md` — Codex TDD 実装プロンプトテンプレート
+- `roles/codex-tdd-developer.md` — Codex TDD 実装プロンプトテンプレート
 - `references/codex-review-instructions.md` — codex review 用レビュー指示テンプレート
 
 ### 共通

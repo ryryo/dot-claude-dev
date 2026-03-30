@@ -18,7 +18,7 @@ Todo の [TDD] ラベルを確認し、ラベルに応じて分岐する。
 
 ### [TDD] ラベルあり → Codex に委任
 
-1. `references/agents/codex-tdd-developer.md` を Read してプロンプトテンプレートを取得
+1. `roles/codex-tdd-developer.md` を Read してプロンプトテンプレートを取得
 2. テンプレートの変数を埋める:
    - `{仕様書の Todo IMPL 内容}`: 仕様書から対象 Todo の IMPL セクションを引用
    - `{プロジェクト情報}`: CLAUDE.md + package.json 等から要約
@@ -32,11 +32,11 @@ Todo の [TDD] ラベルを確認し、ラベルに応じて分岐する。
 5. 結果を確認:
    - 成功: テストコマンド（`npm test` 等）でテストが通ることを確認 → Claude がコミット
    - 失敗: エラー情報を含めてプロンプトを改善し、リトライ（最大3回）
-   - 3回失敗: Claude が `references/agents/tdd-developer.md` で直接実装（フォールバック）
+   - 3回失敗: Claude が `roles/tdd-developer.md` で直接実装（フォールバック）
 
 ### ラベルなし → Claude が直接実装
 
-1. `references/agents/implementer.md` を Read
+1. `roles/implementer.md` を Read
 2. ロール定義の手順に従って実装する（エージェントツールは立ち上げない。メインスレッドでそのまま作業。）
 3. 実装完了後、変更をコミットする
 

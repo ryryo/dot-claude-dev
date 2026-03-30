@@ -12,7 +12,7 @@ cat /tmp/codex-tdd-prompt.md | codex exec -m gpt-5.4 --sandbox workspace-write -
 ## フォールバック
 
 - codex exec が失敗した場合: エラー情報を含めてプロンプトを改善し、最大3回リトライ
-- 3回失敗: Claude が `references/agents/tdd-developer.md` のロール定義で直接実装
+- 3回失敗: Claude が `roles/tdd-developer.md` のロール定義で直接実装
 
 ## プロンプトテンプレート
 
