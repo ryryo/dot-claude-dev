@@ -66,17 +66,6 @@ Todo のラベルに応じて、ロール・モデルを決定する。
 | [TDD]     | VERIFY-a | codex review（差分バグ）   | codex review   |
 | [TDD]     | VERIFY-b | 3体並列レビュー           | sonnet         |
 
-### 共通ルール
-
-- **IMPL Role** の参照先: `references/agents/{role}.md`
-- **3体並列レビュー**: `agents/reviewer-quality.md`, `agents/reviewer-correctness.md`, `agents/reviewer-conventions.md` を並列実行
-- **[TDD]** は Todo 単位のラベル。同一 Gate 内で混在可
-- **Codex モード固有**:
-  - `codex-tdd-developer` の参照先: `references/agents/codex-tdd-developer.md`
-  - `codex review` の指示テンプレート: `references/codex-review-instructions.md`
-  - 非 [TDD] タスクは従来モードと同じ動作（Claude が直接 IMPL）
-  - VERIFY-a（codex review）→ FIX → VERIFY-b（sonnet 3体）の順で実行
-
 ## Todo 実行の手順
 
 実行モードに応じて参照ファイルを切り替える。**該当するリファレンスを Read してから実行すること。**
@@ -88,41 +77,14 @@ Todo のラベルに応じて、ロール・モデルを決定する。
 
 ## VERIFY の実行方法
 
-VERIFY の詳細手順は各実行プロトコルの参照ファイルに記載されている。
-以下は両モード共通の概要。
+`agents/` 内の3体のレビューエージェントを Agent（sonnet）で **並列** 起動する。各エージェントは信頼度スコア（0-100）で評価し、80以上の指摘のみ報告する。仕様書のパス + 対象 Review ID を渡す。
 
-### 3体並列レビュー（両モード共通）
-
-以下の3体を Agent（sonnet）で **並列** 起動する。各エージェントは信頼度スコア（0-100）で評価し、80以上の指摘のみ報告する。
-
-1. `agents/reviewer-quality.md` — 品質・設計（ベストプラクティス、保守性・可読性）
-2. `agents/reviewer-correctness.md` — 正確性・仕様適合（ストーリー適合性、API・SDK準拠、リスク・前提の検証、セキュリティ）
-3. `agents/reviewer-conventions.md` — プロジェクト慣例（CLAUDE.md準拠、既存パターン、命名規則）
-
-各エージェントには仕様書のパス + 対象 Review ID（例: Review A1）を渡す。
-
-### モード別の違い
-
-- **従来モード**: sonnet 3体並列のみ
-- **Codex モード（[TDD] タスク）**: `codex review` → FIX → sonnet 3体の 2段階。詳細は `references/codex-execution.md` を参照
-- **Codex モード（非 [TDD] タスク）**: 従来モードと同じ（sonnet 3体のみ）
-
-### 総合判定
-
-- **全体 PASS**: すべてのレビューが PASS
-- **全体 FAIL**: 1体でも FAIL があれば全体 FAIL → FIX ラウンドへ
+Codex モードの [TDD] タスクでは、sonnet 3体の前に `codex review` を先行実行する。詳細は `references/codex-execution.md` を参照。
 
 ### 結果の記録
 
-仕様書の Step 2 記入欄には **判定結果のみ** を簡潔に記録する。
-
 ```markdown
 - [x] **Step 2 — Review A1** ✅ PASSED
-```
-
-FIX で修正した場合は変更内容をメモする:
-
-```markdown
 - [x] **Step 2 — Review A1** ✅ PASSED (FIX 1回)
   > - stdin の null チェックを追加
 ```
