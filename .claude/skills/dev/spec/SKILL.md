@@ -73,20 +73,13 @@ allowed-tools:
 
 タスク分解結果をもとに、関連する Todo を Gate 単位でグループ化する:
 
-- 同一 Gate 内の Todo は並行実行可能
 - Gate 間は順序依存（前の Gate 通過が次の前提条件）
 - Todo の Step 手順・Gate 通過条件・Review 方法は `/dev:spec-run` スキルで定義。仕様書には Gate 0 として参照を記載するだけ
-- **`[PARALLEL]` タグの判断**: Gate 内の Todo が以下の条件をすべて満たす場合、Gate ヘッダに `[PARALLEL]` タグを付与する:
-  - Gate 内に独立した Todo が 2つ以上ある
-  - 各 Todo が複数ファイルにまたがる（1ファイル変更のみなら逐次で十分）
-  - Todo 間で変更対象ファイルが重複しない（競合回避）
-- `[PARALLEL]` タグ付き Gate の Todo は `dev:spec-run` が worktree で並列実行する（パラメータは `dev:spec-run` の SKILL.md テーブル参照）
 - **`[TDD]` ラベルの判断**: 各 Todo が以下の条件を満たす場合、Todo に `[TDD]` ラベルを付与する:
   - 入出力が明確なロジック（バリデーション、計算、変換、ビジネスロジック等）
   - アサーションで検証可能（`expect(result).toEqual(expected)` のような比較が書ける）
-- `[TDD]` ラベルは Todo 単位で付与する（Gate 単位の `[PARALLEL]` とは独立）
-- `[PARALLEL]` Gate 内で `[TDD]` と非`[TDD]` の Todo が混在してよい
-- `[TDD]` ラベル付き Todo は `dev:spec-run` が tdd-developer ロールで実装する
+- `[TDD]` ラベルは Todo 単位で付与する。同一 Gate 内で混在可
+- `[TDD]` ラベル付き Todo は `dev:spec-run` の実行モードに応じて tdd-developer または codex-tdd-developer で実装する
 
 ### Step 5: 仕様書ドラフト作成
 
@@ -147,8 +140,7 @@ allowed-tools:
 
 - **コミット** → `/dev:simple-add` でコミット
 - **修正** → 指示に従い修正
-- **実装へ進む** → 作業エージェントへの引き渡し方を案内
-  - `[PARALLEL]` タグ付き Gate がある場合、WorktreeCreate hook の設定が必要。`.claude/settings.json` を Read し、hook が未設定であれば `/dev:spec-run` の `references/worktree-setup-guide.md` を Read してプロジェクト分析→セットアップ提案を行う
+- **実装へ進む** → `/dev:spec-run` で仕様書を実行
 
 ---
 
