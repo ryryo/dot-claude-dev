@@ -6,10 +6,10 @@
 
 ```
 Step 0 — CONTEXT   仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
-Step 1 — IMPL      [TDD] は codex exec に委任、それ以外は Claude が直接実装
+Step 1 — IMPL      [TDD] は Codex に委任、それ以外は Claude が直接実装
 Step 2 — VERIFY    [TDD] は codex review → sonnet 3体、それ以外は sonnet 3体のみ
-Step 3 — FIX       FAIL がある場合のみ修正（最大3ラウンド）。全 PASS なら不要
-Step 4 — UPDATE    仕様書の完了した Step のチェックボックスを [x] に更新する
+Step 3 — FIX       FAIL がある場合のみ修正（最大3ラウンド）
+Step 4 — UPDATE    仕様書のチェックボックスを更新する
 ```
 
 ## Step 1 — IMPL の詳細
