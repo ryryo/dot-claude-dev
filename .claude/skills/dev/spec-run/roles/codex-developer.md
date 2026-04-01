@@ -1,52 +1,82 @@
 # Codex Developer — 汎用プロンプトテンプレート
 
-Codex モードで汎用タスクを `codex exec` に委任する際のプロンプトテンプレート。
+Codex モードで汎用タスクをプラグインの `task` コマンドに委任する際のプロンプトテンプレート。
 TDD 以外のタスク（コンポーネント作成、設定、ユーティリティ等）に使用する。
-Claude オーケストレーターがこのテンプレートの `{変数}` を埋めて stdin 経由で渡す。
+Claude オーケストレーターがこのテンプレートの `{変数}` を埋めて `.tmp/` に書き出し、`task` コマンドに渡す。
 
 ## 実行コマンド
 
 ```bash
-cat .tmp/codex-prompt.md | codex exec -m gpt-5.4 --sandbox workspace-write --full-auto --ephemeral - 2>/dev/null
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task --write --prompt-file .tmp/codex-prompt.md
 ```
 
-- `--ephemeral`: セッション再利用による前タスクの文脈汚染を防止
+- `--write`: ワークスペースへの書き込みを許可
+- `--prompt-file`: テンプレートをファイル経由で渡す
+
+### 並列実行（独立ファイルが複数の場合）
+
+```bash
+# ファイルごとに別プロンプトを作成し並列実行
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task --write --background --prompt-file .tmp/codex-prompt-1.md
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" task --write --background --prompt-file .tmp/codex-prompt-2.md
+# 完了待ち
+node "${CLAUDE_PLUGIN_ROOT}/scripts/codex-companion.mjs" status --wait
+```
 
 ## フォールバック
 
-- codex exec が失敗した場合: エラー情報を含めてプロンプトを改善し、最大3回リトライ
+- task が失敗した場合: `--resume-last` でコンテキストを保持したリトライ（最大3回）
 - 3回失敗: Claude が直接実装
 
 ## プロンプトテンプレート
 
-```markdown
-## タスク
-
+```xml
+<task>
 以下の仕様に基づいて実装してください。
 
 ## 仕様
-
 {仕様書の Todo IMPL 内容}
 
-## コンテキスト
-
-### プロジェクト情報
+## プロジェクト情報
 {プロジェクトの技術スタック、ディレクトリ構造の要約}
 
-### 関連コード
+## 関連コード
 {参照すべきファイルの内容を要約 — 10,000文字以内に収める}
+</task>
 
-## 制約
+<structured_output_contract>
+完了時に以下を返してください:
+1. 変更したファイル一覧
+2. 実装の要約（1-2文）
+3. 検証結果（ビルド・テスト実行の結果）
+</structured_output_contract>
 
-- 確認や質問は不要。具体的なコード実装まで自主的に完了すること
-- git commit は行わない（オーケストレーターが行う）
-- 既存コードの構造・命名規則・スタイルに合わせる
-- 仕様に記載されていない機能は追加しない
+<default_follow_through_policy>
+確認や質問は不要。具体的なコード実装まで自主的に完了すること。
+不明点は最も合理的でリスクの低い解釈を採用して進めること。
+</default_follow_through_policy>
+
+<completeness_contract>
+タスクを完全に解決してから停止すること。
+実装途中で止めない。ビルドエラーやテスト失敗がある場合は修正まで行うこと。
+</completeness_contract>
+
+<verification_loop>
+実装完了前に以下を検証すること:
+- コードが仕様の要件を満たしているか
+- ビルドが通るか
+- 既存テストが壊れていないか
+検証に失敗した場合、最初の結果ではなく修正版を返すこと。
+</verification_loop>
+
+<action_safety>
+変更は指定されたタスクのスコープに厳密に限定すること。
+git commit は行わない（オーケストレーターが行う）。
+既存コードの構造・命名規則・スタイルに合わせること。
+仕様に記載されていない機能は追加しない。
+関係のないリファクタリングやクリーンアップは行わない。
 {仕様書の設計決定事項があれば追記}
-
-## 完了条件
-
-{タスクに応じた完了条件 — Claude が Todo の内容から判断して記載}
+</action_safety>
 ```
 
 ## テンプレート変数の埋め方
@@ -56,8 +86,7 @@ cat .tmp/codex-prompt.md | codex exec -m gpt-5.4 --sandbox workspace-write --ful
 | `{仕様書の Todo IMPL 内容}` | 仕様書の対象 Todo の IMPL セクション | そのまま引用 |
 | `{プロジェクトの技術スタック...}` | CLAUDE.md + package.json 等 | 簡潔に要約 |
 | `{参照すべきファイルの内容を要約}` | 仕様書の「参照すべきファイル」を Read | 10,000文字以内。超える場合は型定義に絞る |
-| `{設計決定事項}` | 仕様書の設計決定事項セクション | あれば制約に追加 |
-| `{完了条件}` | Claude が Todo 内容から判断 | 例: ビルド成功、ファイル生成、テストパス等 |
+| `{設計決定事項}` | 仕様書の設計決定事項セクション | あれば `<action_safety>` に追加 |
 
 ## コンテキストサイズの目安
 
