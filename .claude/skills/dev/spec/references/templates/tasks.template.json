@@ -1,0 +1,35 @@
+{
+  "spec": {
+    "slug": "",
+    "title": "",
+    "specPath": "spec.md"
+  },
+  "gates": [
+    {
+      "id": "",
+      "title": "",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "",
+      "gate": "",
+      "title": "",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "", "operation": "", "summary": "" }
+      ],
+      "impl": "",
+      "relatedIssues": [],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "",
+    "totalGates": 0,
+    "totalTodos": 0
+  }
+}

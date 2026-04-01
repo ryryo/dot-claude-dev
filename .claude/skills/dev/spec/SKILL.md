@@ -32,10 +32,20 @@ allowed-tools:
 
 ## 出力
 
+### 通常モード（Gate < 3 かつ Todo < 10）
+
 | ファイル                                | 内容                                                                           |
 | --------------------------------------- | ------------------------------------------------------------------------------ |
-| `docs/PLAN/{YYMMDD}_{slug}.md`          | 仕様書本体                                                                     |
-| `docs/PLAN/{YYMMDD}_{slug}/references/` | 参照資料（外部ファイルのコピー、API 仕様等の新規リファレンス。必要な場合のみ） |
+| `docs/PLAN/{YYMMDD}_{slug}.md`          | 仕様書本体（従来通り全詳細を含む単一ファイル）                                 |
+| `docs/PLAN/{YYMMDD}_{slug}/references/` | 参照資料（必要な場合のみ）                                                     |
+
+### ディレクトリモード（Gate >= 3 または Todo >= 10）
+
+| ファイル                                    | 内容                                                               |
+| ------------------------------------------- | ------------------------------------------------------------------ |
+| `docs/PLAN/{YYMMDD}_{slug}/spec.md`         | 概要・設計決定・アーキテクチャ・依存図・チェックリスト・Review 記録 |
+| `docs/PLAN/{YYMMDD}_{slug}/tasks.json`      | Gate/Todo 全詳細の構造化データ（実装手順・コード例を含む）         |
+| `docs/PLAN/{YYMMDD}_{slug}/references/`     | 参照資料（必要な場合のみ）                                         |
 
 ---
 
@@ -81,14 +91,42 @@ allowed-tools:
 - `[TDD]` ラベルは Todo 単位で付与する。同一 Gate 内で混在可
 - `[TDD]` ラベル付き Todo は `dev:spec-run` の実行モードに応じて tdd-developer または codex-tdd-developer で実装する
 
+### Step 4b: 出力形式判定
+
+Step 4 のグループ化結果をもとに、出力形式を自動判定する:
+
+| 条件                          | 出力形式         |
+| ----------------------------- | ---------------- |
+| Gate 数 >= 3 **または** Todo 数 >= 10 | ディレクトリモード |
+| 上記以外                      | 通常モード       |
+
+判定結果は Step 5 以降の出力先とテンプレート選択に影響する。
+
 ### Step 5: 仕様書ドラフト作成
 
 1. `date +%y%m%d` で日付を取得
 2. AskUserQuestion で仕様書の slug を確定
-3. `references/template/spec-template.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}.md` に Write
+
+#### 通常モード（単一ファイル）
+
+3. `references/templates/spec-template.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}.md` に Write
    - 冒頭に **Gate 0** セクションを含める（`/dev:spec-run` への参照）
    - タスクリストは **Gate / Step 構造** で記述（テンプレートの「タスクリスト」セクション参照）
    - 各 Todo に **Step 1（IMPL）+ Step 2（Review 結果記入欄）** を含める
+
+#### ディレクトリモード
+
+3. `mkdir -p docs/PLAN/{YYMMDD}_{slug}` でディレクトリを作成
+4. **spec.md 作成**: `references/templates/spec-template-dir.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}/spec.md` に Write
+   - 概要・設計決定・アーキテクチャ・依存図・チェックリスト（Todo 名のみ）・Review 記入欄
+   - 実装詳細は **書かない**（tasks.json に格納するため）
+5. **tasks.json 作成**: `references/templates/tasks.template.json` を Read し、構造に従って `docs/PLAN/{YYMMDD}_{slug}/tasks.json` に Write
+   - `spec.slug`, `spec.title` を設定
+   - `gates` 配列に全 Gate を格納
+   - `todos` 配列に全 Todo を格納。各 Todo の `impl` フィールドに**実装詳細・コード例を含む完全な手順**を記述
+   - `affectedFiles` は plan.json と同じ形式（`path`, `operation`, `summary`）
+   - `tdd: true` は `[TDD]` ラベル付き Todo に設定
+   - `metadata.totalGates`, `metadata.totalTodos` を設定
 
 ### Step 6: 外部参照資料の同梱
 
@@ -113,7 +151,9 @@ allowed-tools:
 
 → **Agent（sonnet）** に委譲（`agents/plan-reviewer.md` を Read してプロンプトとして使用）
 
-レビューエージェントに渡す情報: 仕様書パス、CLAUDE.md パス（存在時）
+レビューエージェントに渡す情報:
+- **通常モード**: 仕様書パス、CLAUDE.md パス（存在時）
+- **ディレクトリモード**: spec.md パス + tasks.json パス、CLAUDE.md パス（存在時）
 
 レビュー観点:
 
@@ -146,14 +186,27 @@ allowed-tools:
 
 ## 完了条件
 
-- [ ] `docs/PLAN/{YYMMDD}_{slug}.md` が存在する
+### 共通
+
+- [ ] 冒頭に Gate 0（`/dev:spec-run` 参照）が記述されている
 - [ ] 仕様書内の全参照ファイルがコードベース内パスで解決可能
 - [ ] 外部参照は `references/` にコピー済み、パスも修正済み
-- [ ] 冒頭に Gate 0（`/dev:spec-run` 参照）が記述されている
-- [ ] 各 Todo に Step 1（IMPL）+ Step 2（Review 結果記入欄）が定義されている
 - [ ] Gate 間の依存関係が依存関係図に図示されている
 - [ ] レビューが完了（APPROVED or ユーザー判断で続行）
 - [ ] ユーザーが承認済み
+
+### 通常モード追加条件
+
+- [ ] `docs/PLAN/{YYMMDD}_{slug}.md` が存在する
+- [ ] 各 Todo に Step 1（IMPL）+ Step 2（Review 結果記入欄）が定義されている
+
+### ディレクトリモード追加条件
+
+- [ ] `docs/PLAN/{YYMMDD}_{slug}/spec.md` が存在する
+- [ ] `docs/PLAN/{YYMMDD}_{slug}/tasks.json` が存在する
+- [ ] tasks.json の全 Todo に `impl` フィールドが存在し空でない
+- [ ] spec.md のチェックリストと tasks.json の Todo ID/タイトルが一致する
+- [ ] spec.md の各 Todo に Review 結果記入欄（blockquote）が定義されている
 
 ## 参照
 

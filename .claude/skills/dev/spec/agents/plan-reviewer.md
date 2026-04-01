@@ -11,15 +11,29 @@ allowed_tools: Read, Glob, Grep, Bash
 
 ## 入力
 
+### 通常モード
 - 計画書のパス（`docs/PLAN/{YYMMDD}_{slug}.md`）
+- CLAUDE.md のパス（プロジェクトルート）
+
+### ディレクトリモード
+- spec.md のパス（`docs/PLAN/{YYMMDD}_{slug}/spec.md`）
+- tasks.json のパス（`docs/PLAN/{YYMMDD}_{slug}/tasks.json`）
 - CLAUDE.md のパス（プロジェクトルート）
 
 ## 実行フロー
 
 ### Step 1: ファイル読み込み
 
+**通常モード**:
 ```
 Read(計画書パス)
+Read(CLAUDE.md)
+```
+
+**ディレクトリモード**:
+```
+Read(spec.md パス)
+Read(tasks.json パス)
 Read(CLAUDE.md)
 ```
 
@@ -64,10 +78,19 @@ Read(CLAUDE.md)
 #### Gate 0 と Review 構造
 
 - [ ] 冒頭に Gate 0（`/dev:spec-run` への参照）がある
-- [ ] 各 Todo が Step 1（IMPL）+ Step 2（Review 結果記入欄）の構造を持っている
-- [ ] Review 結果記入欄が blockquote 形式の空テーブルとして設置されている
 - [ ] 各 Gate 末尾に Gate 通過条件が明示されている
 - [ ] Gate 間の依存関係が依存関係図に図示されている
+
+**通常モード追加チェック**:
+- [ ] 各 Todo が Step 1（IMPL）+ Step 2（Review 結果記入欄）の構造を持っている
+- [ ] Review 結果記入欄が blockquote 形式の空テーブルとして設置されている
+
+**ディレクトリモード追加チェック**:
+- [ ] spec.md のチェックリストと tasks.json の Todo ID/タイトルが一致する
+- [ ] spec.md の各 Todo に Review 結果記入欄（blockquote）が定義されている
+- [ ] tasks.json の全 Todo に `impl` フィールドが存在し空でない
+- [ ] tasks.json の `affectedFiles` が具体的ファイルパスである（ディレクトリ指定禁止）
+- [ ] tasks.json の `gates` 配列と spec.md の Gate セクションが一致する
 
 #### 参照の安全性
 
