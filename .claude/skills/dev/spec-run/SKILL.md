@@ -4,7 +4,7 @@ description: |
   仕様書（docs/PLAN/*.md）の実行プロトコル。
   IMPL → VERIFY の2層で Todo を実行する。
   起動時に Codex モードを選択すると、デフォルトで全タスクを Codex プラグイン（task）に委任し、
-  VERIFY は codex review（複雑さに応じて1回 or 3回直列）で実行する。
+  VERIFY は codex review（複雑さに応じて1回 or 3回並列）で実行する。
   仕様書の Gate 0 で参照される。
 
   Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
@@ -51,7 +51,7 @@ description: |
 AskUserQuestion で実行モードを選択する:
 
 - **従来モード** — Claude Code が全 Todo を直接実行
-- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じて1回 or 3回直列）
+- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じて1回 or 3回並列）
 
 選択結果を以降の全 Gate・全 Todo に適用する。
 

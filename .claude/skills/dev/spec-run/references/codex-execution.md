@@ -11,7 +11,7 @@
 ```
 Step 0 — CONTEXT   仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
 Step 1 — IMPL      チェックリストで委任判断 → Codex or Claude
-Step 2 — VERIFY    codex review（複雑さに応じて1回 or 3回直列）
+Step 2 — VERIFY    codex review（複雑さに応じて1回 or 3回並列）
 Step 3 — FIX       FAIL がある場合のみ修正（最大3ラウンド）
 Step 4 — UPDATE    仕様書のチェックボックスを更新する
 ```
@@ -133,15 +133,16 @@ codex review --commit {COMMIT_SHA} - < .tmp/codex-review-focus.md
 
 `{COMMIT_SHA}` は IMPL でコミットした SHA を指定する。未コミットの場合は `--uncommitted` を使用。
 
-### 複雑モード — codex review 3回直列
+### 複雑モード — codex review 3回並列
 
 `references/codex-review-instructions.md` の **quality / correctness / conventions** 各テンプレートを使用。
-各観点を順番に実行する（並列実行は TPM リミットに当たりやすいため直列）。
+3観点を並列実行し、すべての完了を待つ。
 
 ```bash
-codex review --commit {COMMIT_SHA} - < .tmp/codex-review-quality.md
-codex review --commit {COMMIT_SHA} - < .tmp/codex-review-correctness.md
-codex review --commit {COMMIT_SHA} - < .tmp/codex-review-conventions.md
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-quality.md &
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-correctness.md &
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-conventions.md &
+wait
 ```
 
 各 focus テンプレートの `{変数}` は仕様書の情報で埋める。
