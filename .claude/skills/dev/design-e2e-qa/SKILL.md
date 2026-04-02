@@ -70,7 +70,7 @@ Phase 1〜3 で収集した素材と Phase 4 の出力を格納する:
 ```
 {project}/
 └── .claude/e2e/
-    └── {scenario}.js    # before-script（export default async (page) => {}）
+    └── {scenario}.mjs   # before-script（export default async (page) => {}）
 ```
 
 ### SS 命名規則
@@ -170,8 +170,8 @@ Phase 1 の routes.txt から代表ページを選定し、`agents/screenshot.md
 
 認証が必要なページやインタラクション後の状態を撮影したい場合は `--before-script` を使用する:
 
-- **判定基準**: ログインが必要 / チャット完走後の全バルーン表示等、URL だけでは再現できない状態
-- **before-script の配置場所**: プロジェクト側 `.claude/e2e/` に ESM ファイルとして配置（`export default async (page) => {}`）
+- **判定基準**: ログインが必要など、VP に依存しない共通セットアップが URL だけでは再現できない場合に使用。VP ごとに異なる状態（モバイルドロワー展開等）の撮影には使えない（before-script は全 VP 撮影前に1回だけ実行される）
+- **before-script の配置場所**: プロジェクト側 `.claude/e2e/` に `.mjs` ファイルとして配置（`export default async (page) => {}`）
 - **実行順序の変更**: ステートフル UI の場合は Phase 3（インタラクション設計）→ Phase 2（SS 撮影）の順に変更可（before-script の内容を先に設計する必要があるため）
 
 - [ ] 代表ページ一覧を routes.txt から選定・記録（`page:path` 形式）

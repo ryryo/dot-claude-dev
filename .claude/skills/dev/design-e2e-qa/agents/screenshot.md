@@ -19,17 +19,18 @@ allowed_tools: Bash
 cd /path/to/project && bash .claude/skills/design-e2e-qa/scripts/take-screenshots.sh {BASE_URL} top:/ article-detail:/posts/slug/ archive:/posts/ about:/about
 ```
 
-### ステートフル UI（認証・インタラクション必要）
+### ステートフル UI（認証が必要なページ）
 
-認証やインタラクション後の状態を撮影する場合、`--before-script` でページ操作スクリプトを指定する。
+認証が必要なページなど、VP に依存しない共通セットアップが必要な場合に `--before-script` を使用する。
+before-script は全 VP 撮影前に **1回だけ** 実行される。VP ごとに異なる状態（モバイルドロワー展開等）の撮影には使えない。
 
 ```bash
 cd /path/to/project && bash .claude/skills/design-e2e-qa/scripts/take-screenshots.sh \
-  --before-script .claude/e2e/login.js \
+  --before-script .claude/e2e/login.mjs \
   {BASE_URL} dashboard:/dashboard profile:/profile
 ```
 
-before-script は `export default async (page) => {}` 形式の ESM ファイル。Puppeteer の page オブジェクトを直接操作して認証・ナビゲーション・インタラクションを行う。
+before-script は `export default async (page) => {}` 形式の ESM ファイル（`.mjs` 拡張子を推奨。`.js` は対象プロジェクトの `package.json` に `"type": "module"` がある場合のみ使用可）。
 
 ## 手順
 
