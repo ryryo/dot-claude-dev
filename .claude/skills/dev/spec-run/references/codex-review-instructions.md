@@ -1,21 +1,21 @@
-# Codex Adversarial Review — Focus テンプレート
+# Codex Review — Focus テンプレート
 
-Codex モードの VERIFY で `adversarial-review` に渡す focus テンプレート。
-Claude オーケストレーターが複雑さに応じてシンプルモード（統合版1回）または複雑モード（3観点並列）を選択する。
+Codex モードの VERIFY で `codex review` に渡す focus テンプレート。
+Claude オーケストレーターが複雑さに応じてシンプルモード（統合版1回）または複雑モード（3観点直列）を選択する。
 
 ## 実行コマンド
 
 ```bash
 # シンプルモード: 統合版 focus を1回実行
-node "$CODEX_COMPANION" adversarial-review --wait {focus テキスト}
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-focus.md
 
-# 複雑モード: 3観点を並列実行
-node "$CODEX_COMPANION" adversarial-review --background {quality-focus}
-node "$CODEX_COMPANION" adversarial-review --background {correctness-focus}
-node "$CODEX_COMPANION" adversarial-review --background {conventions-focus}
-# 完了待ち
-node "$CODEX_COMPANION" status --wait
+# 複雑モード: 3観点を直列実行（並列は TPM リミットに当たりやすいため）
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-quality.md
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-correctness.md
+codex review --commit {COMMIT_SHA} - < .tmp/codex-review-conventions.md
 ```
+
+`{COMMIT_SHA}` は IMPL でコミットした SHA。未コミットの場合は `--commit {SHA}` を `--uncommitted` に置き換える。
 
 ## 複雑さの判断基準
 
@@ -34,7 +34,7 @@ Claude が各 Todo の以下の要素を総合判断して決定する:
 
 ### 統合版（シンプルモード用）
 
-1回の adversarial-review で全観点をカバーする。
+1回の codex review で全観点をカバーする。
 
 ```
 以下の仕様に基づいて変更をレビューしてください。
@@ -114,27 +114,19 @@ Claude が各 Todo の以下の要素を総合判断して決定する:
 
 ## 結果の判定
 
-adversarial-review は構造化 JSON を返す:
+`codex review` は優先度付きテキストコメントを返す:
 
-```json
-{
-  "verdict": "needs-attention | approve",
-  "summary": "...",
-  "findings": [
-    { "file": "...", "line_start": 0, "severity": "critical|high|medium|low", "title": "...", "body": "...", "recommendation": "...", "confidence": 0.0 }
-  ],
-  "next_steps": ["..."]
-}
-```
+- `[P1]` — critical: 出荷阻止レベルの問題
+- `[P2]` — important: 重要だが文脈次第
+- `[P3]` — minor: 軽微な改善提案
 
 ### 判定基準
 
-- **verdict が "approve"** → PASS
-- **verdict が "needs-attention"**:
-  - severity が critical/high の finding がある → FAIL
-  - severity が medium 以下のみ → Claude が内容を精査し、実質的な問題か判断して PASS/FAIL を決定
+- **コメントなし / P3 のみ** → PASS
+- **P2 あり** → Claude が内容を精査し、仕様の設計決定に基づく意図的な動作かを判断して PASS/FAIL 決定
+- **P1 あり** → FAIL
 
-### 複雑モード（3観点並列）の統合判定
+### 複雑モード（3観点直列）の統合判定
 
 - 3観点すべて PASS → 全体 PASS
 - いずれかが FAIL → 全体 FAIL → FIX へ

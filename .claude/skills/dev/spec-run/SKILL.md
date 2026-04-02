@@ -4,7 +4,7 @@ description: |
   仕様書（docs/PLAN/*.md）の実行プロトコル。
   IMPL → VERIFY の2層で Todo を実行する。
   起動時に Codex モードを選択すると、デフォルトで全タスクを Codex プラグイン（task）に委任し、
-  VERIFY は adversarial-review（複雑さに応じて1回 or 3回並列）で実行する。
+  VERIFY は codex review（複雑さに応じて1回 or 3回直列）で実行する。
   仕様書の Gate 0 で参照される。
 
   Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
@@ -51,7 +51,7 @@ description: |
 AskUserQuestion で実行モードを選択する:
 
 - **従来モード** — Claude Code が全 Todo を直接実行
-- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `adversarial-review`（複雑さに応じて1回 or 3回並列）
+- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じて1回 or 3回直列）
 
 選択結果を以降の全 Gate・全 Todo に適用する。
 
@@ -106,7 +106,7 @@ Gate 内の全 Todo について:
 - `references/codex-execution.md` — Codex 実行プロトコル
 - `roles/codex-developer.md` — Codex 汎用実装プロンプトテンプレート（XML ブロック構造）
 - `roles/codex-tdd-developer.md` — Codex TDD 実装プロンプトテンプレート（XML ブロック構造）
-- `references/codex-review-instructions.md` — adversarial-review 用 focus テンプレート（統合版 + 3観点版）
+- `references/codex-review-instructions.md` — codex review 用 focus テンプレート（統合版 + 3観点版）
 
 ### 共通
 
