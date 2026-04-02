@@ -209,7 +209,7 @@ Gate C: ドキュメント更新（Gate A 完了後）
 
 #### Todo 1: `--before-script` フラグ + VP 内蔵ループ追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `scripts/screenshot.js`
   - **内容**:
     1. `node:path` のインポートに `extname`, `basename`, `join` を追加（`insertVpSuffix` で使用）
@@ -244,17 +244,19 @@ Gate C: ドキュメント更新（Gate A 完了後）
   - **実装詳細**: 「アーキテクチャ詳細」セクションの `screenshot.js main()` フローと `insertVpSuffix` 関数を参照
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
+  > **Review A1**: ✅ PASSED — quality(P1: Gate Bスコープ/設計判断), correctness(P2: macOS限定でスコープ外), conventions(P2: 仕様設計通り)。全指摘がスコープ外または設計判断に基づく。
 
 #### Todo 2: waitForResize ヘルパー追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `scripts/screenshot.js`（main 関数の近くにヘルパーとして定義）
   - **内容**: VP 変更後のレイアウト再描画を待つヘルパー関数を追加
   - **実装詳細**: 「アーキテクチャ詳細」セクションの `waitForResize` コードを参照。`requestAnimationFrame` 2 回 + 500ms 待機
   - **依存**: なし（Todo 1 と同時実装可）
 
-- [ ] **Step 2 — Review A2**
+- [x] **Step 2 — Review A2**
+  > **Review A2**: ✅ PASSED — Todo 1 と同時実装・同時レビュー。waitForResize は rAF 2回 + 500ms で仕様通り。
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、以下を確認:
 - `--before-script` なし + `--width 1440 --height 2560` 指定 → 従来通り単一 VP で SS 1 枚（ファイル名: `{page}-full.jpg`）
@@ -265,7 +267,7 @@ Gate C: ドキュメント更新（Gate A 完了後）
 
 #### Todo 3: VP ループ削除 + `--before-script` 転送
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `scripts/take-screenshots.sh`
   - **内容**:
     1. `VIEWPORTS` 配列定義を削除
@@ -282,7 +284,8 @@ Gate C: ドキュメント更新（Gate A 完了後）
   - **実装詳細**: VP suffix（desktop/tablet/mobile）は screenshot.js 側が出力ファイル名に付与するため、take-screenshots.sh 側では base name のみ指定
   - **依存**: Gate A（screenshot.js が VP ループを内蔵していること）
 
-- [ ] **Step 2 — Review B3**
+- [x] **Step 2 — Review B3**
+  > **Review B3**: ✅ PASSED — 指摘なし。引数パース・--before-script転送・VPループ削除が仕様通り。
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、以下を確認:
 - `take-screenshots.sh http://localhost:3000 top:/` → 3VP の SS が生成される
@@ -292,7 +295,7 @@ Gate C: ドキュメント更新（Gate A 完了後）
 
 #### Todo 4: agents/screenshot.md 更新
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `agents/screenshot.md`
   - **内容**:
     1. 「静的ページ」と「ステートフル UI（認証/インタラクション必要）」の 2 パターンを説明
@@ -300,11 +303,12 @@ Gate C: ドキュメント更新（Gate A 完了後）
     3. VP ループが screenshot.js 側に移動したことを反映（`--width`/`--height` は不要になった旨）
   - **依存**: Gate A
 
-- [ ] **Step 2 — Review C4**
+- [x] **Step 2 — Review C4**
+  > **Review C4**: ✅ PASSED (FIX 1回) — P1(.mjs推奨)とP2(VPスコープ明確化)を修正後PASS
 
 #### Todo 5: SKILL.md Phase 2 更新
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `SKILL.md`
   - **内容**:
     1. Phase 2 の説明に「ステートフル UI 向けフロー分岐」を追記:
@@ -314,7 +318,8 @@ Gate C: ドキュメント更新（Gate A 完了後）
     2. `.tmp/design-e2e-qa/` ディレクトリ構造セクションに `.claude/e2e/` の説明を追加
   - **依存**: Gate A
 
-- [ ] **Step 2 — Review C5**
+- [x] **Step 2 — Review C5**
+  > **Review C5**: ✅ PASSED — Todo 4 と同時レビュー・同時修正。
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、ドキュメントの整合性を確認
 
