@@ -2,8 +2,26 @@
 
 > **目的**: ローカル動作のSEO診断スキルで使用する全チェック項目と実装方式の定義
 > **作成日**: 2026-04-02
-> **前提**: ローカル実行。コードベースを直接Read/Grep/Globで解析するのが基本。
+> **前提**: ローカル実行。汎用スキルが全体をオーケストレーションし、プロジェクト差分は各リポジトリの `<target-project>/scripts/seo/` アダプタで吸収する。
 > **参照ツール**: Semrush(140+), Ahrefs(170+), Lighthouse(8), SEO Site Checkup(70+), Seobility(200+)
+
+---
+
+## パス表記ルール
+
+この資料では、パスの基準位置を明示的に次の2つに分ける。
+
+| 表記 | 意味 |
+|------|------|
+| `<skill-root>/...` | SEO監査スキル自身のディレクトリ配下 |
+| `<target-project>/...` | 監査対象のアプリケーション/サイトのリポジトリ配下 |
+
+例:
+- `<skill-root>/scripts/score.sh` はスキル側の共通スクリプト
+- `<target-project>/scripts/seo/collect.sh` は対象プロジェクト側のSEOアダプタ
+- `<target-project>/docs/seo/pages/<page-id>.json` は対象プロジェクト側に生成される監査成果物
+
+以下、単に `scripts/` や `docs/seo/` と書くと曖昧になるため、原則としてこのプレフィックス付きで記述する。
 
 ---
 
@@ -22,7 +40,7 @@
 
 | 層 | ラベル | データソース | 実行条件 |
 |----|--------|-------------|----------|
-| **Layer 1: code** | コード解析 | `Read`, `Glob`, `Grep` でソースコードを直読み | 常に実行 |
+| **Layer 1: code** | コード解析 | `<target-project>/scripts/seo/` が生成した監査アーティファクト、または静的ファイルを `Read`, `Glob`, `Grep` で解析 | 常に実行 |
 | **Layer 2: live** | ライブチェック | `curl` でHTTPヘッダー・SSL・リダイレクト等を取得 | 本番URL提供時のみ |
 | **Layer 3: api** | 外部API | PageSpeed Insights API でCWV等を取得 | 本番URL提供時のみ |
 
@@ -32,10 +50,11 @@
 
 | 方式 | 配置 | 用途 | 例 |
 |------|------|------|-----|
-| **code** | Read/Grep/Glob | ソースコード直読みで判定 | HTMLタグ有無、構造化データ、リンク構成 |
-| **script** | `scripts/` | bash/jq/grep で確定的ルール判定 | robots.txt解析、文字数カウント、パターンマッチ |
-| **agent** | `agents/` | LLMの判断が必要 | コンテンツ品質、可読性、E-E-A-T評価 |
-| **hybrid** | code/script + agent | 抽出→判定 | アンカーテキスト品質、アンサーファースト |
+| **adapter** | `<target-project>/scripts/seo/` | プロジェクト固有の構成差分を吸収 | ルート検出、ルート一覧、head抽出、ビルド/起動方法 |
+| **code** | Read/Grep/Glob | 正規化済みアーティファクトまたは単純な静的ファイルを判定 | HTMLタグ有無、構造化データ、リンク構成 |
+| **script** | `<skill-root>/scripts/` または `<target-project>/scripts/seo/` | bash/jq/grep で確定的ルール判定 | robots.txt解析、文字数カウント、パターンマッチ |
+| **agent** | `<skill-root>/agents/` | LLMの判断が必要 | コンテンツ品質、可読性、E-E-A-T評価 |
+| **hybrid** | adapter/code/script + agent | 抽出→判定 | アンカーテキスト品質、アンサーファースト |
 | **live** | `curl` | HTTPレスポンスが必要 | ヘッダー、SSL、リダイレクト、TTFB |
 | **api** | PSI API | 外部API呼び出し | CWV（LCP, INP, CLS, FCP） |
 
@@ -43,14 +62,14 @@
 
 ```
 ■ 常に実行（Layer 1: code）
-  Read/Glob/Grep でプロジェクト内のHTML/設定ファイルを直読み
-  ├─ HTMLファイル群 → メタタグ、構造化データ、リンク、画像等
-  ├─ robots.txt    → クローラビリティチェック
-  ├─ sitemap.xml   → サイトマップ検証
-  └─ llms.txt      → AI検索対応
+  まず <target-project>/scripts/seo/ のアダプタで監査対象を正規化
+  ├─ discover      → 監査対象ページ/ルート/設定ファイル候補の列挙
+  ├─ collect       → head/body/JSON-LD/リンク一覧などの監査アーティファクト生成
+  ├─ files         → robots.txt, sitemap.xml, llms.txt, favicon などの実体パス解決
+  └─ checks        → 汎用ルールがアーティファクトに対して判定
 
 ■ 本番URL提供時のみ（Layer 2: live）
-  scripts/fetch-live.sh <URL>
+  <skill-root>/scripts/fetch-live.sh <URL>
   ├─ curl -sIL → headers.txt（レスポンスヘッダー + リダイレクトチェーン）
   ├─ curl -vI 2>&1 → ssl-info.txt（SSL証明書情報）
   ├─ curl -w "%{time_starttransfer}" → ttfb.txt
@@ -59,9 +78,199 @@
   （並列実行、5秒タイムアウト）
 
 ■ 本番URL提供時のみ（Layer 3: api）
-  scripts/call-psi-api.sh <URL>
+  <skill-root>/scripts/call-psi-api.sh <URL>
   └─ PageSpeed Insights API → CWV, Lighthouseスコア
 ```
+
+### 汎用スキルとしての責務分離
+
+フレームワーク差分とディレクトリ差分が大きいため、汎用スキルは「直接すべてを読む」のではなく、以下の二層に分ける。
+
+| 層 | 責務 | 置き場所 |
+|----|------|---------|
+| **汎用スキル本体** | チェックリスト、スコアリング、レポート、アダプタ生成/更新判断 | `<skill-root>/` |
+| **プロジェクトSEOアダプタ** | ページ発見、ルート解決、head/body抽出、ビルド/起動方法の吸収 | `<target-project>/scripts/seo/` |
+
+この設計では `C01 title タグ存在` のような項目も、ソースコード中の `<title>` を直接 `Grep` するのではなく、アダプタが収集した「監査対象ページの正規化済み head 情報」に対して判定する。これにより Next.js/Nuxt/Astro/Vite/静的HTML の差異を吸収できる。
+
+### プロジェクトSEOアダプタの基本方針
+
+各プロジェクトに `<target-project>/scripts/seo/` を持たせ、初回実行時に未作成ならスキルが生成する。既存アダプタがあっても、プロジェクト構成の変化で古くなっている場合はスキルが更新提案または更新実施を行う。
+
+最低限必要な責務は以下。
+
+| ファイル | 役割 | 出力 |
+|---------|------|------|
+| `<target-project>/scripts/seo/discover.*` | 監査対象のページ・ルート・設定ファイル候補を検出 | `<target-project>/docs/seo/pages.json` |
+| `<target-project>/scripts/seo/collect.*` | 各ページの head/body/JSON-LD/リンク一覧を正規化して収集 | `<target-project>/docs/seo/pages/<page-id>.json` |
+| `<target-project>/scripts/seo/files.*` | robots.txt, sitemap.xml, llms.txt, favicon などの実パスを解決 | `<target-project>/docs/seo/files.json` |
+| `<target-project>/scripts/seo/manifest.json` | フレームワーク、主要ディレクトリ、実行方法、除外対象を宣言 | アダプタ設定 |
+
+`discover` はフレームワーク別のルート規約を解決する。例:
+- Next.js App Router: `app/**/page.*`, `generateMetadata`, `layout.*`
+- Next.js Pages Router: `pages/**/*.tsx`, `_app.*`, `_document.*`
+- Astro: `src/pages/**/*.astro`
+- Nuxt: `pages/**/*.vue`, `app.vue`, `nuxt.config.*`
+- 静的HTML: `public/**/*.html`, `dist/**/*.html`, ルート直下HTML
+
+`collect` は初版では静的解析を優先し、`title`, `canonical`, `robots`, `hreflang` など静的解析だけで確定しないページだけレンダリング補完を行う。これにより導入容易性を保ちつつ、動的メタデータも扱いやすくする。
+
+manifest が無い場合は、アダプタが `package.json`, framework config, ディレクトリ構成, route 規約から `framework`, `roots`, `commands`, `output` を自動推定する。manifest がある場合は、指定されたフィールドだけを override として扱い、未指定フィールドは引き続き自動推定結果を使う。
+
+### アダプタのライフサイクル
+
+```
+1. 初回実行
+   - `<target-project>/scripts/seo/` の有無確認
+   - 無ければプロジェクト構成を見て雛形を生成
+
+2. 実行前点検
+   - manifest と現在の構成差分を確認
+   - 主要ディレクトリやフレームワークが変わっていたら refresh を実行
+
+3. 監査実行
+   - adapter で監査アーティファクト生成
+   - 汎用ルールがそのアーティファクトを評価
+
+4. 保守
+   - チェック失敗の原因が「構成変化」なら、ルール修正より先に adapter 更新を優先
+```
+
+### 判定対象を「ソースコード」から「監査アーティファクト」へ寄せる
+
+汎用スキル側の各チェックは、可能な限り次の入力に対して判定する。
+
+| 判定対象 | 例 | 備考 |
+|---------|----|------|
+| `page.head` | title, meta description, canonical, OG, Twitter Card | `<target-project>/docs/seo/pages/<page-id>.json` 内。C01-C04, C16-C19 を安定化 |
+| `page.body` | H1, 見出し階層, FAQ, 本文量 | `<target-project>/docs/seo/pages/<page-id>.json` 内。C05-C08, C24-C30 |
+| `page.links` | 内部リンク数、空アンカー、unsafe target | `<target-project>/docs/seo/pages/<page-id>.json` 内。L01-L08 |
+| `page.structuredData` | JSON-LD構文、@type、必須プロパティ | `<target-project>/docs/seo/pages/<page-id>.json` 内。S01-S08 |
+| `project.files` | robots.txt, sitemap.xml, llms.txt, favicon | `<target-project>/docs/seo/files.json` 内。T01-T07, G01-G03 |
+
+この整理を入れておくと、「どのチェックが raw Grep で済み、どのチェックは adapter 前提か」が明確になる。
+
+### 監査成果物の標準配置
+
+監査成果物の標準配置は `<target-project>/docs/seo/` とし、JSON と人間向け要約の両方を Git 管理する。
+
+| パス | 役割 | 備考 |
+|------|------|------|
+| `<target-project>/docs/seo/pages.json` | 監査対象ページの一覧 | route ベースの安定IDを持つ |
+| `<target-project>/docs/seo/files.json` | ページ単位ではない静的資産の監査情報 | robots, sitemap, llms, favicon の窓口 |
+| `<target-project>/docs/seo/pages/<page-id>.json` | ページ単位の正規化済み監査成果物 | `head`, `body`, `links`, `structuredData` を含む |
+| `<target-project>/docs/seo/summary.md` | 人間向けの監査要約 | 総合スコア、カテゴリ別スコア、重大指摘、次アクション |
+
+`<page-id>` は URL path または route path から決定する安定IDとし、毎回同じページが同じファイル名になることを優先する。
+
+### `summary.md` の役割
+
+`<target-project>/docs/seo/summary.md` は人間向けの監査結果の入口とし、少なくとも以下を含む前提とする。
+
+- 総合スコアとランク
+- カテゴリ別スコア
+- critical / error の重大指摘
+- 直近で着手すべき次アクション
+- `pages.json`, `files.json`, `pages/<page-id>.json` を一次情報源とした旨
+
+### `pages/<page-id>.json` 初版スキーマ
+
+初版のページ成果物は「中程度の詳細」とし、SEO判定だけでなく保守時の由来追跡にも使える粒度にする。
+
+| フィールド | 必須 | 内容 |
+|-----------|------|------|
+| `pageId` | 必須 | route ベースの安定ID |
+| `route` | 必須 | 公開URLまたは route path |
+| `source.framework` | 必須 | `next-app`, `next-pages`, `astro`, `nuxt`, `static` など |
+| `source.sourceFiles` | 必須 | 元になったファイル群 |
+| `source.template` | 任意 | layout, page, template などの由来 |
+| `source.renderMode` | 必須 | `static`, `ssg`, `ssr`, `csr`, `unknown` のいずれか |
+| `source.locale` | 任意 | 言語・地域情報 |
+| `head.title` | 任意 | 正規化済み title |
+| `head.metaDescription` | 任意 | 正規化済み description |
+| `head.canonical` | 任意 | canonical URL |
+| `head.robots` | 任意 | robots directives |
+| `head.hreflangs` | 任意 | hreflang 配列 |
+| `head.openGraph` | 任意 | OGメタ情報 |
+| `head.twitterCard` | 任意 | Twitter Card メタ情報 |
+| `body.h1` | 任意 | 主見出し |
+| `body.headings` | 任意 | 見出し階層の配列 |
+| `body.textSummary` | 任意 | 本文要約または冒頭抜粋 |
+| `body.textLength` | 任意 | 本文文字数 |
+| `body.faqSignals` | 任意 | FAQの有無や件数 |
+| `links.internal` | 任意 | 内部リンク一覧と件数 |
+| `links.external` | 任意 | 外部リンク一覧と件数 |
+| `links.emptyAnchors` | 任意 | 空アンカーの一覧 |
+| `links.unsafeTargets` | 任意 | `target=\"_blank\"` で `rel` 不備の一覧 |
+| `structuredData.rawBlocks` | 任意 | JSON-LD raw block 一覧 |
+| `structuredData.types` | 任意 | 抽出された `@type` 一覧 |
+| `structuredData.parseErrors` | 任意 | JSON-LD パースエラー |
+| `collectionMeta.collectedBy` | 必須 | `static-analysis`, `build-html`, `preview`, `dev-server` など |
+| `collectionMeta.usedRendering` | 必須 | レンダリング補完の有無 |
+| `collectionMeta.warnings` | 任意 | 収集失敗や不確定情報の記録 |
+
+### `files.json` 初版スキーマ
+
+`<target-project>/docs/seo/files.json` はページ単位ではない資産の一次情報源とする。
+
+| フィールド | 必須 | 内容 |
+|-----------|------|------|
+| `robotsTxt` | 任意 | 実パス、存在有無、本文、パース結果 |
+| `sitemapXml` | 任意 | 実パス、存在有無、本文、パース結果 |
+| `llmsTxt` | 任意 | 実パス、存在有無、本文、パース結果 |
+| `favicon` | 任意 | 実パス、存在有無、検出元 |
+| `discoveredPaths` | 必須 | 探索した候補パス一覧 |
+| `missing` | 必須 | 見つからなかった必須/推奨ファイル一覧 |
+| `parseWarnings` | 任意 | パース警告やフォーマット逸脱 |
+
+T01-T07 と G01-G03 は原則 `files.json` を一次情報源として判定する。
+
+### `manifest.json` 初版設計
+
+`<target-project>/scripts/seo/manifest.json` は自動検出優先で、例外だけを上書きする設定ファイルとする。未指定項目はアダプタが推定し、指定された項目だけを override として扱う。
+
+| フィールド | 必須 | 役割 | override ルール |
+|-----------|------|------|-----------------|
+| `framework` | 任意 | フレームワーク種別の明示 | 指定時は自動推定より優先 |
+| `roots.appRoots` | 任意 | app router 系の探索起点 | 指定時は候補追加ではなく優先リスト化 |
+| `roots.pageRoots` | 任意 | page ファイル探索起点 | 指定時は候補追加ではなく優先リスト化 |
+| `roots.publicRoots` | 任意 | 静的資産探索起点 | 指定時は優先 |
+| `roots.configFiles` | 任意 | 設定ファイル候補 | 指定時は優先 |
+| `include` | 任意 | 監査に含める route/file pattern | 自動検出後に絞り込み適用 |
+| `exclude` | 任意 | 監査から除外する route/file pattern | 自動検出後に除外適用 |
+| `collect.preferStaticAnalysis` | 任意 | 静的解析を標準にするか | 未指定時は `true` |
+| `collect.allowRenderingFallback` | 任意 | レンダリング補完を許可するか | 未指定時は `true` |
+| `commands.build` | 任意 | build 実行コマンド | レンダリング補完時の候補 |
+| `commands.dev` | 任意 | dev server 実行コマンド | 最終フォールバック候補 |
+| `commands.preview` | 任意 | preview 実行コマンド | build 済み成果物の次候補 |
+| `output.docsDir` | 任意 | 監査成果物出力先 | 未指定時は `<target-project>/docs/seo/` |
+| `output.pagesDir` | 任意 | ページ成果物出力先 | 未指定時は `<target-project>/docs/seo/pages/` |
+| `notes` | 任意 | 人間向けメモ | 判定には使わない |
+
+### `collect` の標準戦略
+
+`<target-project>/scripts/seo/collect.*` は以下の順で動く前提とする。
+
+1. 静的解析で `head`, `body`, `links`, `structuredData` を回収する。
+2. `title`, `canonical`, `robots`, `hreflang` など静的解析だけで確定しないページだけレンダリング対象にする。
+3. レンダリング補完は `build` 済みHTML、`preview`、`dev server` の順で利用可能なものを選ぶ。
+4. レンダリング不能でも監査は継続し、その理由を `collectionMeta.warnings` に記録する。
+
+レンダリングは必須ではなく、不足分だけ補完する方針とする。初版では完全再現より導入容易性を優先する。
+
+`include` / `exclude` は自動検出後のフィルタとして適用し、`commands.*` と `output.*` は manifest に指定があればその値を優先する。
+
+### 成果物を一次情報源とするチェック再定義
+
+少なくとも以下の項目は、元ソースの direct grep ではなく成果物のどのフィールドを見るかを企画書に明記する。
+
+| チェック | 一次情報源 | 判定方法 |
+|---------|------------|----------|
+| `C01 title タグ存在` | `<target-project>/docs/seo/pages/<page-id>.json` の `head.title` | 空文字または欠損なら error |
+| `T01 robots.txt 存在` | `<target-project>/docs/seo/files.json` の `robotsTxt` | `resolvedPath` 不在または `exists=false` なら warning |
+| `T10 canonical タグ存在` | `<target-project>/docs/seo/pages/<page-id>.json` の `head.canonical` | 欠損なら warning |
+| `S01 JSON-LD 存在` | `<target-project>/docs/seo/pages/<page-id>.json` の `structuredData.rawBlocks` | 空配列なら warning |
+| `L01 内部リンク数` | `<target-project>/docs/seo/pages/<page-id>.json` の `links.internal` | 件数をカウントして集計 |
 
 ---
 
@@ -71,19 +280,19 @@
 
 | # | チェック項目 | 深刻度 | Layer | 方式 | 実装方法 |
 |---|------------|--------|-------|------|----------|
-| T01 | **robots.txt 存在** | warning | code | Glob | プロジェクトルートに `robots.txt` が存在するか |
-| T02 | **robots.txt 構文エラー** | error | code | script | `Read` で読み込み → `User-agent`, `Disallow`, `Allow` の構文パース |
-| T03 | **robots.txt で重要ページ遮断** | critical | code | script | `Disallow: /` の有無。主要パスがDisallowに該当するか判定 |
-| T04 | **robots.txt にSitemap指定** | warning | code | Grep | `Sitemap:` ディレクティブの有無 |
-| T05 | **AIクローラーのブロック** | warning | code | Grep | `GPTBot`, `ClaudeBot`, `PerplexityBot` が Disallow されているか |
-| T06 | **sitemap.xml 存在** | warning | code | Glob | プロジェクトルートに `sitemap.xml` が存在するか |
-| T07 | **sitemap.xml 構文** | error | code | script | `Read` → XMLとして整形式か検証 |
-| T08 | **meta robots** | error | code | Grep | HTML内の `<meta name="robots" content="noindex">` を検出 |
+| T01 | **robots.txt 存在** | warning | code | code | `<target-project>/docs/seo/files.json` の `robotsTxt.exists` と `robotsTxt.resolvedPath` を判定 |
+| T02 | **robots.txt 構文エラー** | error | code | script | `<target-project>/docs/seo/files.json` の `robotsTxt.content` を `User-agent`, `Disallow`, `Allow` としてパース |
+| T03 | **robots.txt で重要ページ遮断** | critical | code | script | `<target-project>/docs/seo/files.json` の `robotsTxt.content` と `pages.json` の主要routeを照合 |
+| T04 | **robots.txt にSitemap指定** | warning | code | code | `<target-project>/docs/seo/files.json` の `robotsTxt.directives` から `Sitemap` を確認 |
+| T05 | **AIクローラーのブロック** | warning | code | code | `<target-project>/docs/seo/files.json` の `robotsTxt.directives` で `GPTBot`, `ClaudeBot`, `PerplexityBot` を確認 |
+| T06 | **sitemap.xml 存在** | warning | code | code | `<target-project>/docs/seo/files.json` の `sitemapXml.exists` と `sitemapXml.resolvedPath` を判定 |
+| T07 | **sitemap.xml 構文** | error | code | script | `<target-project>/docs/seo/files.json` の `sitemapXml.content` をXMLとして検証 |
+| T08 | **meta robots** | error | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `head.robots` に `noindex` があるか判定 |
 | T09 | **X-Robots-Tag** | error | live | curl | `headers.txt` から `X-Robots-Tag: noindex` を検出 |
-| T10 | **canonical タグ存在** | warning | code | Grep | `<link rel="canonical" href="...">` の有無 |
-| T11 | **canonical URL妥当性** | error | code | script | canonical href が相対パス・空でないか、URL形式が正しいか |
-| T12 | **hreflang 存在** | notice | code | Grep | `<link rel="alternate" hreflang="...">` の検出 |
-| T13 | **hreflang 言語コード妥当性** | error | code | script | ISO 639-1 コードとの照合 |
+| T10 | **canonical タグ存在** | warning | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `head.canonical` の有無 |
+| T11 | **canonical URL妥当性** | error | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `head.canonical` が空・相対・不正形式でないか検証 |
+| T12 | **hreflang 存在** | notice | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `head.hreflangs` 配列の有無 |
+| T13 | **hreflang 言語コード妥当性** | error | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `head.hreflangs` を ISO 639-1 と照合 |
 | T14 | **HTTPステータスコード** | error | live | curl | 最終ステータスコード取得。4xx/5xx = error |
 | T15 | **リダイレクトチェーン** | warning | live | curl | リダイレクト回数カウント。3段以上 = warning |
 | T16 | **WWW解決** | warning | live | curl | www あり/なし両方で同一ページに解決されるか |
@@ -119,14 +328,14 @@
 
 | # | チェック項目 | 深刻度 | Layer | 方式 | 実装方法 |
 |---|------------|--------|-------|------|----------|
-| C01 | **title タグ存在** | error | code | Grep | `<title>` タグの有無。空の場合も error |
-| C02 | **title 長さ** | warning | code | script | テキスト抽出→文字数カウント。30未満 or 60超 = warning |
-| C03 | **meta description 存在** | warning | code | Grep | `<meta name="description">` の有無 |
-| C04 | **meta description 長さ** | warning | code | script | content属性の文字数。70未満 or 160超 = warning |
-| C05 | **H1 タグ存在** | error | code | Grep | `<h1>` の有無 |
-| C06 | **H1 が1つだけか** | notice | code | Grep | `<h1>` の出現回数カウント。2以上=notice |
-| C07 | **H1 と title の重複** | warning | code | script | H1テキストとtitleテキストの完全一致チェック |
-| C08 | **見出し階層の論理性** | warning | code | script | H1→H2→H3 の順序チェック。スキップ（H1→H3等）を検出 |
+| C01 | **title タグ存在** | error | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `head.title` が空でないか判定 |
+| C02 | **title 長さ** | warning | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `head.title` 文字数。30未満 or 60超 = warning |
+| C03 | **meta description 存在** | warning | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `head.metaDescription` の有無 |
+| C04 | **meta description 長さ** | warning | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `head.metaDescription` 文字数。70未満 or 160超 = warning |
+| C05 | **H1 タグ存在** | error | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `body.h1` の有無 |
+| C06 | **H1 が1つだけか** | notice | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `body.headings` から H1 件数を集計 |
+| C07 | **H1 と title の重複** | warning | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `body.h1` と `head.title` を比較 |
+| C08 | **見出し階層の論理性** | warning | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `body.headings` を使って H1→H2→H3 の順序を検証 |
 | C09 | **画像 alt 属性** | warning | code | Grep | `<img>` の総数と `alt` 属性なしの数をカウント。充足率算出 |
 | C10 | **レスポンシブ画像（srcset）** | notice | code | Grep | `<img>` に `srcset` 属性があるか |
 | C11 | **モダン画像フォーマット** | notice | code | Grep | `<img src>` / `<source>` の拡張子。WebP/AVIF が使われているか |
@@ -161,14 +370,14 @@
 
 | # | チェック項目 | 深刻度 | Layer | 方式 | 実装方法 |
 |---|------------|--------|-------|------|----------|
-| L01 | **内部リンク数** | notice | code | Grep | `<a href>` のうち同一ドメイン/相対パスのリンク数カウント |
-| L02 | **外部リンク数** | notice | code | Grep | `<a href>` のうち外部ドメインのリンク数カウント |
-| L03 | **リンク過多** | warning | code | script | ページ内リンク総数。100超=notice、300超=warning |
-| L04 | **アンカーテキスト品質** | warning | code | hybrid | Grep: 全`<a>`のテキスト抽出 → agent: 「こちら」「click here」等を判定 |
-| L05 | **空アンカーテキスト** | warning | code | Grep | `<a>` のテキスト+alt(画像リンク)が空のものを検出 |
-| L06 | **nofollow 内部リンク** | warning | code | Grep | 内部リンクに `rel="nofollow"` が付いているものを検出 |
-| L07 | **壊れた内部リンク候補** | notice | code | Grep | 空href, `javascript:void(0)`, `#` のみのリンクを検出 |
-| L08 | **unsafe cross-origin links** | notice | code | Grep | `target="_blank"` に `rel="noopener noreferrer"` がないリンク |
+| L01 | **内部リンク数** | notice | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `links.internal` 件数を集計 |
+| L02 | **外部リンク数** | notice | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `links.external` 件数を集計 |
+| L03 | **リンク過多** | warning | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `links.internal` + `links.external` の総数。100超=notice、300超=warning |
+| L04 | **アンカーテキスト品質** | warning | code | hybrid | `<target-project>/docs/seo/pages/<page-id>.json` のリンクテキストを抽出 → agent が「こちら」「click here」等を判定 |
+| L05 | **空アンカーテキスト** | warning | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `links.emptyAnchors` を検出 |
+| L06 | **nofollow 内部リンク** | warning | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `links.internal` で `rel=\"nofollow\"` を検出 |
+| L07 | **壊れた内部リンク候補** | notice | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `links.internal` で空href, `javascript:void(0)`, `#` を検出 |
+| L08 | **unsafe cross-origin links** | notice | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `links.unsafeTargets` を検出 |
 | L09 | **パンくずリスト** | notice | code | Grep | `BreadcrumbList` JSON-LD、または `<nav aria-label="breadcrumb">` |
 | L10 | **meta refresh リダイレクト** | error | code | Grep | `<meta http-equiv="refresh">` の検出 |
 
@@ -209,10 +418,10 @@
 
 | # | チェック項目 | 深刻度 | Layer | 方式 | 実装方法 |
 |---|------------|--------|-------|------|----------|
-| S01 | **JSON-LD 存在** | warning | code | Grep | `<script type="application/ld+json">` の有無 |
-| S02 | **JSON-LD 構文妥当性** | error | code | script | JSON-LDブロックを抽出 → `jq` でパース。構文エラー検出 |
-| S03 | **@type 検出** | notice | code | script | JSON-LD 内の `@type` 値一覧抽出 |
-| S04 | **必須プロパティ充足** | warning | code | hybrid | Grep: JSON-LD抽出 → agent: Schema.org必須/推奨プロパティとの照合 |
+| S01 | **JSON-LD 存在** | warning | code | code | `<target-project>/docs/seo/pages/<page-id>.json` の `structuredData.rawBlocks` の有無 |
+| S02 | **JSON-LD 構文妥当性** | error | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `structuredData.parseErrors` と raw block を検証 |
+| S03 | **@type 検出** | notice | code | script | `<target-project>/docs/seo/pages/<page-id>.json` の `structuredData.types` 一覧を抽出 |
+| S04 | **必須プロパティ充足** | warning | code | hybrid | `<target-project>/docs/seo/pages/<page-id>.json` の `structuredData.rawBlocks` を agent が Schema.org 必須/推奨プロパティと照合 |
 | S05 | **Organization schema** | notice | code | Grep | `@type.*Organization` の有無。name, url, logo の存在 |
 | S06 | **BreadcrumbList schema** | notice | code | Grep | `@type.*BreadcrumbList` の有無 |
 | S07 | **FAQPage schema** | notice | code | Grep | `@type.*FAQPage` の有無 |
@@ -222,9 +431,9 @@
 
 | # | チェック項目 | 深刻度 | Layer | 方式 | 実装方法 |
 |---|------------|--------|-------|------|----------|
-| G01 | **llms.txt 存在** | notice | code | Glob | プロジェクトルートに `llms.txt` が存在するか |
-| G02 | **llms.txt フォーマット** | notice | code | script | Read → セクション構造の妥当性チェック |
-| G03 | **AIクローラー許可** | warning | code | Grep | robots.txt でGPTBot等がDisallowされていないか（=T05と共有） |
+| G01 | **llms.txt 存在** | notice | code | code | `<target-project>/docs/seo/files.json` の `llmsTxt.exists` と `llmsTxt.resolvedPath` を判定 |
+| G02 | **llms.txt フォーマット** | notice | code | script | `<target-project>/docs/seo/files.json` の `llmsTxt.content` を読み、セクション構造を検証 |
+| G03 | **AIクローラー許可** | warning | code | code | `<target-project>/docs/seo/files.json` の `robotsTxt.directives` を参照して T05 と共通判定 |
 | G04 | **セマンティックHTML使用率** | notice | code | Grep | `<article>`, `<section>`, `<nav>`, `<main>` 数 vs `<div>` 総数の比率 |
 | G05 | **Answer-First 構造** | warning | code | hybrid | Read: H1直後テキスト抽出 → agent: 直接回答があるか判定 |
 | G06 | **Direct Question Headers** | notice | code | Grep | H2/H3に疑問文パターン（「?」「〜とは」「How」「What」） |
@@ -361,8 +570,8 @@
 ### ファイル構成
 
 ```
-seo-audit/
-├── scripts/                        # Layer 2/3（live/api）用
+<skill-root>/
+├── scripts/                        # 汎用スキル側の共通スクリプト
 │   ├── fetch-live.sh               # 本番URLからデータ取得（curl並列）
 │   ├── call-psi-api.sh             # PSI API呼び出し（CWV, Lighthouse）
 │   └── score.sh                    # 全結果集約 → スコア算出
@@ -377,51 +586,82 @@ seo-audit/
 └── SKILL.md                        # スキル本体（実行フロー定義）
 ```
 
-**Layer 1（code）の解析はスキル本体（SKILL.md）のプロンプト内でRead/Grep/Globを直接実行。**
-専用のスクリプトファイルは不要 — Claude Codeのツールで直接処理する。
+監査対象プロジェクト側には、別途以下を生成・保守する想定:
+
+```
+<target-project>/
+├── scripts/
+│   └── seo/
+│       ├── manifest.json           # 自動検出の override 設定
+│       ├── discover.sh             # 監査対象ページ/設定ファイルの発見
+│       ├── collect.sh              # 静的解析優先 + 必要時レンダリング補完
+│       └── files.sh                # robots/sitemap/llms/favicon の実パス解決
+└── docs/
+    └── seo/
+        ├── pages.json
+        ├── files.json
+        ├── summary.md
+        └── pages/
+            └── <page-id>.json
+```
+
+**Layer 1（code）は「直接ソースを舐める」のではなく、原則として `<target-project>/scripts/seo/` が生成した監査アーティファクトを読む。**
+単純な静的ファイルだけは汎用スキル側で直接 `Read/Grep/Glob` してよいが、フレームワーク依存の head 生成やページ列挙はアダプタに寄せる。
 
 ### 実行フロー
 
 ```
-Phase 0: モード決定
-  AskUserQuestion → 本番URLの有無確認
-  ├─ URL入力 → Full モード
-  └─ なし    → Code-only モード
+Phase 0: プロジェクト検出 & モード決定
+  プロジェクト構成を確認
+  ├─ framework, app root, pages root, config file を推定
+  ├─ <target-project>/scripts/seo/ の有無確認
+  └─ AskUserQuestion → 本番URLの有無確認
 
-Phase 1: コード解析（Layer 1: code）— 常に実行
-  Glob: HTMLファイル、robots.txt、sitemap.xml、llms.txt の特定
-  Read: 主要ファイルの読み込み
-  Grep: ~75項目のパターンマッチ検査
-  （Claude Codeの標準ツールで直接実行、並列可能）
+Phase 0.5: アダプタ生成/更新
+  <target-project>/scripts/seo/ が無ければ生成
+  <target-project>/scripts/seo/manifest.json と現状構成がズレていれば refresh
+  以降のチェックはこの adapter を一次情報源として扱う
 
-Phase 2: ライブチェック（Layer 2: live）— 本番URL時のみ
-  scripts/fetch-live.sh <URL>
+Phase 1: アーティファクト収集（Layer 1: code）— 常に実行
+  <target-project>/scripts/seo/discover.*
+  <target-project>/scripts/seo/collect.*
+  <target-project>/scripts/seo/files.*
+  ├─ <target-project>/docs/seo/pages.json
+  ├─ <target-project>/docs/seo/files.json
+  └─ <target-project>/docs/seo/pages/<page-id>.json（head/body/links/structuredData）
+
+Phase 2: 汎用チェック実行（Layer 1: code）— 常に実行
+  Read/Grep/jq 等で監査アーティファクトを評価
+  単純な静的ファイルは直接読み込み可
+
+Phase 3: ライブチェック（Layer 2: live）— 本番URL時のみ
+  <skill-root>/scripts/fetch-live.sh <URL>
   ├─ SSL証明書、HTTPヘッダー、リダイレクト、TTFB等
   └─ 並列実行、5秒タイムアウト
 
-Phase 3: API（Layer 3: api）— 本番URL時のみ
-  scripts/call-psi-api.sh <URL>
+Phase 4: API（Layer 3: api）— 本番URL時のみ
+  <skill-root>/scripts/call-psi-api.sh <URL>
   └─ CWV（LCP, INP, CLS, FCP）+ Lighthouseスコア
 
-Phase 4: Agent解析 — Phase 1(+2)の結果を入力
-  agents/content-quality.md
-  agents/geo-readiness.md
-  agents/eeat-assessment.md
-  agents/local-seo.md
-  agents/link-quality.md
-  agents/structured-data-review.md
+Phase 5: Agent解析 — Phase 1-4 の結果を入力
+  <skill-root>/agents/content-quality.md
+  <skill-root>/agents/geo-readiness.md
+  <skill-root>/agents/eeat-assessment.md
+  <skill-root>/agents/local-seo.md
+  <skill-root>/agents/link-quality.md
+  <skill-root>/agents/structured-data-review.md
   （並列実行可能）
 
-Phase 5: スコア集計 & レポート生成
-  scripts/score.sh            ← 全結果をJSON集約
-  agents/report-generator.md  ← スコア+詳細→人間向けレポート
+Phase 6: スコア集計 & レポート生成
+  <skill-root>/scripts/score.sh            ← `<target-project>/docs/seo/*.json` を集約
+  <skill-root>/agents/report-generator.md  ← `<target-project>/docs/seo/summary.md` を生成
 ```
 
 ### Layer別の内訳
 
 | Layer | 項目数 | 割合 | 実行条件 |
 |-------|--------|------|----------|
-| **code**（コード直読み） | ~100項目 | ~81% | 常に実行 |
+| **code**（アーティファクト/静的ファイル解析） | ~100項目 | ~81% | 常に実行 |
 | **live**（curl） | ~16項目 | ~13% | 本番URL提供時のみ |
 | **api**（PSI API） | ~7項目 | ~6% | 本番URL提供時のみ |
 
@@ -431,12 +671,23 @@ Phase 5: スコア集計 & レポート生成
 
 | 方式 | 項目数 | 説明 |
 |------|--------|------|
-| **Read/Grep/Glob** のみ | ~75項目 | ソースコード直読みで完結 |
+| **adapter + code** | ~75項目 | アダプタが収集したアーティファクトに対して確定的ルールを適用 |
 | **script**（bash/jq等） | ~20項目 | パース・計算が必要 |
 | **agent**（LLMプロンプト） | ~8項目 | 意味理解が必要 |
-| **hybrid**（code+agent） | ~13項目 | 抽出→判定の2段階 |
+| **hybrid**（adapter/code+agent） | ~13項目 | 抽出→判定の2段階 |
 | **live**（curl） | ~16項目 | HTTPレスポンス必要 |
 | **api**（PSI API） | ~7項目 | 外部API |
+
+## 受け入れ条件
+
+この企画書の次版は、以下を満たせば完成とする。
+
+- すべてのパスが `<skill-root>` または `<target-project>` 付きで記載されている
+- `<target-project>/docs/seo/pages/<page-id>.json` と `<target-project>/docs/seo/files.json` の必須フィールドが表形式で定義されている
+- `<target-project>/scripts/seo/manifest.json` の必須/任意項目と override ルールが定義されている
+- `collect` の静的解析とレンダリング補完の分岐条件が書かれている
+- 少なくとも `C01`, `T01`, `T10`, `S01`, `L01` が「どの成果物のどのフィールドを見るか」で説明されている
+- `<target-project>/docs/seo/` 配下に JSON と要約を Git 管理する方針が明記されている
 
 ---
 
