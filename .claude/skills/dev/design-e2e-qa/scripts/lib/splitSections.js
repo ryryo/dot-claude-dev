@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 import sharp from 'sharp';
 
-const SECTION_SELECTORS = 'section, header, footer, main > div, [class*="section"]';
+const SECTION_SELECTORS = 'section, header, footer, main > div, [class*="section"], [role="log"]';
 
 /**
  * DOM構造に基づいてスクリーンショットをセクション単位で分割する。
