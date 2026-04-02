@@ -37,6 +37,7 @@
 | **dev:opencode-check**   | opencode CLIの動作確認。インストール状態、runコマンド、モデル応答をチェック。Triggers: opencode動作確認, opencode check                          |
 | **dev:cleanup-branches** | 不要なローカル・リモートブランチとworktreeを一括削除。Triggers: ブランチ整理, 不要ブランチ削除                                                   |
 | **dev:git-reflect**      | Git履歴から作業セッションを自動検出し、ブロック単位で振り返りサマリーを生成。Triggers: 振り返り, git振り返り, 最近何やった                         |
+| **dev:design-e2e-qa**    | 実装済みサイトのデザイン品質を体系的にチェック。配置・余白・比率・レスポンシブの問題を検出し一覧化。修正は行わない。Triggers: デザインQA, デザインチェック, /design-e2e-qa |
 
 ### メタスキル
 
