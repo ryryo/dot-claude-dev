@@ -380,7 +380,268 @@ Phase 3（集約）:
 
 ---
 
-## 9. 情報源
+## 9. 実ツールとのギャップ分析（2026-04-02 追加調査）
+
+著名SEOチェッカーの**実際のチェック項目リスト**を取得し、リサーチレポートの網羅性を検証した。
+
+### 9.1 調査対象ツール
+
+| ツール | チェック項目数 | 方式 |
+|--------|-------------|------|
+| **Semrush Site Audit** | 140+ | エラー/警告/通知の3段階、カテゴリ別 |
+| **Ahrefs Site Audit** | 170+ | エラー/警告/通知、Health Score算出 |
+| **Lighthouse SEO** | 8 | バイナリ（合格/不合格） |
+| **SEO Site Checkup** | 70+ | カテゴリ別、合格/不合格 |
+| **Seobility** | 200+ | メタ/品質/構造/リンク/サーバー/外部の6カテゴリ |
+
+### 9.2 Semrush 全チェック項目（公式ナレッジベースより取得）
+
+#### AI Search（GEO）— 6項目 ★リサーチで不足していた新カテゴリ
+- llms.txt not found（notice）
+- llms.txt file has formatting issues（notice）
+- Too much content（notice）
+- Outdated Content（notice）
+- Low Semantic HTML Usage（notice）
+- Content not optimized（notice）
+
+#### Crawlability & Architecture — 8項目
+- Hreflang conflicts within page source code（error）
+- Format errors in Robots.txt file（error）
+- Format errors in sitemap.xml files（error）
+- Incorrect pages found in sitemap.xml（error）
+- Pages with a WWW resolve issue（error）
+- Sitemap.xml not indicated in robots.txt（warning）
+- Sitemap.xml not found（warning）
+- Robots.txt not found（notice）
+
+#### On Page SEO — 9項目
+- Pages don't have title tags（error）
+- Issues with duplicate title tags（error）
+- Pages with duplicate meta descriptions（error）
+- Pages with too much text within the title tags（warning）
+- Pages without enough text within the title tags（warning）
+- Pages without meta descriptions（warning）
+- Pages with duplicate H1 and title tags（warning）
+- Pages without an h1 heading（warning）
+- Pages with more than one H1 tag（notice）
+
+#### Content — 3項目
+- Pages with duplicate content issues（error）
+- Pages with low text-HTML ratio（warning）
+- Pages with a low word count（warning）
+
+#### Technical SEO — 17項目
+- Size of HTML on a page is too large（error）
+- Pages couldn't be crawled（error）
+- Pages couldn't be crawled - DNS resolution（error）
+- Pages couldn't be crawled - incorrect URL formats（error）
+- Broken internal links（error）
+- Broken internal images（error）
+- Pages with no viewport tag（error）
+- Missing the viewport width value（error）
+- Pages with an underscore in the URL（warning）
+- Pages with too many parameters in URLs（warning）
+- Pages with no hreflang and lang attributes（warning）
+- Pages without character encoding declared（warning）
+- Pages without doctype declared（warning）
+- Incompatible plugin content（warning）
+- Pages containing frames（warning）
+- JS/CSS total size too large（warning）
+- Too many JS/CSS files（warning）
+
+#### HTTPS Implementation — 12項目
+- Non-secure pages（error）
+- Expiring/expired certificate（error）
+- Old security protocol（error）
+- Incorrect certificate name（error）
+- Mixed content（error）
+- No redirect/canonical to HTTPS from HTTP（error）
+- Subdomains don't support secure encryption（error）
+- Homepage doesn't use HTTPS（warning）
+- HTTP URLs in sitemap.xml for HTTPS site（warning）
+- Links on HTTPS pages leading to HTTP（warning）
+- Subdomains don't support SNI（warning）
+- Subdomains don't support HSTS（notice）
+
+#### Performance — 5項目
+- Pages with slow load speed（error）
+- Uncompressed pages（warning）
+- Uncompressed JS/CSS files（warning）
+- Uncached JS/CSS files（warning）
+- Unminified JS/CSS files（warning）
+
+#### Internal Linking — 6項目
+- Pages with only one incoming internal link（notice）
+- Links with non-descriptive anchor text（notice）
+- Pages needing more than 3 clicks to reach（notice）
+- Links with no anchor text（notice）
+- Internal links containing nofollow（warning）
+- Pages with too many on-page links（warning）
+
+#### Error Codes — 3項目
+- 5XX status code（error）
+- 4XX status code（error）
+- External 403 status code（notice）
+
+#### External Resources — 4項目
+- Broken external images（warning）
+- Broken external links（warning）
+- Blocked external resources in robots.txt（notice）
+- Broken external JS/CSS files（notice）
+
+#### Redirects & Canonicals — 6項目
+- Redirect chains and loops（error）
+- Broken canonical link（error）
+- Multiple canonical URLs（error）
+- Meta refresh tag（error）
+- Temporary redirects（warning）
+- Permanent redirect（notice）
+
+#### Structured Data — 2項目
+- Invalid structured data items（error）
+- Images without alt attributes（warning）
+
+#### Crawling & Indexing — 6項目
+- Sitemap.xml files too large（error）
+- Blocked by X-Robots-Tag: noindex（notice）
+- Blocked from crawling（notice）
+- Orphaned pages from GA（notice）
+- Orphaned pages in sitemap（notice）
+- Resources formatted as page link（notice）
+
+### 9.3 SEO Site Checkup 全チェック項目（70+）
+
+#### Meta Tags & Content（6項目）
+Meta Title / Meta Description / Social Media Meta Tags / Most Common Keywords / Keywords Usage / Keywords Cloud
+
+#### HTML & Structure（5項目）
+Heading Tags / Deprecated HTML Tags / Charset Declaration / HTML Page Size / DOM Size
+
+#### Search Engine Access（3項目）
+Robots.txt / Sitemap / Disallow Directive
+
+#### Images & Media（8項目）
+Image Alt / Responsive Image / Image Aspect Ratio / **Modern Image Format** / Image Metadata / Image Caching / CDN Usage / Google Search Results Preview
+
+#### Performance & Speed（8項目）
+Site Loading Speed / JS Execution Time / HTML Compression/GZIP / TTFB / **FCP** / **LCP** / **CLS** / Favicon
+
+#### JavaScript & CSS（6項目）
+JS Error / Console Errors / JS Minification / CSS Minification / JS Caching / CSS Caching
+
+#### Resources & Loading（3項目）
+Page Objects / **Render Blocking Resources** / URL Redirects
+
+#### Security & HTTPS（4項目）
+SSL Checker / Mixed Content / **HTTP2** / HSTS
+
+#### Links & SEO（5項目）
+Backlinks / URL Canonicalization / **Unsafe Cross-Origin Links** / Canonical Tag / Nofollow Tag
+
+#### Crawlability & Indexing（4項目）
+Noindex Tag / Meta Refresh / Structured Data / Custom 404 Error Page
+
+#### Other（3項目）
+Plaintext Emails / **SPF Records** / **Ads.txt Validation**
+
+### 9.4 ギャップ分析結果
+
+リサーチレポートの項目と実ツールを突き合わせた結果、以下のギャップが判明:
+
+#### ★ リサーチで完全に欠落していた項目
+
+| カテゴリ | 欠落項目 | 検出ツール | 重要度 |
+|----------|---------|-----------|--------|
+| **AI Search/GEO** | llms.txt ファイルの有無・フォーマット検証 | Semrush | 中（2026年新規） |
+| **AI Search/GEO** | セマンティックHTML使用率 | Semrush | 中 |
+| **AI Search/GEO** | AIモデル向けコンテンツ長の最適化 | Semrush | 低 |
+| **パフォーマンス** | GZIP/Brotli 圧縮 | Semrush, SEO Site Checkup | 高 |
+| **パフォーマンス** | JS/CSS ミニファイ | Semrush, SEO Site Checkup | 中 |
+| **パフォーマンス** | JS/CSS キャッシュヘッダー | Semrush, SEO Site Checkup | 中 |
+| **パフォーマンス** | レンダーブロッキングリソース | SEO Site Checkup | 中 |
+| **パフォーマンス** | TTFB（Time To First Byte） | SEO Site Checkup | 高 |
+| **パフォーマンス** | FCP（First Contentful Paint） | SEO Site Checkup | 中 |
+| **セキュリティ** | HTTP/2 対応 | SEO Site Checkup | 中 |
+| **セキュリティ** | SSL証明書有効期限・プロトコルバージョン | Semrush | 高 |
+| **セキュリティ** | SNI対応 | Semrush | 低 |
+| **セキュリティ** | Unsafe Cross-Origin Links（`target="_blank"` の `rel="noopener"`） | SEO Site Checkup | 低 |
+| **HTML品質** | Deprecated HTML tags | SEO Site Checkup | 低 |
+| **HTML品質** | DOM Size（ノード数） | SEO Site Checkup | 中 |
+| **HTML品質** | HTML Page Size | Semrush, SEO Site Checkup | 中 |
+| **HTML品質** | doctype 宣言 | Semrush | 低 |
+| **HTML品質** | charset 宣言 | Semrush | 低 |
+| **HTML品質** | frames 使用検出 | Semrush | 低 |
+| **画像** | レスポンシブ画像（srcset） | SEO Site Checkup | 中 |
+| **画像** | モダン画像フォーマット（WebP/AVIF） | SEO Site Checkup | 中 |
+| **画像** | 画像アスペクト比（CLS防止） | SEO Site Checkup | 中 |
+| **画像** | CDN使用 | SEO Site Checkup | 低 |
+| **リンク** | アンカーテキストの記述性（「こちら」等の検出） | Semrush, Lighthouse | 高 |
+| **リンク** | nofollow 内部リンク検出 | Semrush | 中 |
+| **リンク** | 外部リンク切れ | Semrush | 中 |
+| **メール/スパム** | Plaintext email検出（スパム対策） | SEO Site Checkup | 低 |
+| **メール/スパム** | SPF レコード | SEO Site Checkup | 低 |
+| **広告** | Ads.txt バリデーション | SEO Site Checkup | 低（広告サイトのみ） |
+| **URL品質** | URL内のアンダースコア | Semrush | 低 |
+| **URL品質** | URLパラメータ過多 | Semrush | 中 |
+| **URL品質** | URL長（200文字超） | Semrush | 低 |
+| **その他** | Custom 404エラーページの存在 | SEO Site Checkup | 中 |
+| **その他** | Favicon の存在 | SEO Site Checkup | 低 |
+| **その他** | JS エラー/コンソールエラー検出 | SEO Site Checkup | 中 |
+| **その他** | Google Analytics 設置確認 | SEO Site Checkup | 低 |
+| **AMP** | AMP関連の40+チェック | Semrush | 低（AMP衰退中） |
+
+#### ★ リサーチでカバーできていた項目（確認済み）
+
+以下のカテゴリは実ツールの項目と概ね一致:
+- ✅ title タグ（存在/長さ/重複）
+- ✅ meta description（存在/長さ/重複）
+- ✅ H1タグ（存在/複数/重複）
+- ✅ canonical（存在/整合性/壊れ）
+- ✅ hreflang（整合性/言語コード）
+- ✅ robots.txt（存在/構文/遮断）
+- ✅ sitemap.xml（存在/参照/エラーURL）
+- ✅ HTTPS（SSL/Mixed Content）
+- ✅ HSTS
+- ✅ Core Web Vitals（LCP/INP/CLS）
+- ✅ viewport メタタグ
+- ✅ 画像 alt 属性
+- ✅ 構造化データ（JSON-LD）
+- ✅ HTTPステータスコード（4xx/5xx）
+- ✅ リダイレクトチェーン/ループ
+- ✅ 内部リンク構造（孤立ページ/クリック深度）
+- ✅ Open Graph
+- ✅ lang 属性
+- ✅ E-E-A-T関連ページ検出
+- ✅ NAP一貫性/ローカルSEO
+
+### 9.5 カバレッジサマリー
+
+| 区分 | 項目数 | 割合 |
+|------|--------|------|
+| リサーチでカバー済み | 約50項目 | ~60% |
+| **欠落していた項目** | **約35項目** | **~40%** |
+
+**最も重大なギャップ**:
+1. **AI Search/GEO カテゴリ全体**: llms.txt、セマンティックHTML評価 — 2026年の最新トレンドで、Semrushが新設したカテゴリ
+2. **パフォーマンス詳細**: GZIP圧縮、ミニファイ、キャッシュ、TTFB、レンダーブロッキング — CWVだけでは不十分
+3. **セキュリティ詳細**: SSL証明書の有効期限・プロトコル詳細、HTTP/2対応
+4. **リンク品質**: アンカーテキストの記述性チェック（Lighthouseにもある基本項目）
+5. **画像最適化の詳細**: レスポンシブ画像、モダンフォーマット、アスペクト比
+
+### 9.6 LLM SEO Audit（4-Point Checklist）— 2026年新規
+
+Dataslayerの研究に基づく、AI検索エンジンからの引用獲得のための4項目:
+
+1. **Answer-First Formatting**: 最初の段落が前置きなしにクエリに直接回答
+2. **Direct Question Headers**: H2が直接的な質問形式（「〜はどう動く？」）
+3. **Named Source Attribution**: 各セクションに「〇〇の研究によると」等の具体的出典
+4. **FAQ Schema Implementation**: 3問以上のFAQセクション + FAQPage schema
+
+**スコア解釈**: 0-1点=構造的書き直し必要 / 2-3点=部分修正 / 4点=LLM最適化完了
+
+---
+
+## 10. 情報源
 
 ### Web検索（2026年4月時点）
 
