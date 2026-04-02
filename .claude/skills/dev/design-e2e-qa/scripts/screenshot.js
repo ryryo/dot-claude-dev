@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { autoScroll } from './lib/autoScroll.js';
 import { getBrowser, setupPage } from './lib/browser.js';
 import { takeFullPageScreenshot } from './lib/largeScreenshot.js';
 import { splitByDom } from './lib/splitSections.js';
 import { waitForAllMedia } from './lib/waitForMedia.js';
+
+const DEFAULT_VIEWPORTS = [
+  { name: 'desktop', width: 1440, height: 2560 },
+  { name: 'tablet',  width: 768,  height: 1024 },
+  { name: 'mobile',  width: 390,  height: 844 },
+];
 
 function parseArgs(args) {
   const options = {
@@ -20,6 +26,8 @@ function parseArgs(args) {
     maxScrolls: 30,
     noScroll: false,
     splitSections: false,
+    beforeScript: '',
+    singleViewport: false,
     help: false,
   };
 
@@ -44,6 +52,7 @@ function parseArgs(args) {
           process.exit(1);
         }
         options.width = width;
+        options.singleViewport = true;
         break;
       }
       case '--height': {
@@ -54,8 +63,12 @@ function parseArgs(args) {
           process.exit(1);
         }
         options.height = height;
+        options.singleViewport = true;
         break;
       }
+      case '--before-script':
+        options.beforeScript = args[++i];
+        break;
       case '--timeout':
         options.timeout = parseInt(args[++i], 10);
         break;
@@ -104,13 +117,69 @@ Options:
   --max-scrolls <number>    Maximum scroll iterations (default: 30)
   --no-scroll               Disable auto-scroll (skip lazy-load handling)
   --split-sections          Also save section-level crops based on DOM layout
+  --before-script <path>    Run a JS script before capturing (for auth/interaction)
   --help, -h                Show this help message
+
+By default, screenshots are taken at 3 viewports (desktop/tablet/mobile).
+Use --width/--height to capture a single viewport instead.
 
 Examples:
   node screenshot.js http://localhost:4321/
-  node screenshot.js http://localhost:4321/ -o .tmp/design-e2e-qa/screenshots/top-desktop-full.jpg
+  node screenshot.js http://localhost:4321/ -o .tmp/design-e2e-qa/screenshots/top-full.jpg
   node screenshot.js http://localhost:4321/ --width 768 --height 1024 --split-sections
+  node screenshot.js http://localhost:4321/ --before-script .claude/e2e/login.js -o out/page-full.jpg
   `);
+}
+
+function insertVpSuffix(outputPath, vpName) {
+  const dir = dirname(outputPath);
+  const ext = extname(outputPath);
+  const base = basename(outputPath, ext);
+  return join(dir, `${base.replace(/-full$/, '')}-${vpName}-full${ext}`);
+}
+
+async function waitForResize(page) {
+  await page.evaluate(() => new Promise(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  }));
+  await new Promise(resolve => setTimeout(resolve, 500));
+}
+
+async function captureViewport(page, options, outputPath) {
+  if (!options.noScroll) {
+    console.log('\n[Main] Performing auto-scroll for lazy-loaded content...\n');
+    await autoScroll(page, {
+      step: options.scrollStep ?? page.viewport().height,
+      delay: options.scrollDelay,
+      maxScrolls: options.maxScrolls,
+    });
+  } else {
+    console.log('\n[Main] Auto-scroll disabled. Skipping...\n');
+  }
+
+  console.log('\n[Main] Waiting for media elements to load...\n');
+  await waitForAllMedia(page);
+
+  console.log('\n[Main] Final wait before screenshot capture...\n');
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  console.log('\n[Main] Taking full page screenshot...\n');
+  const screenshot = await takeFullPageScreenshot(page);
+
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, screenshot);
+  console.log(`\n[Main] Screenshot saved to: ${outputPath}`);
+
+  if (options.splitSections) {
+    console.log('\n[Main] Splitting screenshot by DOM sections...\n');
+    const sections = await splitByDom(page, screenshot, outputPath);
+    console.log(`[Main] Saved ${sections.length} section screenshot(s).`);
+    sections.forEach((section) => {
+      console.log(
+        `[Main] Section: ${section.fileName} (${section.left},${section.top} ${section.width}x${section.height})`
+      );
+    });
+  }
 }
 
 async function main() {
@@ -134,11 +203,15 @@ async function main() {
     const startTime = Date.now();
     console.log(`\n[Main] Starting screenshot capture for: ${options.url}\n`);
 
+    const viewports = options.singleViewport
+      ? [{ name: null, width: options.width, height: options.height }]
+      : DEFAULT_VIEWPORTS;
+
     browser = await getBrowser();
 
     const page = await setupPage(browser, options.url, {
-      width: options.width,
-      height: options.height,
+      width: viewports[0].width,
+      height: viewports[0].height,
       timeout: options.timeout * 1000,
     });
 
@@ -149,40 +222,29 @@ async function main() {
       }
     });
 
-    if (!options.noScroll) {
-      console.log('\n[Main] Performing auto-scroll for lazy-loaded content...\n');
-      await autoScroll(page, {
-        step: options.scrollStep ?? options.height,
-        delay: options.scrollDelay,
-        maxScrolls: options.maxScrolls,
-      });
-    } else {
-      console.log('\n[Main] Auto-scroll disabled. Skipping...\n');
+    if (options.beforeScript) {
+      console.log(`[Main] Running before-script: ${options.beforeScript}`);
+      try {
+        const scriptPath = resolve(process.cwd(), options.beforeScript);
+        const { default: beforeFn } = await import(scriptPath);
+        await beforeFn(page);
+      } catch (err) {
+        console.error(`[Main] before-script failed: ${err.message}`);
+        process.exit(1);
+      }
     }
 
-    console.log('\n[Main] Waiting for media elements to load...\n');
-    await waitForAllMedia(page);
+    for (const vp of viewports) {
+      if (vp.name) {
+        console.log(`\n[Main] Switching viewport: ${vp.name} (${vp.width}x${vp.height})\n`);
+        await page.setViewport({ width: vp.width, height: vp.height });
+        await waitForResize(page);
+      }
 
-    console.log('\n[Main] Final wait before screenshot capture...\n');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    console.log('\n[Main] Taking full page screenshot...\n');
-    const screenshot = await takeFullPageScreenshot(page);
-
-    const outputPath = resolve(options.output);
-    await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, screenshot);
-    console.log(`\n[Main] Screenshot saved to: ${outputPath}`);
-
-    if (options.splitSections) {
-      console.log('\n[Main] Splitting screenshot by DOM sections...\n');
-      const sections = await splitByDom(page, screenshot, outputPath);
-      console.log(`[Main] Saved ${sections.length} section screenshot(s).`);
-      sections.forEach((section) => {
-        console.log(
-          `[Main] Section: ${section.fileName} (${section.left},${section.top} ${section.width}x${section.height})`
-        );
-      });
+      const outputPath = resolve(
+        vp.name ? insertVpSuffix(options.output, vp.name) : options.output
+      );
+      await captureViewport(page, options, outputPath);
     }
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
