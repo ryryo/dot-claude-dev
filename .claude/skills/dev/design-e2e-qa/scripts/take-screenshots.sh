@@ -2,7 +2,7 @@
 # design-e2e-qa: 全代表ページ × 3VP のフルページ SS + セクション分割を撮影する
 #
 # Usage:
-#   bash .claude/skills/design-e2e-qa/scripts/take-screenshots.sh <base_url> <page:path> [<page:path> ...]
+#   bash .claude/skills/design-e2e-qa/scripts/take-screenshots.sh [--before-script <path>] <base_url> <page:path> [<page:path> ...]
 #
 # Example:
 #   bash .claude/skills/design-e2e-qa/scripts/take-screenshots.sh http://localhost:4321 \
@@ -18,16 +18,37 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SCREENSHOT_JS="$SCRIPT_DIR/screenshot.js"
 OUTPUT_DIR=".tmp/design-e2e-qa/screenshots"
 
-# ビューポート定義: name:width:height
-VIEWPORTS=(
-  "desktop:1440:2560"
-  "tablet:768:1024"
-  "mobile:390:844"
-)
+BEFORE_SCRIPT=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --before-script)
+      if [ $# -lt 2 ]; then
+        echo "Usage: $0 [--before-script <path>] <base_url> <page:path> [<page:path> ...]"
+        echo "Example: $0 --before-script ./before.js http://localhost:4321 top:/ post-detail:/posts/example"
+        exit 1
+      fi
+      BEFORE_SCRIPT="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "Usage: $0 [--before-script <path>] <base_url> <page:path> [<page:path> ...]"
+      echo "Example: $0 --before-script ./before.js http://localhost:4321 top:/ post-detail:/posts/example"
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 if [ $# -lt 2 ]; then
-  echo "Usage: $0 <base_url> <page:path> [<page:path> ...]"
-  echo "Example: $0 http://localhost:4321 top:/ post-detail:/posts/example"
+  echo "Usage: $0 [--before-script <path>] <base_url> <page:path> [<page:path> ...]"
+  echo "Example: $0 --before-script ./before.js http://localhost:4321 top:/ post-detail:/posts/example"
   exit 1
 fi
 
@@ -45,20 +66,17 @@ for page_path in "$@"; do
   page="${page_path%%:*}"
   path="${page_path#*:}"
   url="${BASE_URL}${path}"
+  before_script_args=()
 
-  for vp in "${VIEWPORTS[@]}"; do
-    vp_name="${vp%%:*}"
-    rest="${vp#*:}"
-    width="${rest%%:*}"
-    height="${rest#*:}"
-    output="$OUTPUT_DIR/${page}-${vp_name}-full.jpg"
+  if [ -n "$BEFORE_SCRIPT" ]; then
+    before_script_args=(--before-script "$BEFORE_SCRIPT")
+  fi
 
-    echo "📸 ${page} (${vp_name}: ${width}x${height})"
-    node "$SCREENSHOT_JS" "$url" \
-      --width "$width" --height "$height" \
-      --split-sections \
-      -o "$output"
-  done
+  echo "📸 ${page}"
+  node "$SCREENSHOT_JS" "$url" \
+    "${before_script_args[@]}" \
+    --split-sections \
+    -o "$OUTPUT_DIR/${page}-full.jpg"
 done
 
 echo ""
