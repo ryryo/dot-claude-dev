@@ -174,7 +174,26 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 
 **最大 2 回ループ**。3 回目は NEEDS_REVISION でもユーザー判断に委ねる。
 
-### Step 8: ユーザー最終確認
+### Step 8: 整合性チェック（ディレクトリモードのみ）
+
+**ディレクトリモードの場合のみ実行。通常モードではスキップして Step 9 へ。**
+
+→ **Agent（opus）** に委譲（`agents/spec-sync.md` を Read してプロンプトとして使用）
+
+エージェントに渡す情報:
+- spec.md パス
+- tasks.json パス
+- 変更コンテキスト: Step 7 のレビューで修正が入った場合はその内容
+
+検証内容:
+1. **構造的整合性** — Todo ID/タイトル、Gate 構造、依存関係、TDD ラベル、metadata カウントが spec.md と tasks.json で一致しているか
+2. **意味的整合性** — impl 内容が設計決定事項・アーキテクチャ詳細と矛盾していないか
+
+修正ルール:
+- 構造的不整合（ID 不一致、カウントずれ等）→ 自動修正
+- 意味的矛盾（impl と設計決定の矛盾等）→ AskUserQuestion で確認後に修正
+
+### Step 9: ユーザー最終確認
 
 仕様書完成を報告し、AskUserQuestion で次のアクションを確認:
 
@@ -211,6 +230,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 ## 参照
 
 - `agents/plan-reviewer.md` — 仕様書全体のレビューエージェント指示書（Step 7）
+- `agents/spec-sync.md` — spec.md / tasks.json 整合性チェック + 修正エージェント（Step 8、ディレクトリモードのみ）
 - `/dev:spec-run` — 仕様書実行プロトコル（Gate 0 で参照。`agents/reviewer.md` に統合済み）
 - `/dev:dig` — Step 2 で要件の深掘りに使用
 - `/dev:decomposition` — Step 3 でタスク分解に使用
