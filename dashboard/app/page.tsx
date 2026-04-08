@@ -1,120 +1,246 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import useSWR from "swr"
+
+import { DashboardLayout } from "@/components/dashboard-layout"
+import { KanbanBoard } from "@/components/kanban-board"
+import { ProjectFilter } from "@/components/project-filter"
+import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import type { PlanFile, PlanStatus, ProjectConfig } from "@/lib/types"
 
-const components = [
-  "card",
-  "checkbox",
-  "badge",
-  "separator",
-  "scroll-area",
-  "collapsible",
-]
+interface PlansResponse {
+  projects: ProjectConfig[]
+  plans: PlanFile[]
+}
+
+const fetcher = async (url: string): Promise<PlansResponse> => {
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error("PLAN データの取得に失敗しました。")
+  }
+
+  return response.json() as Promise<PlansResponse>
+}
+
+const STATUS_LABELS: Record<PlanStatus, string> = {
+  "not-started": "未着手",
+  "in-progress": "進行中",
+  "in-review": "レビュー中",
+  completed: "完了",
+}
 
 export default function Home() {
-  return (
-    <main className="min-h-screen bg-muted/40 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
-        <Card className="overflow-hidden">
-          <CardHeader className="gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge>Next.js</Badge>
-              <Badge variant="secondary">shadcn/ui</Badge>
-              <Badge variant="outline">Base UI</Badge>
-            </div>
-            <div className="space-y-2">
-              <CardTitle className="text-3xl">Dashboard project is ready</CardTitle>
-              <CardDescription>
-                `dashboard/` is bootstrapped as an isolated Next.js app with the
-                requested shadcn/ui components and extra packages.
-              </CardDescription>
-            </div>
+  const { data, error, isLoading } = useSWR<PlansResponse>("/api/plans", fetcher)
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([])
+  const [hasInitializedSelection, setHasInitializedSelection] = useState(false)
+
+  useEffect(() => {
+    if (!data?.projects.length) {
+      return
+    }
+
+    const projectNames = data.projects.map((project) => project.name)
+
+    setSelectedProjects((current) => {
+      if (!hasInitializedSelection) {
+        return projectNames
+      }
+
+      return current.filter((name) => projectNames.includes(name))
+    })
+
+    if (!hasInitializedSelection) {
+      setHasInitializedSelection(true)
+    }
+  }, [data?.projects, hasInitializedSelection])
+
+  const handleToggleProject = (name: string) => {
+    setSelectedProjects((current) =>
+      current.includes(name)
+        ? current.filter((projectName) => projectName !== name)
+        : [...current, name]
+    )
+  }
+
+  const projectNames = data?.projects.map((project) => project.name) ?? []
+
+  const filteredPlans = useMemo(() => {
+    if (!data?.plans.length) {
+      return []
+    }
+
+    const selectedSet = new Set(selectedProjects)
+    return data.plans.filter((plan) => selectedSet.has(plan.projectName))
+  }, [data?.plans, selectedProjects])
+
+  const planCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+
+    data?.plans.forEach((plan) => {
+      counts[plan.projectName] = (counts[plan.projectName] ?? 0) + 1
+    })
+
+    return counts
+  }, [data?.plans])
+
+  const statusCounts = useMemo(() => {
+    return filteredPlans.reduce<Record<PlanStatus, number>>(
+      (counts, plan) => {
+        counts[plan.status] += 1
+        return counts
+      },
+      {
+        "not-started": 0,
+        "in-progress": 0,
+        "in-review": 0,
+        completed: 0,
+      }
+    )
+  }, [filteredPlans])
+
+  const totalTodos = filteredPlans.reduce((sum, plan) => sum + plan.progress.total, 0)
+  const completedTodos = filteredPlans.reduce(
+    (sum, plan) => sum + plan.progress.completed,
+    0
+  )
+  const overallProgress = totalTodos === 0 ? 0 : Math.round((completedTodos / totalTodos) * 100)
+  const selectedProjectCount = projectNames.filter((name) => selectedProjects.includes(name)).length
+  const kanbanComponentName = KanbanBoard.name || "KanbanBoard"
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-6">
+        <div className="space-y-2 text-center">
+          <p className="text-lg font-semibold">PLAN Dashboard を読み込み中です</p>
+          <p className="text-muted-foreground text-sm">/api/plans からデータを取得しています。</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-6">
+        <Card className="w-full max-w-lg">
+          <CardHeader>
+            <CardTitle>データの取得に失敗しました</CardTitle>
+            <CardDescription>
+              {error instanceof Error
+                ? error.message
+                : "PLAN ダッシュボードを表示できませんでした。"}
+            </CardDescription>
           </CardHeader>
+        </Card>
+      </main>
+    )
+  }
 
-          <Separator />
+  return (
+    <DashboardLayout
+      sidebar={
+        <>
+          <Card>
+            <CardHeader className="gap-1">
+              <CardTitle className="text-base">PLAN Dashboard</CardTitle>
+              <CardDescription>
+                プロジェクト横断で PLAN を絞り込み、進捗状況を確認できます。
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProjectFilter
+                projects={data.projects}
+                selected={selectedProjects}
+                onToggle={handleToggleProject}
+                planCounts={planCounts}
+              />
+            </CardContent>
+          </Card>
 
-          <CardContent className="grid gap-6 py-6 md:grid-cols-[minmax(0,1fr)_320px]">
-            <Collapsible
-              defaultOpen
-              className="rounded-xl border bg-card p-4 shadow-sm"
-            >
-              <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 rounded-lg text-left text-sm font-medium">
-                <span>Installed UI components</span>
-                <span className="text-muted-foreground">Toggle</span>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <ScrollArea className="h-52 rounded-lg border bg-background">
-                  <div className="space-y-3 p-4">
-                    {components.map((component) => (
-                      <div
-                        key={component}
-                        className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
-                      >
-                        <span className="font-mono text-sm">{component}</span>
-                        <Badge variant="secondary">ready</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CollapsibleContent>
-            </Collapsible>
+          <Card>
+            <CardHeader className="gap-1">
+              <CardTitle className="text-base">統計サマリー</CardTitle>
+              <CardDescription>現在のフィルター条件に基づく集計です。</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border bg-muted/30 p-3">
+                  <p className="text-muted-foreground text-xs">選択中プロジェクト</p>
+                  <p className="mt-1 text-2xl font-semibold">{selectedProjectCount}</p>
+                </div>
+                <div className="rounded-xl border bg-muted/30 p-3">
+                  <p className="text-muted-foreground text-xs">表示中 PLAN</p>
+                  <p className="mt-1 text-2xl font-semibold">{filteredPlans.length}</p>
+                </div>
+              </div>
 
-            <div className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="mb-4 space-y-1">
-                <h2 className="font-semibold">Setup checklist</h2>
-                <p className="text-muted-foreground text-sm">
-                  A minimal verification surface for the installed components.
+              <div className="rounded-xl border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-muted-foreground text-xs">Todo 進捗</p>
+                  <Badge variant="outline">{overallProgress}%</Badge>
+                </div>
+                <p className="mt-2 text-sm font-medium">
+                  {completedTodos}/{totalTodos} 件完了
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <label className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
-                  <Checkbox defaultChecked aria-label="Next.js scaffolded" />
-                  <span className="space-y-1">
-                    <span className="block text-sm font-medium">
-                      Next.js project scaffolded
-                    </span>
-                    <span className="text-muted-foreground block text-sm">
-                      App Router, TypeScript, Tailwind CSS, and ESLint are in
-                      place.
-                    </span>
-                  </span>
-                </label>
+              <Separator />
 
-                <label className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
-                  <Checkbox defaultChecked aria-label="Base UI configured" />
-                  <span className="space-y-1">
-                    <span className="block text-sm font-medium">
-                      Base UI configured
-                    </span>
-                    <span className="text-muted-foreground block text-sm">
-                      shadcn/ui components are wired to Base UI primitives.
-                    </span>
-                  </span>
-                </label>
+              <div className="space-y-2">
+                {(Object.entries(STATUS_LABELS) as [PlanStatus, string][]).map(
+                  ([status, label]) => (
+                    <div
+                      key={status}
+                      className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2"
+                    >
+                      <span className="text-sm">{label}</span>
+                      <Badge variant="secondary" className="tabular-nums">
+                        {statusCounts[status]}
+                      </Badge>
+                    </div>
+                  )
+                )}
               </div>
-            </div>
-          </CardContent>
+            </CardContent>
+          </Card>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">PLAN Board</h1>
+            <p className="text-muted-foreground text-sm">
+              選択中のプロジェクトに含まれる PLAN を看板形式で管理します。
+            </p>
+          </div>
 
-          <CardFooter className="border-t py-4 text-sm text-muted-foreground">
-            Ready for the next implementation step.
-          </CardFooter>
-        </Card>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{selectedProjectCount} Projects</Badge>
+            <Badge>{filteredPlans.length} Plans</Badge>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-dashed bg-background p-10 shadow-sm">
+          <div className="mx-auto flex max-w-2xl flex-col items-center justify-center space-y-3 text-center">
+            <Badge variant="secondary">Placeholder</Badge>
+            <h2 className="text-xl font-semibold">{kanbanComponentName} は次の Todo で実装予定です</h2>
+            <p className="text-muted-foreground text-sm leading-6">
+              現在はプレースホルダーを表示しています。選択中の {filteredPlans.length} 件の
+              PLAN は、このエリアに看板として表示される想定です。
+            </p>
+          </div>
+        </div>
       </div>
-    </main>
+    </DashboardLayout>
   )
 }

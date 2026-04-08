@@ -1,0 +1,91 @@
+"use client"
+
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
+
+interface ProjectFilterProps {
+  projects: { name: string; path: string }[]
+  selected: string[]
+  onToggle: (name: string) => void
+  planCounts: Record<string, number>
+}
+
+export function ProjectFilter({
+  projects,
+  selected,
+  onToggle,
+  planCounts,
+}: ProjectFilterProps) {
+  const selectedSet = new Set(selected)
+  const selectedCount = projects.filter((project) => selectedSet.has(project.name)).length
+  const allSelected = projects.length > 0 && selectedCount === projects.length
+
+  const handleToggleAll = () => {
+    const targetProjects = allSelected
+      ? projects.filter((project) => selectedSet.has(project.name))
+      : projects.filter((project) => !selectedSet.has(project.name))
+
+    targetProjects.forEach((project) => onToggle(project.name))
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-sm font-semibold">プロジェクトフィルター</h2>
+          <p className="text-muted-foreground text-xs">
+            {selectedCount}/{projects.length} 件を表示対象にしています。
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleToggleAll}
+          className="text-primary text-xs font-medium transition-opacity hover:opacity-80"
+        >
+          {allSelected ? "すべて解除" : "すべて選択"}
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {projects.map((project) => {
+          const isSelected = selectedSet.has(project.name)
+
+          return (
+            <button
+              key={project.name}
+              type="button"
+              onClick={() => onToggle(project.name)}
+              className={cn(
+                "flex w-full items-start justify-between gap-3 rounded-xl border p-3 text-left transition-colors",
+                isSelected ? "bg-accent/50" : "bg-background hover:bg-muted/60"
+              )}
+              aria-pressed={isSelected}
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" />
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-sm font-medium">{project.name}</p>
+                  <p className="text-muted-foreground break-all text-xs">
+                    {project.path}
+                  </p>
+                </div>
+              </div>
+
+              <Badge variant="secondary" className="shrink-0 tabular-nums">
+                {planCounts[project.name] ?? 0} PLAN
+              </Badge>
+            </button>
+          )
+        })}
+
+        {projects.length === 0 ? (
+          <div className="text-muted-foreground rounded-xl border border-dashed px-3 py-6 text-center text-sm">
+            プロジェクトが見つかりません。
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}

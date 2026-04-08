@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Next.js dashboard bootstrap with shadcn/ui Base UI components.",
+  title: "PLAN Dashboard",
+  description: "プロジェクト横断 PLAN 管理ダッシュボード",
 }
 
 export default function RootLayout({
