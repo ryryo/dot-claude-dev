@@ -102,5 +102,52 @@
 
   body {
     @apply antialiased bg-background text-foreground;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+}
+
+@layer utilities {
+  .text-heading-1 {
+    font-size: 35px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .text-heading-2 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .text-heading-3 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .text-body {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+
+  .text-nav {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.28px;
+  }
+
+  .text-label {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.26px;
+  }
+
+  .text-mono-label {
+    font-family: var(--font-mono), monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: -0.44px;
   }
 }
