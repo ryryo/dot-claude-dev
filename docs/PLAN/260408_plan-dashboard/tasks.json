@@ -1,0 +1,183 @@
+{
+  "spec": {
+    "slug": "plan-dashboard",
+    "title": "PLAN ダッシュボード — プロジェクト横断 PLAN 管理 UI",
+    "specPath": "spec.md"
+  },
+  "gates": [
+    {
+      "id": "gate-a",
+      "title": "プロジェクトセットアップ",
+      "dependencies": [],
+      "passCondition": "cd dashboard && npm run dev でエラーなく起動し、shadcn/ui コンポーネントが利用可能な状態"
+    },
+    {
+      "id": "gate-b",
+      "title": "データ層",
+      "dependencies": ["gate-a"],
+      "passCondition": "全テスト PASS。パーサーが 4 ステータスを正しく判定。スキャナーが実プロジェクトの PLAN を収集できる"
+    },
+    {
+      "id": "gate-c",
+      "title": "API + UI",
+      "dependencies": ["gate-b"],
+      "passCondition": "ブラウザで看板が表示され、プロジェクトフィルターで絞り込み、PLAN カードの展開が動作する"
+    },
+    {
+      "id": "gate-d",
+      "title": "統合テスト",
+      "dependencies": ["gate-c"],
+      "passCondition": "実プロジェクトデータで全機能が正常動作"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "gate-a",
+      "title": "Next.js プロジェクト初期化 + UI ライブラリセットアップ",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/package.json", "operation": "create", "summary": "依存関係定義" },
+        { "path": "dashboard/next.config.ts", "operation": "create", "summary": "Next.js 設定" },
+        { "path": "dashboard/tailwind.config.ts", "operation": "create", "summary": "Tailwind CSS 設定" },
+        { "path": "dashboard/tsconfig.json", "operation": "create", "summary": "TypeScript 設定" },
+        { "path": "dashboard/components.json", "operation": "create", "summary": "shadcn/ui 設定" },
+        { "path": "dashboard/app/layout.tsx", "operation": "create", "summary": "ルートレイアウト" },
+        { "path": "dashboard/app/page.tsx", "operation": "create", "summary": "トップページ" }
+      ],
+      "impl": "## 手順\n\n1. `dashboard/` ディレクトリに Next.js プロジェクトを作成:\n```bash\ncd /Users/ryryo/dev/dot-claude-dev\nnpx create-next-app@latest dashboard --typescript --tailwind --eslint --app --src-dir=false --import-alias='@/*' --use-npm\n```\n\n2. shadcn/ui を初期化:\n```bash\ncd dashboard\nnpx shadcn@latest init\n```\n- style: default\n- CSS variables: yes\n- tailwind.config: tailwind.config.ts\n- components: @/components\n\n3. 必要な shadcn/ui コンポーネントをインストール:\n```bash\nnpx shadcn@latest add card checkbox badge separator scroll-area collapsible\n```\n\n4. ai-elements をインストール:\n```bash\nnpx ai-elements@latest\n```\n\n5. YAML パーサーの依存を追加:\n```bash\nnpm install yaml\n```\n\n6. SWR を追加（クライアントサイドのデータ取得）:\n```bash\nnpm install swr\n```\n\n## 検証\n```bash\ncd dashboard && npm run dev\n```\nhttp://localhost:3000 にアクセスし、Next.js のデフォルトページが表示されることを確認。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "A2",
+      "gate": "gate-a",
+      "title": ".gitignore + npm scripts 更新",
+      "status": "pending",
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": ".gitignore", "operation": "modify", "summary": "dashboard/ 関連のエントリ追加" },
+        { "path": "package.json", "operation": "modify", "summary": "dashboard:dev スクリプト追加" }
+      ],
+      "impl": "## 手順\n\n1. ルートの `.gitignore` に追加:\n```\n# Dashboard\ndashboard/.next/\ndashboard/node_modules/\n```\n\n2. ルートの `package.json` の scripts に追加:\n```json\n\"dashboard:dev\": \"cd dashboard && npm run dev\"\n```\n\n## 検証\n```bash\nnpm run dashboard:dev\n```\nルートディレクトリからダッシュボードを起動できることを確認。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B1",
+      "gate": "gate-b",
+      "title": "projects.yaml 設定ファイル + 型定義",
+      "status": "pending",
+      "dependencies": ["A2"],
+      "affectedFiles": [
+        { "path": "dashboard/projects.yaml", "operation": "create", "summary": "プロジェクト一覧設定" },
+        { "path": "dashboard/lib/types.ts", "operation": "create", "summary": "TypeScript 型定義" },
+        { "path": "dashboard/lib/config.ts", "operation": "create", "summary": "YAML 読み込みユーティリティ" }
+      ],
+      "impl": "## 手順\n\n### 1. projects.yaml 作成\n\n`dashboard/projects.yaml` にプロジェクト一覧を記述:\n```yaml\nprojects:\n  - name: dot-claude-dev\n    path: /Users/ryryo/dev/dot-claude-dev\n  - name: meurai-editer\n    path: /Users/ryryo/dev/meurai-editer\n  - name: base-ui-design\n    path: /Users/ryryo/dev/base-ui-design\n  - name: kamui-ryryo\n    path: /Users/ryryo/dev/kamui-ryryo\n  - name: goosely-editor\n    path: /Users/ryryo/dev/goosely-editor\n  - name: swipe-lp-builder\n    path: /Users/ryryo/dev/swipe-lp-builder\n  - name: lead-form\n    path: /Users/ryryo/dev/lead-form\n  - name: lpto-tanstack\n    path: /Users/ryryo/dev/lpto-tanstack\n```\n\n### 2. 型定義 `dashboard/lib/types.ts`\n\n```typescript\nexport type PlanStatus = 'not-started' | 'in-progress' | 'in-review' | 'completed';\n\nexport interface TodoItem {\n  title: string;\n  checked: boolean;\n  hasReview: boolean;\n  reviewFilled: boolean;\n}\n\nexport interface Gate {\n  id: string;\n  title: string;\n  todos: TodoItem[];\n}\n\nexport interface PlanFile {\n  filePath: string;\n  fileName: string;\n  projectName: string;\n  title: string;\n  status: PlanStatus;\n  gates: Gate[];\n  todos: TodoItem[];\n  progress: {\n    total: number;\n    completed: number;\n    percentage: number;\n  };\n}\n\nexport interface ProjectConfig {\n  name: string;\n  path: string;\n}\n\nexport interface ProjectsConfig {\n  projects: ProjectConfig[];\n}\n```\n\n### 3. config.ts 作成\n\n```typescript\nimport fs from 'fs';\nimport path from 'path';\nimport { parse } from 'yaml';\nimport type { ProjectsConfig } from './types';\n\nexport function loadProjectsConfig(): ProjectsConfig {\n  const configPath = path.join(process.cwd(), 'projects.yaml');\n  const content = fs.readFileSync(configPath, 'utf-8');\n  return parse(content) as ProjectsConfig;\n}\n```\n\n## 検証\n- `dashboard/projects.yaml` が正しい YAML としてパースできること\n- 型定義にコンパイルエラーがないこと: `cd dashboard && npx tsc --noEmit`",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B2",
+      "gate": "gate-b",
+      "title": "[TDD] PLAN マークダウンパーサー",
+      "status": "pending",
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/plan-parser.ts", "operation": "create", "summary": "PLAN マークダウンパーサー" },
+        { "path": "dashboard/__tests__/plan-parser.test.ts", "operation": "create", "summary": "パーサーテスト" }
+      ],
+      "impl": "## 手順\n\nTDD でテストファーストで実装する。\n\n### テストケース（RED）\n\n`dashboard/__tests__/plan-parser.test.ts` に以下のテストを記述:\n\n1. **タイトル抽出**: H1 見出しを title として抽出\n2. **チェックボックスなし → not-started**: Gate/Todo 構造がない古い PLAN\n3. **すべて未チェック → not-started**: `- [ ]` のみの PLAN\n4. **混在 → in-progress**: `- [x]` と `- [ ]` が混在\n5. **Review 記入あり → in-review**: 未チェック Todo に Review 内容あり\n6. **すべてチェック → completed**: `- [x]` のみ\n7. **Gate 構造パース**: Gate タイトルと所属 Todo を正しく抽出\n8. **進捗率計算**: total / completed / percentage\n\n### テストデータ例\n\n```typescript\nconst planWithMixedStatus = `\n# テスト計画\n\n### Gate A: セットアップ\n\n- [x] **Todo A1**: 環境構築\n  > **Review A1**: PASS\n\n- [ ] **Todo A2**: 設定ファイル\n  > **Review A2**:\n\n### Gate B: 実装\n\n- [ ] **Todo B1**: 機能実装\n  > **Review B1**:\n`;\n```\n\n### 実装（GREEN）\n\n`dashboard/lib/plan-parser.ts`:\n\n```typescript\nexport function parsePlanFile(content: string, filePath: string, projectName: string): PlanFile\n```\n\n主要なパース処理:\n1. 正規表現で H1 タイトル抽出: `/^# (.+)$/m`\n2. Gate 見出し検出: `/^### (Gate \\w+): (.+)$/gm`\n3. チェックボックス抽出: `/^- \\[([ x])\\] \\*\\*(.+?)\\*\\*/gm`\n4. Review blockquote 検出: 各 Todo の直後の `> **Review` 行を探索し、コロン以降に内容があるか判定\n5. ステータス判定ロジック:\n   - チェックボックスなし → not-started\n   - すべて checked → completed\n   - 未チェックで reviewFilled あり → in-review\n   - checked と unchecked 混在 → in-progress\n   - すべて unchecked → not-started\n\n## 検証\n```bash\ncd dashboard && npx vitest run __tests__/plan-parser.test.ts\n```\n全テストが PASS すること。",
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "B3",
+      "gate": "gate-b",
+      "title": "[TDD] プロジェクトスキャナー",
+      "status": "pending",
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/project-scanner.ts", "operation": "create", "summary": "プロジェクトスキャナー" },
+        { "path": "dashboard/__tests__/project-scanner.test.ts", "operation": "create", "summary": "スキャナーテスト" }
+      ],
+      "impl": "## 手順\n\nTDD でテストファーストで実装する。\n\n### テストケース（RED）\n\n`dashboard/__tests__/project-scanner.test.ts` に以下のテストを記述:\n\n1. **正常系**: 指定パスの `docs/PLAN/` から .md ファイルを収集\n2. **PLAN ディレクトリなし**: `docs/PLAN/` が存在しないプロジェクト → 空配列\n3. **アクセスエラー**: パスが無効 → エラーをスキップし空配列\n4. **ディレクトリモード PLAN**: `docs/PLAN/{slug}/spec.md` 形式も検出\n5. **複数プロジェクト統合**: 全プロジェクトの PLAN を統合して返す\n\n### テストセットアップ\n\nテスト用に一時ディレクトリを作成し、テスト用 PLAN ファイルを配置する:\n```typescript\nimport { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';\nimport { join } from 'path';\nimport os from 'os';\n\nlet tmpDir: string;\nbeforeEach(() => {\n  tmpDir = mkdtempSync(join(os.tmpdir(), 'scanner-test-'));\n});\nafterEach(() => {\n  rmSync(tmpDir, { recursive: true });\n});\n```\n\n### 実装（GREEN）\n\n`dashboard/lib/project-scanner.ts`:\n\n```typescript\nexport function scanProjectPlans(projectPath: string, projectName: string): PlanFile[]\nexport function scanAllProjects(config: ProjectsConfig): PlanFile[]\n```\n\n主要処理:\n1. `projectPath/docs/PLAN/` の存在チェック（try-catch）\n2. ディレクトリ内の `.md` ファイルを `fs.readdirSync` で列挙\n3. サブディレクトリ内の `spec.md` も検出（ディレクトリモード対応）\n4. 各ファイルを `parsePlanFile` でパースして返す\n5. `scanAllProjects` は全プロジェクトを走査して統合\n\n## 検証\n```bash\ncd dashboard && npx vitest run __tests__/project-scanner.test.ts\n```\n全テストが PASS すること。",
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "C1",
+      "gate": "gate-c",
+      "title": "API route 実装 (/api/plans)",
+      "status": "pending",
+      "dependencies": ["B2", "B3"],
+      "affectedFiles": [
+        { "path": "dashboard/app/api/plans/route.ts", "operation": "create", "summary": "PLAN データ API エンドポイント" }
+      ],
+      "impl": "## 手順\n\n`dashboard/app/api/plans/route.ts` を作成:\n\n```typescript\nimport { NextResponse } from 'next/server';\nimport { loadProjectsConfig } from '@/lib/config';\nimport { scanAllProjects } from '@/lib/project-scanner';\n\nexport async function GET() {\n  try {\n    const config = loadProjectsConfig();\n    const plans = scanAllProjects(config);\n    return NextResponse.json({\n      projects: config.projects,\n      plans,\n    });\n  } catch (error) {\n    return NextResponse.json(\n      { error: 'Failed to load plans' },\n      { status: 500 }\n    );\n  }\n}\n```\n\nレスポンス型:\n```typescript\ninterface PlansApiResponse {\n  projects: ProjectConfig[];\n  plans: PlanFile[];\n}\n```\n\n## 検証\n```bash\ncd dashboard && npm run dev\ncurl http://localhost:3000/api/plans | jq .\n```\nJSON レスポンスにプロジェクト一覧と PLAN データが含まれることを確認。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C2",
+      "gate": "gate-c",
+      "title": "ダッシュボードレイアウト + プロジェクトフィルター",
+      "status": "pending",
+      "dependencies": ["C1"],
+      "affectedFiles": [
+        { "path": "dashboard/app/layout.tsx", "operation": "modify", "summary": "ルートレイアウト更新" },
+        { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "ダッシュボードページ" },
+        { "path": "dashboard/components/dashboard-layout.tsx", "operation": "create", "summary": "レイアウトコンポーネント" },
+        { "path": "dashboard/components/project-filter.tsx", "operation": "create", "summary": "プロジェクトフィルター" }
+      ],
+      "impl": "## 手順\n\n### 1. dashboard-layout.tsx\n\nサイドバー + メインコンテンツの 2 カラムレイアウト:\n- 左サイドバー（幅 280px）: プロジェクトフィルター、統計サマリー\n- メイン: 看板エリア（スクロール可能）\n- shadcn/ui の `ScrollArea`, `Separator` を使用\n\n### 2. project-filter.tsx\n\n- shadcn/ui の `Checkbox` を使用\n- props: `projects: ProjectConfig[]`, `selected: string[]`, `onToggle: (name: string) => void`\n- 「すべて選択 / 解除」トグル\n- 各プロジェクトの PLAN 件数をバッジ表示\n\n### 3. page.tsx\n\n- `useSWR` で `/api/plans` からデータ取得\n- `useState` でフィルター状態管理（初期値: 全プロジェクト選択）\n- フィルターに基づいて plans をフィルタリングし看板に渡す\n\n### 4. layout.tsx 更新\n\n- タイトル「PLAN Dashboard」\n- フォント・メタ情報設定\n\n## 検証\n- ブラウザで http://localhost:3000 を開き、サイドバーにプロジェクト一覧が表示される\n- チェックボックスの ON/OFF で表示される PLAN が変わる",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C3",
+      "gate": "gate-c",
+      "title": "看板ビュー (4 カラム表示)",
+      "status": "pending",
+      "dependencies": ["C2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/kanban-board.tsx", "operation": "create", "summary": "4 カラム看板コンポーネント" }
+      ],
+      "impl": "## 手順\n\n`dashboard/components/kanban-board.tsx` を作成:\n\n### 構造\n\n- 4 カラム: 未実装 / 実装中 / レビュー待ち / 完了\n- 各カラムにヘッダー（ステータス名 + 件数バッジ）\n- カラム内に PlanCard を縦並び\n- 横スクロール対応（モバイル・狭い画面）\n\n### 実装\n\n```typescript\ninterface KanbanBoardProps {\n  plans: PlanFile[];\n  onPlanClick: (plan: PlanFile) => void;\n}\n\nconst COLUMNS: { status: PlanStatus; label: string; color: string }[] = [\n  { status: 'not-started', label: '未実装', color: 'bg-gray-100' },\n  { status: 'in-progress', label: '実装中', color: 'bg-blue-50' },\n  { status: 'in-review', label: 'レビュー待ち', color: 'bg-yellow-50' },\n  { status: 'completed', label: '完了', color: 'bg-green-50' },\n];\n```\n\n- shadcn/ui の `Card`, `Badge`, `ScrollArea` を使用\n- 各カラムは flex-shrink-0 で最小幅 280px\n- グリッドレイアウト: `grid grid-cols-4 gap-4`\n\n## 検証\n- 4 カラムが横並びに表示される\n- 各 PLAN が正しいカラムに振り分けられる\n- カラムヘッダーに件数が表示される",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C4",
+      "gate": "gate-c",
+      "title": "PLAN カード + 詳細展開",
+      "status": "pending",
+      "dependencies": ["C3"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-card.tsx", "operation": "create", "summary": "PLAN カードコンポーネント" },
+        { "path": "dashboard/components/plan-detail.tsx", "operation": "create", "summary": "PLAN 詳細展開コンポーネント" }
+      ],
+      "impl": "## 手順\n\n### 1. plan-card.tsx\n\nカード表示:\n- プロジェクト名（小さいバッジ）\n- PLAN タイトル（H1 から抽出済み）\n- 進捗バー（completed / total）\n- ファイル名（日付情報として活用）\n- クリックで詳細展開\n\n```typescript\ninterface PlanCardProps {\n  plan: PlanFile;\n  expanded: boolean;\n  onToggle: () => void;\n}\n```\n\nshadcn/ui の `Card`, `CardHeader`, `CardContent`, `Badge`, `Collapsible` を使用。\n\n### 2. plan-detail.tsx\n\nCollapsible で展開する詳細:\n- Gate 構造をアコーディオン表示\n- 各 Todo のチェック状態を表示（チェックマーク / 空丸）\n- Review 記入済みの Todo には「Review 済」バッジ\n- Todo タイトルのリスト\n\n```typescript\ninterface PlanDetailProps {\n  plan: PlanFile;\n}\n```\n\nshadcn/ui の `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`, `Separator` を使用。\n\n## 検証\n- カードにプロジェクト名、タイトル、進捗バーが表示される\n- クリックで Gate/Todo 一覧が展開される\n- 再クリックで折りたたまれる",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D1",
+      "gate": "gate-d",
+      "title": "統合動作確認",
+      "status": "pending",
+      "dependencies": ["C4"],
+      "affectedFiles": [],
+      "impl": "## 手順\n\n### 1. 起動確認\n```bash\ncd /Users/ryryo/dev/dot-claude-dev\nnpm run dashboard:dev\n```\n\n### 2. 機能チェックリスト\n\n- [ ] http://localhost:3000 でダッシュボードが表示される\n- [ ] サイドバーに projects.yaml の全プロジェクトが表示される\n- [ ] 全プロジェクトの PLAN が看板に表示される\n- [ ] ステータス別に正しいカラムに振り分けられている\n- [ ] プロジェクトのチェックボックスを外すと該当 PLAN が非表示になる\n- [ ] PLAN カードをクリックすると Gate/Todo が展開される\n- [ ] 進捗バーが正しいパーセンテージを示す\n- [ ] Gate/Todo 構造のない古い PLAN も「未実装」カラムに表示される\n- [ ] 存在しないプロジェクトパスがあってもエラーにならない\n\n### 3. 微調整\n\n動作確認中に見つかった UI の問題（余白、フォントサイズ、色等）を修正。\n\n## 検証\n上記チェックリストの全項目をブラウザで手動確認。",
+      "relatedIssues": [],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-08",
+    "totalGates": 4,
+    "totalTodos": 10
+  }
+}
