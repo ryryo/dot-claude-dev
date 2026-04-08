@@ -41,7 +41,7 @@ export function PlanDetail({ plan }: PlanDetailProps) {
               open={isOpen}
               onOpenChange={(open) => setOpenGateId(open ? gate.id : null)}
             >
-              <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left">
+              <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left" aria-label={`${gate.title} の Todo を${isOpen ? '閉じる' : '開く'}`}>
                 <div className="space-y-1">
                   <p className="text-nav font-semibold">{gate.title}</p>
                   <p className="text-muted-foreground text-xs tabular-nums">

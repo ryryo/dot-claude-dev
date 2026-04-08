@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={cn(inter.variable, notoSansJP.variable, ibmPlexMono.variable)}>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }

@@ -13,7 +13,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import type { PlanFile, PlanStatus, ProjectConfig } from "@/lib/types"
@@ -123,10 +122,10 @@ export default function Home() {
 
   if (error || !data) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-6">
+      <main className="flex min-h-svh items-center justify-center bg-muted/30 px-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>データの取得に失敗しました</CardTitle>
+            <h2 className="text-lg font-semibold leading-none tracking-tight">データの取得に失敗しました</h2>
             <CardDescription>
               {error instanceof Error
                 ? error.message

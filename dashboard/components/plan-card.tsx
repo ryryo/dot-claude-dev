@@ -29,7 +29,7 @@ export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
     <Collapsible open={expanded} onOpenChange={onToggle}>
       <Card className="gap-0 overflow-hidden py-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         <CardHeader className="px-0 py-0">
-          <CollapsibleTrigger className="w-full cursor-pointer">
+          <CollapsibleTrigger className="w-full cursor-pointer" aria-label={`${plan.title} の詳細を${expanded ? '閉じる' : '開く'}`}>
             <div className="hover:bg-muted/40 flex w-full flex-col gap-4 px-4 py-4 text-left transition-colors">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-2">

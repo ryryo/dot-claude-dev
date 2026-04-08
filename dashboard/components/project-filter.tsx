@@ -30,10 +30,10 @@ export function ProjectFilter({
   }
 
   return (
-    <div className="space-y-4">
+    <nav aria-label="プロジェクトフィルター" className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-sm font-semibold">プロジェクトフィルター</h2>
+          <h3 className="text-sm font-semibold">プロジェクトフィルター</h3>
           <p className="text-muted-foreground text-xs">
             {selectedCount}/{projects.length} 件を表示対象にしています。
           </p>
@@ -48,13 +48,13 @@ export function ProjectFilter({
         </button>
       </div>
 
-      <div className="space-y-2">
+      <ul className="space-y-2" role="list">
         {projects.map((project) => {
           const isSelected = selectedSet.has(project.name)
 
           return (
+            <li key={project.name}>
             <button
-              key={project.name}
               type="button"
               onClick={() => onToggle(project.name)}
               className={cn(
@@ -77,15 +77,18 @@ export function ProjectFilter({
                 {planCounts[project.name] ?? 0} PLAN
               </Badge>
             </button>
+            </li>
           )
         })}
 
         {projects.length === 0 ? (
+          <li className="list-none">
           <div className="text-muted-foreground rounded-xl border border-dashed px-3 py-6 text-center text-sm">
             プロジェクトが見つかりません。
           </div>
+          </li>
         ) : null}
-      </div>
-    </div>
+      </ul>
+    </nav>
   )
 }
