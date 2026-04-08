@@ -278,24 +278,24 @@ Gate D: Semantic & Polish（Gate C 完了後）
 
 ### Gate C: Component Redesign
 
-- [ ] **Todo C1**: カンバンボード レスポンシブ再設計
-  > **Review C1**:
+- [x] **Todo C1**: カンバンボード レスポンシブ再設計
+  > **Review C1**: PASSED — `116e8b7`
 
-- [ ] **Todo C2**: PlanCard・PlanDetail 再設計
-  > **Review C2**:
+- [x] **Todo C2**: PlanCard・PlanDetail 再設計
+  > **Review C2**: PASSED — `116e8b7`
 
-- [ ] **Todo C3**: ProjectFilter・統計サマリー 再設計
-  > **Review C3**:
+- [x] **Todo C3**: ProjectFilter・統計サマリー 再設計
+  > **Review C3**: PASSED — `116e8b7`
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate D: Semantic & Polish
 
-- [ ] **Todo D1**: セマンティック HTML・アクセシビリティ対応
-  > **Review D1**:
+- [x] **Todo D1**: セマンティック HTML・アクセシビリティ対応
+  > **Review D1**: PASSED — スキップリンク追加、nav+ul/li構造化、見出し階層修正、aria-label追加、prefers-reduced-motion対応。`80794b0`
 
-- [ ] **Todo D2**: iOS Safari viewport 修正・ErrorBoundary 追加
-  > **Review D2**:
+- [x] **Todo D2**: iOS Safari viewport 修正・ErrorBoundary 追加
+  > **Review D2**: PASSED — error.tsx新規作成、min-h-screen→min-h-svh置換、suppressHydrationWarning追加。`80794b0`
 
 **Gate D 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
