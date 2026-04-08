@@ -35,3 +35,7 @@ composer.lock
 
 # Git Worktrees (team-run)
 .worktrees/
+
+# Dashboard
+dashboard/.next/
+dashboard/node_modules/

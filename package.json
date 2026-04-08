@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "dashboard:dev": "cd dashboard && npm run dev"
   },
   "keywords": [
     "claude-code",
