@@ -6,6 +6,7 @@ import useSWR from "swr"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { KanbanBoard } from "@/components/kanban-board"
 import { ProjectFilter } from "@/components/project-filter"
+import { SkeletonDashboard } from "@/components/skeleton-dashboard"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -115,17 +116,9 @@ export default function Home() {
   )
   const overallProgress = totalTodos === 0 ? 0 : Math.round((completedTodos / totalTodos) * 100)
   const selectedProjectCount = projectNames.filter((name) => selectedProjects.includes(name)).length
-  const kanbanComponentName = KanbanBoard.name || "KanbanBoard"
 
   if (isLoading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-6">
-        <div className="space-y-2 text-center">
-          <p className="text-lg font-semibold">PLAN Dashboard を読み込み中です</p>
-          <p className="text-muted-foreground text-sm">/api/plans からデータを取得しています。</p>
-        </div>
-      </main>
-    )
+    return <SkeletonDashboard />
   }
 
   if (error || !data) {
@@ -145,76 +138,60 @@ export default function Home() {
     )
   }
 
+  const filterContent = (
+    <ProjectFilter
+      projects={data.projects}
+      selected={selectedProjects}
+      onToggle={handleToggleProject}
+      planCounts={planCounts}
+    />
+  )
+
+  const statsContent = (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl border bg-muted/30 p-3">
+          <p className="text-muted-foreground text-xs">選択中プロジェクト</p>
+          <p className="mt-1 text-2xl font-semibold">{selectedProjectCount}</p>
+        </div>
+        <div className="rounded-xl border bg-muted/30 p-3">
+          <p className="text-muted-foreground text-xs">表示中 PLAN</p>
+          <p className="mt-1 text-2xl font-semibold">{filteredPlans.length}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-muted/30 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-muted-foreground text-xs">Todo 進捗</p>
+          <Badge variant="outline">{overallProgress}%</Badge>
+        </div>
+        <p className="mt-2 text-sm font-medium">
+          {completedTodos}/{totalTodos} 件完了
+        </p>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        {(Object.entries(STATUS_LABELS) as [PlanStatus, string][]).map(
+          ([status, label]) => (
+            <div
+              key={status}
+              className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2"
+            >
+              <span className="text-sm">{label}</span>
+              <Badge variant="secondary" className="tabular-nums">
+                {statusCounts[status]}
+              </Badge>
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  )
+
   return (
-    <DashboardLayout
-      sidebar={
-        <>
-          <Card>
-            <CardHeader className="gap-1">
-              <CardTitle className="text-base">PLAN Dashboard</CardTitle>
-              <CardDescription>
-                プロジェクト横断で PLAN を絞り込み、進捗状況を確認できます。
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProjectFilter
-                projects={data.projects}
-                selected={selectedProjects}
-                onToggle={handleToggleProject}
-                planCounts={planCounts}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="gap-1">
-              <CardTitle className="text-base">統計サマリー</CardTitle>
-              <CardDescription>現在のフィルター条件に基づく集計です。</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border bg-muted/30 p-3">
-                  <p className="text-muted-foreground text-xs">選択中プロジェクト</p>
-                  <p className="mt-1 text-2xl font-semibold">{selectedProjectCount}</p>
-                </div>
-                <div className="rounded-xl border bg-muted/30 p-3">
-                  <p className="text-muted-foreground text-xs">表示中 PLAN</p>
-                  <p className="mt-1 text-2xl font-semibold">{filteredPlans.length}</p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border bg-muted/30 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-muted-foreground text-xs">Todo 進捗</p>
-                  <Badge variant="outline">{overallProgress}%</Badge>
-                </div>
-                <p className="mt-2 text-sm font-medium">
-                  {completedTodos}/{totalTodos} 件完了
-                </p>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                {(Object.entries(STATUS_LABELS) as [PlanStatus, string][]).map(
-                  ([status, label]) => (
-                    <div
-                      key={status}
-                      className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2"
-                    >
-                      <span className="text-sm">{label}</span>
-                      <Badge variant="secondary" className="tabular-nums">
-                        {statusCounts[status]}
-                      </Badge>
-                    </div>
-                  )
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      }
-    >
+    <DashboardLayout filterContent={filterContent} statsContent={statsContent}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
@@ -230,16 +207,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dashed bg-background p-10 shadow-sm">
-          <div className="mx-auto flex max-w-2xl flex-col items-center justify-center space-y-3 text-center">
-            <Badge variant="secondary">Placeholder</Badge>
-            <h2 className="text-xl font-semibold">{kanbanComponentName} は次の Todo で実装予定です</h2>
-            <p className="text-muted-foreground text-sm leading-6">
-              現在はプレースホルダーを表示しています。選択中の {filteredPlans.length} 件の
-              PLAN は、このエリアに看板として表示される想定です。
-            </p>
-          </div>
-        </div>
+        <KanbanBoard plans={filteredPlans} />
       </div>
     </DashboardLayout>
   )

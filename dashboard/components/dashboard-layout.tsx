@@ -1,34 +1,34 @@
 import type { ReactNode } from "react"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 
 interface DashboardLayoutProps {
-  sidebar: ReactNode
+  filterContent: ReactNode
+  statsContent: ReactNode
   children: ReactNode
 }
 
 export function DashboardLayout({
-  sidebar,
+  filterContent,
+  statsContent,
   children,
 }: DashboardLayoutProps) {
   return (
-    <div className="bg-muted/30">
-      <div className="flex h-screen overflow-hidden">
-        <aside className="w-[280px] shrink-0 bg-background">
-          <ScrollArea className="h-screen">
-            <div className="space-y-6 p-6">{sidebar}</div>
-          </ScrollArea>
-        </aside>
-
-        <Separator orientation="vertical" />
-
-        <main className="min-w-0 flex-1 bg-muted/20">
-          <ScrollArea className="h-screen">
-            <div className="min-h-screen p-6">{children}</div>
-          </ScrollArea>
+    <SidebarProvider>
+      <AppSidebar filterContent={filterContent} statsContent={statsContent} />
+      <SidebarInset>
+        <header className="flex items-center gap-2 border-b px-4 py-3">
+          <SidebarTrigger />
+        </header>
+        <main id="main-content" className="flex-1 overflow-auto p-4 md:p-6">
+          {children}
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

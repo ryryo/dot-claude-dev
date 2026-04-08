@@ -255,24 +255,24 @@ Gate D: Semantic & Polish（Gate C 完了後）
 
 ### Gate A: Design Foundation
 
-- [ ] **Todo A1**: フォントシステム刷新（Inter + Noto Sans JP + IBM Plex Mono）
-  > **Review A1**:
+- [x] **Todo A1**: フォントシステム刷新（Inter + Noto Sans JP + IBM Plex Mono）
+  > **Review A1**: ✅ PASSED
 
-- [ ] **Todo A2**: カラーシステム整理（ダークモード廃止 + ステータスカラー追加）
-  > **Review A2**:
+- [x] **Todo A2**: カラーシステム整理（ダークモード廃止 + ステータスカラー追加）
+  > **Review A2**: ✅ PASSED
 
-- [ ] **Todo A3**: タイポグラフィトークン定義（サイズ・ウェイト・行間・字間）
-  > **Review A3**:
+- [x] **Todo A3**: タイポグラフィトークン定義（サイズ・ウェイト・行間・字間）
+  > **Review A3**: ✅ PASSED
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate B: Layout & Core Fix
 
-- [ ] **Todo B1**: KanbanBoard 接続修正 + スケルトンローディング UI
-  > **Review B1**:
+- [x] **Todo B1**: KanbanBoard 接続修正 + スケルトンローディング UI
+  > **Review B1**: PASSED — kanbanComponentName 削除、プレースホルダーを `<KanbanBoard plans={filteredPlans} />` に置換、SkeletonDashboard 新規作成、isLoading をスケルトンに置換。ビルド成功。
 
-- [ ] **Todo B2**: shadcn/ui Sidebar によるレスポンシブレイアウト
-  > **Review B2**:
+- [x] **Todo B2**: shadcn/ui Sidebar によるレスポンシブレイアウト
+  > **Review B2**: PASSED — shadcn sidebar + 依存7ファイル追加。app-sidebar.tsx 新規作成（collapsible="icon"）。dashboard-layout.tsx を SidebarProvider ベースに全面書き換え。page.tsx の sidebar prop を filterContent/statsContent に分解。ビルド成功。
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
