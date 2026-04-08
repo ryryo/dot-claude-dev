@@ -11,19 +11,17 @@ Claude Codeのための仕様書駆動開発ワークフロー。スキル・コ
 
 ## インストール
 
-### 共有リポジトリをセットアップ
-
 ```bash
-# 1. クローン
+# このリポジトリをクローン
 git clone https://github.com/ryryo/dot-claude-dev.git ~/dot-claude-dev
 ```
 
 ### プロジェクトに適用
 
-```bash
-# 2. プロジェクトディレクトリで実行
-cd /path/to/your-project
-bash ~/dot-claude-dev/scripts/setup-claude.sh
+`~/dot-claude-dev` を Claude Code で開き、`/setup-project` を実行します。
+
+```
+/setup-project /path/to/your-project
 ```
 
 これにより以下の構造が作成されます：
@@ -40,13 +38,9 @@ your-project/.claude/
 └── settings.local.json # プロジェクト固有
 ```
 
-### 更新
+### スキル一覧の同期
 
-```bash
-cd ~/dot-claude-dev
-git pull
-# すべてのプロジェクトに自動反映される
-```
+スキルを追加・変更した後、外部プロジェクトの CLAUDE.md を最新化するには `/sync-skills` を使います。
 
 ## 使い方
 
