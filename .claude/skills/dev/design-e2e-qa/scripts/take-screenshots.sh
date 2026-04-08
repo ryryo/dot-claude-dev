@@ -66,17 +66,18 @@ for page_path in "$@"; do
   page="${page_path%%:*}"
   path="${page_path#*:}"
   url="${BASE_URL}${path}"
-  before_script_args=()
-
-  if [ -n "$BEFORE_SCRIPT" ]; then
-    before_script_args=(--before-script "$BEFORE_SCRIPT")
-  fi
 
   echo "📸 ${page}"
-  node "$SCREENSHOT_JS" "$url" \
-    "${before_script_args[@]}" \
-    --split-sections \
-    -o "$OUTPUT_DIR/${page}-full.jpg"
+  if [ -n "$BEFORE_SCRIPT" ]; then
+    node "$SCREENSHOT_JS" "$url" \
+      --before-script "$BEFORE_SCRIPT" \
+      --split-sections \
+      -o "$OUTPUT_DIR/${page}-full.jpg"
+  else
+    node "$SCREENSHOT_JS" "$url" \
+      --split-sections \
+      -o "$OUTPUT_DIR/${page}-full.jpg"
+  fi
 done
 
 echo ""
