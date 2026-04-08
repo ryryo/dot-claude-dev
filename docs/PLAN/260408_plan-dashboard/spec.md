@@ -217,37 +217,37 @@ Gate D: 統合テスト（Gate C 完了後）
 - [x] **Todo A1**: Next.js プロジェクト初期化 + UI ライブラリセットアップ
   > **Review A1**: ✅ PASSED
 
-- [ ] **Todo A2**: .gitignore + npm scripts 更新
-  > **Review A2**:
+- [x] **Todo A2**: .gitignore + npm scripts 更新
+  > **Review A2**: ✅ PASSED
 
 **Gate A 通過条件**: `cd dashboard && npm run dev` でエラーなく起動し、shadcn/ui コンポーネントが利用可能な状態
 
 ### Gate B: データ層
 
-- [ ] **Todo B1**: projects.yaml 設定ファイル + 型定義
-  > **Review B1**:
+- [x] **Todo B1**: projects.yaml 設定ファイル + 型定義
+  > **Review B1**: ✅ PASSED
 
-- [ ] **Todo B2**: [TDD] PLAN マークダウンパーサー
-  > **Review B2**:
+- [x] **Todo B2**: [TDD] PLAN マークダウンパーサー
+  > **Review B2**: ✅ PASSED (3観点並列レビュー)
 
-- [ ] **Todo B3**: [TDD] プロジェクトスキャナー
-  > **Review B3**:
+- [x] **Todo B3**: [TDD] プロジェクトスキャナー
+  > **Review B3**: ✅ PASSED (3観点並列レビュー)
 
 **Gate B 通過条件**: 全テスト PASS。パーサーが 4 ステータスを正しく判定。スキャナーが実プロジェクトの PLAN を収集できる
 
 ### Gate C: API + UI
 
-- [ ] **Todo C1**: API route 実装 (/api/plans)
-  > **Review C1**:
+- [x] **Todo C1**: API route 実装 (/api/plans)
+  > **Review C1**: ✅ PASSED
 
-- [ ] **Todo C2**: ダッシュボードレイアウト + プロジェクトフィルター
-  > **Review C2**:
+- [x] **Todo C2**: ダッシュボードレイアウト + プロジェクトフィルター
+  > **Review C2**: ✅ PASSED
 
-- [ ] **Todo C3**: 看板ビュー (4 カラム表示)
-  > **Review C3**:
+- [x] **Todo C3**: 看板ビュー (4 カラム表示)
+  > **Review C3**: ✅ PASSED
 
-- [ ] **Todo C4**: PLAN カード + 詳細展開
-  > **Review C4**:
+- [x] **Todo C4**: PLAN カード + 詳細展開
+  > **Review C4**: ✅ PASSED (3観点並列レビュー)
 
 **Gate C 通過条件**: ブラウザで看板が表示され、プロジェクトフィルターで絞り込み、PLAN カードの展開が動作する
 
