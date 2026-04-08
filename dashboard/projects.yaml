@@ -1,0 +1,17 @@
+projects:
+  - name: dot-claude-dev
+    path: /Users/ryryo/dev/dot-claude-dev
+  - name: meurai-editer
+    path: /Users/ryryo/dev/meurai-editer
+  - name: base-ui-design
+    path: /Users/ryryo/dev/base-ui-design
+  - name: kamui-ryryo
+    path: /Users/ryryo/dev/kamui-ryryo
+  - name: goosely-editor
+    path: /Users/ryryo/dev/goosely-editor
+  - name: swipe-lp-builder
+    path: /Users/ryryo/dev/swipe-lp-builder
+  - name: lead-form
+    path: /Users/ryryo/dev/lead-form
+  - name: lpto-tanstack
+    path: /Users/ryryo/dev/lpto-tanstack
