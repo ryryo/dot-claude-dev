@@ -1,0 +1,181 @@
+{
+  "spec": {
+    "slug": "dashboard-redesign",
+    "title": "PLAN Dashboard デザインリニューアル",
+    "specPath": "spec.md"
+  },
+  "gates": [
+    {
+      "id": "A",
+      "title": "Design Foundation",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "Layout & Core Fix",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "C",
+      "title": "Component Redesign",
+      "dependencies": ["A", "B"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "D",
+      "title": "Semantic & Polish",
+      "dependencies": ["C"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "フォントシステム刷新（Inter + Noto Sans JP + IBM Plex Mono）",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/app/layout.tsx", "operation": "modify", "summary": "Inter, Noto_Sans_JP, IBM_Plex_Mono の 3 フォントを next/font/google で読み込み、CSS 変数を設定" },
+        { "path": "dashboard/app/globals.css", "operation": "modify", "summary": "body の font-family から Arial 上書きを削除し、CSS 変数ベースのフォント指定に変更" }
+      ],
+      "impl": "## 実装手順\n\n### 1. layout.tsx のフォント読み込み変更\n\n現在の `Noto_Sans` インポートを削除し、以下の 3 フォントに置き換える：\n\n```tsx\nimport { Inter, Noto_Sans_JP, IBM_Plex_Mono } from \"next/font/google\"\n\nconst inter = Inter({\n  subsets: [\"latin\"],\n  variable: \"--font-sans\",\n  display: \"swap\",\n})\n\nconst notoSansJP = Noto_Sans_JP({\n  subsets: [\"latin\"],\n  variable: \"--font-jp\",\n  display: \"swap\",\n  weight: [\"400\", \"500\", \"600\", \"700\"],\n})\n\nconst ibmPlexMono = IBM_Plex_Mono({\n  subsets: [\"latin\"],\n  weight: [\"400\", \"500\"],\n  variable: \"--font-mono\",\n  display: \"swap\",\n})\n```\n\n`<html>` タグに 3 つの variable クラスを適用：\n```tsx\n<html lang=\"ja\" className={cn(inter.variable, notoSansJP.variable, ibmPlexMono.variable)}>\n```\n\n### 2. globals.css のフォント設定変更\n\n`@layer base` 内の body から `font-family: Arial, Helvetica, sans-serif;` を削除。\n\n`@theme inline` に以下を追加/変更：\n```css\n--font-sans: var(--font-sans), var(--font-jp), sans-serif;\n--font-mono: var(--font-mono), monospace;\n```\n\n### 検証\n- `npm run dev` で起動し、ブラウザの DevTools でフォントが Inter であることを確認\n- 日本語テキストが Noto Sans JP でレンダリングされていることを確認",
+      "relatedIssues": ["D4"],
+      "tdd": false
+    },
+    {
+      "id": "A2",
+      "gate": "A",
+      "title": "カラーシステム整理（ダークモード廃止 + ステータスカラー追加）",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/app/globals.css", "operation": "modify", "summary": ".dark ブロック完全削除、@custom-variant dark 削除、ステータスカラー変数追加" },
+        { "path": "dashboard/DESIGN.md", "operation": "modify", "summary": "カラーパレットを現行の紫系 OKLCH に合わせて更新、ダークモード記述を削除" }
+      ],
+      "impl": "## 実装手順\n\n### 1. globals.css からダークモードを完全削除\n\n以下を削除：\n- `@custom-variant dark (&:is(.dark *));` 行を削除\n- `.dark { ... }` ブロック全体（約30行）を削除\n\n### 2. globals.css にステータスカラー変数を追加\n\n`:root` ブロック内に以下を追加：\n```css\n--status-not-started: oklch(0.95 0.005 325);\n--status-in-progress: oklch(0.93 0.04 270);\n--status-in-review: oklch(0.94 0.06 85);\n--status-completed: oklch(0.93 0.05 155);\n```\n\n`@theme inline` ブロックに以下を追加：\n```css\n--color-status-not-started: var(--status-not-started);\n--color-status-in-progress: var(--status-in-progress);\n--color-status-in-review: var(--status-in-review);\n--color-status-completed: var(--status-completed);\n```\n\n### 3. shadcn/ui コンポーネントの dark: prefix を除去\n\n```bash\ngrep -r 'dark:' dashboard/components/ui/\n```\n\n該当するファイルから `dark:` prefix のクラスを削除する。\n\n### 4. DESIGN.md のカラーパレットを現行紫系に更新\n\nDESIGN.md の Color Palette セクションを現行の OKLCH パレットに合わせて更新：\n- Primary: 現行の紫（oklch(0.496 0.265 301.924)）\n- 「STUDIO Blue」への言及をすべて削除\n- ダークモード関連の記述を削除\n\n### 検証\n- `.dark` クラスが globals.css に残っていないことを確認\n- `dark:` prefix が dashboard/ 配下に残っていないことを Grep で確認\n- 既存の紫系テーマが崩れていないことをブラウザで確認",
+      "relatedIssues": ["D5"],
+      "tdd": false
+    },
+    {
+      "id": "A3",
+      "gate": "A",
+      "title": "タイポグラフィトークン定義（サイズ・ウェイト・行間・字間）",
+      "status": "pending",
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "dashboard/app/globals.css", "operation": "modify", "summary": "DESIGN.md 準拠のタイポグラフィユーティリティクラスを @layer utilities に追加" }
+      ],
+      "impl": "## 実装手順\n\n### 1. globals.css にカスタムユーティリティを追加\n\n`@layer base` の後に以下を追加：\n\n```css\n@layer utilities {\n  /* DESIGN.md タイポグラフィスケール */\n  .text-body {\n    font-size: 15px;\n    font-weight: 400;\n    line-height: 1.7;\n  }\n\n  .text-nav {\n    font-size: 14px;\n    font-weight: 500;\n    letter-spacing: -0.28px;\n  }\n\n  .text-label {\n    font-size: 13px;\n    font-weight: 500;\n    letter-spacing: -0.26px;\n  }\n\n  .text-mono-label {\n    font-family: var(--font-mono), monospace;\n    font-size: 11px;\n    font-weight: 500;\n    letter-spacing: -0.44px;\n  }\n\n  .text-heading-1 {\n    font-size: 35px;\n    font-weight: 600;\n    line-height: 1.2;\n  }\n\n  .text-heading-2 {\n    font-size: 24px;\n    font-weight: 600;\n    line-height: 1.5;\n  }\n\n  .text-heading-3 {\n    font-size: 18px;\n    font-weight: 600;\n    line-height: 1.4;\n  }\n}\n```\n\n### 2. @layer base の body にデフォルトタイポグラフィを設定\n\n```css\nbody {\n  @apply antialiased bg-background text-foreground;\n  font-size: 15px;\n  line-height: 1.7;\n}\n```\n\n### 検証\n- DevTools で body の font-size が 15px、line-height が 1.7 であることを確認\n- 各ユーティリティクラスが Tailwind で使用可能であることを確認（コンポーネント適用は Gate C で実施）",
+      "relatedIssues": ["D6"],
+      "tdd": false
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "KanbanBoard 接続修正 + スケルトンローディング UI",
+      "status": "pending",
+      "dependencies": ["A1", "A2", "A3"],
+      "affectedFiles": [
+        { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "KanbanBoard プレースホルダーを <KanbanBoard plans={filteredPlans} /> に置換。kanbanComponentName 変数削除。ローディング状態をスケルトン UI に変更" },
+        { "path": "dashboard/components/skeleton-dashboard.tsx", "operation": "create", "summary": "サイドバー + カンバンボードのスケルトン UI コンポーネント" }
+      ],
+      "impl": "## 実装手順\n\n### 1. page.tsx の KanbanBoard 接続\n\n以下の行を削除：\n```tsx\nconst kanbanComponentName = KanbanBoard.name || \"KanbanBoard\"  // line 118\n```\n\nプレースホルダー div（line 233〜243）を以下に置換：\n```tsx\n<KanbanBoard plans={filteredPlans} />\n```\n\n### 2. skeleton-dashboard.tsx の作成\n\n```tsx\nexport function SkeletonDashboard() {\n  return (\n    <div className=\"flex h-svh\">\n      {/* Sidebar skeleton */}\n      <aside className=\"hidden w-[280px] shrink-0 border-r p-6 lg:block\">\n        <div className=\"space-y-6\">\n          <div className=\"space-y-3\">\n            <div className=\"h-5 w-32 animate-pulse rounded bg-muted\" />\n            <div className=\"h-4 w-48 animate-pulse rounded bg-muted\" />\n          </div>\n          {Array.from({ length: 5 }).map((_, i) => (\n            <div key={i} className=\"h-16 animate-pulse rounded-xl bg-muted\" />\n          ))}\n        </div>\n      </aside>\n      {/* Main skeleton */}\n      <main className=\"flex-1 p-6\">\n        <div className=\"space-y-6\">\n          <div className=\"h-8 w-48 animate-pulse rounded bg-muted\" />\n          <div className=\"grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4\">\n            {Array.from({ length: 4 }).map((_, i) => (\n              <div key={i} className=\"h-96 animate-pulse rounded-xl bg-muted\" />\n            ))}\n          </div>\n        </div>\n      </main>\n    </div>\n  )\n}\n```\n\n### 3. page.tsx のローディング状態を置換\n\n既存のテキストのみの isLoading 分岐を SkeletonDashboard コンポーネントに置換：\n```tsx\nif (isLoading) {\n  return <SkeletonDashboard />\n}\n```\n\n### 検証\n- `npm run dev` で KanbanBoard が描画されることを確認\n- ネットワークを遅延させてスケルトン UI が表示されることを確認\n- KanbanBoard に plans データが正しく渡されていることを DevTools で確認",
+      "relatedIssues": ["D1", "D20"],
+      "tdd": false
+    },
+    {
+      "id": "B2",
+      "gate": "B",
+      "title": "shadcn/ui Sidebar によるレスポンシブレイアウト",
+      "status": "pending",
+      "dependencies": ["A1", "A2", "A3"],
+      "affectedFiles": [
+        { "path": "dashboard/components/dashboard-layout.tsx", "operation": "modify", "summary": "SidebarProvider + Sidebar(collapsible='icon') でレスポンシブレイアウト実装。既存カスタムレイアウトを完全置換" },
+        { "path": "dashboard/components/app-sidebar.tsx", "operation": "create", "summary": "Sidebar コンポーネント（SidebarHeader, SidebarContent, SidebarFooter）" }
+      ],
+      "impl": "## 実装手順\n\n### 0. shadcn/ui Sidebar コンポーネントの追加\n\n```bash\ncd dashboard && npx shadcn@latest add sidebar\n```\n\nこれにより Sheet, Button 等の依存コンポーネントも自動追加される。\n\n### 1. app-sidebar.tsx の作成\n\nSidebar の中身を専用コンポーネントに分離：\n\n```tsx\nimport {\n  Sidebar,\n  SidebarContent,\n  SidebarHeader,\n  SidebarFooter,\n  SidebarGroup,\n  SidebarGroupLabel,\n  SidebarGroupContent,\n} from \"@/components/ui/sidebar\"\n\ninterface AppSidebarProps {\n  filterContent: ReactNode   // ProjectFilter\n  statsContent: ReactNode    // 統計サマリー\n}\n\nexport function AppSidebar({ filterContent, statsContent }: AppSidebarProps) {\n  return (\n    <Sidebar collapsible=\"icon\">\n      <SidebarHeader>\n        <h1 className=\"text-heading-3 px-2\">PLAN Dashboard</h1>\n      </SidebarHeader>\n      <SidebarContent>\n        <SidebarGroup>\n          <SidebarGroupLabel>フィルター</SidebarGroupLabel>\n          <SidebarGroupContent>{filterContent}</SidebarGroupContent>\n        </SidebarGroup>\n        <SidebarGroup>\n          <SidebarGroupLabel>統計</SidebarGroupLabel>\n          <SidebarGroupContent>{statsContent}</SidebarGroupContent>\n        </SidebarGroup>\n      </SidebarContent>\n      <SidebarFooter />\n    </Sidebar>\n  )\n}\n```\n\n### 2. dashboard-layout.tsx を SidebarProvider ベースに書き換え\n\n```tsx\nimport { SidebarProvider, SidebarInset, SidebarTrigger } from \"@/components/ui/sidebar\"\nimport { AppSidebar } from \"@/components/app-sidebar\"\n\ninterface DashboardLayoutProps {\n  filterContent: ReactNode\n  statsContent: ReactNode\n  children: ReactNode\n}\n\nexport function DashboardLayout({ filterContent, statsContent, children }: DashboardLayoutProps) {\n  return (\n    <SidebarProvider>\n      <AppSidebar filterContent={filterContent} statsContent={statsContent} />\n      <SidebarInset>\n        <header className=\"flex items-center gap-2 border-b px-4 py-3\">\n          <SidebarTrigger />\n          {/* ヘッダーコンテンツ */}\n        </header>\n        <main id=\"main-content\" className=\"flex-1 overflow-auto p-4 md:p-6\">\n          {children}\n        </main>\n      </SidebarInset>\n    </SidebarProvider>\n  )\n}\n```\n\n### 3. page.tsx の sidebar prop を分解\n\n現在の `sidebar={<>...</>}` 一括渡しを `filterContent` と `statsContent` に分解。\n\n**ポイント**:\n- `collapsible=\"icon\"`: タブレットでアイコンレール、デスクトップで展開\n- モバイル（md 未満）: 自動で Sheet ドロワーに変換（shadcn Sidebar 内蔵機能）\n- `SidebarTrigger`: ハンバーガーメニュー（モバイル）/ 折りたたみトグル（デスクトップ）を自動切替\n- `h-screen` 問題は SidebarProvider が内部で管理\n\n### 検証\n- デスクトップ: サイドバー展開状態で表示\n- タブレット: アイコンレール表示、クリックで展開\n- モバイル: ハンバーガーメニューで Sheet ドロワー表示\n- SidebarTrigger が各ビューポートで正しく動作することを確認",
+      "relatedIssues": ["D2", "D3", "D8", "D9"],
+      "tdd": false
+    },
+    {
+      "id": "C1",
+      "gate": "C",
+      "title": "カンバンボード レスポンシブ再設計",
+      "status": "pending",
+      "dependencies": ["B1", "B2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/kanban-board.tsx", "operation": "modify", "summary": "レスポンシブ列数（1/2/4列）、DESIGN.md カラー適用、横スクロール廃止" }
+      ],
+      "impl": "## 実装手順\n\n### 1. kanban-board.tsx の書き換え\n\n**列数のレスポンシブ化（snap-scroll パターン）**:\n```tsx\n// ScrollArea wrapper を削除\n// モバイル: 横スワイプ snap-scroll でカンバンメタファー維持\n// タブレット以上: grid\n<div className=\"flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-2 md:overflow-x-visible md:snap-none lg:grid-cols-4\">\n  {COLUMNS.map((column) => (\n    <div className=\"w-[85vw] shrink-0 snap-center md:w-auto md:shrink\">\n      // 各列\n    </div>\n  ))}\n</div>\n```\n\n**カラーの変更**:\n```tsx\nconst COLUMNS: { status: PlanStatus; label: string; color: string }[] = [\n  { status: \"not-started\", label: \"未実装\", color: \"bg-status-not-started\" },\n  { status: \"in-progress\", label: \"実装中\", color: \"bg-status-in-progress\" },\n  { status: \"in-review\", label: \"レビュー待ち\", color: \"bg-status-in-review\" },\n  { status: \"completed\", label: \"完了\", color: \"bg-status-completed\" },\n]\n```\n\n**列カードの修正**:\n- `min-w-[280px]` を削除（レスポンシブで不要）\n- `min-h-[420px]` を `min-h-[200px]` に変更（モバイルで過剰なスペースを防ぐ）\n- `shadow-none` のまま（DESIGN.md のフラットデザイン準拠）\n\n**エンプティステートの統一**:\n```tsx\n<div className=\"flex min-h-24 items-center justify-center rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground\">\n  このステータスの PLAN はありません\n</div>\n```\n\n### 検証\n- デスクトップで 4 列表示\n- タブレット（768px〜1024px）で 2 列表示\n- モバイル（≤768px）で 1 列スタック表示\n- 横スクロールが発生しないことを確認",
+      "relatedIssues": ["D7"],
+      "tdd": false
+    },
+    {
+      "id": "C2",
+      "gate": "C",
+      "title": "PlanCard・PlanDetail 再設計",
+      "status": "pending",
+      "dependencies": ["B1", "B2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-card.tsx", "operation": "modify", "summary": "DESIGN.md タイポグラフィ適用、cursor-pointer 追加、コントラスト修正、PLAN ラベルサイズ修正" },
+        { "path": "dashboard/components/plan-detail.tsx", "operation": "modify", "summary": "cursor-pointer 追加、タイポグラフィ修正" }
+      ],
+      "impl": "## 実装手順\n\n### 1. plan-card.tsx の修正\n\n**cursor-pointer 追加（D10）**:\n```tsx\n<CollapsibleTrigger className=\"w-full cursor-pointer\">\n```\n\n**PLAN ラベルサイズ修正（D6）**:\n```tsx\n// text-[11px] → text-mono-label（13px相当の可読性）\n<p className=\"text-mono-label uppercase text-muted-foreground\">\n  PLAN\n</p>\n```\n\n**プロジェクト名 truncate 幅拡大（D26）**:\n```tsx\n<span className=\"max-w-[180px] truncate\">{plan.projectName}</span>\n```\n\n**カード影を DESIGN.md 準拠に**:\n```tsx\n<Card className=\"gap-0 overflow-hidden py-0\" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>\n```\n\n**プログレスバーの色**:\nそのまま `bg-primary`（#0275fd に変わっているため問題なし）\n\n### 2. plan-detail.tsx の修正\n\n**cursor-pointer 追加（D11）**:\n```tsx\n<CollapsibleTrigger className=\"flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left\">\n```\n\n**タイポグラフィ修正**:\n- Gate タイトル: `text-sm font-semibold` → `text-nav font-semibold`（14px, -0.28px tracking）\n- Todo テキスト: `text-sm` → `text-body`（15px, line-height 1.7）は過剰なので `text-sm` 維持で OK\n\n### 検証\n- カード・Gate トリガーにホバー時 cursor:pointer が表示されることを確認\n- PLAN ラベルが 11px 以上であることを DevTools で確認\n- プロジェクト名が適切に表示されることを確認",
+      "relatedIssues": ["D5", "D6", "D10", "D11"],
+      "tdd": false
+    },
+    {
+      "id": "C3",
+      "gate": "C",
+      "title": "ProjectFilter・統計サマリー 再設計",
+      "status": "pending",
+      "dependencies": ["B1", "B2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/project-filter.tsx", "operation": "modify", "summary": "タッチターゲット拡大、DESIGN.md スタイル適用、aria-hidden 追加" },
+        { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "統計サマリーカードのタイポグラフィ・スペーシング修正、デスクトップ H1 サイズ修正" }
+      ],
+      "impl": "## 実装手順\n\n### 1. project-filter.tsx の修正\n\n**タッチターゲット拡大（D12）**:\n```tsx\n// 「すべて選択/すべて解除」ボタン\n<button\n  type=\"button\"\n  onClick={handleToggleAll}\n  className=\"text-label text-primary min-h-[44px] px-2 transition-opacity hover:opacity-80\"\n>\n```\n\n**Checkbox に aria-hidden 追加（D30）**:\n```tsx\n<Checkbox checked={isSelected} className=\"pointer-events-none mt-0.5\" aria-hidden=\"true\" />\n```\n\n**プロジェクトボタンの角丸を DESIGN.md 準拠に**:\n```tsx\n// rounded-xl → rounded-lg（DESIGN.md のカード radius 8-12px に合わせる）\nclassName={cn(\n  \"flex w-full items-start justify-between gap-3 rounded-lg border p-3 text-left transition-colors cursor-pointer\",\n  isSelected ? \"bg-accent\" : \"bg-background hover:bg-muted\"\n)}\n```\n\n### 2. page.tsx の統計サマリー・ヘッダー修正\n\n**H1 サイズ修正**:\n```tsx\n// text-2xl → text-heading-2 (24px) をデスクトップ基本サイズに\n<h1 className=\"text-heading-2\">PLAN Board</h1>\n```\n\n**統計カードの text-xs → text-label に統一**:\n```tsx\n<p className=\"text-label text-muted-foreground\">選択中プロジェクト</p>\n```\n\n**統計値のフォント**:\n```tsx\n// text-2xl → text-heading-2 で統一\n<p className=\"mt-1 text-heading-2 tabular-nums\">{selectedProjectCount}</p>\n```\n\n### 検証\n- すべてのタッチターゲットが 44px 以上であることを確認\n- 統計サマリーのフォントサイズが DESIGN.md に準拠していることを確認\n- フィルターの操作が正しく動作することを確認",
+      "relatedIssues": ["D12", "D26", "D28", "D30"],
+      "tdd": false
+    },
+    {
+      "id": "D1",
+      "gate": "D",
+      "title": "セマンティック HTML・アクセシビリティ対応",
+      "status": "pending",
+      "dependencies": ["C1", "C2", "C3"],
+      "affectedFiles": [
+        { "path": "dashboard/components/dashboard-layout.tsx", "operation": "modify", "summary": "スキップリンク追加、nav ランドマーク追加" },
+        { "path": "dashboard/components/project-filter.tsx", "operation": "modify", "summary": "nav + ul/li 構造に変更、aria-label 追加" },
+        { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "見出し階層修正（h1 → h2 の正しい順序）" },
+        { "path": "dashboard/components/plan-card.tsx", "operation": "modify", "summary": "CollapsibleTrigger に aria-label 追加" },
+        { "path": "dashboard/components/plan-detail.tsx", "operation": "modify", "summary": "CollapsibleTrigger に aria-label 追加" }
+      ],
+      "impl": "## 実装手順\n\n### 1. スキップリンク追加（D14）\n\ndashboard-layout.tsx の先頭に：\n```tsx\n<a\n  href=\"#main-content\"\n  className=\"sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground\"\n>\n  メインコンテンツへスキップ\n</a>\n```\n\n### 2. ProjectFilter を nav + ul/li に（D16）\n\nproject-filter.tsx の外側 div を nav に変更：\n```tsx\n<nav aria-label=\"プロジェクトフィルター\">\n  <div className=\"flex items-start justify-between gap-3\">\n    ...\n  </div>\n  <ul className=\"space-y-2\" role=\"list\">\n    {projects.map((project) => (\n      <li key={project.name}>\n        <button ...>\n```\n\n### 3. 見出し階層修正（D17）\n\n- ProjectFilter 内の `<h2>` を `<h2>` のまま維持\n- page.tsx の `<h1>PLAN Board</h1>` が DOM 上で ProjectFilter の h2 より前に来るようにする\n  - DashboardLayout の children（main）が sidebar（aside）より後なので DOM 順序上は問題\n  - ただし page.tsx 内の sidebar prop で `<h2>` が出る前に main 内で `<h1>` を出すのは構造上難しい\n  - **対策**: ProjectFilter の見出しを `<h2>` → `<h3>` に変更し、page.tsx の CardTitle も `<h2>` に変更\n\n### 4. aria-label 追加（D19）\n\nplan-card.tsx:\n```tsx\n<CollapsibleTrigger\n  className=\"w-full cursor-pointer\"\n  aria-label={`${plan.title} の詳細を${expanded ? '閉じる' : '開く'}`}\n>\n```\n\nplan-detail.tsx:\n```tsx\n<CollapsibleTrigger\n  className=\"flex w-full cursor-pointer ...\"\n  aria-label={`${gate.title} の Todo を${isOpen ? '閉じる' : '開く'}`}\n>\n```\n\n### 5. prefers-reduced-motion 対応\n\nglobals.css に以下を追加：\n```css\n@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration: 0.01ms !important;\n    animation-iteration-count: 1 !important;\n    transition-duration: 0.01ms !important;\n    scroll-behavior: auto !important;\n  }\n}\n```\n\nこれにより animate-pulse（スケルトン）、snap-scroll、hover トランジション等すべてのモーションが無効化される。\n\n### 検証\n- Tab キーでスキップリンクが表示されることを確認\n- スクリーンリーダーで見出し階層が正しいことを確認\n- aria-label が各トリガーに設定されていることを DevTools で確認\n- DevTools で prefers-reduced-motion: reduce を有効にし、アニメーションが停止することを確認",
+      "relatedIssues": ["D14", "D15", "D16", "D17", "D18", "D19"],
+      "tdd": false
+    },
+    {
+      "id": "D2",
+      "gate": "D",
+      "title": "iOS Safari viewport 修正・ErrorBoundary 追加",
+      "status": "pending",
+      "dependencies": ["C1"],
+      "affectedFiles": [
+        { "path": "dashboard/app/error.tsx", "operation": "create", "summary": "Next.js error.tsx — ErrorBoundary コンポーネント" },
+        { "path": "dashboard/components/dashboard-layout.tsx", "operation": "modify", "summary": "h-screen → h-svh への最終確認（B2 で対応済みの場合はスキップ）" }
+      ],
+      "impl": "## 実装手順\n\n### 1. error.tsx の作成（D13）\n\n```tsx\n\"use client\"\n\nimport { useEffect } from \"react\"\n\nexport default function Error({\n  error,\n  reset,\n}: {\n  error: Error & { digest?: string }\n  reset: () => void\n}) {\n  useEffect(() => {\n    console.error(error)\n  }, [error])\n\n  return (\n    <main className=\"flex h-svh items-center justify-center p-6\">\n      <div className=\"max-w-md space-y-4 text-center\">\n        <h1 className=\"text-heading-2\">エラーが発生しました</h1>\n        <p className=\"text-body text-muted-foreground\">\n          {error.message || \"予期しないエラーが発生しました。\"}\n        </p>\n        <button\n          onClick={reset}\n          className=\"rounded-full bg-[var(--cta)] px-6 py-2.5 text-label text-[var(--cta-foreground)] transition-opacity hover:opacity-90\"\n        >\n          再読み込み\n        </button>\n      </div>\n    </main>\n  )\n}\n```\n\n### 2. iOS Safari viewport の最終確認\n\n全ファイルで `h-screen` / `min-h-screen` が残っていないことを Grep で確認：\n```bash\ngrep -r \"h-screen\\|min-h-screen\" dashboard/components/ dashboard/app/\n```\n\nB2 で `h-svh` に変更済みのはず。残っていれば `h-svh` / `min-h-svh` に置換。\n\n### 検証\n- error.tsx のレンダリングを確認（`throw new Error('test')` を一時的に挿入）\n- iOS Safari（または Safari devtools）で viewport の高さが正しいことを確認",
+      "relatedIssues": ["D8", "D13"],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-08",
+    "totalGates": 4,
+    "totalTodos": 10
+  }
+}

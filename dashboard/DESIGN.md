@@ -1,38 +1,57 @@
-# DESIGN.md — STUDIO
+# DESIGN.md — PLAN Dashboard
 
 > このファイルはAIエージェントが正確な日本語UIを生成するためのデザイン仕様書です。
 > セクションヘッダーは英語、値の説明は日本語で記述しています。
-> 対象: https://studio.design/ja
 
 ---
 
 ## 1. Visual Theme & Atmosphere
 
-- **デザイン方針**: クリーン、モダン、プロフェッショナル。ノーコードWebサイトビルダーとしての信頼感と先進性を両立
-- **密度**: ゆったりとしたランディングページ型。余白を活かしたプレゼンテーション志向
-- **キーワード**: ミニマル、テック、洗練、高速、ダークテキスト on ホワイト
+- **デザイン方針**: クリーン、モダン、プロフェッショナル。開発ツールとしての信頼感と先進性を両立
+- **密度**: ダッシュボード型。情報密度を保ちつつ余白で読みやすさを確保
+- **キーワード**: ミニマル、テック、洗練、紫系アクセント
+- **モード**: ライトモード専用（ダークモードなし）
 
 ---
 
 ## 2. Color Palette & Roles
 
-### Primary（ブランドカラー）
+shadcn/ui base-nova プリセット（mauve ベース）の OKLCH カラーを使用。
 
-- **STUDIO Blue** (`#0275fd`): メインのブランドカラー。アクセント、リンク、ハイライトに使用
-- **Light Blue BG** (`#eef9ff`): ブルー系の薄い背景色
+### カラーコード一覧
 
-### Neutral（ニュートラル）
+| 用途 | OKLCH | Hex 近似 | 説明 |
+| ---- | ----- | -------- | ---- |
+| ブランドカラー | `oklch(0.496 0.265 301.924)` | `#8200da` | アクセント、リンク、プログレスバー |
+| ブランド上テキスト | `oklch(0.977 0.014 308.299)` | `#faf5fe` | ブランドカラー上のテキスト |
+| 本文テキスト | `oklch(0.145 0.008 326)` | `#0b080b` | メインテキスト色 |
+| 補足テキスト | `oklch(0.542 0.034 322.5)` | `#79687b` | 説明文、サブテキスト |
+| 背景 | `oklch(1 0 0)` | `#ffffff` | ページ背景（白） |
+| サーフェス | `oklch(0.96 0.003 325.6)` | `#f2f0f2` | カード背景、セクション背景 |
+| ボーダー | `oklch(0.922 0.005 325.62)` | `#e6e4e6` | 罫線、区切り |
+| セカンダリ | `oklch(0.967 0.001 286.375)` | `#f3f3f4` | セカンダリボタン背景 |
+| セカンダリテキスト | `oklch(0.21 0.006 285.885)` | `#17171a` | セカンダリボタン上テキスト |
+| リング | `oklch(0.711 0.019 323.02)` | `#a79ea8` | フォーカスリング |
+| エラー | `oklch(0.577 0.245 27.325)` | `#e7000a` | エラー・削除 |
 
-- **Text Primary** (`#222222`): 本文テキスト（ほぼ黒だが純黒ではない）
-- **Text Secondary** (`#707070`): 補足テキスト、説明文
-- **Text on Dark** (`#f7f7f7`): ダークボタン上のテキスト、CTA文字色
-- **Background** (`#ffffff`): ページ背景
-- **Surface Light** (`#f7f7f7`): カード背景、セクション背景
-- **CTA Surface** (`#222222`): CTAボタンの背景色（ほぼ黒）
+### ステータスカラー（カンバン列背景）
 
-### Semantic（意味的な色）
+| ステータス | OKLCH | Hex 近似 |
+| ---------- | ----- | -------- |
+| 未実装 | `oklch(0.95 0.005 325)` | `#f0edf0` |
+| 実装中 | `oklch(0.93 0.04 270)` | `#dde7ff` |
+| レビュー待ち | `oklch(0.94 0.06 85)` | `#fde8be` |
+| 完了 | `oklch(0.93 0.05 155)` | `#cef2d9` |
 
-- 実測データなし（LPのため明示的なSemantic色は未確認）
+### サイドバー専用カラー
+
+| 用途 | OKLCH | Hex 近似 |
+| ---- | ----- | -------- |
+| サイドバー背景 | `oklch(0.985 0 0)` | `#f9f9f9` |
+| サイドバーテキスト | `oklch(0.145 0.008 326)` | `#0b080b` |
+| サイドバーアクセント | `oklch(0.558 0.288 302.321)` | `#980ffa` |
+| サイドバーアクセント背景 | `oklch(0.96 0.003 325.6)` | `#f2f0f2` |
+| サイドバーボーダー | `oklch(0.922 0.005 325.62)` | `#e6e4e6` |
 
 ---
 
@@ -219,16 +238,17 @@ font-feature-settings: normal;
 - 見出しの weight は 600（semibold）を基本にする
 - 小さいテキスト（11〜14px）には負の letter-spacing を適用する
 - CTAボタンは radius: 500px のピル型にする
-- テキスト色は `#222222` を使い、純黒 `#000000` は避ける
-- ブランドカラー `#0275fd` はアクセントとして控えめに使用する
+- テキスト色は `--foreground`（oklch(0.145 0.008 326)）を使い、純黒 `#000000` は避ける
+- ブランドカラー（紫 `--primary`）はアクセントとして控えめに使用する
+- カラーは CSS カスタムプロパティ（`bg-primary`, `text-muted-foreground` 等）経由で参照する
 
 ### Don't（禁止）
 
-- `font-feature-settings: "palt"` を適用しない（STUDIO は palt 不使用）
+- `font-feature-settings: "palt"` を適用しない（palt 不使用）
 - 見出しに weight 700（bold）を使わない（600 = semibold が基本）
-- CTAボタンの radius を 4px にしない（ピル型でないと STUDIO らしくない）
-- ブランドブルー `#0275fd` をCTAボタンの背景にしない（CTAは `#222222`）
-- テキスト色に `#000000` を使わない（`#222222` を使用）
+- テキスト色に `#000000` をハードコードしない
+- ダークモード（`.dark` クラス、`dark:` prefix）を使わない — ライトモード専用
+- カラー値を直接ハードコードせず、CSS 変数を使う
 
 ---
 
@@ -258,12 +278,11 @@ font-feature-settings: normal;
 ### クイックリファレンス
 
 ```
-Primary Color: #0275fd (STUDIO Blue — アクセント用)
-CTA Color: #222222 (ボタン背景)
-Text Color: #222222
-Text Secondary: #707070
-Background: #ffffff
-Surface: #f7f7f7
+Primary:          oklch(0.496 0.265 301.924) / #8200da (紫 — アクセント用)
+Foreground:       oklch(0.145 0.008 326)     / #0b080b
+Muted Foreground: oklch(0.542 0.034 322.5)   / #79687b
+Background:       oklch(1 0 0)               / #ffffff
+Surface:          oklch(0.96 0.003 325.6)    / #f2f0f2
 Font: Inter, "Noto Sans JP", sans-serif
 Mono: "IBM Plex Mono", monospace
 Body Size: 15px
@@ -272,24 +291,25 @@ Heading Weight: 600
 Letter Spacing (small text): -0.28px
 Button Radius (CTA): 500px
 Button Radius (secondary): 4px
+Dark Mode: なし（ライトモード専用）
 ```
 
 ### プロンプト例
 
 ```
-このサービスのデザインシステムに従って、機能紹介セクションを作成してください。
+このダッシュボードのデザインシステムに従って、コンポーネントを作成してください。
 - フォント: Inter, "Noto Sans JP", sans-serif
 - 見出し: 36px / weight 600 / line-height 1.25
-- 本文: 15px / weight 400 / line-height 1.7 / color #707070
-- CTAボタン: bg #222222, color #f7f7f7, radius 500px, font-size 13px, weight 500
-- アクセント: #0275fd（リンクやハイライトに限定使用）
-- ナビテキスト: 14px / weight 500 / letter-spacing -0.28px / color #222
+- 本文: 15px / weight 400 / line-height 1.7 / color: text-muted-foreground
+- CTAボタン: bg-foreground, text-background, radius 500px, font-size 13px, weight 500
+- アクセント: bg-primary（紫、リンクやプログレスバーに使用）
+- ナビテキスト: 14px / weight 500 / letter-spacing -0.28px
 - palt は使用しない
+- ダークモードなし
 ```
 
 ### 特記事項
 
-- **モリサワフォント**: `ゴシックMB101 B JIS2004` は法人向けラベル等で限定使用。再現時は `"Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif` で代替
-- **IBM Plex Mono**: `FOR BUSINESS` 等の英字ラベルに使用。等幅フォントでテクニカルな印象を付与
-- **Instrument Serif**: CSS変数に定義があるが、LP上での使用箇所は限定的
+- **IBM Plex Mono**: ラベルやバッジに使用。等幅フォントでテクニカルな印象を付与
 - **負の letter-spacing**: 小さいテキストで文字を詰める Apple 的アプローチが特徴
+- **OKLCH カラー**: shadcn/ui base-nova (mauve) プリセットの OKLCH 値をそのまま使用
