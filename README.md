@@ -14,12 +14,8 @@ Claude Codeのための仕様書駆動開発ワークフロー。スキル・コ
 ### 共有リポジトリをセットアップ
 
 ```bash
-# 1. このリポジトリをホームディレクトリにクローン（推奨）
-git clone https://github.com/ryryo/dot-claude-dev.git ~/.claude-shared
-
-# または任意の場所に配置（環境変数で指定）
-export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
-git clone https://github.com/ryryo/dot-claude-dev.git "$CLAUDE_SHARED_DIR"
+# 1. クローン
+git clone https://github.com/ryryo/dot-claude-dev.git ~/dot-claude-dev
 ```
 
 ### プロジェクトに適用
@@ -27,7 +23,7 @@ git clone https://github.com/ryryo/dot-claude-dev.git "$CLAUDE_SHARED_DIR"
 ```bash
 # 2. プロジェクトディレクトリで実行
 cd /path/to/your-project
-bash ~/.claude-shared/scripts/setup-claude.sh
+bash ~/dot-claude-dev/scripts/setup-claude.sh
 ```
 
 これにより以下の構造が作成されます：
@@ -35,19 +31,19 @@ bash ~/.claude-shared/scripts/setup-claude.sh
 ```
 your-project/.claude/
 ├── rules/
-│   ├── languages -> ~/.claude-shared/.claude/rules/languages  # シンボリックリンク
-│   └── workflow -> ~/.claude-shared/.claude/rules/workflow    # シンボリックリンク
+│   ├── languages -> ~/dot-claude-dev/.claude/rules/languages  # シンボリックリンク
+│   └── workflow -> ~/dot-claude-dev/.claude/rules/workflow    # シンボリックリンク
 ├── skills/
-│   └── dev -> ~/.claude-shared/.claude/skills/dev             # シンボリックリンク
+│   └── dev -> ~/dot-claude-dev/.claude/skills/dev             # シンボリックリンク
 ├── commands/
-│   └── dev -> ~/.claude-shared/.claude/commands/dev           # シンボリックリンク
+│   └── dev -> ~/dot-claude-dev/.claude/commands/dev           # シンボリックリンク
 └── settings.local.json # プロジェクト固有
 ```
 
 ### 更新
 
 ```bash
-cd ~/.claude-shared
+cd ~/dot-claude-dev
 git pull
 # すべてのプロジェクトに自動反映される
 ```
