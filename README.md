@@ -1,15 +1,13 @@
 # dot-claude-dev
 
-Claude Codeのためのストーリー駆動開発ワークフロー。TDD/E2E/TASKの自動分類と多段階のスキル・コマンド群で開発を加速する。
+Claude Codeのための仕様書駆動開発ワークフロー。スキル・コマンド群で仕様書作成から実装まで一貫してサポートする。
 
 ## 概要
 
 このリポジトリは以下の構造化された開発ワークフローを提供します：
 
-1. **フィーチャーを設計** - `/dev:epic` でストーリー分割・計画書生成
-2. **タスクに分解** - `/dev:story` でTDD/E2E/TASK自動分類
-3. **タスクを実行** - `dev:developing` で適切なワークフローを自動選択
-4. **学びを蓄積** - `/dev:feedback` でDESIGN.md更新・スキル改善提案
+1. **仕様書を作成** - `/dev:spec` で要件深掘り→タスク分解→自己完結した実装仕様書を生成
+2. **仕様書を実行** - `/dev:spec-run` でGateごとにIMPL + VERIFYを実行（従来 or Codexモード）
 
 ## インストール
 
@@ -56,88 +54,52 @@ git pull
 
 ## 使い方
 
-### 1. フィーチャーを設計（任意）
+### 1. 仕様書を作成
 
 ```bash
-/dev:epic
+/dev:spec
 ```
 
-大きなフィーチャー向け。要件を入力すると `PLAN.md` + `plan.json`（ストーリー一覧・executionType付き）を生成します。
+要件を深掘りし、タスク分解→レビューループを経て自己完結した実装仕様書（`docs/PLAN/*/spec.md`）を生成します。別エージェントがその仕様書だけで実装を完遂できることをゴールとします。
 
-### 2. ストーリーからタスクを生成
+### 2. 仕様書を実行
 
 ```bash
-/dev:story
+/dev:spec-run
 ```
 
-ストーリーを分析し `task-list.json`（workflowフィールド付き）を生成します：
-- **TDD** — ロジック・バリデーション・計算
-- **E2E** — UIコンポーネント・レイアウト・視覚的確認が必要なもの
-- **TASK** — 設定・セットアップ・インフラ・ドキュメント
+実行モードを選択してGateごとにIMPL + VERIFYを実行：
 
-### 3. タスクを実行
-
-```bash
-/dev:developing
-```
-
-`task-list.json` のワークフローに応じて自動選択：
-
-| ワークフロー | フロー |
+| モード | 動作 |
 |---|---|
-| **TDD** | CYCLE (RED→GREEN→REFACTOR+OpenCode) → REVIEW(+OpenCode) → CHECK → SPOT |
-| **E2E** | IMPL(UI実装) → AUTO(agent-browser検証, FIXループ最大3回) → CHECK → SPOT |
-| **TASK** | EXEC → VERIFY → SPOT |
-
-### 4. フィードバックを記録
-
-```bash
-/dev:feedback
-```
-
-実装後、DESIGN.mdを更新し、繰り返しパターンを検出してスキル/ルールの改善を提案。PR作成まで実行します。
+| **従来モード** | Claude Code が全Todoを直接実行 |
+| **Codexモード** | 全タスクをCodexプラグインに委任、VERIFYはcodex review |
 
 ## ワークフロー図
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  ストーリー駆動開発                           │
+│                  仕様書駆動開発                               │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  0. /dev:epic（任意）                                        │
-│     └── 要件入力 → PLAN.md + plan.json（ストーリー一覧）      │
+│  1. /dev:spec                                               │
+│     └── 要件深掘り → タスク分解 → 仕様書 → レビューループ      │
 │                                                             │
-│  1. /dev:story                                              │
-│     └── ストーリー → task-list.json（TDD/E2E/TASK付き）       │
-│                                                             │
-│  2. /dev:developing                                         │
-│     ├── [TDD]  CYCLE→REVIEW→CHECK→SPOT                     │
-│     ├── [E2E]  IMPL→AUTO→CHECK→SPOT                        │
-│     └── [TASK] EXEC→VERIFY→SPOT                            │
-│                                                             │
-│  3. /dev:feedback                                           │
-│     └── DESIGN.md更新 → パターン検出 → 改善提案 → PR作成     │
+│  2. /dev:spec-run                                           │
+│     ├── [従来]  Claude が全Todoを直接実行                    │
+│     └── [Codex] Codex委任 → codex review                   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## コマンド一覧
 
-### 開発ワークフロー
-
-| コマンド | 説明 |
-|---|---|
-| `/dev:epic` | フィーチャー全体設計・ストーリー分割。PLAN.md + plan.json 生成 |
-| `/dev:story` | ストーリーからタスクリスト（task-list.json）生成 |
-| `/dev:developing` | タスクリストのworkflowに応じて実装（TDD/E2E/TASK） |
-| `/dev:feedback` | 実装完了後の振り返り。DESIGN.md更新・改善提案・PR作成 |
-
-### 仕様書
+### 仕様書駆動ワークフロー
 
 | コマンド | 説明 |
 |---|---|
 | `/dev:spec` | 自己完結した実装仕様書を作成（要件深掘り→タスク分解→レビューループ） |
-| `/dev:spec-run` | 仕様書を実行。OpenCodeハイブリッドレビュー付き |
+| `/dev:spec-run` | 仕様書を実行。従来モードまたはCodexモードを選択 |
 | `/dev:clarify` | 不明点を繰り返し明確化して詳細な仕様書を作成 |
 | `/dev:ideation` | アイデアをJTBD分析→競合調査→SLC仕様書に構造化 |
 
@@ -218,7 +180,7 @@ opencode run -m openai/gpt-5.3-codex "{prompt}" 2>&1
 
 ### DESIGN.md
 
-機能別仕様書。実装で得た知見・決定事項・発見されたパターンを蓄積します。`/dev:feedback` が自動更新します。
+機能別仕様書。実装で得た知見・決定事項・発見されたパターンを蓄積します。
 
 ### Hook駆動コミット
 
