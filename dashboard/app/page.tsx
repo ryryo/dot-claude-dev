@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import useSWR from "swr"
 
 import { DashboardLayout } from "@/components/dashboard-layout"
+import { DateFilter } from "@/components/date-filter"
 import { KanbanBoard } from "@/components/kanban-board"
 import { ProjectFilter } from "@/components/project-filter"
 import { SkeletonDashboard } from "@/components/skeleton-dashboard"
@@ -41,6 +42,7 @@ const STATUS_LABELS: Record<PlanStatus, string> = {
 
 export default function Home() {
   const { data, error, isLoading } = useSWR<PlansResponse>("/api/plans", fetcher)
+  const [filterDays, setFilterDays] = useState<number>(30)
   const [selectedProjects, setSelectedProjects] = useState<string[]>([])
   const [hasInitializedSelection, setHasInitializedSelection] = useState(false)
 
@@ -80,18 +82,22 @@ export default function Home() {
     }
 
     const selectedSet = new Set(selectedProjects)
-    return data.plans.filter((plan) => selectedSet.has(plan.projectName))
-  }, [data?.plans, selectedProjects])
+    const cutoff = filterDays === 0 ? null : new Date(Date.now() - filterDays * 86400000)
+
+    return data.plans
+      .filter((plan) => selectedSet.has(plan.projectName))
+      .filter((plan) => !cutoff || !plan.createdDate || new Date(plan.createdDate) >= cutoff)
+  }, [data?.plans, filterDays, selectedProjects])
 
   const planCounts = useMemo(() => {
     const counts: Record<string, number> = {}
 
-    data?.plans.forEach((plan) => {
+    filteredPlans.forEach((plan) => {
       counts[plan.projectName] = (counts[plan.projectName] ?? 0) + 1
     })
 
     return counts
-  }, [data?.plans])
+  }, [filteredPlans])
 
   const statusCounts = useMemo(() => {
     return filteredPlans.reduce<Record<PlanStatus, number>>(
@@ -146,6 +152,8 @@ export default function Home() {
     />
   )
 
+  const dateFilterContent = <DateFilter days={filterDays} onChange={setFilterDays} />
+
   const statsContent = (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
@@ -190,7 +198,11 @@ export default function Home() {
   )
 
   return (
-    <DashboardLayout filterContent={filterContent} statsContent={statsContent}>
+    <DashboardLayout
+      filterContent={filterContent}
+      dateFilterContent={dateFilterContent}
+      statsContent={statsContent}
+    >
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">

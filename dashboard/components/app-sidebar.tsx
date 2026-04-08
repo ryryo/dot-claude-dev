@@ -11,11 +11,16 @@ import {
 } from "@/components/ui/sidebar"
 
 interface AppSidebarProps {
+  dateFilterContent: ReactNode
   filterContent: ReactNode
   statsContent: ReactNode
 }
 
-export function AppSidebar({ filterContent, statsContent }: AppSidebarProps) {
+export function AppSidebar({
+  dateFilterContent,
+  filterContent,
+  statsContent,
+}: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -27,6 +32,7 @@ export function AppSidebar({ filterContent, statsContent }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupLabel>フィルター</SidebarGroupLabel>
           <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
+            {dateFilterContent}
             {filterContent}
           </SidebarGroupContent>
         </SidebarGroup>

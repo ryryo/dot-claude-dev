@@ -67,7 +67,7 @@ export function ProjectFilter({
                 <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" aria-hidden="true" />
                 <div className="min-w-0 space-y-1">
                   <p className="truncate text-sm font-medium">{project.name}</p>
-                  <p className="text-muted-foreground break-all text-xs">
+                  <p className="text-muted-foreground truncate text-xs" title={project.path}>
                     {project.path}
                   </p>
                 </div>

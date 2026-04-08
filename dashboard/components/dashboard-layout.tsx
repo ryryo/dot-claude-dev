@@ -8,12 +8,14 @@ import {
 } from "@/components/ui/sidebar"
 
 interface DashboardLayoutProps {
+  dateFilterContent: ReactNode
   filterContent: ReactNode
   statsContent: ReactNode
   children: ReactNode
 }
 
 export function DashboardLayout({
+  dateFilterContent,
   filterContent,
   statsContent,
   children,
@@ -26,7 +28,11 @@ export function DashboardLayout({
       >
         メインコンテンツへスキップ
       </a>
-      <AppSidebar filterContent={filterContent} statsContent={statsContent} />
+      <AppSidebar
+        dateFilterContent={dateFilterContent}
+        filterContent={filterContent}
+        statsContent={statsContent}
+      />
       <SidebarInset>
         <header className="flex items-center gap-2 border-b px-4 py-3">
           <SidebarTrigger />

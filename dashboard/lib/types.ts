@@ -18,6 +18,8 @@ export interface PlanFile {
   fileName: string;
   projectName: string;
   title: string;
+  createdDate: string | null;
+  reviewChecked: boolean;
   status: PlanStatus;
   gates: Gate[];
   todos: TodoItem[];
