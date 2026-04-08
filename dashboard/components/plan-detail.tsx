@@ -41,9 +41,9 @@ export function PlanDetail({ plan }: PlanDetailProps) {
               open={isOpen}
               onOpenChange={(open) => setOpenGateId(open ? gate.id : null)}
             >
-              <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
+              <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left">
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold">{gate.title}</p>
+                  <p className="text-nav font-semibold">{gate.title}</p>
                   <p className="text-muted-foreground text-xs tabular-nums">
                     {completedCount}/{gate.todos.length} 完了
                   </p>

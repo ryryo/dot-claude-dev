@@ -42,7 +42,7 @@ export function ProjectFilter({
         <button
           type="button"
           onClick={handleToggleAll}
-          className="text-primary text-xs font-medium transition-opacity hover:opacity-80"
+          className="text-label text-primary min-h-[44px] px-2 transition-opacity hover:opacity-80"
         >
           {allSelected ? "すべて解除" : "すべて選択"}
         </button>
@@ -58,13 +58,13 @@ export function ProjectFilter({
               type="button"
               onClick={() => onToggle(project.name)}
               className={cn(
-                "flex w-full items-start justify-between gap-3 rounded-xl border p-3 text-left transition-colors",
+                "flex w-full items-start justify-between gap-3 rounded-lg border p-3 text-left transition-colors cursor-pointer",
                 isSelected ? "bg-accent/50" : "bg-background hover:bg-muted/60"
               )}
               aria-pressed={isSelected}
             >
               <div className="flex min-w-0 items-start gap-3">
-                <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" />
+                <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" aria-hidden="true" />
                 <div className="min-w-0 space-y-1">
                   <p className="truncate text-sm font-medium">{project.name}</p>
                   <p className="text-muted-foreground break-all text-xs">

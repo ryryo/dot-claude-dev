@@ -27,18 +27,18 @@ interface PlanCardProps {
 export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
-      <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+      <Card className="gap-0 overflow-hidden py-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         <CardHeader className="px-0 py-0">
-          <CollapsibleTrigger className="w-full">
+          <CollapsibleTrigger className="w-full cursor-pointer">
             <div className="hover:bg-muted/40 flex w-full flex-col gap-4 px-4 py-4 text-left transition-colors">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-2">
                   <Badge variant="outline" className="max-w-full">
-                    <span className="max-w-[140px] truncate">{plan.projectName}</span>
+                    <span className="max-w-[180px] truncate">{plan.projectName}</span>
                   </Badge>
 
                   <div className="space-y-1">
-                    <p className="text-muted-foreground text-[11px] font-medium tracking-[0.2em] uppercase">
+                    <p className="text-muted-foreground text-mono-label uppercase">
                       PLAN
                     </p>
                     <CardTitle className="line-clamp-2 text-sm leading-5 whitespace-normal">

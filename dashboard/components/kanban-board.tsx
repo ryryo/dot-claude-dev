@@ -5,15 +5,14 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { PlanCard } from "@/components/plan-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import type { PlanFile, PlanStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const COLUMNS: { status: PlanStatus; label: string; color: string }[] = [
-  { status: "not-started", label: "未実装", color: "bg-gray-100" },
-  { status: "in-progress", label: "実装中", color: "bg-blue-50" },
-  { status: "in-review", label: "レビュー待ち", color: "bg-yellow-50" },
-  { status: "completed", label: "完了", color: "bg-green-50" },
+  { status: "not-started", label: "未実装", color: "bg-status-not-started" },
+  { status: "in-progress", label: "実装中", color: "bg-status-in-progress" },
+  { status: "in-review", label: "レビュー待ち", color: "bg-status-in-review" },
+  { status: "completed", label: "完了", color: "bg-status-completed" },
 ]
 
 interface KanbanBoardProps {
@@ -37,16 +36,15 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
   )
 
   return (
-    <ScrollArea className="w-full whitespace-nowrap rounded-2xl border bg-background shadow-sm">
-      <div className="grid min-w-max grid-cols-4 gap-4 p-4">
-        {COLUMNS.map((column) => {
-          const columnPlans = plansByStatus[column.status]
+    <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-2 md:overflow-x-visible md:snap-none lg:grid-cols-4">
+      {COLUMNS.map((column) => {
+        const columnPlans = plansByStatus[column.status]
 
-          return (
+        return (
+          <div key={column.status} className="w-[85vw] shrink-0 snap-center md:w-auto md:shrink">
             <Card
-              key={column.status}
               className={cn(
-                "min-h-[420px] min-w-[280px] shrink-0 gap-4 border-none shadow-none",
+                "min-h-[200px] shrink-0 gap-4 border-none shadow-none",
                 column.color
               )}
             >
@@ -72,15 +70,15 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
                     />
                   ))
                 ) : (
-                  <div className="text-muted-foreground flex min-h-32 flex-1 items-center justify-center rounded-xl border border-dashed bg-background/70 px-4 text-center text-sm whitespace-normal">
-                    このステータスの PLAN はありません。
+                  <div className="flex min-h-24 items-center justify-center rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                    このステータスの PLAN はありません
                   </div>
                 )}
               </CardContent>
             </Card>
-          )
-        })}
-      </div>
-    </ScrollArea>
+          </div>
+        )
+      })}
+    </div>
   )
 }

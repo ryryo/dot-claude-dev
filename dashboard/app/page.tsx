@@ -151,18 +151,18 @@ export default function Home() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border bg-muted/30 p-3">
-          <p className="text-muted-foreground text-xs">選択中プロジェクト</p>
-          <p className="mt-1 text-2xl font-semibold">{selectedProjectCount}</p>
+          <p className="text-label text-muted-foreground">選択中プロジェクト</p>
+          <p className="mt-1 text-heading-2 tabular-nums">{selectedProjectCount}</p>
         </div>
         <div className="rounded-xl border bg-muted/30 p-3">
-          <p className="text-muted-foreground text-xs">表示中 PLAN</p>
-          <p className="mt-1 text-2xl font-semibold">{filteredPlans.length}</p>
+          <p className="text-label text-muted-foreground">表示中 PLAN</p>
+          <p className="mt-1 text-heading-2 tabular-nums">{filteredPlans.length}</p>
         </div>
       </div>
 
       <div className="rounded-xl border bg-muted/30 p-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-muted-foreground text-xs">Todo 進捗</p>
+          <p className="text-label text-muted-foreground">Todo 進捗</p>
           <Badge variant="outline">{overallProgress}%</Badge>
         </div>
         <p className="mt-2 text-sm font-medium">
@@ -195,7 +195,7 @@ export default function Home() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">PLAN Board</h1>
+            <h1 className="text-heading-2">PLAN Board</h1>
             <p className="text-muted-foreground text-sm">
               選択中のプロジェクトに含まれる PLAN を看板形式で管理します。
             </p>
