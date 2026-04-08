@@ -1,9 +1,27 @@
 import type { Metadata } from "next"
 import "./globals.css"
-import { Noto_Sans } from "next/font/google";
-import { cn } from "@/lib/utils";
+import { Inter, Noto_Sans_JP, IBM_Plex_Mono } from "next/font/google"
+import { cn } from "@/lib/utils"
 
-const notoSans = Noto_Sans({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+})
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ["latin"],
+  variable: "--font-jp",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+})
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "PLAN Dashboard",
@@ -16,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" className={cn("font-sans", notoSans.variable)}>
+    <html lang="ja" className={cn(inter.variable, notoSansJP.variable, ibmPlexMono.variable)}>
       <body>{children}</body>
     </html>
   )
