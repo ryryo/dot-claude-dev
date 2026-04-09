@@ -1,0 +1,170 @@
+{
+  "spec": {
+    "slug": "dashboard-web-deploy",
+    "title": "PLAN Dashboard Web Deploy（GitHub API統合）",
+    "specPath": "spec.md"
+  },
+  "gates": [
+    {
+      "id": "Gate 1",
+      "title": "バックエンド基盤",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate 2",
+      "title": "API Routes刷新",
+      "dependencies": ["Gate 1"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate 3",
+      "title": "フロントエンド刷新",
+      "dependencies": ["Gate 2"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate 4",
+      "title": "デプロイ設定",
+      "dependencies": ["Gate 3"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "G1-T1",
+      "gate": "Gate 1",
+      "title": "types.ts 更新（ProjectConfig.path → repo、GitHubRepo/RepoError 型追加）",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/lib/types.ts", "operation": "edit", "summary": "ProjectConfig.path を repo に変更、GitHubRepo・RepoError 型を追加" }
+      ],
+      "impl": "## 実装手順\n\n### 対象ファイル\n`dashboard/lib/types.ts`\n\n### 変更内容\n\n#### 1. ProjectConfig の `path` フィールドを `repo` に変更\n\n変更前:\n```typescript\nexport interface ProjectConfig {\n  name: string\n  path: string\n}\n```\n\n変更後:\n```typescript\nexport interface ProjectConfig {\n  name: string\n  repo: string  // \"owner/name\" 形式 (例: \"ryryo/dot-claude-dev\")\n}\n```\n\n#### 2. GitHubRepo 型を追加\n\n```typescript\nexport interface GitHubRepo {\n  id: number\n  name: string       // リポジトリ名 (例: \"dot-claude-dev\")\n  full_name: string  // \"owner/repo\" (例: \"ryryo/dot-claude-dev\")\n  private: boolean\n  description: string | null\n  updated_at: string // ISO 8601\n  html_url: string\n}\n```\n\n#### 3. GitHubContent 型を追加\n\n```typescript\nexport interface GitHubContent {\n  name: string\n  path: string\n  type: 'file' | 'dir'\n  sha: string\n}\n```\n\n#### 4. RepoError 型を追加\n\n```typescript\nexport interface RepoError {\n  repo: string    // \"owner/repo\" フルネーム\n  message: string\n}\n```\n\n### テスト\n\n`[TDD]` — TypeScript コンパイルエラーがないことを確認:\n```bash\ncd dashboard && npx tsc --noEmit\n```\n\n既存の `PlanFile`, `Gate`, `TodoItem`, `PlanStatus`, `ProjectsConfig` は変更しない（ただし `ProjectsConfig` 内の `projects: ProjectConfig[]` の型は自動的に更新される）。",
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "G1-T2",
+      "gate": "Gate 1",
+      "title": "lib/github.ts 作成（GitHub API クライアント）",
+      "status": "pending",
+      "dependencies": ["G1-T1"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/github.ts", "operation": "create", "summary": "GitHub API クライアント: fetchUserRepos, fetchPlanFiles を実装" }
+      ],
+      "impl": "## 実装手順\n\n### 新規作成ファイル\n`dashboard/lib/github.ts`\n\n### 実装内容\n\n```typescript\nimport { parsePlanFile } from './plan-parser'\nimport type { GitHubContent, GitHubRepo, PlanFile } from './types'\n\nconst GITHUB_API_BASE = 'https://api.github.com'\n\nfunction getHeaders(): HeadersInit {\n  const token = process.env.GITHUB_TOKEN\n  if (!token) throw new Error('GITHUB_TOKEN is not set')\n  return {\n    Authorization: `Bearer ${token}`,\n    Accept: 'application/vnd.github+json',\n    'X-GitHub-Api-Version': '2022-11-28',\n  }\n}\n\n/** ユーザーの全リポジトリ一覧を取得 */\nexport async function fetchUserRepos(): Promise<GitHubRepo[]> {\n  const response = await fetch(\n    `${GITHUB_API_BASE}/user/repos?per_page=100&sort=updated&type=all`,\n    { headers: getHeaders(), next: { revalidate: 300 } },\n  )\n  if (!response.ok) {\n    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)\n  }\n  return response.json() as Promise<GitHubRepo[]>\n}\n\n/** リポジトリの docs/PLAN に含まれる全 PlanFile を取得 */\nexport async function fetchPlanFiles(owner: string, repo: string): Promise<PlanFile[]> {\n  const contents = await fetchContents(owner, repo, 'docs/PLAN')\n  if (contents.length === 0) return []\n\n  const projectName = `${owner}/${repo}`\n  const sorted = [...contents].sort((a, b) => a.name.localeCompare(b.name))\n\n  const results = await Promise.all(\n    sorted.map(async (entry) => {\n      if (entry.type === 'file' && entry.name.endsWith('.md')) {\n        // 単一ファイルモード\n        const content = await fetchFileContent(owner, repo, entry.path)\n        return parsePlanFile(content, entry.path, projectName)\n      }\n      if (entry.type === 'dir') {\n        // ディレクトリモード: spec.md を探す\n        const specPath = `${entry.path}/spec.md`\n        try {\n          const content = await fetchFileContent(owner, repo, specPath)\n          return parsePlanFile(content, specPath, projectName)\n        } catch {\n          return null\n        }\n      }\n      return null\n    }),\n  )\n\n  return results.filter((r): r is PlanFile => r !== null)\n}\n\n/** ディレクトリ内容を取得（docs/PLAN が存在しない場合は空配列を返す） */\nasync function fetchContents(owner: string, repo: string, path: string): Promise<GitHubContent[]> {\n  const response = await fetch(\n    `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`,\n    { headers: getHeaders(), next: { revalidate: 300 } },\n  )\n  if (response.status === 404) return []\n  if (!response.ok) {\n    throw new Error(`Failed to fetch contents at ${path}: ${response.status}`)\n  }\n  return response.json() as Promise<GitHubContent[]>\n}\n\n/** ファイルの内容を文字列として取得（base64 デコード） */\nasync function fetchFileContent(owner: string, repo: string, path: string): Promise<string> {\n  const response = await fetch(\n    `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`,\n    { headers: getHeaders(), next: { revalidate: 300 } },\n  )\n  if (!response.ok) {\n    throw new Error(`Failed to fetch file at ${path}: ${response.status}`)\n  }\n  const data = (await response.json()) as { content: string; encoding: string }\n  return Buffer.from(data.content, 'base64').toString('utf-8')\n}\n```\n\n### 注意点\n- `next: { revalidate: 300 }` で Next.js の fetch キャッシュを5分間有効化（GitHub API レート制限対策）\n- `getHeaders()` は毎回トークンを環境変数から読む（サーバーサイドのみで呼ばれる前提）\n- `fetchContents` は 404 の場合に空配列を返す（docs/PLAN が存在しないリポジトリを許容）\n\n### テスト\n\n`[TDD]` — TypeScript コンパイルエラーがないことを確認:\n```bash\ncd dashboard && npx tsc --noEmit\n```\n\n単体テストの観点（手動確認でも可）:\n- `GITHUB_TOKEN` が未設定のとき `getHeaders()` がエラーをスローすること\n- `fetchContents` が 404 を受けたとき空配列を返すこと\n- `fetchFileContent` が base64 文字列を正しく UTF-8 デコードすること",
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "G2-T1",
+      "gate": "Gate 2",
+      "title": "app/api/repos/route.ts 作成",
+      "status": "pending",
+      "dependencies": ["G1-T2"],
+      "affectedFiles": [
+        { "path": "dashboard/app/api/repos/route.ts", "operation": "create", "summary": "GET /api/repos: ユーザーのリポジトリ一覧を返す" }
+      ],
+      "impl": "## 実装手順\n\n### 新規作成ファイル\n`dashboard/app/api/repos/route.ts`\n\n### 実装内容\n\n```typescript\nimport { NextResponse } from 'next/server'\n\nimport { fetchUserRepos } from '@/lib/github'\n\nexport async function GET() {\n  try {\n    const repos = await fetchUserRepos()\n    return NextResponse.json({ repos })\n  } catch (error) {\n    const message = error instanceof Error ? error.message : 'Failed to fetch repos'\n    return NextResponse.json({ error: message }, { status: 500 })\n  }\n}\n```\n\n### レスポンス形式\n\n成功時:\n```json\n{\n  \"repos\": [\n    {\n      \"id\": 123456,\n      \"name\": \"dot-claude-dev\",\n      \"full_name\": \"ryryo/dot-claude-dev\",\n      \"private\": false,\n      \"description\": \"...\",\n      \"updated_at\": \"2026-04-09T00:00:00Z\",\n      \"html_url\": \"https://github.com/ryryo/dot-claude-dev\"\n    }\n  ]\n}\n```\n\n失敗時（500）:\n```json\n{ \"error\": \"GitHub API error: 401 Unauthorized\" }\n```\n\n### 確認方法\n\n`GITHUB_TOKEN` を設定した状態でローカル起動し、`curl http://localhost:3000/api/repos` を実行してリポジトリ一覧が返ることを確認する。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G2-T2",
+      "gate": "Gate 2",
+      "title": "app/api/plans/route.ts 刷新（?repos= クエリ対応、GitHub API 経由取得）",
+      "status": "pending",
+      "dependencies": ["G1-T2"],
+      "affectedFiles": [
+        { "path": "dashboard/app/api/plans/route.ts", "operation": "edit", "summary": "ローカルfs依存を廃止し、GitHub API + クエリパラメータ対応に書き換え" }
+      ],
+      "impl": "## 実装手順\n\n### 対象ファイル\n`dashboard/app/api/plans/route.ts`\n\n### 現行コード（参考）\n```typescript\nimport { NextResponse } from 'next/server'\nimport { loadProjectsConfig } from '@/lib/config'\nimport { scanAllProjects } from '@/lib/project-scanner'\n\nexport async function GET() {\n  try {\n    const config = loadProjectsConfig()\n    const plans = scanAllProjects(config)\n    return NextResponse.json({ projects: config.projects, plans })\n  } catch (error) {\n    return NextResponse.json({ error: 'Failed to load plans' }, { status: 500 })\n  }\n}\n```\n\n### 新実装\n\n```typescript\nimport { NextResponse } from 'next/server'\n\nimport { fetchPlanFiles } from '@/lib/github'\nimport type { PlanFile, RepoError } from '@/lib/types'\n\nexport async function GET(request: Request) {\n  const { searchParams } = new URL(request.url)\n  const reposParam = searchParams.get('repos')\n\n  if (!reposParam?.trim()) {\n    return NextResponse.json({ plans: [], errors: [] })\n  }\n\n  const repos = reposParam.split(',').map((r) => r.trim()).filter(Boolean)\n\n  const results = await Promise.allSettled(\n    repos.map(async (fullName) => {\n      const slashIndex = fullName.indexOf('/')\n      if (slashIndex === -1) throw new Error(`Invalid repo format: ${fullName}`)\n      const owner = fullName.slice(0, slashIndex)\n      const repo = fullName.slice(slashIndex + 1)\n      return fetchPlanFiles(owner, repo)\n    }),\n  )\n\n  const plans: PlanFile[] = []\n  const errors: RepoError[] = []\n\n  results.forEach((result, index) => {\n    if (result.status === 'fulfilled') {\n      plans.push(...result.value)\n    } else {\n      errors.push({\n        repo: repos[index],\n        message: result.reason instanceof Error ? result.reason.message : 'Unknown error',\n      })\n    }\n  })\n\n  return NextResponse.json({ plans, errors })\n}\n```\n\n### レスポンス形式\n\n```json\n{\n  \"plans\": [ /* PlanFile[] */ ],\n  \"errors\": [\n    { \"repo\": \"ryryo/private-repo\", \"message\": \"Failed to fetch contents at docs/PLAN: 403\" }\n  ]\n}\n```\n\n### 注意点\n- `repos` が未指定（初回ロード前など）の場合は空を返す\n- `Promise.allSettled` で部分成功を許容する\n- `owner`/`repo` の分割は `.indexOf('/')` で行い、正規表現を避けてシンプルに保つ",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G2-T3",
+      "gate": "Gate 2",
+      "title": "lib/config.ts・lib/project-scanner.ts・projects.yaml 削除",
+      "status": "pending",
+      "dependencies": ["G2-T1", "G2-T2"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/config.ts", "operation": "delete", "summary": "projects.yaml 読み込みロジック削除" },
+        { "path": "dashboard/lib/project-scanner.ts", "operation": "delete", "summary": "ローカルファイル走査ロジック削除" },
+        { "path": "dashboard/projects.yaml", "operation": "delete", "summary": "ローカルパス設定ファイル削除" }
+      ],
+      "impl": "## 実装手順\n\n### 削除対象ファイル\n\n以下3ファイルを削除する:\n- `dashboard/lib/config.ts`\n- `dashboard/lib/project-scanner.ts`\n- `dashboard/projects.yaml`\n\n```bash\nrm dashboard/lib/config.ts\nrm dashboard/lib/project-scanner.ts\nrm dashboard/projects.yaml\n```\n\n### 削除後の確認\n\n削除後に TypeScript コンパイルエラーがないことを確認する:\n```bash\ncd dashboard && npx tsc --noEmit\n```\n\nエラーが出た場合は、削除ファイルをインポートしている箇所を検索して修正する:\n```bash\ngrep -r 'config\\|project-scanner\\|projects.yaml' dashboard/app dashboard/lib dashboard/components\n```\n\n### 期待結果\n- コンパイルエラー 0 件\n- `grep` で残存インポートが 0 件",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G3-T1",
+      "gate": "Gate 3",
+      "title": "RepoSelector コンポーネント作成（リポジトリ選択 UI + LocalStorage 永続化）",
+      "status": "pending",
+      "dependencies": ["G2-T1", "G2-T2", "G2-T3"],
+      "affectedFiles": [
+        { "path": "dashboard/components/repo-selector.tsx", "operation": "create", "summary": "GitHub リポジトリ一覧表示・チェックボックス選択・LocalStorage 永続化コンポーネント" }
+      ],
+      "impl": "## 実装手順\n\n### 新規作成ファイル\n`dashboard/components/repo-selector.tsx`\n\n### LocalStorage スキーマ\n- キー: `plan-dashboard-selected-repos`\n- 値: `JSON.stringify(string[])` — full_name の配列 (例: `[\"ryryo/dot-claude-dev\"]`)\n\n### Props 定義\n\n```typescript\ninterface RepoSelectorProps {\n  repos: GitHubRepo[]           // /api/repos から取得した全リポジトリ\n  selected: string[]            // 選択中の full_name 配列\n  onToggle: (fullName: string) => void\n  planCounts: Record<string, number>  // full_name → plan数\n  errorRepos: string[]          // fetch エラーになったリポジトリの full_name\n}\n```\n\n### 実装内容\n\n```tsx\n'use client'\n\nimport { Badge } from '@/components/ui/badge'\nimport { Checkbox } from '@/components/ui/checkbox'\nimport type { GitHubRepo } from '@/lib/types'\n\ninterface RepoSelectorProps {\n  repos: GitHubRepo[]\n  selected: string[]\n  onToggle: (fullName: string) => void\n  planCounts: Record<string, number>\n  errorRepos: string[]\n}\n\nexport function RepoSelector({ repos, selected, onToggle, planCounts, errorRepos }: RepoSelectorProps) {\n  return (\n    <div className=\"space-y-1\">\n      <p className=\"text-label font-medium text-muted-foreground mb-2\">リポジトリ</p>\n      {repos.map((repo) => {\n        const isSelected = selected.includes(repo.full_name)\n        const count = planCounts[repo.full_name] ?? 0\n        const hasError = errorRepos.includes(repo.full_name)\n        return (\n          <div\n            key={repo.full_name}\n            className=\"flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/50 cursor-pointer\"\n            onClick={() => onToggle(repo.full_name)}\n          >\n            <Checkbox\n              checked={isSelected}\n              onCheckedChange={() => onToggle(repo.full_name)}\n              onClick={(e) => e.stopPropagation()}\n            />\n            <span className=\"text-sm flex-1 truncate\" title={repo.full_name}>\n              {repo.name}\n            </span>\n            {hasError && (\n              <Badge variant=\"destructive\" className=\"text-xs px-1 py-0\">Error</Badge>\n            )}\n            {!hasError && count > 0 && (\n              <Badge variant=\"secondary\" className=\"text-xs tabular-nums\">{count}</Badge>\n            )}\n          </div>\n        )\n      })}\n    </div>\n  )\n}\n```\n\n### 注意点\n- LocalStorage の読み書きは `app/page.tsx` 側で行う（このコンポーネントは純粋な表示コンポーネント）\n- `repo.name`（短縮名）を表示し、`title` 属性でフルネームを見せる\n- エラーリポジトリは赤バッジ `Error` を表示\n- PLAN 数は `planCounts` から取得（0 件は何も表示しない）",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G3-T2",
+      "gate": "Gate 3",
+      "title": "app/page.tsx 刷新（/api/repos フェッチ + RepoSelector 統合 + /api/plans 動的呼び出し）",
+      "status": "pending",
+      "dependencies": ["G3-T1"],
+      "affectedFiles": [
+        { "path": "dashboard/app/page.tsx", "operation": "edit", "summary": "/api/repos SWR 追加、LocalStorage 対応、/api/plans クエリ動的構築、RepoSelector 統合" }
+      ],
+      "impl": "## 実装手順\n\n### 対象ファイル\n`dashboard/app/page.tsx`\n\n### 変更の全体像\n\n1. `/api/repos` を SWR で取得（GitHubRepo 一覧）\n2. LocalStorage からの選択復元・保存ロジックを追加\n3. `/api/plans` の URL を動的に構築（`?repos=...`）\n4. `ProjectFilter` を `RepoSelector` に置き換え\n5. `errors` 配列を受け取りエラーリポジトリを追跡\n\n### 新しい型・定数\n\n```typescript\nconst STORAGE_KEY = 'plan-dashboard-selected-repos'\n\ninterface ReposResponse {\n  repos: GitHubRepo[]\n}\n\ninterface PlansResponse {\n  plans: PlanFile[]\n  errors: RepoError[]\n}\n```\n\n### SWR の変更点\n\n```typescript\n// 1. リポジトリ一覧取得（常に実行）\nconst { data: reposData, isLoading: reposLoading } = useSWR<ReposResponse>(\n  '/api/repos',\n  fetcher,\n)\n\n// 2. 選択リポジトリのプラン取得（選択済みリポジトリがある場合のみ）\nconst plansUrl = selectedRepos.length > 0\n  ? `/api/plans?repos=${selectedRepos.join(',')}`\n  : null  // null を渡すと SWR はリクエストしない\n\nconst { data: plansData, isLoading: plansLoading } = useSWR<PlansResponse>(\n  plansUrl,\n  fetcher,\n)\n```\n\n### LocalStorage の読み書き\n\n```typescript\n// 初期化: LocalStorage から復元\nconst [selectedRepos, setSelectedRepos] = useState<string[]>(() => {\n  if (typeof window === 'undefined') return []\n  try {\n    const saved = localStorage.getItem(STORAGE_KEY)\n    return saved ? (JSON.parse(saved) as string[]) : []\n  } catch {\n    return []\n  }\n})\n\n// 変更時: LocalStorage に保存\nconst handleToggleRepo = (fullName: string) => {\n  setSelectedRepos((current) => {\n    const next = current.includes(fullName)\n      ? current.filter((r) => r !== fullName)\n      : [...current, fullName]\n    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))\n    return next\n  })\n}\n```\n\n### ローディング状態\n\n`reposLoading` が true の間は `SkeletonDashboard` を表示する（既存と同様）。\n\n### filterContent の変更\n\n```tsx\nconst filterContent = (\n  <RepoSelector\n    repos={reposData?.repos ?? []}\n    selected={selectedRepos}\n    onToggle={handleToggleRepo}\n    planCounts={planCounts}\n    errorRepos={(plansData?.errors ?? []).map((e) => e.repo)}\n  />\n)\n```\n\n### planCounts の計算\n\n```typescript\nconst planCounts = useMemo(() => {\n  const counts: Record<string, number> = {}\n  ;(plansData?.plans ?? []).forEach((plan) => {\n    counts[plan.projectName] = (counts[plan.projectName] ?? 0) + 1\n  })\n  return counts\n}, [plansData?.plans])\n```\n\n### 既存コードとの互換性\n\n- `filteredPlans` の計算は `plansData?.plans` ベースに変更（`data?.plans` → `plansData?.plans`）\n- `selectedProjectCount` は `selectedRepos.length` に変更\n- `statusCounts`, `overallProgress` の計算ロジックは変更なし\n- `KanbanBoard` / `DashboardLayout` への props は変更なし\n\n### 不要になるインポート\n\n```typescript\n// 削除\nimport { ProjectFilter } from '@/components/project-filter'\nimport type { ProjectConfig } from '@/lib/types'\n\n// 追加\nimport { RepoSelector } from '@/components/repo-selector'\nimport type { GitHubRepo, RepoError } from '@/lib/types'\n```",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G3-T3",
+      "gate": "Gate 3",
+      "title": "エラーバッジ・部分成功表示実装（失敗リポジトリを明示）",
+      "status": "pending",
+      "dependencies": ["G3-T2"],
+      "affectedFiles": [
+        { "path": "dashboard/app/page.tsx", "operation": "edit", "summary": "エラーリポジトリのアラート表示を追加" }
+      ],
+      "impl": "## 実装手順\n\n### 対象ファイル\n`dashboard/app/page.tsx`\n\n### 要件\n\n`plansData.errors` が 1 件以上ある場合、メインコンテンツ上部に警告表示を追加する。\n\n### 実装内容\n\n`KanbanBoard` の上、ヘッダーセクションの下に以下を追加:\n\n```tsx\n{(plansData?.errors ?? []).length > 0 && (\n  <div className=\"rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3\">\n    <p className=\"text-sm font-medium text-destructive\">\n      {plansData!.errors.length} 件のリポジトリで取得に失敗しました\n    </p>\n    <ul className=\"mt-1 space-y-0.5\">\n      {plansData!.errors.map((err) => (\n        <li key={err.repo} className=\"text-xs text-destructive/80\">\n          {err.repo}: {err.message}\n        </li>\n      ))}\n    </ul>\n  </div>\n)}\n```\n\n### RepoSelector のエラーバッジ\n\nG3-T1 で実装済み（`errorRepos` prop で制御）。このタスクでは `page.tsx` へのエラー一覧表示を追加するだけ。\n\n### 確認方法\n\n`GITHUB_TOKEN` の権限がない private リポジトリを選択した場合に赤い警告ブロックが表示されること。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G4-T1",
+      "gate": "Gate 4",
+      "title": "Vercel デプロイ設定（GITHUB_TOKEN 環境変数・next.config.ts 確認）",
+      "status": "pending",
+      "dependencies": ["G3-T3"],
+      "affectedFiles": [
+        { "path": "dashboard/next.config.ts", "operation": "edit", "summary": "設定の確認・必要に応じて serverExternalPackages を追加" }
+      ],
+      "impl": "## 実装手順\n\n### 1. next.config.ts の確認\n\n`dashboard/next.config.ts` を Read して以下を確認する:\n- `output: 'standalone'` が設定されている場合はそのままで OK（Vercel は不要）\n- `experimental.serverExternalPackages` に `yaml` が含まれている場合は削除（projects.yaml を廃止したため不要）\n\nもし `yaml` パッケージがもう使われていない場合、依存関係からも削除する:\n```bash\ncd dashboard && npm uninstall yaml\n```\n\n### 2. Vercel デプロイ手順の確認\n\n`dashboard/` ディレクトリを Vercel にデプロイするために必要な手順:\n\n#### Vercel 側の設定\n1. Vercel プロジェクトの **Settings > Environment Variables** で以下を追加:\n   - キー: `GITHUB_TOKEN`\n   - 値: GitHub PAT（必要スコープ: `repo`）\n   - 環境: Production / Preview / Development すべてに設定\n\n2. **Root Directory** を `dashboard` に設定（Vercel がリポジトリルートを見ている場合）\n\n3. **Framework Preset**: Next.js\n\n#### PAT の作成方法（README に追記）\n```\nGitHub > Settings > Developer settings > Personal access tokens > Tokens (classic)\nスコープ: repo（private リポジトリも読む場合）または public_repo（public のみの場合）\n```\n\n### 3. dashboard/.env.local を作成（ローカル開発用）\n\nファイルが存在しない場合のみ作成:\n```bash\nif [ ! -f dashboard/.env.local ]; then\n  echo 'GITHUB_TOKEN=your_github_pat_here' > dashboard/.env.local\nfi\n```\n\n`.gitignore` に `.env.local` が含まれていることを確認:\n```bash\ngrep '.env.local' dashboard/.gitignore\n```\n\n### 4. 確認コマンド\n\n```bash\ncd dashboard && npx tsc --noEmit && npm run build\n```\n\nビルドが成功すれば Vercel デプロイ可能な状態。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "G4-T2",
+      "gate": "Gate 4",
+      "title": "ローカル E2E 動作確認手順整備",
+      "status": "pending",
+      "dependencies": ["G4-T1"],
+      "affectedFiles": [],
+      "impl": "## 実装手順\n\n### 目的\n\n実装完了後の疎通確認手順をまとめ、動作を確認する。このタスクはコード変更ではなく**動作確認の実行**である。\n\n### 確認手順\n\n#### 1. 環境変数の設定\n\n```bash\n# dashboard/.env.local に GITHUB_TOKEN を設定済みであること\ncat dashboard/.env.local\n```\n\n#### 2. 開発サーバー起動\n\n```bash\ncd dashboard && npm run dev\n```\n\n#### 3. API 疎通確認\n\n```bash\n# リポジトリ一覧が返ること\ncurl http://localhost:3000/api/repos | head -c 500\n\n# 特定リポジトリのプラン取得\ncurl 'http://localhost:3000/api/plans?repos=ryryo/dot-claude-dev' | head -c 1000\n```\n\n#### 4. ブラウザ確認\n\n`http://localhost:3000` を開いて以下を確認:\n- [ ] サイドバーにリポジトリ一覧が表示される\n- [ ] リポジトリを選択するとカンバンに PLAN が表示される\n- [ ] ページをリロードしても選択状態が維持される（LocalStorage）\n- [ ] 存在しないリポジトリを選択するとエラーバッジが表示される（テスト方法: 意図的に不正なリポジトリ名を LocalStorage に追加）\n\n#### 5. ビルド確認\n\n```bash\ncd dashboard && npm run build\n```\n\nエラーなく完了すれば Vercel デプロイ準備完了。\n\n### 通過条件\n\n上記チェックリストが全て ✅ になれば Gate 4 通過。",
+      "relatedIssues": [],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-09",
+    "totalGates": 4,
+    "totalTodos": 10
+  }
+}
