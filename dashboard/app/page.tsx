@@ -1,36 +1,41 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import useSWR from "swr"
 
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { DateFilter } from "@/components/date-filter"
 import { KanbanBoard } from "@/components/kanban-board"
-import { ProjectFilter } from "@/components/project-filter"
+import { RepoSelector } from "@/components/repo-selector"
 import { SkeletonDashboard } from "@/components/skeleton-dashboard"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import type { PlanFile, PlanStatus, ProjectConfig } from "@/lib/types"
+import type { GitHubRepo, PlanFile, PlanStatus, RepoError } from "@/lib/types"
 
-interface PlansResponse {
-  projects: ProjectConfig[]
-  plans: PlanFile[]
+const STORAGE_KEY = "plan-dashboard-selected-repos"
+
+interface ReposResponse {
+  repos: GitHubRepo[]
 }
 
-const fetcher = async (url: string): Promise<PlansResponse> => {
+interface PlansResponse {
+  plans: PlanFile[]
+  errors: RepoError[]
+}
+
+const fetcher = async (url: string) => {
   const response = await fetch(url)
 
   if (!response.ok) {
-    throw new Error("PLAN データの取得に失敗しました。")
+    throw new Error("データの取得に失敗しました。")
   }
 
-  return response.json() as Promise<PlansResponse>
+  return response.json()
 }
 
 const STATUS_LABELS: Record<PlanStatus, string> = {
@@ -41,63 +46,63 @@ const STATUS_LABELS: Record<PlanStatus, string> = {
 }
 
 export default function Home() {
-  const { data, error, isLoading } = useSWR<PlansResponse>("/api/plans", fetcher)
+  const { data: reposData, error: reposError, isLoading: reposLoading } = useSWR<ReposResponse>(
+    "/api/repos",
+    fetcher
+  )
   const [filterDays, setFilterDays] = useState<number>(30)
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([])
-  const [hasInitializedSelection, setHasInitializedSelection] = useState(false)
-
-  useEffect(() => {
-    if (!data?.projects.length) {
-      return
-    }
-
-    const projectNames = data.projects.map((project) => project.name)
-
-    setSelectedProjects((current) => {
-      if (!hasInitializedSelection) {
-        return projectNames
-      }
-
-      return current.filter((name) => projectNames.includes(name))
-    })
-
-    if (!hasInitializedSelection) {
-      setHasInitializedSelection(true)
-    }
-  }, [data?.projects, hasInitializedSelection])
-
-  const handleToggleProject = (name: string) => {
-    setSelectedProjects((current) =>
-      current.includes(name)
-        ? current.filter((projectName) => projectName !== name)
-        : [...current, name]
-    )
-  }
-
-  const projectNames = data?.projects.map((project) => project.name) ?? []
-
-  const filteredPlans = useMemo(() => {
-    if (!data?.plans.length) {
+  const [selectedRepos, setSelectedRepos] = useState<string[]>(() => {
+    if (typeof window === "undefined") {
       return []
     }
 
-    const selectedSet = new Set(selectedProjects)
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      return saved ? (JSON.parse(saved) as string[]) : []
+    } catch {
+      return []
+    }
+  })
+
+  const plansUrl =
+    selectedRepos.length > 0 ? `/api/plans?repos=${selectedRepos.join(",")}` : null
+
+  const { data: plansData, error: plansError } = useSWR<PlansResponse>(
+    plansUrl,
+    fetcher
+  )
+
+  const handleToggleRepo = (fullName: string) => {
+    setSelectedRepos((current) => {
+      const next = current.includes(fullName)
+        ? current.filter((repo) => repo !== fullName)
+        : [...current, fullName]
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const filteredPlans = useMemo(() => {
+    if (!plansData?.plans.length) {
+      return []
+    }
+
     const cutoff = filterDays === 0 ? null : new Date(Date.now() - filterDays * 86400000)
 
-    return data.plans
-      .filter((plan) => selectedSet.has(plan.projectName))
+    return plansData.plans
       .filter((plan) => !cutoff || !plan.createdDate || new Date(plan.createdDate) >= cutoff)
-  }, [data?.plans, filterDays, selectedProjects])
+  }, [filterDays, plansData?.plans])
 
   const planCounts = useMemo(() => {
     const counts: Record<string, number> = {}
 
-    filteredPlans.forEach((plan) => {
+    ;(plansData?.plans ?? []).forEach((plan) => {
       counts[plan.projectName] = (counts[plan.projectName] ?? 0) + 1
     })
 
     return counts
-  }, [filteredPlans])
+  }, [plansData?.plans])
 
   const statusCounts = useMemo(() => {
     return filteredPlans.reduce<Record<PlanStatus, number>>(
@@ -120,21 +125,23 @@ export default function Home() {
     0
   )
   const overallProgress = totalTodos === 0 ? 0 : Math.round((completedTodos / totalTodos) * 100)
-  const selectedProjectCount = projectNames.filter((name) => selectedProjects.includes(name)).length
+  const selectedProjectCount = selectedRepos.length
 
-  if (isLoading) {
+  if (reposLoading) {
     return <SkeletonDashboard />
   }
 
-  if (error || !data) {
+  if (reposError || !reposData || (plansError && selectedRepos.length > 0)) {
+    const displayError = reposError ?? plansError
+
     return (
       <main className="flex min-h-svh items-center justify-center bg-muted/30 px-6">
         <Card className="w-full max-w-lg">
           <CardHeader>
             <h2 className="text-lg font-semibold leading-none tracking-tight">データの取得に失敗しました</h2>
             <CardDescription>
-              {error instanceof Error
-                ? error.message
+              {displayError instanceof Error
+                ? displayError.message
                 : "PLAN ダッシュボードを表示できませんでした。"}
             </CardDescription>
           </CardHeader>
@@ -144,11 +151,12 @@ export default function Home() {
   }
 
   const filterContent = (
-    <ProjectFilter
-      projects={data.projects}
-      selected={selectedProjects}
-      onToggle={handleToggleProject}
+    <RepoSelector
+      repos={reposData.repos}
+      selected={selectedRepos}
+      onToggle={handleToggleRepo}
       planCounts={planCounts}
+      errorRepos={(plansData?.errors ?? []).map((error) => error.repo)}
     />
   )
 
@@ -158,7 +166,7 @@ export default function Home() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border bg-muted/30 p-3">
-          <p className="text-label text-muted-foreground">選択中プロジェクト</p>
+          <p className="text-label text-muted-foreground">選択中リポジトリ</p>
           <p className="mt-1 text-heading-2 tabular-nums">{selectedProjectCount}</p>
         </div>
         <div className="rounded-xl border bg-muted/30 p-3">
@@ -208,16 +216,15 @@ export default function Home() {
           <div className="space-y-2">
             <h1 className="text-heading-2">PLAN Board</h1>
             <p className="text-muted-foreground text-sm">
-              選択中のプロジェクトに含まれる PLAN を看板形式で管理します。
+              選択中のリポジトリに含まれる PLAN を看板形式で管理します。
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{selectedProjectCount} Projects</Badge>
+            <Badge variant="outline">{selectedProjectCount} Repos</Badge>
             <Badge>{filteredPlans.length} Plans</Badge>
           </div>
         </div>
-
         <KanbanBoard plans={filteredPlans} />
       </div>
     </DashboardLayout>
