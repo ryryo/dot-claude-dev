@@ -36,7 +36,7 @@ export function PlanDetail({ plan }: PlanDetailProps) {
         const isOpen = openGateId === gate.id
 
         return (
-          <div key={gate.id} className="rounded-xl border bg-background/70">
+          <div key={`${plan.projectName}/${plan.filePath}-${index}`} className="rounded-xl border bg-background/70">
             <Collapsible
               open={isOpen}
               onOpenChange={(open) => setOpenGateId(open ? gate.id : null)}
@@ -60,9 +60,9 @@ export function PlanDetail({ plan }: PlanDetailProps) {
               <CollapsibleContent className="px-4 pb-4">
                 <Separator className="mb-3" />
                 <div className="space-y-2">
-                  {gate.todos.map((todo) => (
+                  {gate.todos.map((todo, todoIndex) => (
                     <div
-                      key={`${gate.id}-${todo.title}`}
+                      key={`${plan.filePath}-${index}-${todoIndex}`}
                       className="flex items-start justify-between gap-3 rounded-lg bg-muted/30 px-3 py-2"
                     >
                       <div className="flex min-w-0 items-start gap-2">

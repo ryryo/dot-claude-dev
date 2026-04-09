@@ -48,10 +48,8 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
         return (
           <div
             key={column.status}
-            className={cn(
-              "w-[85vw] shrink-0 snap-center transition-all duration-300 ease-in-out md:w-auto md:shrink md:min-w-[180px]",
-              expandedStatus === null ? "md:flex-1" : isExpanded ? "md:flex-[2]" : "md:flex-1"
-            )}
+            className="w-[85vw] shrink-0 snap-center transition-all duration-300 ease-in-out md:w-auto md:shrink md:min-w-[120px]"
+            style={{ flex: expandedStatus === null ? '1 1 0%' : isExpanded ? '2 1 0%' : '1 1 0%' }}
           >
             <Card
               className={cn(
@@ -70,7 +68,7 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
                 {columnPlans.length > 0 ? (
                   columnPlans.map((plan) => (
                     <PlanCard
-                      key={plan.filePath}
+                      key={`${plan.projectName}/${plan.filePath}`}
                       plan={plan}
                       expanded={expandedId === plan.filePath}
                       onToggle={() =>
