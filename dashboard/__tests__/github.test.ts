@@ -97,6 +97,43 @@ describe('github', () => {
     ]);
   });
 
+  it('ディレクトリモードの spec.md が 404 ならスキップする', async () => {
+    process.env.GITHUB_TOKEN = 'test-token';
+
+    const contents: GitHubContent[] = [
+      { name: 'feature-beta', path: 'docs/PLAN/feature-beta', type: 'dir', sha: '2' },
+    ];
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(createJsonResponse(contents))
+      .mockResolvedValueOnce(
+        createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
+      );
+
+    await expect(fetchPlanFiles('octocat', 'hello-world')).resolves.toEqual([]);
+  });
+
+  it('ディレクトリモードの spec.md が 404 以外なら再 throw する', async () => {
+    process.env.GITHUB_TOKEN = 'test-token';
+
+    const contents: GitHubContent[] = [
+      { name: 'feature-beta', path: 'docs/PLAN/feature-beta', type: 'dir', sha: '2' },
+    ];
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(createJsonResponse(contents))
+      .mockResolvedValueOnce(
+        createJsonResponse(
+          { message: 'Internal Server Error' },
+          { status: 500, statusText: 'Internal Server Error' }
+        )
+      );
+
+    await expect(fetchPlanFiles('octocat', 'hello-world')).rejects.toThrow(
+      'Failed to fetch file at docs/PLAN/feature-beta/spec.md: 500'
+    );
+  });
+
   it('ユーザーのリポジトリ一覧を取得する', async () => {
     process.env.GITHUB_TOKEN = 'test-token';
     const repos: GitHubRepo[] = [

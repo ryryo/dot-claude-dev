@@ -69,8 +69,12 @@ export async function fetchPlanFiles(owner: string, repo: string): Promise<PlanF
         try {
           const content = await fetchFileContent(owner, repo, specPath);
           return parsePlanFile(content, specPath, projectName);
-        } catch {
-          return null;
+        } catch (error) {
+          if (isFileNotFoundError(error)) {
+            return null;
+          }
+
+          throw error;
         }
       }
 
@@ -81,7 +85,20 @@ export async function fetchPlanFiles(owner: string, repo: string): Promise<PlanF
   return plans.filter((plan): plan is PlanFile => plan !== null);
 }
 
-/** ディレクトリ内容を取得（docs/PLAN が存在しない場合は空配列を返す） */
+function isFileNotFoundError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('Failed to fetch file') &&
+    error.message.includes('404')
+  );
+}
+
+/**
+ * ディレクトリ内容を取得する。
+ *
+ * GitHub Contents API は、リポジトリ自体が存在しない場合と `path` が存在しない場合の
+ * どちらも 404 を返すため、この関数単体では区別できない。現状はどちらも空配列として扱う。
+ */
 async function fetchContents(owner: string, repo: string, path: string): Promise<GitHubContent[]> {
   const response = await fetch(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`,
