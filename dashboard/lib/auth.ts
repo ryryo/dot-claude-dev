@@ -30,22 +30,12 @@ async function createSignature(timestamp: string): Promise<string> {
 }
 
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    // Compare with self to keep constant time, then return false
-    const buf = encoder.encode(a)
-    let result = 0
-    for (let i = 0; i < buf.length; i++) {
-      result |= buf[i] ^ buf[i]
-    }
-    void result
-    return false
-  }
-
   const bufA = encoder.encode(a)
   const bufB = encoder.encode(b)
-  let result = 0
-  for (let i = 0; i < bufA.length; i++) {
-    result |= bufA[i] ^ bufB[i]
+  const len = Math.max(bufA.length, bufB.length)
+  let result = bufA.length ^ bufB.length
+  for (let i = 0; i < len; i++) {
+    result |= (bufA[i] ?? 0) ^ (bufB[i] ?? 0)
   }
   return result === 0
 }
