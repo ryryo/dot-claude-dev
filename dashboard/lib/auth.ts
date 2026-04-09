@@ -1,45 +1,62 @@
-import { createHmac, timingSafeEqual, createHash } from "node:crypto"
-
 export const COOKIE_NAME = "dashboard-session"
 export const MAX_AGE = 7 * 24 * 60 * 60
 
-function getSecret() {
+const encoder = new TextEncoder()
+
+async function deriveSecret(): Promise<ArrayBuffer> {
   const password = process.env.DASHBOARD_PASSWORD
 
   if (!password) {
     throw new Error("DASHBOARD_PASSWORD is not set")
   }
 
-  return createHash("sha256").update(`cookie-secret:${password}`).digest()
+  const data = encoder.encode(`cookie-secret:${password}`)
+  return crypto.subtle.digest("SHA-256", data)
 }
 
-function createSignature(timestamp: string) {
-  return createHmac("sha256", getSecret()).update(timestamp).digest("hex")
+async function createSignature(timestamp: string): Promise<string> {
+  const secret = await deriveSecret()
+  const key = await crypto.subtle.importKey(
+    "raw",
+    secret,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  )
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(timestamp))
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
 }
 
-function safeEqual(left: string, right: string) {
-  const leftBuffer = Buffer.from(left)
-  const rightBuffer = Buffer.from(right)
-  const bufferLength = Math.max(leftBuffer.length, rightBuffer.length, 1)
-  const paddedLeft = Buffer.alloc(bufferLength)
-  const paddedRight = Buffer.alloc(bufferLength)
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Compare with self to keep constant time, then return false
+    const buf = encoder.encode(a)
+    let result = 0
+    for (let i = 0; i < buf.length; i++) {
+      result |= buf[i] ^ buf[i]
+    }
+    void result
+    return false
+  }
 
-  leftBuffer.copy(paddedLeft)
-  rightBuffer.copy(paddedRight)
-
-  const valuesEqual = timingSafeEqual(paddedLeft, paddedRight)
-
-  return leftBuffer.length === rightBuffer.length && valuesEqual
+  const bufA = encoder.encode(a)
+  const bufB = encoder.encode(b)
+  let result = 0
+  for (let i = 0; i < bufA.length; i++) {
+    result |= bufA[i] ^ bufB[i]
+  }
+  return result === 0
 }
 
-export function createSessionCookie() {
+export async function createSessionCookie(): Promise<string> {
   const timestamp = Date.now().toString()
-  const signature = createSignature(timestamp)
-
+  const signature = await createSignature(timestamp)
   return `${timestamp}.${signature}`
 }
 
-export function verifySessionCookie(value: string) {
+export async function verifySessionCookie(value: string): Promise<boolean> {
   const parts = value.split(".")
 
   if (parts.length !== 2) {
@@ -65,19 +82,20 @@ export function verifySessionCookie(value: string) {
   }
 
   try {
-    return safeEqual(signature, createSignature(timestamp))
+    const expected = await createSignature(timestamp)
+    return timingSafeEqual(signature, expected)
   } catch {
     return false
   }
 }
 
-export function verifyPassword(input: string) {
+export function verifyPassword(input: string): boolean {
   const password = process.env.DASHBOARD_PASSWORD
 
   if (!password) {
-    safeEqual(input, "")
+    timingSafeEqual(input, "")
     return false
   }
 
-  return safeEqual(input, password)
+  return timingSafeEqual(input, password)
 }
