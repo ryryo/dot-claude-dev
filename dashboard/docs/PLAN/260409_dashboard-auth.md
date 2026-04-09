@@ -121,7 +121,7 @@ Gate A: パスワード認証実装
 
 #### Todo 1: 認証ユーティリティ作成 (lib/auth.ts)
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `lib/auth.ts`（新規作成）
   - **内容**: Cookie の生成・検証ロジックを実装
   - **実装詳細**:
@@ -133,11 +133,14 @@ Gate A: パスワード認証実装
     - `verifyPassword(input: string)`: `DASHBOARD_PASSWORD` と timingSafeEqual で比較。Buffer 長が異なる場合も固定時間で比較
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
+  > **Review A1**: ✅ PASSED (FIX 2回)
+  > - Web Crypto API に書き換え（Edge Runtime 互換）
+  > - 異なる長さの入力でも固定時間比較を保証
 
 #### Todo 2: 認証 API ルート作成 (app/api/auth/route.ts)
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `app/api/auth/route.ts`（新規作成）
   - **内容**: POST でパスワードを受け取り、Cookie を設定してリダイレクト
   - **実装詳細**:
@@ -150,11 +153,13 @@ Gate A: パスワード認証実装
       4. 成功 → `NextResponse.json({ ok: true })` に `Set-Cookie` ヘッダー追加: `COOKIE_NAME=createSessionCookie(); Path=/; HttpOnly; SameSite=Lax; Max-Age=MAX_AGE`。本番環境では `Secure` も付与
   - **依存**: Todo 1
 
-- [ ] **Step 2 — Review A2**
+- [x] **Step 2 — Review A2**
+  > **Review A2**: ✅ PASSED (FIX 1回)
+  > - 不正JSON/空ボディで400を返すバリデーション追加
 
 #### Todo 3: 認証 Middleware 作成 (middleware.ts)
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `middleware.ts`（プロジェクトルートに新規作成）
   - **内容**: 全リクエストで Cookie を検証し、未認証なら `/login` にリダイレクト
   - **実装詳細**:
@@ -169,7 +174,10 @@ Gate A: パスワード認証実装
       - `/login`, `/api/auth`, Next.js 内部アセットを除外
   - **依存**: Todo 1
 
-- [ ] **Step 2 — Review A3**
+- [x] **Step 2 — Review A3**
+  > **Review A3**: ✅ PASSED (FIX 1回)
+  > - `_next/*` 全体を除外するよう matcher 修正（HMR等の開発時リクエスト対応）
+  > - P1（/login未作成）は Todo 4 で対応予定のため設計意図通りと判定
 
 #### Todo 4: ログインページ作成 (app/login/page.tsx)
 
