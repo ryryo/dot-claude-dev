@@ -16,14 +16,15 @@ const PRESETS = [
 ] as const
 
 export function DateFilter({ days, onChange }: DateFilterProps) {
-  const sliderValue = days === 0 ? 7 : Math.min(Math.max(days, 7), 365)
+  const sliderValue = days === 0 ? 7 : Math.min(Math.max(days, 1), 90)
 
   return (
-    <section aria-label="期間フィルター" className="space-y-4">
-      <div className="flex flex-wrap gap-2">
+    <section aria-label="期間フィルター" className="space-y-3">
+      <div className="flex flex-wrap gap-1.5">
         {PRESETS.map((preset) => (
           <Button
             key={preset.days}
+            size="sm"
             type="button"
             variant={days === preset.days ? "default" : "outline"}
             onClick={() => onChange(preset.days)}
@@ -33,17 +34,17 @@ export function DateFilter({ days, onChange }: DateFilterProps) {
         ))}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Slider
-          min={7}
-          max={365}
+          min={1}
+          max={90}
           step={1}
           value={sliderValue}
           disabled={days === 0}
           onValueChange={(value) => onChange(value)}
           aria-label="表示期間"
         />
-        <p className="text-muted-foreground text-sm">
+        <p className="text-muted-foreground text-xs">
           {days === 0 ? "すべての期間" : `過去 ${days} 日間`}
         </p>
       </div>

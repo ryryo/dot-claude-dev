@@ -82,11 +82,8 @@ export function RepoSelector({
 
   return (
     <>
-      {/* 展開時: ラベル + フルトリガーボタン */}
-      <div className="flex flex-col gap-2 group-data-[collapsible=icon]:hidden">
-        <p className="text-label font-medium text-muted-foreground">
-          リポジトリ
-        </p>
+      {/* 展開時: フルトリガーボタン */}
+      <div className="flex flex-col group-data-[collapsible=icon]:hidden">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             render={

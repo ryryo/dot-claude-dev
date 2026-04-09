@@ -29,16 +29,19 @@ export function AppSidebar({
         </h1>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>フィルター</SidebarGroupLabel>
+        <SidebarGroup className="pb-2">
+          <SidebarGroupLabel>期間</SidebarGroupLabel>
           <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
             {dateFilterContent}
           </SidebarGroupContent>
-          <div className="px-2 py-1">
-            {filterContent}
-          </div>
         </SidebarGroup>
-        <SidebarGroup>
+        <SidebarGroup className="py-2">
+          <SidebarGroupLabel>リポジトリ</SidebarGroupLabel>
+          <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
+            {filterContent}
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup className="pt-2">
           <SidebarGroupLabel>統計</SidebarGroupLabel>
           <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
             {statsContent}

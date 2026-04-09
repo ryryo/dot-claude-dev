@@ -14,7 +14,6 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import type { GitHubRepo, PlanFile, PlanStatus, RepoError } from "@/lib/types"
 
 const STORAGE_KEY = "plan-dashboard-selected-repos"
@@ -164,40 +163,36 @@ export default function Home() {
 
   const statsContent = (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border bg-muted/30 p-3">
-          <p className="text-label text-muted-foreground">選択中リポジトリ</p>
-          <p className="mt-1 text-heading-2 tabular-nums">{selectedProjectCount}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-3">
+          <p className="text-xs text-muted-foreground">リポジトリ</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{selectedProjectCount}</p>
         </div>
-        <div className="rounded-xl border bg-muted/30 p-3">
-          <p className="text-label text-muted-foreground">表示中 PLAN</p>
-          <p className="mt-1 text-heading-2 tabular-nums">{filteredPlans.length}</p>
+        <div className="rounded-lg bg-muted/50 p-3">
+          <p className="text-xs text-muted-foreground">PLAN</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{filteredPlans.length}</p>
         </div>
       </div>
 
-      <div className="rounded-xl border bg-muted/30 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-label text-muted-foreground">Todo 進捗</p>
-          <Badge variant="outline">{overallProgress}%</Badge>
+      <div className="rounded-lg bg-muted/50 p-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Todo 進捗</p>
+          <span className="text-xs font-medium tabular-nums">{overallProgress}%</span>
         </div>
-        <p className="mt-2 text-sm font-medium">
-          {completedTodos}/{totalTodos} 件完了
+        <p className="mt-1 text-sm font-medium tabular-nums">
+          {completedTodos}/{totalTodos} 件
         </p>
       </div>
 
-      <Separator />
-
-      <div className="space-y-2">
+      <div className="space-y-1">
         {(Object.entries(STATUS_LABELS) as [PlanStatus, string][]).map(
           ([status, label]) => (
             <div
               key={status}
-              className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2"
+              className="flex items-center justify-between px-1 py-1.5"
             >
-              <span className="text-sm">{label}</span>
-              <Badge variant="secondary" className="tabular-nums">
-                {statusCounts[status]}
-              </Badge>
+              <span className="text-sm text-muted-foreground">{label}</span>
+              <span className="text-sm font-medium tabular-nums">{statusCounts[status]}</span>
             </div>
           )
         )}

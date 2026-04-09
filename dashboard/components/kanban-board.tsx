@@ -35,13 +35,24 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
     }
   )
 
+  const expandedStatus = expandedId
+    ? plans.find((p) => p.filePath === expandedId)?.status ?? null
+    : null
+
   return (
-    <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-2 md:overflow-x-visible md:snap-none lg:grid-cols-4">
+    <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 md:overflow-x-visible md:snap-none">
       {COLUMNS.map((column) => {
         const columnPlans = plansByStatus[column.status]
+        const isExpanded = expandedStatus === column.status
 
         return (
-          <div key={column.status} className="w-[85vw] shrink-0 snap-center md:w-auto md:shrink">
+          <div
+            key={column.status}
+            className={cn(
+              "w-[85vw] shrink-0 snap-center transition-all duration-300 ease-in-out md:w-auto md:shrink md:min-w-[180px]",
+              expandedStatus === null ? "md:flex-1" : isExpanded ? "md:flex-[2]" : "md:flex-1"
+            )}
+          >
             <Card
               className={cn(
                 "min-h-[200px] shrink-0 gap-4 border-none shadow-none",
