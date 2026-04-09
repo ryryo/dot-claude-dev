@@ -8,7 +8,13 @@ import {
 } from "@/lib/auth"
 
 export async function POST(request: Request) {
-  const { password } = (await request.json()) as { password: string }
+  let password: string
+  try {
+    const body = await request.json()
+    password = typeof body?.password === "string" ? body.password : ""
+  } catch {
+    return NextResponse.json({ error: "不正なリクエストです" }, { status: 400 })
+  }
 
   if (!verifyPassword(password)) {
     return NextResponse.json(
