@@ -225,6 +225,20 @@ export default function Home() {
             <Badge>{filteredPlans.length} Plans</Badge>
           </div>
         </div>
+        {(plansData?.errors ?? []).length > 0 && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+            <p className="text-sm font-medium text-destructive">
+              {plansData!.errors.length} 件のリポジトリで取得に失敗しました
+            </p>
+            <ul className="mt-1 space-y-0.5">
+              {plansData!.errors.map((err) => (
+                <li key={err.repo} className="text-xs text-destructive/80">
+                  {err.repo}: {err.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <KanbanBoard plans={filteredPlans} />
       </div>
     </DashboardLayout>
