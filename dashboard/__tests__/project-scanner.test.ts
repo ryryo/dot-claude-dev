@@ -66,8 +66,8 @@ describe('project-scanner', () => {
 
     const config: ProjectsConfig = {
       projects: [
-        { name: 'alpha', path: alphaPath },
-        { name: 'beta', path: betaPath },
+        { name: 'alpha', repo: alphaPath },
+        { name: 'beta', repo: betaPath },
       ],
     };
 

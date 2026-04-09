@@ -19,7 +19,7 @@ export function scanProjectPlans(projectPath: string, projectName: string): Plan
 }
 
 export function scanAllProjects(config: ProjectsConfig): PlanFile[] {
-  return config.projects.flatMap((project) => scanProjectPlans(project.path, project.name));
+  return config.projects.flatMap((project) => scanProjectPlans(project.repo, project.name));
 }
 
 function collectPlanPaths(planDir: string): string[] {

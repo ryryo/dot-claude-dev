@@ -2,10 +2,11 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { ProjectConfig } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 interface ProjectFilterProps {
-  projects: { name: string; path: string }[]
+  projects: ProjectConfig[]
   selected: string[]
   onToggle: (name: string) => void
   planCounts: Record<string, number>
@@ -67,8 +68,8 @@ export function ProjectFilter({
                 <Checkbox checked={isSelected} className="pointer-events-none mt-0.5" aria-hidden="true" />
                 <div className="min-w-0 space-y-1">
                   <p className="truncate text-sm font-medium">{project.name}</p>
-                  <p className="text-muted-foreground truncate text-xs" title={project.path}>
-                    {project.path}
+                  <p className="text-muted-foreground truncate text-xs" title={project.repo}>
+                    {project.repo}
                   </p>
                 </div>
               </div>

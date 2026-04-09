@@ -32,7 +32,29 @@ export interface PlanFile {
 
 export interface ProjectConfig {
   name: string;
+  repo: string;
+}
+
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  private: boolean;
+  description: string | null;
+  updated_at: string;
+  html_url: string;
+}
+
+export interface GitHubContent {
+  name: string;
   path: string;
+  type: 'file' | 'dir';
+  sha: string;
+}
+
+export interface RepoError {
+  repo: string;
+  message: string;
 }
 
 export interface ProjectsConfig {
