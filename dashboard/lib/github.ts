@@ -1,0 +1,115 @@
+import { parsePlanFile } from './plan-parser';
+import type { GitHubContent, GitHubRepo, PlanFile } from './types';
+
+const GITHUB_API_BASE = 'https://api.github.com';
+const GITHUB_REVALIDATE_SECONDS = 300;
+
+type GitHubRequestInit = RequestInit & {
+  next: {
+    revalidate: number;
+  };
+};
+
+function getHeaders(): HeadersInit {
+  const token = process.env.GITHUB_TOKEN;
+
+  if (!token) {
+    throw new Error('GITHUB_TOKEN is not set');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+function getRequestOptions(): GitHubRequestInit {
+  return {
+    headers: getHeaders(),
+    next: { revalidate: GITHUB_REVALIDATE_SECONDS },
+  };
+}
+
+/** ユーザーの全リポジトリ一覧を取得 */
+export async function fetchUserRepos(): Promise<GitHubRepo[]> {
+  const response = await fetch(
+    `${GITHUB_API_BASE}/user/repos?per_page=100&sort=updated&type=all`,
+    getRequestOptions()
+  );
+
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json() as Promise<GitHubRepo[]>;
+}
+
+/** リポジトリの docs/PLAN に含まれる全 PlanFile を取得 */
+export async function fetchPlanFiles(owner: string, repo: string): Promise<PlanFile[]> {
+  const contents = await fetchContents(owner, repo, 'docs/PLAN');
+
+  if (contents.length === 0) {
+    return [];
+  }
+
+  const projectName = `${owner}/${repo}`;
+  const sorted = [...contents].sort((left, right) => left.name.localeCompare(right.name));
+
+  const plans = await Promise.all(
+    sorted.map(async (entry) => {
+      if (entry.type === 'file' && entry.name.endsWith('.md')) {
+        const content = await fetchFileContent(owner, repo, entry.path);
+        return parsePlanFile(content, entry.path, projectName);
+      }
+
+      if (entry.type === 'dir') {
+        const specPath = `${entry.path}/spec.md`;
+
+        try {
+          const content = await fetchFileContent(owner, repo, specPath);
+          return parsePlanFile(content, specPath, projectName);
+        } catch {
+          return null;
+        }
+      }
+
+      return null;
+    })
+  );
+
+  return plans.filter((plan): plan is PlanFile => plan !== null);
+}
+
+/** ディレクトリ内容を取得（docs/PLAN が存在しない場合は空配列を返す） */
+async function fetchContents(owner: string, repo: string, path: string): Promise<GitHubContent[]> {
+  const response = await fetch(
+    `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`,
+    getRequestOptions()
+  );
+
+  if (response.status === 404) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch contents at ${path}: ${response.status}`);
+  }
+
+  return response.json() as Promise<GitHubContent[]>;
+}
+
+/** ファイルの内容を文字列として取得（base64 デコード） */
+export async function fetchFileContent(owner: string, repo: string, path: string): Promise<string> {
+  const response = await fetch(
+    `${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/${path}`,
+    getRequestOptions()
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file at ${path}: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { content: string; encoding: string };
+  return Buffer.from(data.content, 'base64').toString('utf-8');
+}
