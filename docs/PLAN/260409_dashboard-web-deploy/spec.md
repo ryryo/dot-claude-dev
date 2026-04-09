@@ -207,44 +207,47 @@ Gate 4: デプロイ設定（Gate 3 完了後）
   > **Review G1-T1**: ✅ PASSED (FIX 1回)
   > - project-scanner.ts の path→repo 変更を revert（G2-T3で削除予定のため as any で維持）
 
-- [ ] **G1-T2**: lib/github.ts 作成（GitHub API クライアント） [TDD]
-  > **Review G1-T2**:
+- [x] **G1-T2**: lib/github.ts 作成（GitHub API クライアント） [TDD]
+  > **Review G1-T2**: ✅ PASSED (FIX 1回)
+  > - spec.md取得時に非404エラーをre-throw、fetchContentsのdocstringに404制約を明記
 
 **Gate 1 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate 2: API Routes刷新
 
-- [ ] **G2-T1**: app/api/repos/route.ts 作成
-  > **Review G2-T1**:
+- [x] **G2-T1**: app/api/repos/route.ts 作成
+  > **Review G2-T1**: ✅ PASSED
+  > - P1指摘(認証なし)は仕様の「シングルユーザー前提」設計決定により意図的
 
-- [ ] **G2-T2**: app/api/plans/route.ts 刷新
-  > **Review G2-T2**:
+- [x] **G2-T2**: app/api/plans/route.ts 刷新
+  > **Review G2-T2**: ✅ PASSED
+  > - P1指摘(後方互換/認証なし)はG3-T2で解消予定+シングルユーザー設計決定
 
-- [ ] **G2-T3**: lib/config.ts・lib/project-scanner.ts・projects.yaml 削除
-  > **Review G2-T3**:
+- [x] **G2-T3**: lib/config.ts・lib/project-scanner.ts・projects.yaml 削除
+  > **Review G2-T3**: ✅ PASSED — tsc --noEmit エラーなし、残存インポート0件
 
 **Gate 2 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate 3: フロントエンド刷新
 
-- [ ] **G3-T1**: RepoSelector コンポーネント作成
-  > **Review G3-T1**:
+- [x] **G3-T1**: RepoSelector コンポーネント作成
+  > **Review G3-T1**: ✅ PASSED — P2(checkbox aria-label)は既存パターンと一致
 
-- [ ] **G3-T2**: app/page.tsx 刷新
-  > **Review G3-T2**:
+- [x] **G3-T2**: app/page.tsx 刷新
+  > **Review G3-T2**: ✅ PASSED — P2(LocalStorage復元値とrepos照合)は将来改善課題
 
-- [ ] **G3-T3**: エラーバッジ・部分成功表示実装
-  > **Review G3-T3**:
+- [x] **G3-T3**: エラーバッジ・部分成功表示実装
+  > **Review G3-T3**: ✅ PASSED — コメントなし
 
 **Gate 3 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate 4: デプロイ設定
 
-- [ ] **G4-T1**: Vercel デプロイ設定
-  > **Review G4-T1**:
+- [x] **G4-T1**: Vercel デプロイ設定
+  > **Review G4-T1**: ✅ PASSED — tsc + npm run build 成功
 
-- [ ] **G4-T2**: ローカル E2E 動作確認手順整備
-  > **Review G4-T2**:
+- [x] **G4-T2**: ローカル E2E 動作確認手順整備
+  > **Review G4-T2**: ✅ PASSED — npm run build 成功、E2Eはユーザーが手動確認
 
 **Gate 4 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
