@@ -203,8 +203,9 @@ Gate 4: デプロイ設定（Gate 3 完了後）
 
 ### Gate 1: バックエンド基盤
 
-- [ ] **G1-T1**: types.ts 更新（ProjectConfig.path → repo、GitHubRepo/RepoError 型追加） [TDD]
-  > **Review G1-T1**:
+- [x] **G1-T1**: types.ts 更新（ProjectConfig.path → repo、GitHubRepo/RepoError 型追加） [TDD]
+  > **Review G1-T1**: ✅ PASSED (FIX 1回)
+  > - project-scanner.ts の path→repo 変更を revert（G2-T3で削除予定のため as any で維持）
 
 - [ ] **G1-T2**: lib/github.ts 作成（GitHub API クライアント） [TDD]
   > **Review G1-T2**:
