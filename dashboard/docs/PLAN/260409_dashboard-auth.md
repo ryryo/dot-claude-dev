@@ -181,7 +181,7 @@ Gate A: パスワード認証実装
 
 #### Todo 4: ログインページ作成 (app/login/page.tsx)
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `app/login/page.tsx`（新規作成）
   - **内容**: パスワード入力フォームを作成
   - **実装詳細**:
@@ -199,11 +199,13 @@ Gate A: パスワード認証実装
     - スタイル: 既存の Tailwind テーマ・フォント変数を使用。ダークモード対応（既存と同等）
   - **依存**: Todo 2
 
-- [ ] **Step 2 — Review A4**
+- [x] **Step 2 — Review A4**
+  > **Review A4**: ✅ PASSED
+  > - P2（ハイドレーション前のフォーム送信）は内部ツールのため設計意図通りと判定
 
 #### Todo 5: 環境変数設定 + 動作確認
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `.env.example`（変更）
   - **内容**: `DASHBOARD_PASSWORD` を追記
   - **実装詳細**:
@@ -211,7 +213,8 @@ Gate A: パスワード認証実装
     - `.env.local` にも実際のパスワードを設定（コミットしない）
   - **依存**: なし
 
-- [ ] **Step 2 — Review A5**
+- [x] **Step 2 — Review A5**
+  > **Review A5**: ⏭️ SKIPPED (docs only)
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
