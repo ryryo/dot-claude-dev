@@ -33,8 +33,10 @@ export function AppSidebar({
           <SidebarGroupLabel>フィルター</SidebarGroupLabel>
           <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
             {dateFilterContent}
-            {filterContent}
           </SidebarGroupContent>
+          <div className="px-2 py-1">
+            {filterContent}
+          </div>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>統計</SidebarGroupLabel>
