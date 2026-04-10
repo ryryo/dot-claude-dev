@@ -31,6 +31,12 @@ export function PlanDetail({ plan }: PlanDetailProps) {
 
   return (
     <div className="space-y-3">
+      {plan.summary ? (
+        <>
+          <p className="text-muted-foreground text-sm whitespace-pre-wrap">{plan.summary}</p>
+          <Separator />
+        </>
+      ) : null}
       {plan.gates.map((gate, index) => {
         const completedCount = gate.todos.filter((todo) => todo.checked).length
         const isOpen = openGateId === gate.id
