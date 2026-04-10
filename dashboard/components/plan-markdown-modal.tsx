@@ -1,6 +1,7 @@
 "use client"
 
 import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 import {
   Dialog,
@@ -29,7 +30,7 @@ export function PlanMarkdownModal({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="prose prose-sm dark:prose-invert max-h-[80vh] overflow-y-auto">
-          <Markdown>{markdown}</Markdown>
+          <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
         </div>
       </DialogContent>
     </Dialog>
