@@ -1,8 +1,10 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { useState } from "react"
+import { ChevronDown, FileText } from "lucide-react"
 
 import { PlanDetail } from "@/components/plan-detail"
+import { PlanMarkdownModal } from "@/components/plan-markdown-modal"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -25,6 +27,8 @@ interface PlanCardProps {
 }
 
 export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
+  const [modalOpen, setModalOpen] = useState(false)
+
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       <Card className="gap-0 overflow-hidden py-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
@@ -47,12 +51,26 @@ export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
                   </div>
                 </div>
 
-                <ChevronDown
-                  className={cn(
-                    "text-muted-foreground mt-0.5 size-4 shrink-0 transition-transform",
-                    expanded && "rotate-180"
-                  )}
-                />
+                <div className="mt-0.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={`${plan.title} の全文を読む`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setModalOpen(true)
+                    }}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                  >
+                    <FileText className="size-4 shrink-0" />
+                  </button>
+                  <ChevronDown
+                    className={cn(
+                      "text-muted-foreground size-4 shrink-0 transition-transform",
+                      expanded && "rotate-180"
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -82,6 +100,12 @@ export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
           </CardContent>
         </CollapsibleContent>
       </Card>
+      <PlanMarkdownModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={plan.title}
+        markdown={plan.rawMarkdown}
+      />
     </Collapsible>
   )
 }
