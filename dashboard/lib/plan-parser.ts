@@ -9,6 +9,7 @@ const REVIEW_PATTERN = /^\s*> \*\*Review.+?\*\*:(.*)$/m;
 const REVIEW_STATUS_PATTERN = /^## レビューステータス\s*\n[\s\S]*?- \[([ x])\] \*\*レビュー完了\*\*/m;
 const SUMMARY_HEADING_PATTERN = /^## 概要\s*$/m;
 const H2_HEADING_PATTERN = /^##\s+/m;
+const CODE_FENCE_PATTERN = /```[\s\S]*?```/g;
 
 function parseDateFromFileName(name: string): string | null {
   const match = name.match(/^(\d{6})/);
@@ -54,20 +55,25 @@ export function parsePlanFile(content: string, filePath: string, projectName: st
 }
 
 function parseSummary(content: string): string {
-  const summaryHeadingMatch = SUMMARY_HEADING_PATTERN.exec(content);
+  const scanTarget = maskCodeFences(content);
+  const summaryHeadingMatch = SUMMARY_HEADING_PATTERN.exec(scanTarget);
 
   if (summaryHeadingMatch && summaryHeadingMatch.index !== undefined) {
     const sectionStart = summaryHeadingMatch.index + summaryHeadingMatch[0].length;
     const remainingContent = content.slice(sectionStart);
-    const nextHeadingMatch = H2_HEADING_PATTERN.exec(remainingContent);
+    const remainingScanTarget = scanTarget.slice(sectionStart);
+    const nextHeadingMatch = H2_HEADING_PATTERN.exec(remainingScanTarget);
     const summaryMarkdown = nextHeadingMatch
       ? remainingContent.slice(0, nextHeadingMatch.index)
       : remainingContent;
+    const strippedSummary = stripMarkdown(summaryMarkdown);
 
-    return stripMarkdown(summaryMarkdown);
+    if (strippedSummary) {
+      return strippedSummary;
+    }
   }
 
-  const titleMatch = TITLE_PATTERN.exec(content);
+  const titleMatch = TITLE_PATTERN.exec(scanTarget);
 
   if (!titleMatch || titleMatch.index === undefined) {
     return '';
@@ -75,7 +81,8 @@ function parseSummary(content: string): string {
 
   const introStart = titleMatch.index + titleMatch[0].length;
   const remainingContent = content.slice(introStart);
-  const nextHeadingMatch = H2_HEADING_PATTERN.exec(remainingContent);
+  const remainingScanTarget = scanTarget.slice(introStart);
+  const nextHeadingMatch = H2_HEADING_PATTERN.exec(remainingScanTarget);
 
   if (!nextHeadingMatch || nextHeadingMatch.index === undefined) {
     return '';
@@ -84,6 +91,10 @@ function parseSummary(content: string): string {
   const introMarkdown = remainingContent.slice(0, nextHeadingMatch.index);
 
   return stripMarkdown(introMarkdown);
+}
+
+function maskCodeFences(content: string): string {
+  return content.replace(CODE_FENCE_PATTERN, (match) => match.replace(/[^\n]/g, ' '));
 }
 
 function stripMarkdown(content: string): string {
