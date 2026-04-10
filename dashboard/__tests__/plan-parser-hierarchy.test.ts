@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractStepDescription } from '../lib/plan-parser';
+import { extractStepDescription, parseReviewBlockquote } from '../lib/plan-parser';
 
 describe('extractStepDescription', () => {
   it('`- **内容**:` があれば内容フィールドの値を返す', () => {
