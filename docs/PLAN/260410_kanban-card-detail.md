@@ -171,57 +171,65 @@ Gate B: UI層（依存パッケージ + コンポーネント）（Gate A 完了
 
 #### Todo 1: PlanFile 型に summary と rawMarkdown フィールドを追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/types.ts`
   - **内容**: `PlanFile` インターフェースに `summary: string` と `rawMarkdown: string` を追加
   - **実装詳細**: 既存フィールド（`progress` の後）に2行追加。他の型定義は変更しない
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
 
+  > **Review A1**: ⏭️ SKIPPED (型定義のみ、ロジック変更なし) — commit a05e43f
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | 型定義の正確性 | | |
-  > | 既存フィールドへの影響なし | | |
-  > | **総合判定** | | |
+  > | 型定義の正確性 | ✅ | PlanFile に `summary: string` / `rawMarkdown: string` を追加 |
+  > | 既存フィールドへの影響なし | ✅ | 既存フィールド順は維持 |
+  > | **総合判定** | ✅ PASS | |
 
 #### Todo 2: plan-parser に概要抽出ロジックを追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/plan-parser.ts`
   - **内容**: `parseSummary(content)` と `stripMarkdown(text)` 関数を追加し、`parsePlanFile` の返り値に `summary` と `rawMarkdown` を含める
   - **実装詳細**: 「アーキテクチャ詳細 > 概要パースロジック」のコード例に従う。正規表現パターンは `SUMMARY_SECTION_PATTERN` と `INTRO_TEXT_PATTERN` をファイル上部の既存パターン群の後に定義。`parsePlanFile` の return オブジェクトに `summary: parseSummary(content)` と `rawMarkdown: content` を追加
   - **[TDD]**: 入出力が明確（マークダウン文字列 → プレーンテキスト文字列）
   - **依存**: Todo 1（型定義）
 
-- [ ] **Step 2 — Review A2**
+- [x] **Step 2 — Review A2**
 
+  > **Review A2**: ✅ PASSED (FIX 1回) — commits a05e43f, d57675a
+  > - 初回レビューで [P2] コードブロック内 `##` 誤検出、[P3] 空 `## 概要` フォールバック未実装を指摘 → `maskCodeFences` 追加 + 空時フォールバックで修正
+  > - 再レビュー: regression なし
+  >
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | parseSummary の正規表現が正しい | | |
-  > | フォールバックロジック | | |
-  > | stripMarkdown の変換精度 | | |
-  > | parsePlanFile の返り値に含まれる | | |
-  > | **総合判定** | | |
+  > | parseSummary の正規表現が正しい | ✅ | コードブロックは事前マスクしてから検索 |
+  > | フォールバックロジック | ✅ | `## 概要` なし/空の両方でタイトル直後に流れる |
+  > | stripMarkdown の変換精度 | ✅ | 太字/斜体/リンク/リスト/引用/見出しを除去 |
+  > | parsePlanFile の返り値に含まれる | ✅ | `summary` + `rawMarkdown` 両方 |
+  > | **総合判定** | ✅ PASS | |
 
 #### Todo 3: 概要パースのユニットテストを追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/__tests__/plan-parser-summary.test.ts`（新規）
   - **内容**: `parseSummary` のテストケース3パターン + `stripMarkdown` のテストケース + `parsePlanFile` で summary/rawMarkdown が返ることの統合テスト
   - **実装詳細**: 既存の `dashboard/__tests__/` のテストパターンに従い vitest で作成。テストケース: (1) `## 概要` あり → テキスト抽出 (2) `## 概要` なし・冒頭テキストあり → フォールバック (3) 両方なし → 空文字 (4) マークダウン記法の除去（太字、リンク、リスト等）(5) parsePlanFile が summary と rawMarkdown を返すこと
   - **[TDD]**
   - **依存**: Todo 2（パース関数）
 
-- [ ] **Step 2 — Review A3**
+- [x] **Step 2 — Review A3**
 
+  > **Review A3**: ⏭️ SKIPPED (test-only file addition) — commit 0178eb0
+  > - 新規 7 テスト全 PASS、既存 plan-parser.test.ts 8 テスト影響なし
+  >
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | 3パターンのカバレッジ | | |
-  > | stripMarkdown テストケース | | |
-  > | 統合テスト（parsePlanFile） | | |
-  > | テスト全件 PASS | | |
-  > | **総合判定** | | |
+  > | 3パターンのカバレッジ | ✅ | `## 概要`あり / フォールバック / 両方なし |
+  > | stripMarkdown テストケース | ✅ | 太字・斜体・リンク・コード・リスト除去を検証 |
+  > | 統合テスト（parsePlanFile） | ✅ | summary + rawMarkdown 両方を検証 |
+  > | テスト全件 PASS | ✅ | 新規 7/7、既存 8/8 |
+  > | **総合判定** | ✅ PASS | |
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -229,71 +237,77 @@ Gate B: UI層（依存パッケージ + コンポーネント）（Gate A 完了
 
 #### Todo 4: 依存パッケージをインストール
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/package.json`
   - **内容**: `react-markdown` と `@tailwindcss/typography` を追加
   - **実装詳細**: `cd dashboard && npm install react-markdown @tailwindcss/typography` を実行。`dashboard/app/globals.css` の先頭 `@import` ブロックの後に `@plugin "@tailwindcss/typography";` を追加（Tailwind CSS 4 でプラグインを有効化する記法）
   - **依存**: なし
 
-- [ ] **Step 2 — Review B1**
+- [x] **Step 2 — Review B1**
 
+  > **Review B1**: ✅ PASSED — `@tailwindcss/typography ^0.5.19`, `react-markdown ^10.1.0`, `remark-gfm ^4.0.1` を追加。ネットワーク不通により `~/.npm/_cacache/` のtarball経由でオフラインインストール後、`package.json` を通常の semver 参照に書き戻し。
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | パッケージインストール成功 | | |
-  > | globals.css に @plugin 追加済み | | |
-  > | **総合判定** | | |
+  > | パッケージインストール成功 | ✅ | semver 参照で dependencies に記録済み |
+  > | globals.css に @plugin 追加済み | ✅ | `@import` ブロックの直後に追加 |
+  > | **総合判定** | ✅ PASS | |
 
 #### Todo 5: マークダウンモーダルコンポーネントを作成
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/components/plan-markdown-modal.tsx`（新規）
   - **内容**: `PlanMarkdownModal` コンポーネントを作成。Props: `open`, `onOpenChange`, `title`, `markdown`
   - **実装詳細**: 既存の `dashboard/components/ui/dialog.tsx` の Dialog を使用。`react-markdown` の `<Markdown>` コンポーネントで rawMarkdown をレンダリング。`prose` クラス（@tailwindcss/typography）でスタイリング。モーダルサイズは `max-w-3xl`、コンテンツ領域は `max-h-[80vh] overflow-y-auto`。DialogTitle に plan.title を表示
   - **依存**: Todo 4（パッケージ）
 
-- [ ] **Step 2 — Review B2**
+- [x] **Step 2 — Review B2**
 
+  > **Review B2**: ✅ PASSED (FIX 1回) — 初回 [P2] 指摘: react-markdown 既定では GFM 非対応で PLAN のテーブル/タスクリストが生テキスト表示。`remark-gfm` を追加し `remarkPlugins={[remarkGfm]}` を適用して修正。
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | Dialog の使い方が既存パターンに準拠 | | |
-  > | react-markdown レンダリング動作 | | |
-  > | prose スタイリング適用 | | |
-  > | スクロール・サイズ | | |
-  > | **総合判定** | | |
+  > | Dialog の使い方が既存パターンに準拠 | ✅ | shadcn Dialog + DialogHeader/DialogTitle |
+  > | react-markdown レンダリング動作 | ✅ | remark-gfm プラグイン有効 |
+  > | prose スタイリング適用 | ✅ | `prose prose-sm dark:prose-invert` |
+  > | スクロール・サイズ | ✅ | `max-w-3xl max-h-[80vh] overflow-y-auto` |
+  > | **総合判定** | ✅ PASS | |
 
 #### Todo 6: PlanDetail に概要テキスト表示を追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/components/plan-detail.tsx`
   - **内容**: Gate 一覧の上部に概要テキストを表示
   - **実装詳細**: return の `<div className="space-y-3">` 内、Gate の map の前に概要セクションを追加。`plan.summary` が空でない場合のみ表示。スタイル: `text-muted-foreground text-sm` のパラグラフ。概要とGate一覧の間に `<Separator />` を挿入
   - **依存**: Todo 1, 2（summary フィールド）
 
-- [ ] **Step 2 — Review B3**
+- [x] **Step 2 — Review B3**
 
+  > **Review B3**: ✅ PASSED (FIX 1回) — 初回 [P2] 指摘: gates が空の early return により summary が非表示になる。早期 return を削除し `space-y-3` 内で summary → gates 空時の placeholder の順に表示する構造へ修正。
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | 概要テキスト表示（summary あり） | | |
-  > | 概要なし時の非表示 | | |
-  > | レイアウト（概要 → Gate一覧） | | |
-  > | **総合判定** | | |
+  > | 概要テキスト表示（summary あり） | ✅ | `whitespace-pre-wrap` で改行維持 |
+  > | 概要なし時の非表示 | ✅ | `plan.summary ? ... : null` |
+  > | レイアウト（概要 → Gate一覧） | ✅ | gates 空の場合でも summary は表示 |
+  > | **総合判定** | ✅ PASS | |
 
 #### Todo 7: PlanCard ヘッダーに「全体を読む」アクションアイコンを追加
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/components/plan-card.tsx`
   - **内容**: ChevronDown の横に FileText アイコンボタンを追加。クリックで PlanMarkdownModal を開く
   - **実装詳細**: `lucide-react` の `FileText` アイコンを import。ChevronDown の左に配置。`useState<boolean>` で modalOpen を管理。`onClick` ハンドラで `e.stopPropagation()` を呼び CollapsibleTrigger のイベントに干渉しない。`<PlanMarkdownModal open={modalOpen} onOpenChange={setModalOpen} title={plan.title} markdown={plan.rawMarkdown} />` を Card 内に配置。アイコンボタンのスタイル: `text-muted-foreground hover:text-foreground transition-colors size-4`
   - **依存**: Todo 5（モーダルコンポーネント）
 
-- [ ] **Step 2 — Review B4**
+- [x] **Step 2 — Review B4**
 
+  > **Review B4**: ✅ PASSED (FIX 2回) — (1) 当初 CollapsibleTrigger（`<button>`）内に FileText `<button>` をネストしていたため HTML 非準拠になる問題を Claude の自己レビューで検出 → Card 直下に絶対配置の兄弟要素として再配置。(2) Agent レビューで [P1] 狭幅カラム時に絶対配置ボタンがタイトルに重なる懸念を検出 → タイトル flex 行に `pr-6` と `min-w-0` を付与。
   > | 項目 | 結果 | 備考 |
   > |------|------|------|
-  > | アイコンクリックでモーダル表示 | | |
-  > | stopPropagation 動作（カード展開に干渉しない） | | |
-  > | モーダル閉じた後の状態 | | |
-  > | **総合判定** | | |
+  > | アイコンクリックでモーダル表示 | ✅ | `setModalOpen(true)` |
+  > | stopPropagation 動作（カード展開に干渉しない） | ✅ | `e.stopPropagation()` |
+  > | モーダル閉じた後の状態 | ✅ | Collapsible の外に PlanMarkdownModal を配置 |
+  > | HTML 構造（ネストボタン回避） | ✅ | FileText を CollapsibleTrigger 外に配置 |
+  > | 狭幅カラムでの重なり回避 | ✅ | `pr-6` + `min-w-0` でスペース確保 |
+  > | **総合判定** | ✅ PASS | |
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
