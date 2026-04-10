@@ -97,6 +97,29 @@ function maskCodeFences(content: string): string {
   return content.replace(CODE_FENCE_PATTERN, (match) => match.replace(/[^\n]/g, ' '));
 }
 
+export function extractStepDescription(stepBlock: string): string {
+  const contentMatch = stepBlock.match(/^\s*-\s*\*\*内容\*\*[:：]\s*(.+)$/m);
+  if (contentMatch) return stripMarkdown(contentMatch[1]).trim();
+
+  const implMatch = stepBlock.match(/^\s*-\s*\*\*実装詳細\*\*[:：]\s*(.+)$/m);
+  if (implMatch) return firstSentence(stripMarkdown(implMatch[1]));
+
+  const targetMatch = stepBlock.match(/^\s*-\s*\*\*対象\*\*[:：]\s*(.+)$/m);
+  if (targetMatch) return stripMarkdown(targetMatch[1]).trim();
+
+  const firstBulletMatch = stepBlock.match(
+    /^\s*-\s+(?!\[[ xX]\]|\*\*(?:内容|実装詳細|対象|依存|\[TDD\])\*\*)(.+)$/m
+  );
+  if (firstBulletMatch) return stripMarkdown(firstBulletMatch[1]).trim();
+
+  return '';
+}
+
+function firstSentence(text: string): string {
+  const match = text.match(/^(.*?[。.!?！？])/);
+  return (match ? match[1] : text).trim();
+}
+
 function stripMarkdown(content: string): string {
   return content
     .replace(/```[\s\S]*?```/g, (block) =>

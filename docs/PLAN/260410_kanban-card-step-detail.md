@@ -357,7 +357,7 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
 
 #### Todo 1: Step 説明抽出関数 + フォールバックチェーン
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/plan-parser.ts`, `dashboard/__tests__/plan-parser-hierarchy.test.ts`（新規）
   - **内容**: `extractStepDescription(stepBlock: string): string` 関数を `plan-parser.ts` にエクスポート可能な純粋関数として追加し、単体テストを新規ファイルに書く
   - **実装詳細**:
@@ -376,9 +376,9 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
   - **[TDD]**: 入出力が明確な純粋関数（マークダウン文字列 → プレーンテキスト文字列）
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
 
-  > **Review A1**: [記入欄]
+  > **Review A1**: ✅ PASSED — 7テストケース全 PASS。仕様書通りのフォールバックチェーン + `\[[ xX]\]` 行除外の防御追加で Step ラベル誤マッチも回避
 
 #### Todo 2: Review blockquote パース関数
 
