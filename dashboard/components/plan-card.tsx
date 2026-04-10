@@ -46,8 +46,8 @@ export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
         <CardHeader className="px-0 py-0">
           <CollapsibleTrigger className="w-full cursor-pointer" aria-label={`${plan.title} の詳細を${expanded ? '閉じる' : '開く'}`}>
             <div className="hover:bg-muted/40 flex w-full flex-col gap-4 px-4 py-4 text-left transition-colors">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
+              <div className="flex items-start justify-between gap-3 pr-6">
+                <div className="min-w-0 space-y-2">
                   <Badge variant="outline" className="max-w-full">
                     <span className="max-w-[180px] truncate">{plan.projectName}</span>
                   </Badge>
