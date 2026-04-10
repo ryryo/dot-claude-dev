@@ -28,6 +28,8 @@ export interface PlanFile {
     completed: number;
     percentage: number;
   };
+  summary: string;
+  rawMarkdown: string;
 }
 
 export interface ProjectConfig {

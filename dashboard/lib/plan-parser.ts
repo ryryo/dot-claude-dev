@@ -7,6 +7,8 @@ const GATE_PATTERN = /^### (Gate \w+): (.+)$/gm;
 const TODO_PATTERN = /^- \[([ x])\] \*\*(.+?)\*\*/gm;
 const REVIEW_PATTERN = /^\s*> \*\*Review.+?\*\*:(.*)$/m;
 const REVIEW_STATUS_PATTERN = /^## レビューステータス\s*\n[\s\S]*?- \[([ x])\] \*\*レビュー完了\*\*/m;
+const SUMMARY_HEADING_PATTERN = /^## 概要\s*$/m;
+const H2_HEADING_PATTERN = /^##\s+/m;
 
 function parseDateFromFileName(name: string): string | null {
   const match = name.match(/^(\d{6})/);
@@ -33,6 +35,7 @@ export function parsePlanFile(content: string, filePath: string, projectName: st
   const gates = parseGates(content);
   const todos = gates.length > 0 ? gates.flatMap((gate) => gate.todos) : parseTodos(content);
   const progress = calculateProgress(todos);
+  const summary = parseSummary(content);
 
   return {
     filePath,
@@ -45,7 +48,66 @@ export function parsePlanFile(content: string, filePath: string, projectName: st
     gates,
     todos,
     progress,
+    summary,
+    rawMarkdown: content,
   };
+}
+
+function parseSummary(content: string): string {
+  const summaryHeadingMatch = SUMMARY_HEADING_PATTERN.exec(content);
+
+  if (summaryHeadingMatch && summaryHeadingMatch.index !== undefined) {
+    const sectionStart = summaryHeadingMatch.index + summaryHeadingMatch[0].length;
+    const remainingContent = content.slice(sectionStart);
+    const nextHeadingMatch = H2_HEADING_PATTERN.exec(remainingContent);
+    const summaryMarkdown = nextHeadingMatch
+      ? remainingContent.slice(0, nextHeadingMatch.index)
+      : remainingContent;
+
+    return stripMarkdown(summaryMarkdown);
+  }
+
+  const titleMatch = TITLE_PATTERN.exec(content);
+
+  if (!titleMatch || titleMatch.index === undefined) {
+    return '';
+  }
+
+  const introStart = titleMatch.index + titleMatch[0].length;
+  const remainingContent = content.slice(introStart);
+  const nextHeadingMatch = H2_HEADING_PATTERN.exec(remainingContent);
+
+  if (!nextHeadingMatch || nextHeadingMatch.index === undefined) {
+    return '';
+  }
+
+  const introMarkdown = remainingContent.slice(0, nextHeadingMatch.index);
+
+  return stripMarkdown(introMarkdown);
+}
+
+function stripMarkdown(content: string): string {
+  return content
+    .replace(/```[\s\S]*?```/g, (block) =>
+      block
+        .replace(/^```[\w-]*\n?/, '')
+        .replace(/\n?```$/, '')
+    )
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/(\*\*|__)(.*?)\1/g, '$2')
+    .replace(/(\*|_)(.*?)\1/g, '$2')
+    .replace(/^>\s?/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 function parseGates(content: string): Gate[] {
