@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 
 import { verifySessionCookie, COOKIE_NAME } from "@/lib/auth"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const cookie = request.cookies.get(COOKIE_NAME)?.value
 
   if (cookie && (await verifySessionCookie(cookie))) {
