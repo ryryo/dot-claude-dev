@@ -382,7 +382,7 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
 
 #### Todo 2: Review blockquote パース関数
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/plan-parser.ts`, `dashboard/__tests__/plan-parser-hierarchy.test.ts`
   - **内容**: `parseReviewBlockquote(stepBlock: string)` を `plan-parser.ts` にエクスポート可能な純粋関数として追加し、書式ブレ3パターン以上をカバーする単体テストを追加
   - **実装詳細**:
@@ -399,9 +399,9 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
   - **[TDD]**: 入出力が明確な純粋関数
   - **依存**: なし
 
-- [ ] **Step 2 — Review A2**
+- [x] **Step 2 — Review A2**
 
-  > **Review A2**: [記入欄]
+  > **Review A2**: ✅ PASSED — reviewer-correctness 4観点すべて PASS / N/A。ストーリー適合・API/SDK 準拠・リスク前提・セキュリティすべて問題なし。信頼度80以上の指摘ゼロ。14/14 テスト PASS。
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること。`extractStepDescription` と `parseReviewBlockquote` が独立してテスト可能で、書式ブレ3パターン以上をカバーするテストがすべて PASS すること。
 

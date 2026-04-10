@@ -120,6 +120,76 @@ function firstSentence(text: string): string {
   return (match ? match[1] : text).trim();
 }
 
+const REVIEW_FIRST_LINE_PATTERN = /^\s*>\s*\*\*Review\s+[\w\d]+\*\*[:：]\s*(.*)$/m;
+const REVIEW_RESULT_PATTERN = /(PASSED|FAILED|SKIPPED|IN[_\s-]?PROGRESS)/i;
+const REVIEW_FIX_COUNT_PATTERN = /FIX\s*(\d+)\s*回/;
+const COMMIT_HASH_PATTERN = /\b(?:commit|commits)\s+[0-9a-f,\s]+/gi;
+
+type ReviewResultLabel = 'PASSED' | 'FAILED' | 'SKIPPED' | 'IN_PROGRESS';
+
+export function parseReviewBlockquote(stepBlock: string): {
+  hasReview: boolean;
+  reviewFilled: boolean;
+  reviewResult: ReviewResultLabel | null;
+  reviewFixCount: number | null;
+  summary: string;
+} {
+  const firstLineMatch = stepBlock.match(REVIEW_FIRST_LINE_PATTERN);
+  if (!firstLineMatch) {
+    return {
+      hasReview: false,
+      reviewFilled: false,
+      reviewResult: null,
+      reviewFixCount: null,
+      summary: '',
+    };
+  }
+
+  const firstLineBody = firstLineMatch[1];
+  if (firstLineBody.trim() === '') {
+    return {
+      hasReview: true,
+      reviewFilled: false,
+      reviewResult: null,
+      reviewFixCount: null,
+      summary: '',
+    };
+  }
+
+  const statusMatch = firstLineBody.match(REVIEW_RESULT_PATTERN);
+  const reviewResult = statusMatch
+    ? (statusMatch[1].toUpperCase().replace(/[\s-]/g, '_') as ReviewResultLabel)
+    : null;
+
+  const fixMatch = firstLineBody.match(REVIEW_FIX_COUNT_PATTERN);
+  const reviewFixCount = fixMatch ? parseInt(fixMatch[1], 10) : null;
+
+  let summary = '';
+  const emdashIdx = firstLineBody.search(/\s[—–-]\s/);
+  if (emdashIdx >= 0) {
+    summary = firstLineBody.slice(emdashIdx + 2).trim();
+  }
+  if (!summary) {
+    const secondLineBullet = stepBlock.match(/^\s*>\s*-\s+(.+)$/m);
+    if (secondLineBullet) summary = secondLineBullet[1].trim();
+  }
+
+  summary = summary
+    .replace(COMMIT_HASH_PATTERN, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/[\s—–-]+$/, '')
+    .trim();
+  summary = stripMarkdown(summary);
+
+  return {
+    hasReview: true,
+    reviewFilled: true,
+    reviewResult,
+    reviewFixCount,
+    summary,
+  };
+}
+
 function stripMarkdown(content: string): string {
   return content
     .replace(/```[\s\S]*?```/g, (block) =>

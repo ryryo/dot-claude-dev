@@ -68,3 +68,101 @@ describe('extractStepDescription', () => {
     expect(result).not.toContain('](');
   });
 });
+
+describe('parseReviewBlockquote', () => {
+  it('PASSED + FIX 回数 + commit hash を含む blockquote から結果を抽出する', () => {
+    const block = `- [x] **Step 2 — Review A2**
+
+  > **Review A2**: ✅ PASSED (FIX 1回) — commits a05e43f, d57675a
+  > - 初回レビューで [P2] コードブロック内 \`##\` 誤検出を指摘 → \`maskCodeFences\` 追加で修正
+  > - 再レビュー: regression なし
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.hasReview).toBe(true);
+    expect(result.reviewFilled).toBe(true);
+    expect(result.reviewResult).toBe('PASSED');
+    expect(result.reviewFixCount).toBe(1);
+    expect(result.summary).not.toContain('commits a05e43f');
+    expect(result.summary).not.toContain('d57675a');
+  });
+
+  it('SKIPPED + 括弧付きの補足 + commit hash を処理する', () => {
+    const block = `- [x] **Step 2 — Review A1**
+
+  > **Review A1**: ⏭️ SKIPPED (型定義のみ、ロジック変更なし) — commit a05e43f
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.hasReview).toBe(true);
+    expect(result.reviewFilled).toBe(true);
+    expect(result.reviewResult).toBe('SKIPPED');
+    expect(result.reviewFixCount).toBeNull();
+    expect(result.summary).not.toContain('commit a05e43f');
+  });
+
+  it('PASSED + 1行要約（FIX 回数なし）を抽出する', () => {
+    const block = `- [x] **Step 2 — Review B1**
+
+  > **Review B1**: ✅ PASSED — react-markdown を追加
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.reviewResult).toBe('PASSED');
+    expect(result.reviewFixCount).toBeNull();
+    expect(result.summary).toContain('react-markdown');
+  });
+
+  it('空の Review blockquote は hasReview=true / reviewFilled=false を返す', () => {
+    const block = `- [ ] **Step 2 — Review A1**
+
+  > **Review A1**:
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.hasReview).toBe(true);
+    expect(result.reviewFilled).toBe(false);
+    expect(result.reviewResult).toBeNull();
+    expect(result.summary).toBe('');
+  });
+
+  it('Review blockquote が存在しない Step は hasReview=false を返す', () => {
+    const block = `- [ ] **Step 1 — IMPL**
+  - **内容**: 実装のみ
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.hasReview).toBe(false);
+    expect(result.reviewFilled).toBe(false);
+    expect(result.reviewResult).toBeNull();
+  });
+
+  it('FAILED ラベルを抽出できる', () => {
+    const block = `- [x] **Step 2 — Review C1**
+
+  > **Review C1**: ❌ FAILED — テスト実行エラーが残存
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.reviewResult).toBe('FAILED');
+    expect(result.summary).toContain('テスト実行エラー');
+  });
+
+  it('commit hash が summary から除去される', () => {
+    const block = `- [x] **Step 2 — Review B2**
+
+  > **Review B2**: ✅ PASSED — commits abc123, def456 を参照
+`;
+
+    const result = parseReviewBlockquote(block);
+
+    expect(result.summary).not.toContain('commits abc123');
+    expect(result.summary).not.toContain('def456');
+  });
+});
