@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { PlanCard } from "@/components/plan-card"
@@ -26,6 +26,8 @@ interface KanbanBoardProps {
 export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: KanbanBoardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isMd, setIsMd] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const filteredPlans = sizeBinFilter
     ? plans.filter((p) => getSizeBin(getPlanSize(p).total) === sizeBinFilter)
@@ -50,25 +52,79 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
     return Array.from(map.entries())
   }, [groupByProject, filteredPlans])
 
+  useEffect(() => {
+    if (!groupByProject || !projects) return
+    const main = document.getElementById("main-content")
+    if (!main) return
+
+    const handleScroll = () => {
+      const mainRect = main.getBoundingClientRect()
+      let active = 0
+      sectionRefs.current.forEach((ref, index) => {
+        if (!ref) return
+        const rect = ref.getBoundingClientRect()
+        if (rect.top <= mainRect.top + 80) {
+          active = index
+        }
+      })
+      setActiveIndex(active)
+    }
+
+    main.addEventListener("scroll", handleScroll, { passive: true })
+    return () => main.removeEventListener("scroll", handleScroll)
+  }, [groupByProject, projects])
+
+  const scrollToProject = (index: number) => {
+    sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   if (groupByProject && projects) {
     return (
-      <div className="max-h-[calc(100vh-220px)] space-y-4 overflow-y-auto pr-1">
-        {projects.map(([projectName, projectPlans]) => (
-          <div key={projectName} className="space-y-2">
-            <div className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-1 backdrop-blur">
-              <p className="text-sm font-semibold text-muted-foreground">
-                {projectName}{" "}
-                <span className="text-xs tabular-nums">({projectPlans.length})</span>
-              </p>
+      <div className="flex gap-3">
+        {/* Dot navigation */}
+        <div className="sticky top-0 self-start flex flex-col items-center justify-center min-h-[calc(100svh-8rem)] py-4">
+          {projects.map(([projectName], index) => (
+            <div key={projectName} className="flex flex-col items-center">
+              {index > 0 && (
+                <div className="w-px h-5 bg-primary/30" />
+              )}
+              <button
+                onClick={() => scrollToProject(index)}
+                title={projectName}
+                className={cn(
+                  "size-2.5 rounded-full transition-all duration-200 hover:scale-125",
+                  activeIndex === index
+                    ? "bg-primary"
+                    : "bg-primary/30 hover:bg-primary/60"
+                )}
+              />
             </div>
-            <KanbanGrid
-              plans={projectPlans}
-              isMd={isMd}
-              expandedId={expandedId}
-              setExpandedId={setExpandedId}
-            />
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* Project sections */}
+        <div className="flex-1 space-y-4">
+          {projects.map(([projectName, projectPlans], index) => (
+            <div
+              key={projectName}
+              ref={(el) => { sectionRefs.current[index] = el }}
+              className="space-y-2"
+            >
+              <div className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-1 backdrop-blur">
+                <p className="text-sm font-semibold text-muted-foreground">
+                  {projectName}{" "}
+                  <span className="text-xs tabular-nums">({projectPlans.length})</span>
+                </p>
+              </div>
+              <KanbanGrid
+                plans={projectPlans}
+                isMd={isMd}
+                expandedId={expandedId}
+                setExpandedId={setExpandedId}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -160,7 +216,6 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
                 )}
               </CardContent>
             </Card>
-
           </div>
         )
       })}

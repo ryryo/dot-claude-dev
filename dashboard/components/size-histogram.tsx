@@ -15,7 +15,7 @@ export function SizeHistogram({ plans, activeBin, onBinClick }: SizeHistogramPro
   const max = Math.max(1, ...SIZE_BINS.map((b) => counts[b]))
 
   return (
-    <div className="w-fit">
+    <div className="w-full">
       {activeBin && (
         <div className="mb-2">
           <button
@@ -38,7 +38,7 @@ export function SizeHistogram({ plans, activeBin, onBinClick }: SizeHistogramPro
               type="button"
               onClick={() => onBinClick(bin)}
               aria-pressed={isActive}
-              className={cn('group flex w-14 flex-col items-center gap-1', 'cursor-pointer')}
+              className={cn('group flex flex-1 flex-col items-center gap-1', 'cursor-pointer')}
             >
               <span className="text-xs tabular-nums text-muted-foreground">{count}</span>
               <div className="flex h-16 w-full items-end">

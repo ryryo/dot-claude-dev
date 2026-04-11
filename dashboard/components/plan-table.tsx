@@ -27,6 +27,12 @@ const STATUS_LABEL: Record<PlanStatus, string> = {
   completed: '完了',
 }
 
+const NOWRAP_COLS = new Set(['status', 'size', 'progress', 'createdDate', 'actions', 'expander'])
+const MIN_W_CLASS: Record<string, string> = {
+  title: 'min-w-[12rem]',
+  projectName: 'min-w-[8rem]',
+}
+
 const STATUS_BG_CLASS: Record<PlanStatus, string> = {
   'not-started': 'bg-status-not-started',
   'in-progress': 'bg-status-in-progress',
@@ -95,7 +101,7 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
       cell: (info) => {
         const s = info.getValue<PlanStatus>()
         return (
-          <span className={cn('inline-flex rounded-md px-2 py-0.5 text-xs', STATUS_BG_CLASS[s])}>
+          <span className={cn('inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-xs', STATUS_BG_CLASS[s])}>
             {STATUS_LABEL[s]}
           </span>
         )
@@ -185,7 +191,14 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
       <Fragment key={row.id}>
         <tr className="border-t hover:bg-muted/30">
           {row.getVisibleCells().map((cell) => (
-            <td key={cell.id} className="px-3 py-2 align-middle">
+            <td
+              key={cell.id}
+              className={cn(
+                "px-3 py-2 align-middle",
+                NOWRAP_COLS.has(cell.column.id) && "whitespace-nowrap",
+                MIN_W_CLASS[cell.column.id]
+              )}
+            >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </td>
           ))}
@@ -229,8 +242,8 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
 
   return (
     <>
-    <div className="overflow-hidden rounded-lg border">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto rounded-lg border">
+      <table className="min-w-full text-sm">
         <thead className="bg-muted/40">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
@@ -238,7 +251,11 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
                 <th
                   key={h.id}
                   onClick={h.column.getToggleSortingHandler()}
-                  className="cursor-pointer px-3 py-2 text-left font-semibold text-muted-foreground"
+                  className={cn(
+                    "cursor-pointer px-3 py-2 text-left font-semibold text-muted-foreground",
+                    NOWRAP_COLS.has(h.column.id) && "whitespace-nowrap",
+                    MIN_W_CLASS[h.column.id]
+                  )}
                 >
                   {flexRender(h.column.columnDef.header, h.getContext())}
                   {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? null}
