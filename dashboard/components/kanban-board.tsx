@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { PlanCard } from "@/components/plan-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type { SizeBin } from "@/lib/plan-size"
+import { getPlanSize, getSizeBin } from "@/lib/plan-size"
 import type { PlanFile, PlanStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -18,11 +20,16 @@ const COLUMNS: { status: PlanStatus; label: string; color: string; bgVar: string
 interface KanbanBoardProps {
   plans: PlanFile[]
   groupByProject?: boolean
+  sizeBinFilter?: SizeBin | null
 }
 
-export function KanbanBoard({ plans, groupByProject = false }: KanbanBoardProps) {
+export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: KanbanBoardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isMd, setIsMd] = useState(false)
+
+  const filteredPlans = sizeBinFilter
+    ? plans.filter((p) => getSizeBin(getPlanSize(p).total) === sizeBinFilter)
+    : plans
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)")
@@ -35,13 +42,13 @@ export function KanbanBoard({ plans, groupByProject = false }: KanbanBoardProps)
   const projects = useMemo(() => {
     if (!groupByProject) return null
     const map = new Map<string, PlanFile[]>()
-    for (const p of plans) {
+    for (const p of filteredPlans) {
       const arr = map.get(p.projectName) ?? []
       arr.push(p)
       map.set(p.projectName, arr)
     }
     return Array.from(map.entries())
-  }, [groupByProject, plans])
+  }, [groupByProject, filteredPlans])
 
   if (groupByProject && projects) {
     return (
@@ -68,7 +75,7 @@ export function KanbanBoard({ plans, groupByProject = false }: KanbanBoardProps)
 
   return (
     <KanbanGrid
-      plans={plans}
+      plans={filteredPlans}
       isMd={isMd}
       expandedId={expandedId}
       setExpandedId={setExpandedId}
@@ -138,6 +145,7 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
                       plan={plan}
                       expanded={expandedId === plan.filePath}
                       isNarrow={isNarrow}
+                      narrowFadeBg={isNarrow ? column.bgVar : undefined}
                       onToggle={() =>
                         setExpandedId((current) =>
                           current === plan.filePath ? null : plan.filePath
@@ -153,12 +161,6 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
               </CardContent>
             </Card>
 
-            {isNarrow && (
-              <div
-                className="pointer-events-none absolute inset-y-0 right-0 z-20 w-8"
-                style={{ background: `linear-gradient(to right, transparent, ${column.bgVar})` }}
-              />
-            )}
           </div>
         )
       })}

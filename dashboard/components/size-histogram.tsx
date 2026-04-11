@@ -15,10 +15,9 @@ export function SizeHistogram({ plans, activeBin, onBinClick }: SizeHistogramPro
   const max = Math.max(1, ...SIZE_BINS.map((b) => counts[b]))
 
   return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">規模分布（クリックで絞込）</p>
-        {activeBin && (
+    <div className="w-fit">
+      {activeBin && (
+        <div className="mb-2">
           <button
             type="button"
             onClick={() => onBinClick(activeBin)}
@@ -26,8 +25,8 @@ export function SizeHistogram({ plans, activeBin, onBinClick }: SizeHistogramPro
           >
             絞込解除
           </button>
-        )}
-      </div>
+        </div>
+      )}
       <div className="flex items-end gap-3">
         {SIZE_BINS.map((bin) => {
           const count = counts[bin]
@@ -39,7 +38,7 @@ export function SizeHistogram({ plans, activeBin, onBinClick }: SizeHistogramPro
               type="button"
               onClick={() => onBinClick(bin)}
               aria-pressed={isActive}
-              className={cn('group flex flex-1 flex-col items-center gap-1', 'cursor-pointer')}
+              className={cn('group flex w-14 flex-col items-center gap-1', 'cursor-pointer')}
             >
               <span className="text-xs tabular-nums text-muted-foreground">{count}</span>
               <div className="flex h-16 w-full items-end">

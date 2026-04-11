@@ -10,14 +10,18 @@ import {
 interface DashboardLayoutProps {
   dateFilterContent: ReactNode
   filterContent: ReactNode
+  sizeFilterContent: ReactNode
   statsContent: ReactNode
+  headerContent?: ReactNode
   children: ReactNode
 }
 
 export function DashboardLayout({
   dateFilterContent,
   filterContent,
+  sizeFilterContent,
   statsContent,
+  headerContent,
   children,
 }: DashboardLayoutProps) {
   return (
@@ -31,11 +35,13 @@ export function DashboardLayout({
       <AppSidebar
         dateFilterContent={dateFilterContent}
         filterContent={filterContent}
+        sizeFilterContent={sizeFilterContent}
         statsContent={statsContent}
       />
       <SidebarInset>
-        <header className="flex items-center gap-2 border-b px-4 py-3">
+        <header className="flex items-center gap-4 border-b px-4 py-3">
           <SidebarTrigger />
+          {headerContent && <div className="flex flex-1 items-center">{headerContent}</div>}
         </header>
         <main id="main-content" className="flex-1 overflow-auto p-4 md:p-6">
           {children}

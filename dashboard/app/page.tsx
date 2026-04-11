@@ -12,7 +12,6 @@ import { RepoSelector } from "@/components/repo-selector"
 import { SizeHistogram } from "@/components/size-histogram"
 import { SkeletonDashboard } from "@/components/skeleton-dashboard"
 import { ViewSwitcher, type ViewType } from "@/components/view-switcher"
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardDescription,
@@ -209,26 +208,39 @@ export default function Home() {
     </div>
   )
 
+  const sizeFilterContent = (
+    <SizeHistogram
+      plans={filteredPlans}
+      activeBin={sizeBinFilter}
+      onBinClick={(bin) => setSizeBinFilter((prev) => (prev === bin ? null : bin))}
+    />
+  )
+
+  const headerContent = (
+    <div className="flex flex-1 items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-semibold">PLAN Board</span>
+        <ViewSwitcher activeView={activeView} onViewChange={setActiveView} />
+      </div>
+      <GroupingToggle
+        enabled={activeView === "kanban" ? kanbanGrouping : tableGrouping}
+        onToggle={(next) => {
+          if (activeView === "kanban") setKanbanGrouping(next)
+          else setTableGrouping(next)
+        }}
+      />
+    </div>
+  )
+
   return (
     <DashboardLayout
       filterContent={filterContent}
       dateFilterContent={dateFilterContent}
+      sizeFilterContent={sizeFilterContent}
       statsContent={statsContent}
+      headerContent={headerContent}
     >
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <h1 className="text-heading-2">PLAN Board</h1>
-            <p className="text-muted-foreground text-sm">
-              選択中のリポジトリに含まれる PLAN を看板形式で管理します。
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{selectedProjectCount} Repos</Badge>
-            <Badge>{filteredPlans.length} Plans</Badge>
-          </div>
-        </div>
+      <div className="space-y-4">
         {(plansData?.errors ?? []).length > 0 && (
           <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
             <p className="text-sm font-medium text-destructive">
@@ -243,33 +255,14 @@ export default function Home() {
             </ul>
           </div>
         )}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <ViewSwitcher activeView={activeView} onViewChange={setActiveView} />
-          <GroupingToggle
-            enabled={activeView === "kanban" ? kanbanGrouping : tableGrouping}
-            onToggle={(next) => {
-              if (activeView === "kanban") setKanbanGrouping(next)
-              else setTableGrouping(next)
-            }}
-          />
-        </div>
         {activeView === "kanban" ? (
-          <KanbanBoard plans={filteredPlans} groupByProject={kanbanGrouping} />
+          <KanbanBoard plans={filteredPlans} groupByProject={kanbanGrouping} sizeBinFilter={sizeBinFilter} />
         ) : (
-          <div className="space-y-4">
-            <SizeHistogram
-              plans={filteredPlans}
-              activeBin={sizeBinFilter}
-              onBinClick={(bin) =>
-                setSizeBinFilter((prev) => (prev === bin ? null : bin))
-              }
-            />
-            <PlanTable
-              plans={filteredPlans}
-              sizeBinFilter={sizeBinFilter}
-              groupByProject={tableGrouping}
-            />
-          </div>
+          <PlanTable
+            plans={filteredPlans}
+            sizeBinFilter={sizeBinFilter}
+            groupByProject={tableGrouping}
+          />
         )}
       </div>
     </DashboardLayout>

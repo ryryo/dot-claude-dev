@@ -25,9 +25,10 @@ interface PlanCardProps {
   expanded: boolean
   onToggle: () => void
   isNarrow?: boolean
+  narrowFadeBg?: string
 }
 
-export function PlanCard({ plan, expanded, onToggle, isNarrow }: PlanCardProps) {
+export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: PlanCardProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
@@ -94,6 +95,12 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow }: PlanCardProps) 
           </CollapsibleTrigger>
         </CardHeader>
 
+        {narrowFadeBg && (
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 z-20 w-8"
+            style={{ background: `linear-gradient(to right, transparent, ${narrowFadeBg})` }}
+          />
+        )}
         <CollapsibleContent>
           <CardContent className="border-t px-4 py-4">
             <PlanDetail plan={plan} />

@@ -13,12 +13,14 @@ import {
 interface AppSidebarProps {
   dateFilterContent: ReactNode
   filterContent: ReactNode
+  sizeFilterContent: ReactNode
   statsContent: ReactNode
 }
 
 export function AppSidebar({
   dateFilterContent,
   filterContent,
+  sizeFilterContent,
   statsContent,
 }: AppSidebarProps) {
   return (
@@ -39,6 +41,12 @@ export function AppSidebar({
           <SidebarGroupLabel>リポジトリ</SidebarGroupLabel>
           <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
             {filterContent}
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup className="py-2">
+          <SidebarGroupLabel>規模</SidebarGroupLabel>
+          <SidebarGroupContent className="group-data-[collapsible=icon]:hidden">
+            {sizeFilterContent}
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup className="pt-2">
