@@ -1,0 +1,258 @@
+{
+  "spec": {
+    "slug": "dashboard-table-view",
+    "title": "Dashboard Table View — 規模軸ビュー切替の追加",
+    "specPath": "spec.md"
+  },
+  "gates": [
+    {
+      "id": "Gate A",
+      "title": "基盤",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate B",
+      "title": "Tableビュー本体",
+      "dependencies": ["Gate A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate C",
+      "title": "規模ヒストグラム",
+      "dependencies": ["Gate A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate D",
+      "title": "プロジェクトグルーピング",
+      "dependencies": ["Gate A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "Gate E",
+      "title": "統合",
+      "dependencies": ["Gate B", "Gate C", "Gate D"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "Gate A",
+      "title": "getPlanSize ヘルパー実装",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/lib/plan-size.ts", "operation": "create", "summary": "PlanSize 型と getPlanSize 関数を新規作成" },
+        { "path": "dashboard/__tests__/plan-size.test.ts", "operation": "create", "summary": "getPlanSize のテストを追加" }
+      ],
+      "impl": "## 実装手順\n\n1. `dashboard/lib/plan-size.ts` を新規作成する。\n\n```ts\nimport type { PlanFile } from './types';\n\nexport interface PlanSize {\n  gateCount: number;\n  todoCount: number;\n  total: number;\n}\n\n/**\n * Plan の全体規模を返す。完了状態は考慮しない。\n * total = gates.length + todos.length\n */\nexport function getPlanSize(plan: PlanFile): PlanSize {\n  const gateCount = plan.gates.length;\n  const todoCount = plan.todos.length;\n  return {\n    gateCount,\n    todoCount,\n    total: gateCount + todoCount,\n  };\n}\n```\n\n2. `dashboard/__tests__/plan-size.test.ts` を新規作成し、以下の Vitest テストを追加する。\n\n```ts\nimport { describe, expect, it } from 'vitest';\nimport { getPlanSize } from '../lib/plan-size';\nimport type { PlanFile } from '../lib/types';\n\nfunction makePlan(overrides: Partial<PlanFile> = {}): PlanFile {\n  return {\n    filePath: 'p.md',\n    fileName: 'p.md',\n    projectName: 'proj',\n    title: 't',\n    createdDate: null,\n    reviewChecked: false,\n    status: 'not-started',\n    gates: [],\n    todos: [],\n    progress: { total: 0, completed: 0, percentage: 0 },\n    summary: '',\n    rawMarkdown: '',\n    ...overrides,\n  };\n}\n\ndescribe('getPlanSize', () => {\n  it('Gate も Todo もない場合は total=0', () => {\n    expect(getPlanSize(makePlan())).toEqual({ gateCount: 0, todoCount: 0, total: 0 });\n  });\n\n  it('Gate と Todo の合計を返す', () => {\n    const plan = makePlan({\n      gates: [\n        { id: 'A', title: 'a', todos: [] },\n        { id: 'B', title: 'b', todos: [] },\n      ],\n      todos: [\n        { title: 't1', steps: [] },\n        { title: 't2', steps: [] },\n        { title: 't3', steps: [] },\n      ],\n    });\n    expect(getPlanSize(plan)).toEqual({ gateCount: 2, todoCount: 3, total: 5 });\n  });\n\n  it('完了状態に関わらず全 Todo を数える', () => {\n    const plan = makePlan({\n      gates: [{ id: 'A', title: 'a', todos: [] }],\n      todos: [\n        { title: 't1', steps: [{ title: 's', checked: true, kind: 'impl', description: '', hasReview: false, reviewFilled: false, reviewResult: null, reviewFixCount: null }] },\n        { title: 't2', steps: [{ title: 's', checked: false, kind: 'impl', description: '', hasReview: false, reviewFilled: false, reviewResult: null, reviewFixCount: null }] },\n      ],\n    });\n    expect(getPlanSize(plan).total).toBe(3);\n  });\n});\n```\n\n3. `npm test` で全テストが PASS することを確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "A2",
+      "gate": "Gate A",
+      "title": "getSizeBin ヘルパー実装",
+      "status": "pending",
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/plan-size.ts", "operation": "modify", "summary": "SizeBin 型と getSizeBin 関数を追加" },
+        { "path": "dashboard/__tests__/plan-size.test.ts", "operation": "modify", "summary": "getSizeBin のテストを追加" }
+      ],
+      "impl": "## 実装手順\n\n1. `dashboard/lib/plan-size.ts` に追記する。\n\n```ts\nexport type SizeBin = 'S' | 'M' | 'L' | 'XL';\n\nexport const SIZE_BIN_LABEL: Record<SizeBin, string> = {\n  S: 'S (1-3)',\n  M: 'M (4-7)',\n  L: 'L (8-15)',\n  XL: 'XL (16+)',\n};\n\n/**\n * 規模 total を S/M/L/XL のビンに分類する。\n * S:  1-3   (軽い)\n * M:  4-7   (中)\n * L:  8-15  (重い)\n * XL: 16+   (巨大)\n * total <= 0 の場合も S とする（仕様簡略化）。\n */\nexport function getSizeBin(total: number): SizeBin {\n  if (total <= 3) return 'S';\n  if (total <= 7) return 'M';\n  if (total <= 15) return 'L';\n  return 'XL';\n}\n```\n\n2. `dashboard/__tests__/plan-size.test.ts` に以下を追記する。\n\n```ts\nimport { getSizeBin } from '../lib/plan-size';\n\ndescribe('getSizeBin', () => {\n  it('境界値', () => {\n    expect(getSizeBin(0)).toBe('S');\n    expect(getSizeBin(1)).toBe('S');\n    expect(getSizeBin(3)).toBe('S');\n    expect(getSizeBin(4)).toBe('M');\n    expect(getSizeBin(7)).toBe('M');\n    expect(getSizeBin(8)).toBe('L');\n    expect(getSizeBin(15)).toBe('L');\n    expect(getSizeBin(16)).toBe('XL');\n    expect(getSizeBin(100)).toBe('XL');\n  });\n});\n```\n\n3. `npm test` で全テストが PASS することを確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "A3",
+      "gate": "Gate A",
+      "title": "ViewSwitcher コンポーネント",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/components/view-switcher.tsx", "operation": "create", "summary": "Kanban / Table タブ切替 UI" }
+      ],
+      "impl": "## 実装手順\n\n1. `dashboard/components/view-switcher.tsx` を新規作成する。タブはセグメント型ボタンで実装（shadcn `button` を流用、Tabs 用のコンポーネントが ui/ にないため自前）。\n\n```tsx\n\"use client\"\n\nimport { LayoutGrid, Table } from 'lucide-react'\nimport { Button } from '@/components/ui/button'\nimport { cn } from '@/lib/utils'\n\nexport type ViewType = 'kanban' | 'table'\n\ninterface ViewSwitcherProps {\n  activeView: ViewType\n  onViewChange: (view: ViewType) => void\n}\n\nconst VIEWS: { id: ViewType; label: string; icon: typeof LayoutGrid }[] = [\n  { id: 'kanban', label: 'Kanban', icon: LayoutGrid },\n  { id: 'table', label: 'Table', icon: Table },\n]\n\nexport function ViewSwitcher({ activeView, onViewChange }: ViewSwitcherProps) {\n  return (\n    <div\n      role=\"tablist\"\n      aria-label=\"ビュー切替\"\n      className=\"inline-flex items-center gap-1 rounded-lg border bg-muted/40 p-1\"\n    >\n      {VIEWS.map((v) => {\n        const Icon = v.icon\n        const isActive = activeView === v.id\n        return (\n          <Button\n            key={v.id}\n            type=\"button\"\n            role=\"tab\"\n            aria-selected={isActive}\n            variant={isActive ? 'default' : 'ghost'}\n            size=\"sm\"\n            className={cn('h-8 gap-1.5 px-3', !isActive && 'text-muted-foreground')}\n            onClick={() => onViewChange(v.id)}\n          >\n            <Icon className=\"size-4\" />\n            {v.label}\n          </Button>\n        )\n      })}\n    </div>\n  )\n}\n```\n\n2. このコンポーネントは Gate E で `app/page.tsx` から使用する。本 Todo では作成のみで配置は行わない。\n\n3. `npm run lint` でエラーがないことを確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B1",
+      "gate": "Gate B",
+      "title": "TanStack Table v8 導入 + PlanTable 土台",
+      "status": "pending",
+      "dependencies": ["A1", "A2"],
+      "affectedFiles": [
+        { "path": "dashboard/package.json", "operation": "modify", "summary": "@tanstack/react-table 依存追加" },
+        { "path": "dashboard/components/plan-table.tsx", "operation": "create", "summary": "PlanTable コンポーネントの土台" }
+      ],
+      "impl": "## 実装手順\n\n1. dashboard ディレクトリで TanStack Table をインストール。\n\n```bash\ncd dashboard && npm install @tanstack/react-table\n```\n\n2. `dashboard/components/plan-table.tsx` を新規作成。最初は最小カラム（projectName / title / status のみ）でテーブルが描画されるところまで進める。\n\n```tsx\n\"use client\"\n\nimport { useMemo, useState } from 'react'\nimport {\n  ColumnDef,\n  flexRender,\n  getCoreRowModel,\n  getSortedRowModel,\n  SortingState,\n  useReactTable,\n} from '@tanstack/react-table'\n\nimport { Badge } from '@/components/ui/badge'\nimport { cn } from '@/lib/utils'\nimport type { PlanFile, PlanStatus } from '@/lib/types'\n\nconst STATUS_LABEL: Record<PlanStatus, string> = {\n  'not-started': '未着手',\n  'in-progress': '進行中',\n  'in-review': 'レビュー中',\n  completed: '完了',\n}\n\nconst STATUS_BG_CLASS: Record<PlanStatus, string> = {\n  'not-started': 'bg-status-not-started',\n  'in-progress': 'bg-status-in-progress',\n  'in-review': 'bg-status-in-review',\n  completed: 'bg-status-completed',\n}\n\ninterface PlanTableProps {\n  plans: PlanFile[]\n}\n\nexport function PlanTable({ plans }: PlanTableProps) {\n  const [sorting, setSorting] = useState<SortingState>([])\n\n  const columns = useMemo<ColumnDef<PlanFile>[]>(() => [\n    {\n      id: 'projectName',\n      accessorFn: (row) => row.projectName,\n      header: 'プロジェクト',\n      cell: (info) => (\n        <Badge variant=\"outline\" className=\"max-w-[160px] truncate\">\n          {info.getValue<string>()}\n        </Badge>\n      ),\n    },\n    {\n      id: 'title',\n      accessorKey: 'title',\n      header: 'PLAN',\n      cell: (info) => (\n        <span className=\"line-clamp-1 text-sm font-medium\">{info.getValue<string>()}</span>\n      ),\n    },\n    {\n      id: 'status',\n      accessorKey: 'status',\n      header: 'ステータス',\n      cell: (info) => {\n        const s = info.getValue<PlanStatus>()\n        return (\n          <span className={cn('inline-flex rounded-md px-2 py-0.5 text-xs', STATUS_BG_CLASS[s])}>\n            {STATUS_LABEL[s]}\n          </span>\n        )\n      },\n    },\n  ], [])\n\n  const table = useReactTable({\n    data: plans,\n    columns,\n    state: { sorting },\n    onSortingChange: setSorting,\n    getCoreRowModel: getCoreRowModel(),\n    getSortedRowModel: getSortedRowModel(),\n  })\n\n  return (\n    <div className=\"overflow-hidden rounded-lg border\">\n      <table className=\"w-full text-sm\">\n        <thead className=\"bg-muted/40\">\n          {table.getHeaderGroups().map((hg) => (\n            <tr key={hg.id}>\n              {hg.headers.map((h) => (\n                <th\n                  key={h.id}\n                  onClick={h.column.getToggleSortingHandler()}\n                  className=\"cursor-pointer px-3 py-2 text-left font-semibold text-muted-foreground\"\n                >\n                  {flexRender(h.column.columnDef.header, h.getContext())}\n                  {{ asc: ' ▲', desc: ' ▼' }[h.column.getIsSorted() as string] ?? null}\n                </th>\n              ))}\n            </tr>\n          ))}\n        </thead>\n        <tbody>\n          {table.getRowModel().rows.map((row) => (\n            <tr key={row.id} className=\"border-t hover:bg-muted/30\">\n              {row.getVisibleCells().map((cell) => (\n                <td key={cell.id} className=\"px-3 py-2 align-middle\">\n                  {flexRender(cell.column.columnDef.cell, cell.getContext())}\n                </td>\n              ))}\n            </tr>\n          ))}\n          {plans.length === 0 && (\n            <tr><td colSpan={columns.length} className=\"px-3 py-6 text-center text-muted-foreground\">PLAN がありません</td></tr>\n          )}\n        </tbody>\n      </table>\n    </div>\n  )\n}\n```\n\n3. React 19 と peer 競合が出たら `npm install @tanstack/react-table --legacy-peer-deps` を試す。\n4. `npm run build` がエラーなく通ることを確認。本 Todo ではまだ page.tsx に組み込まない。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B2",
+      "gate": "Gate B",
+      "title": "Plan 行レンダリング（カラム + 規模バー + ソート）",
+      "status": "pending",
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-table.tsx", "operation": "modify", "summary": "size / progress / createdDate カラムを追加し、規模バーを描画" }
+      ],
+      "impl": "## 実装手順\n\n1. `plan-table.tsx` の `columns` 配列に以下のカラムを追加する。\n\n```tsx\nimport { getPlanSize, SizeBin, getSizeBin, SIZE_BIN_LABEL } from '@/lib/plan-size'\n\n// columns 配列に追加（projectName/title/status の後ろに配置）\n{\n  id: 'size',\n  accessorFn: (row) => getPlanSize(row).total,\n  header: '規模',\n  cell: (info) => {\n    const total = info.getValue<number>()\n    const bin = getSizeBin(total)\n    // 棒の最大長を XL=20 と仮定して比率計算（XL は満タン表示）\n    const maxBar = 20\n    const widthPct = Math.min(100, (total / maxBar) * 100)\n    return (\n      <div className=\"flex items-center gap-2\">\n        <span className=\"w-6 text-right tabular-nums text-muted-foreground\">{total}</span>\n        <div className=\"h-2 w-20 overflow-hidden rounded-full bg-muted\">\n          <div className=\"h-full bg-primary/70\" style={{ width: `${widthPct}%` }} />\n        </div>\n        <span className=\"w-6 text-xs text-muted-foreground\">{bin}</span>\n      </div>\n    )\n  },\n  sortingFn: 'basic',\n},\n{\n  id: 'progress',\n  accessorFn: (row) => row.progress.percentage,\n  header: '進捗',\n  cell: (info) => {\n    const p = info.getValue<number>()\n    return (\n      <div className=\"flex items-center gap-2\">\n        <span className=\"w-9 text-right tabular-nums text-muted-foreground\">{p}%</span>\n        <div className=\"h-2 w-16 overflow-hidden rounded-full bg-muted\">\n          <div className=\"h-full bg-primary\" style={{ width: `${p}%` }} />\n        </div>\n      </div>\n    )\n  },\n},\n{\n  id: 'createdDate',\n  accessorFn: (row) => row.createdDate ?? '',\n  header: '作成日',\n  cell: (info) => {\n    const v = info.getValue<string>()\n    return <span className=\"tabular-nums text-muted-foreground\">{v || '–'}</span>\n  },\n},\n```\n\n2. デフォルトソートを規模昇順にしたい場合は `useState<SortingState>([{ id: 'size', desc: false }])` に変更しておく。\n\n3. `npm run build` で型エラーなく通ることを確認。視認は Gate E で行う。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B3",
+      "gate": "Gate B",
+      "title": "Gate 展開行",
+      "status": "pending",
+      "dependencies": ["B2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-table.tsx", "operation": "modify", "summary": "expander カラムと renderSubComponent で Gate 進捗を表示" }
+      ],
+      "impl": "## 実装手順\n\n1. import に `getExpandedRowModel`, `Row`, `ExpandedState` を追加。\n\n```tsx\nimport {\n  ExpandedState,\n  getExpandedRowModel,\n  Row,\n} from '@tanstack/react-table'\nimport { ChevronRight } from 'lucide-react'\n```\n\n2. State に `expanded` を追加し、`useReactTable` に渡す。\n\n```tsx\nconst [expanded, setExpanded] = useState<ExpandedState>({})\n\nconst table = useReactTable({\n  data: plans,\n  columns,\n  state: { sorting, expanded },\n  onSortingChange: setSorting,\n  onExpandedChange: setExpanded,\n  getCoreRowModel: getCoreRowModel(),\n  getSortedRowModel: getSortedRowModel(),\n  getExpandedRowModel: getExpandedRowModel(),\n  getRowCanExpand: () => true,\n})\n```\n\n3. columns 先頭に expander カラムを追加。\n\n```tsx\n{\n  id: 'expander',\n  header: () => null,\n  cell: ({ row }) => (\n    <button\n      type=\"button\"\n      onClick={row.getToggleExpandedHandler()}\n      aria-label={row.getIsExpanded() ? '閉じる' : '開く'}\n      className=\"flex size-6 items-center justify-center rounded hover:bg-muted\"\n    >\n      <ChevronRight\n        className={cn('size-4 text-muted-foreground transition-transform', row.getIsExpanded() && 'rotate-90')}\n      />\n    </button>\n  ),\n},\n```\n\n4. tbody の各 row レンダリングを以下に変更し、展開時にサブ行を描画する。\n\n```tsx\n{table.getRowModel().rows.map((row) => (\n  <Fragment key={row.id}>\n    <tr className=\"border-t hover:bg-muted/30\">\n      {row.getVisibleCells().map((cell) => (\n        <td key={cell.id} className=\"px-3 py-2 align-middle\">\n          {flexRender(cell.column.columnDef.cell, cell.getContext())}\n        </td>\n      ))}\n    </tr>\n    {row.getIsExpanded() && (\n      <tr className=\"bg-muted/20\">\n        <td colSpan={row.getVisibleCells().length} className=\"px-6 py-3\">\n          <PlanGateRows plan={row.original} />\n        </td>\n      </tr>\n    )}\n  </Fragment>\n))}\n```\n\n5. 同ファイル末尾に `PlanGateRows` を追加。\n\n```tsx\nfunction PlanGateRows({ plan }: { plan: PlanFile }) {\n  if (plan.gates.length === 0) {\n    return <p className=\"text-xs text-muted-foreground\">Gate 情報がありません</p>\n  }\n  return (\n    <table className=\"w-full text-xs\">\n      <thead>\n        <tr className=\"text-muted-foreground\">\n          <th className=\"w-24 text-left font-medium\">Gate</th>\n          <th className=\"text-left font-medium\">タイトル</th>\n          <th className=\"w-32 text-right font-medium\">Todo 進捗</th>\n        </tr>\n      </thead>\n      <tbody>\n        {plan.gates.map((g) => {\n          const total = g.todos.length\n          const done = g.todos.filter((t) => t.steps.every((s) => s.checked)).length\n          return (\n            <tr key={g.id} className=\"border-t border-border/60\">\n              <td className=\"py-1 font-mono\">{g.id}</td>\n              <td className=\"py-1\">{g.title}</td>\n              <td className=\"py-1 text-right tabular-nums\">{done}/{total}</td>\n            </tr>\n          )\n        })}\n      </tbody>\n    </table>\n  )\n}\n```\n\n6. `import { Fragment } from 'react'` を追加。`npm run build` で確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B4",
+      "gate": "Gate B",
+      "title": "全文表示ボタン（PlanMarkdownModal 接続）",
+      "status": "pending",
+      "dependencies": ["B3"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-table.tsx", "operation": "modify", "summary": "actions カラム + PlanMarkdownModal を組み込み" }
+      ],
+      "impl": "## 実装手順\n\n1. import を追加。\n\n```tsx\nimport { FileText } from 'lucide-react'\nimport { PlanMarkdownModal } from '@/components/plan-markdown-modal'\n```\n\n2. `PlanTable` 内で開いている Plan を state 管理する。\n\n```tsx\nconst [modalPlan, setModalPlan] = useState<PlanFile | null>(null)\n```\n\n3. columns 末尾に actions カラムを追加。\n\n```tsx\n{\n  id: 'actions',\n  header: () => null,\n  cell: ({ row }) => (\n    <button\n      type=\"button\"\n      aria-label={`${row.original.title} の全文を読む`}\n      onClick={(e) => {\n        e.stopPropagation()\n        setModalPlan(row.original)\n      }}\n      className=\"text-muted-foreground hover:text-foreground\"\n    >\n      <FileText className=\"size-4\" />\n    </button>\n  ),\n},\n```\n\n4. JSX 末尾（テーブルラッパの外側）にモーダルを追加。\n\n```tsx\n<PlanMarkdownModal\n  open={modalPlan !== null}\n  onOpenChange={(open) => { if (!open) setModalPlan(null) }}\n  title={modalPlan?.title ?? ''}\n  markdown={modalPlan?.rawMarkdown ?? ''}\n/>\n```\n\n5. `npm run build` で確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C1",
+      "gate": "Gate C",
+      "title": "getSizeHistogram ヘルパー実装",
+      "status": "pending",
+      "dependencies": ["A2"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/plan-size.ts", "operation": "modify", "summary": "getSizeHistogram 関数を追加" },
+        { "path": "dashboard/__tests__/plan-size.test.ts", "operation": "modify", "summary": "getSizeHistogram のテストを追加" }
+      ],
+      "impl": "## 実装手順\n\n1. `dashboard/lib/plan-size.ts` に追記する。\n\n```ts\nimport type { PlanFile } from './types';\n\nexport const SIZE_BINS: SizeBin[] = ['S', 'M', 'L', 'XL'];\n\n/**\n * Plan 配列を規模ビンごとに集計する。\n * 各ビンの件数をオブジェクトで返す。\n */\nexport function getSizeHistogram(plans: PlanFile[]): Record<SizeBin, number> {\n  const result: Record<SizeBin, number> = { S: 0, M: 0, L: 0, XL: 0 };\n  for (const plan of plans) {\n    const bin = getSizeBin(getPlanSize(plan).total);\n    result[bin] += 1;\n  }\n  return result;\n}\n```\n\n2. テスト追記。\n\n```ts\nimport { getSizeHistogram } from '../lib/plan-size';\n\ndescribe('getSizeHistogram', () => {\n  it('空配列はすべて 0', () => {\n    expect(getSizeHistogram([])).toEqual({ S: 0, M: 0, L: 0, XL: 0 });\n  });\n\n  it('複数 Plan を正しく集計', () => {\n    const small = makePlan({ todos: [{ title: 't', steps: [] }] }); // total=1 → S\n    const mid = makePlan({\n      gates: [{ id: 'A', title: 'a', todos: [] }, { id: 'B', title: 'b', todos: [] }],\n      todos: Array.from({ length: 4 }, () => ({ title: 't', steps: [] })),\n    }); // total=6 → M\n    const big = makePlan({\n      gates: Array.from({ length: 4 }, (_, i) => ({ id: `G${i}`, title: 'g', todos: [] })),\n      todos: Array.from({ length: 12 }, () => ({ title: 't', steps: [] })),\n    }); // total=16 → XL\n    expect(getSizeHistogram([small, mid, big])).toEqual({ S: 1, M: 1, L: 0, XL: 1 });\n  });\n});\n```\n\n3. `npm test` で全 PASS を確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "C2",
+      "gate": "Gate C",
+      "title": "SizeHistogram コンポーネント",
+      "status": "pending",
+      "dependencies": ["C1"],
+      "affectedFiles": [
+        { "path": "dashboard/components/size-histogram.tsx", "operation": "create", "summary": "規模ビン棒グラフ + クリックで activeBin を切替" }
+      ],
+      "impl": "## 実装手順\n\n1. `dashboard/components/size-histogram.tsx` を新規作成。\n\n```tsx\n\"use client\"\n\nimport { getSizeHistogram, SIZE_BINS, SIZE_BIN_LABEL, SizeBin } from '@/lib/plan-size'\nimport type { PlanFile } from '@/lib/types'\nimport { cn } from '@/lib/utils'\n\ninterface SizeHistogramProps {\n  plans: PlanFile[]\n  activeBin: SizeBin | null\n  onBinClick: (bin: SizeBin) => void\n}\n\nexport function SizeHistogram({ plans, activeBin, onBinClick }: SizeHistogramProps) {\n  const counts = getSizeHistogram(plans)\n  const max = Math.max(1, ...SIZE_BINS.map((b) => counts[b]))\n\n  return (\n    <div className=\"rounded-lg border bg-muted/20 p-3\">\n      <div className=\"mb-2 flex items-center justify-between\">\n        <p className=\"text-xs font-medium text-muted-foreground\">規模分布（クリックで絞込）</p>\n        {activeBin && (\n          <button\n            type=\"button\"\n            onClick={() => onBinClick(activeBin)}\n            className=\"text-xs text-primary underline\"\n          >\n            絞込解除\n          </button>\n        )}\n      </div>\n      <div className=\"flex items-end gap-3\">\n        {SIZE_BINS.map((bin) => {\n          const count = counts[bin]\n          const heightPct = (count / max) * 100\n          const isActive = activeBin === bin\n          return (\n            <button\n              key={bin}\n              type=\"button\"\n              onClick={() => onBinClick(bin)}\n              aria-pressed={isActive}\n              className={cn(\n                'group flex flex-1 flex-col items-center gap-1',\n                'cursor-pointer'\n              )}\n            >\n              <span className=\"text-xs tabular-nums text-muted-foreground\">{count}</span>\n              <div className=\"flex h-16 w-full items-end\">\n                <div\n                  className={cn(\n                    'w-full rounded-t transition-colors',\n                    isActive ? 'bg-primary' : 'bg-primary/40 group-hover:bg-primary/60'\n                  )}\n                  style={{ height: `${Math.max(4, heightPct)}%` }}\n                />\n              </div>\n              <span className={cn('text-xs', isActive ? 'font-semibold text-foreground' : 'text-muted-foreground')}>\n                {SIZE_BIN_LABEL[bin]}\n              </span>\n            </button>\n          )\n        })}\n      </div>\n    </div>\n  )\n}\n```\n\n2. `npm run build` でエラーがないことを確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C3",
+      "gate": "Gate C",
+      "title": "Table ↔ ヒストグラム連動フィルタ",
+      "status": "pending",
+      "dependencies": ["B4", "C2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-table.tsx", "operation": "modify", "summary": "sizeBinFilter prop を受け取り、内部で plans を絞り込む" }
+      ],
+      "impl": "## 実装手順\n\n1. `PlanTableProps` に `sizeBinFilter` を追加。\n\n```tsx\nimport { getPlanSize, getSizeBin, SizeBin } from '@/lib/plan-size'\n\ninterface PlanTableProps {\n  plans: PlanFile[]\n  sizeBinFilter: SizeBin | null\n}\n```\n\n2. コンポーネント先頭で plans をフィルタする。\n\n```tsx\nconst data = useMemo(() => {\n  if (!sizeBinFilter) return plans\n  return plans.filter((p) => getSizeBin(getPlanSize(p).total) === sizeBinFilter)\n}, [plans, sizeBinFilter])\n\n// useReactTable に渡すのは data\nconst table = useReactTable({ data, columns, ... })\n```\n\n3. 空状態（フィルタ適用で 0 件）の tbody fallback メッセージを変更。\n\n```tsx\n{data.length === 0 && (\n  <tr>\n    <td colSpan={columns.length} className=\"px-3 py-6 text-center text-muted-foreground\">\n      {sizeBinFilter ? `規模 ${sizeBinFilter} に該当する PLAN はありません` : 'PLAN がありません'}\n    </td>\n  </tr>\n)}\n```\n\n4. 親側（Gate E で対応）から `sizeBinFilter` を渡す前提なので、本 Todo では PlanTable 単体の型を固める。`npm run build` で確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D1",
+      "gate": "Gate D",
+      "title": "GroupingToggle コンポーネント",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/components/grouping-toggle.tsx", "operation": "create", "summary": "Project でグループ化トグルスイッチ" }
+      ],
+      "impl": "## 実装手順\n\n1. `dashboard/components/grouping-toggle.tsx` を新規作成。\n\n```tsx\n\"use client\"\n\nimport { Layers } from 'lucide-react'\nimport { Button } from '@/components/ui/button'\nimport { cn } from '@/lib/utils'\n\ninterface GroupingToggleProps {\n  enabled: boolean\n  onToggle: (next: boolean) => void\n}\n\nexport function GroupingToggle({ enabled, onToggle }: GroupingToggleProps) {\n  return (\n    <Button\n      type=\"button\"\n      variant={enabled ? 'default' : 'outline'}\n      size=\"sm\"\n      aria-pressed={enabled}\n      onClick={() => onToggle(!enabled)}\n      className={cn('h-8 gap-1.5')}\n    >\n      <Layers className=\"size-4\" />\n      Project でグループ化\n    </Button>\n  )\n}\n```\n\n2. `npm run lint` で確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D2",
+      "gate": "Gate D",
+      "title": "KanbanBoard 横スイムレーン対応",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/components/kanban-board.tsx", "operation": "modify", "summary": "groupByProject prop を追加し、true 時は Project 行 × Status 列のグリッドを描画" }
+      ],
+      "impl": "## 実装手順\n\n1. `KanbanBoardProps` に prop を追加。\n\n```tsx\ninterface KanbanBoardProps {\n  plans: PlanFile[]\n  groupByProject?: boolean\n}\n```\n\n2. 既存のグループなしレンダリング部分を `renderColumns(plans)` のような関数に括り出し、`groupByProject === true` の時は Project ごとに 1 つの行を構成する。\n\n```tsx\nconst projects = useMemo(() => {\n  if (!groupByProject) return null\n  const map = new Map<string, PlanFile[]>()\n  for (const p of plans) {\n    const arr = map.get(p.projectName) ?? []\n    arr.push(p)\n    map.set(p.projectName, arr)\n  }\n  return Array.from(map.entries())\n}, [groupByProject, plans])\n```\n\n3. 戻り値を分岐:\n\n```tsx\nif (groupByProject && projects) {\n  return (\n    <div className=\"max-h-[calc(100vh-220px)] space-y-4 overflow-y-auto pr-1\">\n      {projects.map(([projectName, projectPlans]) => (\n        <div key={projectName} className=\"space-y-2\">\n          <div className=\"sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-1 backdrop-blur\">\n            <p className=\"text-sm font-semibold text-muted-foreground\">\n              {projectName} <span className=\"text-xs tabular-nums\">({projectPlans.length})</span>\n            </p>\n          </div>\n          <KanbanGrid plans={projectPlans} expandedId={expandedId} setExpandedId={setExpandedId} />\n        </div>\n      ))}\n    </div>\n  )\n}\n\nreturn <KanbanGrid plans={plans} expandedId={expandedId} setExpandedId={setExpandedId} />\n```\n\n4. 既存の COLUMNS マップ + 描画ロジックを `KanbanGrid` という小コンポーネントに切り出す（同ファイル内）。`narrowCols` ロジックは `KanbanGrid` 内に閉じ込める。\n\n5. 既存のグループ無し動作が壊れていないことを確認するため、`npm run build` と既存のスナップショット系テスト（あれば）を実行。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D3",
+      "gate": "Gate D",
+      "title": "PlanTable プロジェクトグルーピング対応",
+      "status": "pending",
+      "dependencies": ["B4"],
+      "affectedFiles": [
+        { "path": "dashboard/components/plan-table.tsx", "operation": "modify", "summary": "groupByProject prop を追加。true 時は Project ごとにグループヘッダー行を挿入" }
+      ],
+      "impl": "## 実装手順\n\n1. `PlanTableProps` に `groupByProject` を追加。\n\n```tsx\ninterface PlanTableProps {\n  plans: PlanFile[]\n  sizeBinFilter: SizeBin | null\n  groupByProject: boolean\n}\n```\n\n2. シンプル化のため、TanStack Table の grouping API は使わず、表示時に Project ごとに分割した行を順に出す方針にする。\n\n3. tbody のレンダリング部分を以下に置き換える。\n\n```tsx\nconst rows = table.getRowModel().rows\n\nfunction renderRow(row: Row<PlanFile>) {\n  return (\n    <Fragment key={row.id}>\n      <tr className=\"border-t hover:bg-muted/30\">\n        {row.getVisibleCells().map((cell) => (\n          <td key={cell.id} className=\"px-3 py-2 align-middle\">\n            {flexRender(cell.column.columnDef.cell, cell.getContext())}\n          </td>\n        ))}\n      </tr>\n      {row.getIsExpanded() && (\n        <tr className=\"bg-muted/20\">\n          <td colSpan={row.getVisibleCells().length} className=\"px-6 py-3\">\n            <PlanGateRows plan={row.original} />\n          </td>\n        </tr>\n      )}\n    </Fragment>\n  )\n}\n\nlet body: React.ReactNode\nif (groupByProject) {\n  // ソート済み rows を Project でグルーピング（順序維持）\n  const groups = new Map<string, Row<PlanFile>[]>()\n  for (const r of rows) {\n    const key = r.original.projectName\n    const arr = groups.get(key) ?? []\n    arr.push(r)\n    groups.set(key, arr)\n  }\n  body = Array.from(groups.entries()).map(([projectName, groupRows]) => (\n    <Fragment key={projectName}>\n      <tr className=\"bg-muted/40\">\n        <td colSpan={columns.length} className=\"px-3 py-1.5 text-xs font-semibold text-muted-foreground\">\n          {projectName} <span className=\"tabular-nums\">({groupRows.length})</span>\n        </td>\n      </tr>\n      {groupRows.map(renderRow)}\n    </Fragment>\n  ))\n} else {\n  body = rows.map(renderRow)\n}\n\nreturn (\n  // ...\n  <tbody>\n    {body}\n    {data.length === 0 && (\n      <tr><td colSpan={columns.length} className=\"px-3 py-6 text-center text-muted-foreground\">\n        {sizeBinFilter ? `規模 ${sizeBinFilter} に該当する PLAN はありません` : 'PLAN がありません'}\n      </td></tr>\n    )}\n  </tbody>\n)\n```\n\n4. `npm run build` で確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "E1",
+      "gate": "Gate E",
+      "title": "page.tsx で全体統合",
+      "status": "pending",
+      "dependencies": ["A3", "B4", "C3", "D1", "D2", "D3"],
+      "affectedFiles": [
+        { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "ViewSwitcher / GroupingToggle / PlanTable / SizeHistogram を組み込み、state を追加" }
+      ],
+      "impl": "## 実装手順\n\n1. import を追加。\n\n```tsx\nimport { ViewSwitcher, type ViewType } from '@/components/view-switcher'\nimport { GroupingToggle } from '@/components/grouping-toggle'\nimport { PlanTable } from '@/components/plan-table'\nimport { SizeHistogram } from '@/components/size-histogram'\nimport type { SizeBin } from '@/lib/plan-size'\n```\n\n2. `Home` コンポーネント内に state を追加。\n\n```tsx\nconst [activeView, setActiveView] = useState<ViewType>('kanban')\nconst [kanbanGrouping, setKanbanGrouping] = useState(false)\nconst [tableGrouping, setTableGrouping] = useState(false)\nconst [sizeBinFilter, setSizeBinFilter] = useState<SizeBin | null>(null)\n```\n\n3. ヘッダー直下のレイアウトを以下に変更（既存のタイトル + バッジ群はそのまま）。\n\n```tsx\n<div className=\"flex flex-wrap items-center justify-between gap-3\">\n  <ViewSwitcher activeView={activeView} onViewChange={setActiveView} />\n  <GroupingToggle\n    enabled={activeView === 'kanban' ? kanbanGrouping : tableGrouping}\n    onToggle={(next) => {\n      if (activeView === 'kanban') setKanbanGrouping(next)\n      else setTableGrouping(next)\n    }}\n  />\n</div>\n```\n\n4. 既存の `<KanbanBoard plans={filteredPlans} />` を以下に置き換え。\n\n```tsx\n{activeView === 'kanban' ? (\n  <KanbanBoard plans={filteredPlans} groupByProject={kanbanGrouping} />\n) : (\n  <div className=\"space-y-4\">\n    <SizeHistogram\n      plans={filteredPlans}\n      activeBin={sizeBinFilter}\n      onBinClick={(bin) => setSizeBinFilter((prev) => (prev === bin ? null : bin))}\n    />\n    <PlanTable\n      plans={filteredPlans}\n      sizeBinFilter={sizeBinFilter}\n      groupByProject={tableGrouping}\n    />\n  </div>\n)}\n```\n\n5. ビュー切替時に sizeBinFilter をリセットしたい場合は、`setActiveView` をラップする関数を用意する（仕様: ビュー独立だが SizeBinFilter は Table 専用なので Kanban 切替時のリセットは不要 → そのまま）。\n\n6. `npm run build` と `npm run dev` で動作確認。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "E2",
+      "gate": "Gate E",
+      "title": "動作確認 + ビュー独立性の検証",
+      "status": "pending",
+      "dependencies": ["E1"],
+      "affectedFiles": [],
+      "impl": "## 実施項目\n\n1. **ビルド**: `cd dashboard && npm run build` がエラーなく完了する。\n2. **Lint**: `npm run lint` がエラーなく完了する。\n3. **テスト**: `npm test` で `plan-size.test.ts` を含む全テストが PASS する。\n4. **手動動作確認**: `npm run dev` で起動し、以下を確認:\n   - Kanban / Table のタブ切替が機能する\n   - Table の規模カラムソートが昇順/降順で動作\n   - 規模ヒストグラムのバーをクリックすると Table が絞り込まれる\n   - 同じバーを再クリックで解除される\n   - Kanban で「Project でグループ化」ON にすると横スイムレーン表示になる\n   - Table で「Project でグループ化」ON にするとグループヘッダー行が挿入される\n   - Kanban のグルーピング ON 状態は Table に切り替えても引き継がれない（ビュー独立）\n   - リロードすると activeView=kanban / グルーピング OFF / sizeBinFilter null にリセットされる\n   - 既存のリポジトリフィルター/日付フィルターが両ビューで正しく機能する\n5. 不具合があれば該当 Todo に戻して修正、Review 欄に確認結果を記入。"
+      ,
+      "relatedIssues": [],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-11",
+    "totalGates": 5,
+    "totalTodos": 15
+  }
+}
