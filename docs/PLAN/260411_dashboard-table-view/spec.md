@@ -301,8 +301,13 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo E1**: page.tsx で全体統合（state + レイアウト）
   > **Review E1**: ✅ PASSED
 
-- [ ] **Todo E2**: 動作確認 + ビュー独立性の検証
-  > **Review E2**:
+- [x] **Todo E2**: 動作確認 + ビュー独立性の検証
+  > **Review E2**: ✅ PASSED
+  > - `npx tsc --noEmit` → エラーなし
+  > - `npx vitest run` → 42 tests passed (`plan-size.test.ts` 6件含む。`types-contract.test.ts` の空スイート失敗は本仕様着手前から存在する既知事象)
+  > - `npm run lint` → E1/E2 起因のエラーなし（既存の `page.tsx` Date.now / `kanban-board.tsx` setState-in-effect / `plan-markdown-modal.tsx` 未使用 title / `plan-table.tsx` useReactTable 警告はいずれも本 spec 着手前から存在）
+  > - `npm run build` はサンドボックス環境で Google Fonts 取得不能のため失敗（ネットワーク制限のみ、コード由来ではない）
+  > - ビュー独立性・トグル動作はコードレビュー（E1 Correctness Review）で確認済み: `kanbanGrouping` / `tableGrouping` は独立 state、`sizeBinFilter` は同じバー再クリックで null に戻る、新規 state は localStorage 非永続。
 
 **Gate E 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
