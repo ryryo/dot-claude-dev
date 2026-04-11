@@ -136,3 +136,32 @@ spec.md のチェックボックスを `[x]` に更新し、Review 結果を blo
 - [x] **Todo A1**: カラーコントラスト修正
   > **Review A1**: ✅ PASSED
 ```
+
+---
+
+## worktree モード（オプション）
+
+SKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プロトコルは **worktree 内の cwd** で実行される。差分は以下の通り。
+
+### 前提
+
+- `cd $WORKTREE_PATH` が Step 4.6 で実行済み
+- Bash tool の cwd は worktree 内
+- 以降の全 Bash / ファイル操作は worktree 内で完結する
+
+### 各 Step の差分
+
+| Step | 差分 |
+|------|------|
+| Step 0 CONTEXT | 仕様書の「参照すべきファイル」は worktree 内のパスで Read する。worktree は master から派生なので同じファイルが存在する |
+| Preflight フェーズ | worktree 内で実行（`node_modules` / `.env` は worktree 側に配置される）。master 側には影響しない |
+| Step 1 IMPL | worktree 内のファイルを直接編集。コミットも worktree 内（`git commit` は自動的に feature/{slug} ブランチに対して行われる） |
+| Step 2 VERIFY | レビュワー Agent は worktree 内の差分に対してレビューする。Agent の cwd は継承される |
+| Step 3 FIX | worktree 内で修正、再コミット |
+| Step 4 UPDATE | **worktree 内の spec.md** のチェックボックスを更新。master 側の spec.md は完了処理の merge 後に反映される |
+
+### 注意
+
+- master 側の spec.md を直接編集してはならない（cwd が worktree の前提が崩れる）
+- Codex モードで worktree を使う場合は `references/codex-execution.md` の該当セクションを参照
+- worktree モードの詳細なライフサイクル（setup / merge / cleanup）は `references/worktree-protocol.md` を参照
