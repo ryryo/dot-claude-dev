@@ -288,8 +288,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo D1**: GroupingToggle コンポーネント
   > **Review D1**: ✅ PASSED
 
-- [ ] **Todo D2**: KanbanBoard 横スイムレーン対応
-  > **Review D2**:
+- [x] **Todo D2**: KanbanBoard 横スイムレーン対応
+  > **Review D2**: ✅ PASSED
 
 - [ ] **Todo D3**: PlanTable プロジェクトグルーピング対応
   > **Review D3**:

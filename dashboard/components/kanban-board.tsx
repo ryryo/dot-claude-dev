@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { PlanCard } from "@/components/plan-card"
@@ -17,9 +17,10 @@ const COLUMNS: { status: PlanStatus; label: string; color: string; bgVar: string
 
 interface KanbanBoardProps {
   plans: PlanFile[]
+  groupByProject?: boolean
 }
 
-export function KanbanBoard({ plans }: KanbanBoardProps) {
+export function KanbanBoard({ plans, groupByProject = false }: KanbanBoardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isMd, setIsMd] = useState(false)
 
@@ -31,6 +32,58 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
     return () => mq.removeEventListener("change", handler)
   }, [])
 
+  const projects = useMemo(() => {
+    if (!groupByProject) return null
+    const map = new Map<string, PlanFile[]>()
+    for (const p of plans) {
+      const arr = map.get(p.projectName) ?? []
+      arr.push(p)
+      map.set(p.projectName, arr)
+    }
+    return Array.from(map.entries())
+  }, [groupByProject, plans])
+
+  if (groupByProject && projects) {
+    return (
+      <div className="max-h-[calc(100vh-220px)] space-y-4 overflow-y-auto pr-1">
+        {projects.map(([projectName, projectPlans]) => (
+          <div key={projectName} className="space-y-2">
+            <div className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-1 backdrop-blur">
+              <p className="text-sm font-semibold text-muted-foreground">
+                {projectName}{" "}
+                <span className="text-xs tabular-nums">({projectPlans.length})</span>
+              </p>
+            </div>
+            <KanbanGrid
+              plans={projectPlans}
+              isMd={isMd}
+              expandedId={expandedId}
+              setExpandedId={setExpandedId}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <KanbanGrid
+      plans={plans}
+      isMd={isMd}
+      expandedId={expandedId}
+      setExpandedId={setExpandedId}
+    />
+  )
+}
+
+interface KanbanGridProps {
+  plans: PlanFile[]
+  isMd: boolean
+  expandedId: string | null
+  setExpandedId: (updater: (current: string | null) => string | null) => void
+}
+
+function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps) {
   const plansByStatus = COLUMNS.reduce<Record<PlanStatus, PlanFile[]>>(
     (accumulator, column) => {
       accumulator[column.status] = plans.filter((plan) => plan.status === column.status)
