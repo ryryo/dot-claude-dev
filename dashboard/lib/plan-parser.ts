@@ -1,11 +1,12 @@
 import path from 'node:path';
 
-import type { Gate, PlanFile, PlanStatus, TodoItem } from './types';
+import type { Gate, PlanFile, PlanStatus, ReviewResult, Step, StepKind, Todo } from './types';
 
 const TITLE_PATTERN = /^# (.+)$/m;
 const GATE_PATTERN = /^### (Gate \w+): (.+)$/gm;
-const TODO_PATTERN = /^- \[([ x])\] \*\*(.+?)\*\*/gm;
-const REVIEW_PATTERN = /^\s*> \*\*Review.+?\*\*:(.*)$/m;
+const STEP_BULLET_PATTERN = /^- \[([ x])\] \*\*(.+?)\*\*/gm;
+const H4_TODO_PATTERN = /^####\s+(?:Todo\s+\d+:?\s*)?(.+)$/gm;
+const STEP_REVIEW_PATTERN = /^Step\s+\d+\s*[—–-]\s*Review\b/;
 const REVIEW_STATUS_PATTERN = /^## レビューステータス\s*\n[\s\S]*?- \[([ x])\] \*\*レビュー完了\*\*/m;
 const SUMMARY_HEADING_PATTERN = /^## 概要\s*$/m;
 const H2_HEADING_PATTERN = /^##\s+/m;
@@ -34,7 +35,7 @@ export function parsePlanFile(content: string, filePath: string, projectName: st
   const reviewChecked = hasReviewSection && reviewMatch![1] === 'x';
   const title = content.match(TITLE_PATTERN)?.[1] ?? '';
   const gates = parseGates(content);
-  const todos = gates.length > 0 ? gates.flatMap((gate) => gate.todos) : parseTodos(content);
+  const todos = gates.length > 0 ? gates.flatMap((gate) => gate.todos) : parseGateTodos(content);
   const progress = calculateProgress(todos);
   const summary = parseSummary(content);
 
@@ -125,12 +126,10 @@ const REVIEW_RESULT_PATTERN = /(PASSED|FAILED|SKIPPED|IN[_\s-]?PROGRESS)/i;
 const REVIEW_FIX_COUNT_PATTERN = /FIX\s*(\d+)\s*回/;
 const COMMIT_HASH_PATTERN = /\b(?:commit|commits)\s+[0-9a-f,\s]+/gi;
 
-type ReviewResultLabel = 'PASSED' | 'FAILED' | 'SKIPPED' | 'IN_PROGRESS';
-
 export function parseReviewBlockquote(stepBlock: string): {
   hasReview: boolean;
   reviewFilled: boolean;
-  reviewResult: ReviewResultLabel | null;
+  reviewResult: ReviewResult | null;
   reviewFixCount: number | null;
   summary: string;
 } {
@@ -158,7 +157,7 @@ export function parseReviewBlockquote(stepBlock: string): {
 
   const statusMatch = firstLineBody.match(REVIEW_RESULT_PATTERN);
   const reviewResult = statusMatch
-    ? (statusMatch[1].toUpperCase().replace(/[\s-]/g, '_') as ReviewResultLabel)
+    ? (statusMatch[1].toUpperCase().replace(/[\s-]/g, '_') as ReviewResult)
     : null;
 
   const fixMatch = firstLineBody.match(REVIEW_FIX_COUNT_PATTERN);
@@ -223,30 +222,59 @@ function parseGates(content: string): Gate[] {
     return {
       id: match[1],
       title: match[2],
-      todos: parseTodos(section),
+      todos: parseGateTodos(section),
     };
   });
 }
 
-function parseTodos(content: string): TodoItem[] {
-  const matches = [...content.matchAll(TODO_PATTERN)];
+function parseGateTodos(gateContent: string): Todo[] {
+  const masked = maskCodeFences(gateContent);
+  const h4Matches = [...masked.matchAll(H4_TODO_PATTERN)];
 
-  return matches.map((match, index) => {
-    const todoBlock = sliceBlock(content, match.index ?? 0, matches[index + 1]?.index ?? content.length);
-    const reviewMatch = todoBlock.match(REVIEW_PATTERN);
+  if (h4Matches.length === 0) {
+    const steps = parseSteps(gateContent);
+    return steps.map((step) => ({ title: step.title, steps: [step] }));
+  }
+
+  return h4Matches.map((match, index) => {
+    const sectionStart = match.index ?? 0;
+    const sectionEnd = h4Matches[index + 1]?.index ?? gateContent.length;
+    const sectionContent = gateContent.slice(sectionStart, sectionEnd);
 
     return {
-      title: match[2],
-      checked: match[1] === 'x',
-      hasReview: reviewMatch !== null,
-      reviewFilled: reviewMatch !== null && reviewMatch[1].trim().length > 0,
+      title: match[1].trim(),
+      steps: parseSteps(sectionContent),
     };
   });
 }
 
-function calculateProgress(todos: TodoItem[]): PlanFile['progress'] {
-  const completed = todos.filter((todo) => todo.checked).length;
-  const total = todos.length;
+function parseSteps(content: string): Step[] {
+  const matches = [...content.matchAll(STEP_BULLET_PATTERN)];
+
+  return matches.map((match, index) => {
+    const stepBlock = sliceBlock(content, match.index ?? 0, matches[index + 1]?.index ?? content.length);
+    const title = match[2];
+    const kind: StepKind = STEP_REVIEW_PATTERN.test(title) ? 'review' : 'impl';
+    const description = extractStepDescription(stepBlock);
+    const review = parseReviewBlockquote(stepBlock);
+
+    return {
+      title,
+      checked: match[1] === 'x',
+      kind,
+      description,
+      hasReview: review.hasReview,
+      reviewFilled: review.reviewFilled,
+      reviewResult: review.reviewResult,
+      reviewFixCount: review.reviewFixCount,
+    };
+  });
+}
+
+function calculateProgress(todos: Todo[]): PlanFile['progress'] {
+  const allSteps = todos.flatMap((todo) => todo.steps);
+  const completed = allSteps.filter((step) => step.checked).length;
+  const total = allSteps.length;
 
   return {
     total,
@@ -256,17 +284,18 @@ function calculateProgress(todos: TodoItem[]): PlanFile['progress'] {
 }
 
 function determineStatus(
-  todos: TodoItem[],
+  todos: Todo[],
   hasReviewSection: boolean,
   reviewChecked: boolean
 ): PlanStatus {
-  if (todos.length === 0) return 'not-started';
-  if (todos.every((todo) => todo.checked)) {
+  const allSteps = todos.flatMap((todo) => todo.steps);
+  if (allSteps.length === 0) return 'not-started';
+  if (allSteps.every((step) => step.checked)) {
     if (hasReviewSection && !reviewChecked) return 'in-review';
     return 'completed';
   }
-  if (todos.some((todo) => !todo.checked && todo.reviewFilled)) return 'in-review';
-  if (todos.some((todo) => todo.checked)) return 'in-progress';
+  if (allSteps.some((step) => !step.checked && step.reviewFilled)) return 'in-review';
+  if (allSteps.some((step) => step.checked)) return 'in-progress';
   return 'not-started';
 }
 

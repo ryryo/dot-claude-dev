@@ -35,7 +35,8 @@ export function PlanDetail({ plan }: PlanDetailProps) {
         </div>
       ) : (
         plan.gates.map((gate, index) => {
-          const completedCount = gate.todos.filter((todo) => todo.checked).length
+          const allSteps = gate.todos.flatMap((todo) => todo.steps)
+          const completedCount = allSteps.filter((step) => step.checked).length
           const isOpen = openGateId === gate.id
 
           return (
@@ -48,7 +49,7 @@ export function PlanDetail({ plan }: PlanDetailProps) {
                   <div className="space-y-1">
                     <p className="text-nav font-semibold">{gate.title}</p>
                     <p className="text-muted-foreground text-xs tabular-nums">
-                      {completedCount}/{gate.todos.length} 完了
+                      {completedCount}/{allSteps.length} 完了
                     </p>
                   </div>
 
@@ -63,21 +64,21 @@ export function PlanDetail({ plan }: PlanDetailProps) {
                 <CollapsibleContent className="px-4 pb-4">
                   <Separator className="mb-3" />
                   <div className="space-y-2">
-                    {gate.todos.map((todo, todoIndex) => (
+                    {allSteps.map((step, stepIndex) => (
                       <div
-                        key={`${plan.filePath}-${index}-${todoIndex}`}
+                        key={`${plan.filePath}-${index}-${stepIndex}`}
                         className="flex items-start justify-between gap-3 rounded-lg bg-muted/30 px-3 py-2"
                       >
                         <div className="flex min-w-0 items-start gap-2">
-                          {todo.checked ? (
+                          {step.checked ? (
                             <Check className="mt-0.5 size-4 shrink-0 text-primary" />
                           ) : (
                             <Circle className="text-muted-foreground mt-0.5 size-4 shrink-0" />
                           )}
-                          <span className="text-sm whitespace-normal">{todo.title}</span>
+                          <span className="text-sm whitespace-normal">{step.title}</span>
                         </div>
 
-                        {todo.hasReview && todo.reviewFilled ? (
+                        {step.hasReview && step.reviewFilled ? (
                           <Badge variant="secondary" className="shrink-0">
                             Review 済
                           </Badge>

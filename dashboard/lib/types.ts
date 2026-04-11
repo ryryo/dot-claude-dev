@@ -1,16 +1,27 @@
 export type PlanStatus = 'not-started' | 'in-progress' | 'in-review' | 'completed';
+export type StepKind = 'impl' | 'review';
+export type ReviewResult = 'PASSED' | 'FAILED' | 'SKIPPED' | 'IN_PROGRESS';
 
-export interface TodoItem {
+export interface Step {
   title: string;
   checked: boolean;
+  kind: StepKind;
+  description: string;
   hasReview: boolean;
   reviewFilled: boolean;
+  reviewResult: ReviewResult | null;
+  reviewFixCount: number | null;
+}
+
+export interface Todo {
+  title: string;
+  steps: Step[];
 }
 
 export interface Gate {
   id: string;
   title: string;
-  todos: TodoItem[];
+  todos: Todo[];
 }
 
 export interface PlanFile {
@@ -22,7 +33,7 @@ export interface PlanFile {
   reviewChecked: boolean;
   status: PlanStatus;
   gates: Gate[];
-  todos: TodoItem[];
+  todos: Todo[];
   progress: {
     total: number;
     completed: number;

@@ -409,7 +409,7 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
 
 #### Todo 3: 型刷新 + h4 Todo パース + parsePlanFile 統合 + 既存テスト更新
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/types.ts`, `dashboard/lib/plan-parser.ts`, `dashboard/__tests__/plan-parser.test.ts`, `dashboard/__tests__/plan-parser-summary.test.ts`
   - **内容**: 型を破壊的に刷新し、`parsePlanFile` が Gate → Todo → Step の3階層を返すように統合する。既存テストを新データ構造に書き直す
   - **実装詳細**:
@@ -435,9 +435,9 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
     - **plan-parser-summary.test.ts**: `result.summary` / `result.rawMarkdown` のテストは基本通る想定だが、`result.todos` に触れる箇所があれば修正（現状は触れていない）
   - **依存**: Todo 1（`extractStepDescription`）, Todo 2（`parseReviewBlockquote`）
 
-- [ ] **Step 2 — Review B1**
+- [x] **Step 2 — Review B1**
 
-  > **Review B1**: [記入欄]
+  > **Review B1**: ✅ PASSED — 複雑モード3観点並列レビュー (quality / correctness / conventions) すべて PASS。信頼度 80 以上の指摘ゼロ。36/36 テスト PASS、`npm run build` 成功。`plan-detail.tsx` は Todo 4 までの暫定コンパイルシムとして allSteps.flatMap で対応。
 
 #### Todo 4: PlanDetail 3階層アコーディオン再構築
 

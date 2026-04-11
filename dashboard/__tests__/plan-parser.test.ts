@@ -136,58 +136,57 @@ describe('parsePlanFile', () => {
 
     const result = parsePlanFile(content, filePath, projectName);
 
+    const stepA1 = {
+      title: 'Todo A1',
+      checked: true,
+      kind: 'impl' as const,
+      description: '',
+      hasReview: true,
+      reviewFilled: true,
+      reviewResult: null,
+      reviewFixCount: null,
+    };
+    const stepA2 = {
+      title: 'Todo A2',
+      checked: false,
+      kind: 'impl' as const,
+      description: '',
+      hasReview: true,
+      reviewFilled: false,
+      reviewResult: null,
+      reviewFixCount: null,
+    };
+    const stepB1 = {
+      title: 'Todo B1',
+      checked: false,
+      kind: 'impl' as const,
+      description: '',
+      hasReview: true,
+      reviewFilled: false,
+      reviewResult: null,
+      reviewFixCount: null,
+    };
+
     expect(result.gates).toEqual([
       {
         id: 'Gate A',
         title: 'セットアップ',
         todos: [
-          {
-            title: 'Todo A1',
-            checked: true,
-            hasReview: true,
-            reviewFilled: true,
-          },
-          {
-            title: 'Todo A2',
-            checked: false,
-            hasReview: true,
-            reviewFilled: false,
-          },
+          { title: 'Todo A1', steps: [stepA1] },
+          { title: 'Todo A2', steps: [stepA2] },
         ],
       },
       {
         id: 'Gate B',
         title: '実装',
-        todos: [
-          {
-            title: 'Todo B1',
-            checked: false,
-            hasReview: true,
-            reviewFilled: false,
-          },
-        ],
+        todos: [{ title: 'Todo B1', steps: [stepB1] }],
       },
     ]);
 
     expect(result.todos).toEqual([
-      {
-        title: 'Todo A1',
-        checked: true,
-        hasReview: true,
-        reviewFilled: true,
-      },
-      {
-        title: 'Todo A2',
-        checked: false,
-        hasReview: true,
-        reviewFilled: false,
-      },
-      {
-        title: 'Todo B1',
-        checked: false,
-        hasReview: true,
-        reviewFilled: false,
-      },
+      { title: 'Todo A1', steps: [stepA1] },
+      { title: 'Todo A2', steps: [stepA2] },
+      { title: 'Todo B1', steps: [stepB1] },
     ]);
   });
 
