@@ -15,7 +15,7 @@ import { ChevronRight, FileText } from 'lucide-react'
 
 import { PlanMarkdownModal } from '@/components/plan-markdown-modal'
 import { Badge } from '@/components/ui/badge'
-import { getPlanSize, getSizeBin } from '@/lib/plan-size'
+import { getPlanSize, getSizeBin, SizeBin } from '@/lib/plan-size'
 import { cn } from '@/lib/utils'
 import type { PlanFile, PlanStatus } from '@/lib/types'
 
@@ -35,12 +35,18 @@ const STATUS_BG_CLASS: Record<PlanStatus, string> = {
 
 interface PlanTableProps {
   plans: PlanFile[]
+  sizeBinFilter: SizeBin | null
 }
 
-export function PlanTable({ plans }: PlanTableProps) {
+export function PlanTable({ plans, sizeBinFilter }: PlanTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'size', desc: false }])
   const [expanded, setExpanded] = useState<ExpandedState>({})
   const [modalPlan, setModalPlan] = useState<PlanFile | null>(null)
+
+  const data = useMemo(() => {
+    if (!sizeBinFilter) return plans
+    return plans.filter((p) => getSizeBin(getPlanSize(p).total) === sizeBinFilter)
+  }, [plans, sizeBinFilter])
 
   const columns = useMemo<ColumnDef<PlanFile>[]>(() => [
     {
@@ -159,7 +165,7 @@ export function PlanTable({ plans }: PlanTableProps) {
   ], [])
 
   const table = useReactTable({
-    data: plans,
+    data,
     columns,
     state: { sorting, expanded },
     onSortingChange: setSorting,
@@ -209,10 +215,12 @@ export function PlanTable({ plans }: PlanTableProps) {
               )}
             </Fragment>
           ))}
-          {plans.length === 0 && (
+          {data.length === 0 && (
             <tr>
               <td colSpan={columns.length} className="px-3 py-6 text-center text-muted-foreground">
-                PLAN がありません
+                {sizeBinFilter
+                  ? `規模 ${sizeBinFilter} に該当する PLAN はありません`
+                  : 'PLAN がありません'}
               </td>
             </tr>
           )}

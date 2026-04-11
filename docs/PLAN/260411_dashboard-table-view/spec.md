@@ -278,8 +278,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo C2**: SizeHistogram コンポーネント
   > **Review C2**: ✅ PASSED
 
-- [ ] **Todo C3**: Table ↔ ヒストグラム連動フィルタ
-  > **Review C3**:
+- [x] **Todo C3**: Table ↔ ヒストグラム連動フィルタ
+  > **Review C3**: ✅ PASSED
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
