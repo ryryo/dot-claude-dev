@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, ReactNode, useMemo, useState } from 'react'
 import {
   ColumnDef,
   ExpandedState,
@@ -8,6 +8,7 @@ import {
   getCoreRowModel,
   getExpandedRowModel,
   getSortedRowModel,
+  Row,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
@@ -36,9 +37,10 @@ const STATUS_BG_CLASS: Record<PlanStatus, string> = {
 interface PlanTableProps {
   plans: PlanFile[]
   sizeBinFilter: SizeBin | null
+  groupByProject: boolean
 }
 
-export function PlanTable({ plans, sizeBinFilter }: PlanTableProps) {
+export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'size', desc: false }])
   const [expanded, setExpanded] = useState<ExpandedState>({})
   const [modalPlan, setModalPlan] = useState<PlanFile | null>(null)
@@ -176,6 +178,55 @@ export function PlanTable({ plans, sizeBinFilter }: PlanTableProps) {
     getRowCanExpand: () => true,
   })
 
+  const rows = table.getRowModel().rows
+
+  function renderRow(row: Row<PlanFile>) {
+    return (
+      <Fragment key={row.id}>
+        <tr className="border-t hover:bg-muted/30">
+          {row.getVisibleCells().map((cell) => (
+            <td key={cell.id} className="px-3 py-2 align-middle">
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </td>
+          ))}
+        </tr>
+        {row.getIsExpanded() && (
+          <tr className="bg-muted/20">
+            <td colSpan={row.getVisibleCells().length} className="px-6 py-3">
+              <PlanGateRows plan={row.original} />
+            </td>
+          </tr>
+        )}
+      </Fragment>
+    )
+  }
+
+  let body: ReactNode
+  if (groupByProject) {
+    const groups = new Map<string, Row<PlanFile>[]>()
+    for (const r of rows) {
+      const key = r.original.projectName
+      const arr = groups.get(key) ?? []
+      arr.push(r)
+      groups.set(key, arr)
+    }
+    body = Array.from(groups.entries()).map(([projectName, groupRows]) => (
+      <Fragment key={projectName}>
+        <tr className="bg-muted/40">
+          <td
+            colSpan={columns.length}
+            className="px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+          >
+            {projectName} <span className="tabular-nums">({groupRows.length})</span>
+          </td>
+        </tr>
+        {groupRows.map(renderRow)}
+      </Fragment>
+    ))
+  } else {
+    body = rows.map(renderRow)
+  }
+
   return (
     <>
     <div className="overflow-hidden rounded-lg border">
@@ -197,24 +248,7 @@ export function PlanTable({ plans, sizeBinFilter }: PlanTableProps) {
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <Fragment key={row.id}>
-              <tr className="border-t hover:bg-muted/30">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-3 py-2 align-middle">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-              {row.getIsExpanded() && (
-                <tr className="bg-muted/20">
-                  <td colSpan={row.getVisibleCells().length} className="px-6 py-3">
-                    <PlanGateRows plan={row.original} />
-                  </td>
-                </tr>
-              )}
-            </Fragment>
-          ))}
+          {body}
           {data.length === 0 && (
             <tr>
               <td colSpan={columns.length} className="px-3 py-6 text-center text-muted-foreground">
