@@ -6,8 +6,6 @@ import remarkGfm from "remark-gfm"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog"
 
 interface PlanMarkdownModalProps {
@@ -26,10 +24,7 @@ export function PlanMarkdownModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <div className="prose prose-sm dark:prose-invert max-h-[80vh] overflow-y-auto">
+        <div className="prose prose-sm dark:prose-invert max-w-none max-h-[80vh] overflow-y-auto">
           <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
         </div>
       </DialogContent>

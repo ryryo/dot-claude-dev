@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { PlanCard } from "@/components/plan-card"
@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { PlanFile, PlanStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-const COLUMNS: { status: PlanStatus; label: string; color: string }[] = [
-  { status: "not-started", label: "未実装", color: "bg-status-not-started" },
-  { status: "in-progress", label: "実装中", color: "bg-status-in-progress" },
-  { status: "in-review", label: "レビュー待ち", color: "bg-status-in-review" },
-  { status: "completed", label: "完了", color: "bg-status-completed" },
+const COLUMNS: { status: PlanStatus; label: string; color: string; bgVar: string }[] = [
+  { status: "not-started", label: "未実装", color: "bg-status-not-started", bgVar: "var(--color-status-not-started)" },
+  { status: "in-progress", label: "実装中", color: "bg-status-in-progress", bgVar: "var(--color-status-in-progress)" },
+  { status: "in-review", label: "レビュー待ち", color: "bg-status-in-review", bgVar: "var(--color-status-in-review)" },
+  { status: "completed", label: "完了", color: "bg-status-completed", bgVar: "var(--color-status-completed)" },
 ]
 
 interface KanbanBoardProps {
@@ -21,6 +21,15 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ plans }: KanbanBoardProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [isMd, setIsMd] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)")
+    setIsMd(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMd(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
 
   const plansByStatus = COLUMNS.reduce<Record<PlanStatus, PlanFile[]>>(
     (accumulator, column) => {
@@ -44,12 +53,16 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
       {COLUMNS.map((column) => {
         const columnPlans = plansByStatus[column.status]
         const isExpanded = expandedStatus === column.status
+        const isNarrow = isMd && expandedId !== null && !isExpanded
+        const flexStyle = isMd
+          ? { flex: expandedStatus === null ? "1 1 0%" : isExpanded ? "2 1 0%" : "1 1 0%" }
+          : undefined
 
         return (
           <div
             key={column.status}
-            className="w-[85vw] shrink-0 snap-center transition-all duration-300 ease-in-out md:w-auto md:shrink md:min-w-[120px]"
-            style={{ flex: expandedStatus === null ? '1 1 0%' : isExpanded ? '2 1 0%' : '1 1 0%' }}
+            className="relative overflow-hidden w-[85vw] shrink-0 snap-center transition-all duration-300 ease-in-out md:w-auto md:shrink md:min-w-[120px]"
+            style={flexStyle}
           >
             <Card
               className={cn(
@@ -71,6 +84,7 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
                       key={`${plan.projectName}/${plan.filePath}`}
                       plan={plan}
                       expanded={expandedId === plan.filePath}
+                      isNarrow={isNarrow}
                       onToggle={() =>
                         setExpandedId((current) =>
                           current === plan.filePath ? null : plan.filePath
@@ -85,6 +99,13 @@ export function KanbanBoard({ plans }: KanbanBoardProps) {
                 )}
               </CardContent>
             </Card>
+
+            {isNarrow && (
+              <div
+                className="pointer-events-none absolute inset-y-0 right-0 z-20 w-8"
+                style={{ background: `linear-gradient(to right, transparent, ${column.bgVar})` }}
+              />
+            )}
           </div>
         )
       })}

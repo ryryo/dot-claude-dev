@@ -24,16 +24,17 @@ interface PlanCardProps {
   plan: PlanFile
   expanded: boolean
   onToggle: () => void
+  isNarrow?: boolean
 }
 
-export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
+export function PlanCard({ plan, expanded, onToggle, isNarrow }: PlanCardProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       <Card className="relative gap-0 overflow-hidden py-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         {/* アイコングループ: FileText + ChevronDown をまとめて絶対配置 */}
-        <div className="pointer-events-none absolute top-4 right-3 z-10 flex items-center gap-2">
+        <div className={cn("pointer-events-none absolute top-4 right-3 z-10 flex items-center gap-2", isNarrow && "hidden")}>
           <button
             type="button"
             aria-label={`${plan.title} の全文を読む`}
@@ -55,7 +56,7 @@ export function PlanCard({ plan, expanded, onToggle }: PlanCardProps) {
         <CardHeader className="px-0 py-0">
           <CollapsibleTrigger className="w-full cursor-pointer" aria-label={`${plan.title} の詳細を${expanded ? '閉じる' : '開く'}`}>
             <div className="hover:bg-muted/40 flex w-full flex-col gap-4 px-4 py-4 text-left transition-colors">
-              <div className="pr-14">
+              <div className={cn("pr-14", isNarrow && "pr-2")}>
                 <div className="min-w-0 space-y-2">
                   <Badge variant="outline" className="max-w-full">
                     <span className="max-w-[180px] truncate">{plan.projectName}</span>
