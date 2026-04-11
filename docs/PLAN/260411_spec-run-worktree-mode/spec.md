@@ -363,47 +363,69 @@ Gate D: 検証（Gate C 完了後）
 
 ### Gate A: スクリプト層
 
-- [ ] **Todo A1**: setup-worktree.sh を spec-run/scripts/ に作成（team-run 版を流用 + 5 点改修）
-  > **Review A1**:
+- [x] **Todo A1**: setup-worktree.sh を spec-run/scripts/ に作成（team-run 版を流用 + 5 点改修）
+  > **Review A1**: ✅ PASSED (シンプルモード / correctness reviewer 1体)
+  >
+  > 5 点改修（起点明示 / SLUG サニタイズ / base 自動検出 / fetch / reuse 警告）すべて確認。契約（stdout=絶対パス / stderr=ログ / exit 0-3）遵守。bash -n 構文検証 PASS、実行権限付与済み。
 
-- [ ] **Todo A2**: cleanup-worktree.sh を spec-run/scripts/ に作成（team-run 版を流用 + 3 点改修）
-  > **Review A2**:
+- [x] **Todo A2**: cleanup-worktree.sh を spec-run/scripts/ に作成（team-run 版を流用 + 3 点改修）
+  > **Review A2**: ✅ PASSED (シンプルモード / correctness reviewer 1体)
+  >
+  > 3 点改修（feature ブランチ削除追加 / `|| true` 撤廃 / 未コミット検知）すべて確認。`-d` フラグで未マージ保護、SLUG サニタイズ、exit コード契約（0/1/2/3）遵守。bash -n PASS。
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate B: プロトコル文書層
 
-- [ ] **Todo B1**: references/worktree-protocol.md を新規作成
-  > **Review B1**:
+- [x] **Todo B1**: references/worktree-protocol.md を新規作成
+  > **Review B1**: ⏭️ SKIPPED (docs only)
 
-- [ ] **Todo B2**: references/execution.md に worktree 対応セクション追加
-  > **Review B2**:
+- [x] **Todo B2**: references/execution.md に worktree 対応セクション追加
+  > **Review B2**: ⏭️ SKIPPED (docs only)
 
-- [ ] **Todo B3**: references/codex-execution.md に worktree 対応セクション追加
-  > **Review B3**:
+- [x] **Todo B3**: references/codex-execution.md に worktree 対応セクション追加
+  > **Review B3**: ⏭️ SKIPPED (docs only)
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate C: SKILL.md 本体更新
 
-- [ ] **Todo C1**: SKILL.md の Step 4 を「実行モード + worktree 選択」に書き換える
-  > **Review C1**:
+- [x] **Todo C1**: SKILL.md の Step 4 を「実行モード + worktree 選択」に書き換える
+  > **Review C1**: ⏭️ SKIPPED (docs only)
 
-- [ ] **Todo C2**: SKILL.md に Step 4.5（dirty check）と Step 4.6（worktree setup）を追加
-  > **Review C2**:
+- [x] **Todo C2**: SKILL.md に Step 4.5（dirty check）と Step 4.6（worktree setup）を追加
+  > **Review C2**: ⏭️ SKIPPED (docs only)
 
-- [ ] **Todo C3**: SKILL.md の完了処理に worktree 終了処理（merge + cleanup）を追加
-  > **Review C3**:
+- [x] **Todo C3**: SKILL.md の完了処理に worktree 終了処理（merge + cleanup）を追加
+  > **Review C3**: ⏭️ SKIPPED (docs only)
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate D: 検証
 
-- [ ] **Todo D1**: 両シェルスクリプトの構文検証（`bash -n`）+ SLUG バリデーション・冪等性・Codex plugin 互換性の動作確認（master 履歴を汚染しないよう一時ブランチ `test/validate-worktree-cleanup` を使用）
-  > **Review D1**:
+- [x] **Todo D1**: 両シェルスクリプトの構文検証（`bash -n`）+ SLUG バリデーション・冪等性・Codex plugin 互換性の動作確認（master 履歴を汚染しないよう一時ブランチ `test/validate-worktree-cleanup` を使用）
+  > **Review D1**: ✅ PASSED
+  >
+  > - 構文検証: `bash -n` 両方とも 0 exit
+  > - SLUG バリデーション: 'bad slug' / '/etc' / 空文字 すべて exit 1
+  > - 新規作成: `.worktrees/test-worktree-validation/` + `feature/test-worktree-validation` 作成確認
+  > - 冪等性: 再実行で "already exists, reusing" メッセージ確認、exit 0
+  > - Codex plugin 互換性: worktree cwd から `resolve-codex-plugin.sh` 実行で `/Users/ryryo/.claude/plugins/cache/openai-codex/codex/1.0.2/scripts/codex-companion.mjs` 取得成功 → **Codex モード × worktree モード併用可能**
+  > - cleanup 未マージケース: `git branch -d` 失敗で exit 3、worktree は先に削除される挙動を確認
+  > - cleanup 正常ケース: 一時ブランチ `test/validate-worktree-cleanup` で `--no-ff` マージ後に cleanup 実行、exit 0、worktree + feature ブランチ削除確認
+  > - 後始末: master HEAD は `0501eaf` のまま不変、一時ブランチも `-D` で削除済み
 
-- [ ] **Todo D2**: SKILL.md ↔ worktree-protocol.md ↔ execution.md / codex-execution.md の相互参照が壊れていないか確認
-  > **Review D2**:
+- [x] **Todo D2**: SKILL.md ↔ worktree-protocol.md ↔ execution.md / codex-execution.md の相互参照が壊れていないか確認
+  > **Review D2**: ✅ PASSED
+  >
+  > - 全 3 ファイル（setup-worktree.sh / cleanup-worktree.sh / worktree-protocol.md）存在確認
+  > - SKILL.md → worktree-protocol.md: 6 箇所参照（Step 4 / Step 4.5 / Step 4.6×2 / 完了処理×2）
+  > - execution.md → worktree-protocol.md: 1 箇所（line 167）
+  > - codex-execution.md → worktree-protocol.md: 1 箇所（line 343）
+  > - worktree-protocol.md → scripts: setup/cleanup 両方正しいパス
+  > - 用語統一: `$WORKTREE_PATH` / `$MASTER_ROOT` / `feature/{slug}` / `.worktrees/{slug}` 全ファイル一致
+  > - Step 番号連続性: 1→2→3→4→4.5→4.6→5 確認
+  > - Codex × worktree 併用: D1 で検証成功、codex-execution.md の「動作する前提」記述と整合
 
 **Gate D 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
