@@ -272,8 +272,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 
 ### Gate C: 規模ヒストグラム
 
-- [ ] **Todo C1** [TDD]: `getSizeHistogram` ヘルパー実装
-  > **Review C1**:
+- [x] **Todo C1** [TDD]: `getSizeHistogram` ヘルパー実装
+  > **Review C1**: ✅ PASSED
 
 - [ ] **Todo C2**: SizeHistogram コンポーネント
   > **Review C2**:
