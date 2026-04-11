@@ -1,0 +1,199 @@
+{
+  "spec": {
+    "slug": "260411_spec-run-worktree-mode",
+    "title": "dev:spec-run に worktree モードを追加する",
+    "specPath": "spec.md"
+  },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "スクリプト層",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "プロトコル文書層",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "C",
+      "title": "SKILL.md 本体更新",
+      "dependencies": ["B"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "D",
+      "title": "検証",
+      "dependencies": ["C"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "setup-worktree.sh を spec-run/scripts/ に作成（team-run 版を流用 + 5 点改修）",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/scripts/setup-worktree.sh",
+          "operation": "create",
+          "summary": "worktree + feature ブランチを作成するシェルスクリプト。冪等性あり。改修 5 点（起点明示/サニタイズ/base検出/fetch/reuse警告）"
+        }
+      ],
+      "impl": "## 目的\nteam-run 版（references/team-run-setup-worktree.sh）をベースに、spec-run 用の setup-worktree.sh を新規作成する。既存動作（冪等性・stdout=絶対パス・stderr=ログ）を維持しつつ 5 点の改修を加える。\n\n## 作成ファイル\n`.claude/skills/dev/spec-run/scripts/setup-worktree.sh`\n\n## 改修 5 点\n1. **起点ブランチ明示**: `git branch feature/{slug} {base}` の形で base を明示\n2. **SLUG サニタイズ**: `^[a-zA-Z0-9][a-zA-Z0-9_.-]*$` にマッチしない場合 exit 1\n3. **base 自動検出**: `git symbolic-ref refs/remotes/origin/HEAD` で取得、失敗時は `master` → `main` の順で試行、全失敗で exit 2\n4. **リモート同期**: `git fetch origin --quiet` を冒頭で実行。失敗は warning のみ（exit しない、オフライン許容）\n5. **reuse 警告**: 既存 branch reuse 時、`git merge-base --is-ancestor origin/{base} feature/{slug}` で遅れていれば stderr に警告\n\n## 完全なスクリプト内容\n\n```bash\n#!/bin/bash\n# spec-run 用 worktree セットアップスクリプト\n# Usage: setup-worktree.sh <slug>\n#\n# 処理:\n# 1. base ブランチを検出（symbolic-ref → master → main の順）\n# 2. SLUG をサニタイズ\n# 3. origin を fetch（失敗は warning）\n# 4. feature/{slug} ブランチを作成（既存なら reuse + 警告）\n# 5. .worktrees/{slug}/ に worktree を作成（既存なら reuse）\n# 6. worktree の絶対パスを stdout に出力\n\nset -euo pipefail\n\n# --- 引数検証 ---\nif [ $# -lt 1 ] || [ -z \"${1:-}\" ]; then\n    echo \"Usage: setup-worktree.sh <slug>\" >&2\n    exit 1\nfi\n\nSLUG=\"$1\"\n\n# SLUG サニタイズ\nif ! [[ \"$SLUG\" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]; then\n    echo \"ERROR: Invalid slug '${SLUG}'. Must match ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$\" >&2\n    exit 1\nfi\n\nWORKTREE_PATH=\".worktrees/${SLUG}\"\nFEATURE_BRANCH=\"feature/${SLUG}\"\n\n# --- base ブランチ検出 ---\nBASE_BRANCH=\"\"\nif BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); then\n    :\nelif git show-ref --verify --quiet refs/heads/master; then\n    BASE_BRANCH=\"master\"\nelif git show-ref --verify --quiet refs/heads/main; then\n    BASE_BRANCH=\"main\"\nelse\n    echo \"ERROR: Cannot detect base branch (symbolic-ref failed, master/main not found)\" >&2\n    exit 2\nfi\necho \"Base branch: ${BASE_BRANCH}\" >&2\n\n# --- リモート fetch（失敗は warning） ---\nif ! git fetch origin --quiet 2>/dev/null; then\n    echo \"WARNING: git fetch origin failed (offline?). Continuing with local refs.\" >&2\nfi\n\n# --- feature ブランチ作成 or reuse ---\nif git show-ref --verify --quiet \"refs/heads/${FEATURE_BRANCH}\"; then\n    echo \"Branch ${FEATURE_BRANCH} already exists, reusing\" >&2\n    # reuse 時、base の最新を含んでいるか確認（遅れていれば警告）\n    if git show-ref --verify --quiet \"refs/remotes/origin/${BASE_BRANCH}\"; then\n        if ! git merge-base --is-ancestor \"origin/${BASE_BRANCH}\" \"${FEATURE_BRANCH}\" 2>/dev/null; then\n            echo \"WARNING: ${FEATURE_BRANCH} is behind origin/${BASE_BRANCH}. Merge is recommended after worktree setup.\" >&2\n        fi\n    fi\nelse\n    if ! git branch \"${FEATURE_BRANCH}\" \"${BASE_BRANCH}\"; then\n        echo \"ERROR: Failed to create branch ${FEATURE_BRANCH} from ${BASE_BRANCH}\" >&2\n        exit 3\n    fi\n    echo \"Created branch: ${FEATURE_BRANCH} (from ${BASE_BRANCH})\" >&2\nfi\n\n# --- worktree 作成 or reuse ---\nif [ -d \"${WORKTREE_PATH}\" ]; then\n    echo \"Worktree ${WORKTREE_PATH} already exists, reusing\" >&2\nelse\n    if ! git worktree add \"${WORKTREE_PATH}\" \"${FEATURE_BRANCH}\"; then\n        echo \"ERROR: Failed to create worktree at ${WORKTREE_PATH}\" >&2\n        exit 3\n    fi\n    echo \"Created worktree: ${WORKTREE_PATH}\" >&2\nfi\n\n# --- 絶対パスを stdout に出力 ---\ncd \"${WORKTREE_PATH}\" && pwd\n```\n\n## 作成後の確認\n- `chmod +x .claude/skills/dev/spec-run/scripts/setup-worktree.sh`\n- `bash -n .claude/skills/dev/spec-run/scripts/setup-worktree.sh` で構文エラーなし\n- 無効 slug テスト: `bash .claude/skills/dev/spec-run/scripts/setup-worktree.sh 'bad slug'` が exit 1 を返す（手動確認）\n- Gate D の Todo D1 で本格的な動作検証を行う\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "A2",
+      "gate": "A",
+      "title": "cleanup-worktree.sh を spec-run/scripts/ に作成（team-run 版を流用 + 3 点改修）",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/scripts/cleanup-worktree.sh",
+          "operation": "create",
+          "summary": "worktree と feature ブランチを削除するシェルスクリプト。改修 3 点（feature削除追加/エラー握りつぶし撤廃/未コミット検知）"
+        }
+      ],
+      "impl": "## 目的\nteam-run 版（references/team-run-cleanup-worktree.sh）をベースに、spec-run 用の cleanup-worktree.sh を新規作成する。team-run 版は worktree のみ削除して feature ブランチを残していたが、spec-run 用はマージ完了後を前提とするため feature ブランチも削除する。\n\n## 作成ファイル\n`.claude/skills/dev/spec-run/scripts/cleanup-worktree.sh`\n\n## 改修 3 点\n1. **feature ブランチ削除追加**: worktree 削除後に `git branch -d feature/{slug}`（未マージなら失敗 → exit 3 で報告）\n2. **エラー握りつぶし撤廃**: team-run 版の `|| true` を撤廃。`git worktree remove --force` が失敗したら exit 2\n3. **未コミット検知**: worktree 削除前に `git -C .worktrees/{slug} status --porcelain` で未コミット変更を確認、あれば exit 2\n\n## 完全なスクリプト内容\n\n```bash\n#!/bin/bash\n# spec-run 用 worktree クリーンアップスクリプト\n# Usage: cleanup-worktree.sh <slug>\n#\n# 処理:\n# 1. SLUG サニタイズ\n# 2. worktree の未コミット変更を確認（あれば中止）\n# 3. worktree を削除（git worktree remove）\n# 4. feature/{slug} ブランチをローカル削除（git branch -d、未マージなら失敗）\n# 5. git worktree prune\n# 6. .worktrees ディレクトリが空なら削除\n\nset -euo pipefail\n\n# --- 引数検証 ---\nif [ $# -lt 1 ] || [ -z \"${1:-}\" ]; then\n    echo \"Usage: cleanup-worktree.sh <slug>\" >&2\n    exit 1\nfi\n\nSLUG=\"$1\"\n\nif ! [[ \"$SLUG\" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]; then\n    echo \"ERROR: Invalid slug '${SLUG}'. Must match ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$\" >&2\n    exit 1\nfi\n\nWORKTREE_PATH=\".worktrees/${SLUG}\"\nFEATURE_BRANCH=\"feature/${SLUG}\"\n\necho \"=== Cleanup Worktree: ${SLUG} ===\" >&2\n\n# --- 未コミット変更チェック ---\nif [ -d \"${WORKTREE_PATH}\" ]; then\n    if DIRTY=$(git -C \"${WORKTREE_PATH}\" status --porcelain 2>/dev/null) && [ -n \"${DIRTY}\" ]; then\n        echo \"ERROR: Worktree ${WORKTREE_PATH} has uncommitted changes:\" >&2\n        echo \"${DIRTY}\" >&2\n        echo \"Commit or stash changes before cleanup.\" >&2\n        exit 2\n    fi\nfi\n\n# --- worktree 削除 ---\nif [ -d \"${WORKTREE_PATH}\" ]; then\n    if ! git worktree remove \"${WORKTREE_PATH}\"; then\n        echo \"ERROR: Failed to remove worktree ${WORKTREE_PATH}\" >&2\n        exit 2\n    fi\n    echo \"Removed worktree: ${WORKTREE_PATH}\" >&2\nelse\n    echo \"Worktree ${WORKTREE_PATH} does not exist, skipping\" >&2\nfi\n\n# --- worktree prune ---\ngit worktree prune\n\n# --- .worktrees ディレクトリが空なら削除 ---\nif [ -d \".worktrees\" ] && [ -z \"$(ls -A .worktrees 2>/dev/null)\" ]; then\n    rmdir .worktrees\n    echo \"Removed empty .worktrees directory\" >&2\nfi\n\n# --- feature ブランチ削除 ---\nif git show-ref --verify --quiet \"refs/heads/${FEATURE_BRANCH}\"; then\n    if ! git branch -d \"${FEATURE_BRANCH}\"; then\n        echo \"ERROR: Failed to delete branch ${FEATURE_BRANCH} (not merged?). Use cleanup-branches skill for force delete.\" >&2\n        exit 3\n    fi\n    echo \"Deleted branch: ${FEATURE_BRANCH}\" >&2\nelse\n    echo \"Branch ${FEATURE_BRANCH} does not exist, skipping\" >&2\nfi\n\necho \"=== Cleanup Complete: ${SLUG} ===\" >&2\necho \"Cleaned up worktree and branch for ${SLUG}\"\n```\n\n## 作成後の確認\n- `chmod +x .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh`\n- `bash -n .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh` で構文エラーなし\n- 未マージ feature ブランチに対して実行 → exit 3 を返すことを手動確認（Gate D の Todo D1 で実施）\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "references/worktree-protocol.md を新規作成",
+      "status": "pending",
+      "dependencies": ["A1", "A2"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/references/worktree-protocol.md",
+          "operation": "create",
+          "summary": "worktree ライフサイクルの詳細プロトコル。SKILL.md から参照される"
+        }
+      ],
+      "impl": "## 目的\nworktree モード選択時のライフサイクル詳細を記述した参照文書を新規作成する。SKILL.md から参照され、worktree 選択時に Read される。\n\n## 作成ファイル\n`.claude/skills/dev/spec-run/references/worktree-protocol.md`\n\n## 内容構成\n\n````markdown\n# worktree ライフサイクル（spec-run 用）\n\nSKILL.md の Step 4 で worktree 使用を選択した場合のみ適用される拡張プロトコル。未選択時は本ファイルを Read する必要はない。\n\n## 前提\n\n- `.worktrees/` と `.tmp/` は `.gitignore` 登録済み（dot-claude-dev 側で確認済み）\n- setup-worktree.sh / cleanup-worktree.sh は `.claude/skills/dev/spec-run/scripts/` に配置済み\n- Bash tool の cwd は永続する前提で設計\n\n## フェーズ一覧\n\n| # | フェーズ | 実行タイミング | cwd |\n|---|---------|---------------|-----|\n| 1 | dirty チェック | Step 4 直後 | master |\n| 2 | setup | Step 4.5 の後 | master → worktree |\n| 3 | reuse 時 spec 同期 | setup 直後、既存 worktree 検出時 | worktree |\n| 4 | Gate 実行 | Step 5 | worktree |\n| 5 | 完了時 merge | 人間レビュー OK 後 | worktree → master |\n| 6 | cleanup | merge 直後 | master |\n| 7 | エラーリカバリ | 各フェーズで失敗時 | - |\n\n---\n\n## フェーズ 1: dirty チェック\n\n### 目的\nmaster の未コミット変更が worktree 作成後のマージ時にコンフリクトを生まないようにする。\n\n### 手順\n\n1. `git status --porcelain` を実行\n2. 出力が空なら → フェーズ 2 へ\n3. 出力に行があれば AskUserQuestion で以下を選択:\n   - **コミット**: `/dev:simple-add` スキルを呼び出してコミット（ユーザーに内容確認を任せる）\n   - **stash**: `git stash push -m \"spec-run worktree setup: {slug}\"` を実行（完了時の pop はユーザー責任。spec-run は pop しない）\n   - **中断**: spec-run を停止、ユーザーに対応を任せる\n\n---\n\n## フェーズ 2: setup\n\n### 目的\n`.worktrees/{slug}/` と `feature/{slug}` ブランチを作成する（既存なら reuse）。\n\n### 手順\n\n1. slug を決定: 仕様書ファイル名から拡張子を除いたもの（例: `260411_dashboard-table-view.md` → `260411_dashboard-table-view`）\n2. `bash .claude/skills/dev/spec-run/scripts/setup-worktree.sh {slug}` を実行\n3. stdout の 1 行を `$WORKTREE_PATH` として記憶\n4. stderr を確認し、\"already exists, reusing\" を検出したら **reuse フラグ** を立てる\n5. **Bash tool の cwd を worktree に切り替え**: `cd \"$WORKTREE_PATH\"` を実行（以降の全 Bash コマンドは worktree 内で動作）\n\n### 失敗時\n\n| 終了コード | 意味 | 対処 |\n|-----------|------|------|\n| 1 | slug 無効 | spec-run を停止、仕様書ファイル名をユーザーに確認 |\n| 2 | base ブランチ検出失敗 | master/main どちらも存在しないリポジトリ。ユーザーに報告して停止 |\n| 3 | git 操作失敗 | stderr の内容をユーザーに報告して停止 |\n\n---\n\n## フェーズ 3: reuse 時 spec 同期\n\n### 目的\n前回中断後に放置された worktree に、master 側で加えられた最新仕様を取り込む。進捗チェックボックスは git merge の標準動作で保持される。\n\n### 実行条件\nフェーズ 2 で **reuse フラグが立った場合のみ**。新規作成時はスキップ。\n\n### 手順\n\n1. cwd は worktree 内（フェーズ 2 末尾で切り替え済み）\n2. base ブランチを検出: `git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'`（フォールバックは master → main）\n3. `git merge {base} --no-edit -m \"Sync {base} into feature/{slug}\"` を実行\n4. 終了コードで分岐:\n   - 0: 成功（または already up-to-date）→ フェーズ 4 へ\n   - 非 0: コンフリクト → 「コンフリクト自動解決」セクションへ\n\n### コンフリクト自動解決\n\nClaude が `git status --porcelain` で conflict ファイル一覧を取得し、各ファイルに対して以下を判断する:\n\n#### 自動解決 OK\n\n| パターン | 判定方法 | 解決 |\n|---------|---------|------|\n| import 文の順序のみの差異 | diff が import 系の行のみに限定 | 両方の import を union、重複除去 |\n| コメント・空白のみの差異 | diff が `//` / `#` / 空白のみ | 両方残す（実害なし） |\n| 片側が完全な superset（片側は機能追加のみ） | 一方の変更が他方を完全に含む | superset 側を採用 |\n| spec.md の同一チェックボックス行、両側 `[x]` | `- [x]` が両側 | `[x]` を採用 |\n| spec.md の同一チェックボックス行、片側のみ `[x]` | 片側 `[x]`、片側 `[ ]` | `[x]` を採用（進捗優先） |\n\n#### AskUserQuestion でエスカレーション\n\n- 同じ関数のロジックが両側で変更\n- spec.md の Review blockquote 内容が両側変更\n- package.json / tsconfig.json 等の設定ファイル両側変更\n- .env 系のファイル\n- 上記パターンに当てはまらない全てのコンフリクト\n\nエスカレーション時の選択肢:\n1. ユーザーが手動解決 → 解決後に「完了」報告を待つ\n2. 特定ファイルを master 側で上書き（`git checkout --theirs <file>`）\n3. 特定ファイルを worktree 側で上書き（`git checkout --ours <file>`）\n4. merge を abort（`git merge --abort`）して spec-run を停止\n\n自動解決後は `git add <files> && git commit --no-edit` でマージを完了させる。\n\n---\n\n## フェーズ 4: Gate 実行\n\n### 目的\n通常の Gate 実行を worktree 内の cwd で行う。\n\n### 変更点（非 worktree モードとの差分）\n\n- cwd は worktree 内（変更なし、フェーズ 2 で切り替え済み）\n- Preflight は worktree 内で実行（`.env` / `node_modules` は worktree 側に揃える）\n- Codex モードでは `.tmp/codex-*.md` が worktree 側の `.tmp/` に書かれる\n- Codex プラグインのパス解決（`resolve-codex-plugin.sh`）は worktree cwd でも動作する前提（Gate A/D で検証）\n- ファイル編集（Read/Edit/Write）は worktree 内の絶対パスを使う\n- 仕様書 spec.md の更新も worktree 内のパスで行う（master 側には cleanup 後の merge で反映される）\n\n### 注意\n\n- Codex プラグイン側の `task --write` が cwd=worktree で想定通り動作することを Gate D の Todo D1 で検証する\n- 万一動作しない場合は spec-run を停止してユーザーに報告（フォールバックで master 側に勝手に切り替えない）\n\n---\n\n## フェーズ 5: 完了時 merge\n\n### 目的\n人間レビュー OK 後、worktree の全変更をローカル master にマージする。\n\n### 実行条件\n\n- 全 Gate 通過済み\n- 「人間レビュー確認フロー」で OK を受領済み\n- worktree 内に未コミット変更がない\n\n### 手順\n\n1. `git -C \"$WORKTREE_PATH\" status --porcelain` が空であることを確認（非空なら「全 Gate 通過後の完了処理」セクションでコミット済みのはずだが念のため）\n2. **master ルートに cwd を戻す**: `cd \"$MASTER_ROOT\"`（`$MASTER_ROOT` は setup フェーズ前に `MASTER_ROOT=\"$(pwd)\"` で事前保存しておく。`git rev-parse --show-toplevel` は worktree 内から実行すると worktree 側のルートを返すため使用しない）\n3. base ブランチを検出（フェーズ 3 と同じロジック）\n4. `git checkout {base}`\n5. `git pull --ff-only` を試行（失敗したら警告して続行。ローカルマージを妨げない）\n6. `git merge --no-ff feature/{slug} -m \"Merge feature/{slug} via spec-run ({spec title})\"` を実行\n7. 終了コードで分岐:\n   - 0: 成功 → フェーズ 6 へ\n   - 非 0: コンフリクト → フェーズ 3 の「コンフリクト自動解決」ロジックを適用\n\n---\n\n## フェーズ 6: cleanup\n\n### 目的\nworktree と feature ブランチを削除する。\n\n### 手順\n\n1. cwd は master リポジトリルート（フェーズ 5 で切り替え済み）\n2. `bash .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh {slug}` を実行\n3. 終了コードで分岐:\n   - 0: 成功 → 完了処理の残りへ\n   - 2: worktree 削除失敗（未コミット変更残留、または git worktree remove 失敗）→ stderr の内容をユーザーに報告して中断\n   - 3: feature ブランチ削除失敗（未マージ）→ ユーザーに状況確認を依頼。merge が実際に成功していたか再確認（merge commit が存在するか確認）\n\n### Codex モード特有\n\n- worktree 内の `.tmp/codex-*.md` は cleanup-worktree.sh で worktree ごと消える\n- master 側に `.tmp/codex-*.md` が残っていれば削除する（非 worktree モードと同様）\n\n---\n\n## フェーズ 7: エラーリカバリ\n\n### dirty チェック失敗（フェーズ 1）\n- ユーザーが「中断」を選んだ場合、spec-run 自体を停止\n\n### setup 失敗（フェーズ 2）\n- setup-worktree.sh の exit code に応じてユーザーに報告\n- 自動リトライは行わない\n\n### reuse 時マージ失敗（フェーズ 3）\n- Claude 自動解決で解決できなかった場合、AskUserQuestion でエスカレーション\n- ユーザーが「abort」を選んだ場合: `git merge --abort` → spec-run 停止。worktree は残る（次回再起動時に再 reuse が可能）\n\n### Gate 実行失敗（フェーズ 4）\n- 既存 spec-run の FIX ループに従う（worktree 特有の処理なし）\n- 3 ラウンド超過したら既存プロトコル通りユーザーに判断を仰ぐ\n- spec-run 中断時は worktree を残して終了（ユーザー選択の「次回 reuse」のため）\n\n### 完了時マージ失敗（フェーズ 5）\n- フェーズ 3 と同じコンフリクト自動解決ロジック\n- 解決不能な場合は spec-run を停止、worktree と feature ブランチは残す（次回 reuse の選択肢をユーザーに残す）\n- この時点で cwd は master にいるので、ユーザーは手動で `git merge --abort` や `git reset` で状態を戻せる\n\n### cleanup 失敗（フェーズ 6）\n- exit 2 / 3 の内容をユーザーに報告\n- 自動リトライは行わない（状態破壊を避けるため）\n- ユーザーは `.claude/skills/dev/cleanup-branches/` スキルを使って手動整理可能\n\n---\n\n## cwd 管理まとめ\n\n| ステップ | cwd | 切替コマンド |\n|---------|-----|-------------|\n| Step 1-4 | master | （初期値） |\n| Step 4.5 (dirty check) | master | （変更なし） |\n| Step 4.6 setup-worktree.sh 呼び出し | master | （スクリプト内で cd するが戻る、stdout=絶対パス） |\n| Step 4.6 末尾 | **worktree** | `cd \"$WORKTREE_PATH\"` |\n| Step 5 以降 Gate 実行 | worktree | （変更なし） |\n| 完了処理フェーズ 5 冒頭 | **master** | `cd \"$MASTER_ROOT\"`（setup 前に `MASTER_ROOT=\"$(pwd)\"` で事前保存したパスを使う。`git rev-parse --show-toplevel` は worktree 内では worktree 側のルートを返すため不可） |\n| cleanup 後 | master | （変更なし） |\n\n**推奨**: setup-worktree.sh 呼び出し前に `MASTER_ROOT=\"$(pwd)\"` で master ルートを保存しておき、フェーズ 5 冒頭で `cd \"$MASTER_ROOT\"` で確実に戻す。\n````\n\n## 作成後の確認\n- ファイルが存在し、上記構成を満たしていること\n- SKILL.md からの参照リンクが壊れていないこと（Gate D の Todo D2 で検証）\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B2",
+      "gate": "B",
+      "title": "references/execution.md に worktree 対応セクション追加",
+      "status": "pending",
+      "dependencies": ["A1", "A2", "B1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/references/execution.md",
+          "operation": "modify",
+          "summary": "Claudeモード実行プロトコルに worktree 使用時の差分セクションを追加"
+        }
+      ],
+      "impl": "## 目的\n`references/execution.md`（Claude モードの実行プロトコル）に、worktree 使用時の挙動差分を追加する。既存コンテンツは変更せず、末尾に新規セクションを追加する形で対応する。\n\n## 編集対象\n`.claude/skills/dev/spec-run/references/execution.md`\n\n## 追加箇所\nファイル末尾の「## Step 4 — UPDATE」セクションの後ろに以下を追加する。\n\n## 追加内容\n\n````markdown\n\n---\n\n## worktree モード（オプション）\n\nSKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プロトコルは **worktree 内の cwd** で実行される。差分は以下の通り。\n\n### 前提\n\n- `cd $WORKTREE_PATH` が Step 4.6 で実行済み\n- Bash tool の cwd は worktree 内\n- 以降の全 Bash / ファイル操作は worktree 内で完結する\n\n### 各 Step の差分\n\n| Step | 差分 |\n|------|------|\n| Step 0 CONTEXT | 仕様書の「参照すべきファイル」は worktree 内のパスで Read する。worktree は master から派生なので同じファイルが存在する |\n| Preflight フェーズ | worktree 内で実行（`node_modules` / `.env` は worktree 側に配置される）。master 側には影響しない |\n| Step 1 IMPL | worktree 内のファイルを直接編集。コミットも worktree 内（`git commit` は自動的に feature/{slug} ブランチに対して行われる） |\n| Step 2 VERIFY | レビュワー Agent は worktree 内の差分に対してレビューする。Agent の cwd は継承される |\n| Step 3 FIX | worktree 内で修正、再コミット |\n| Step 4 UPDATE | **worktree 内の spec.md** のチェックボックスを更新。master 側の spec.md は完了処理の merge 後に反映される |\n\n### 注意\n\n- master 側の spec.md を直接編集してはならない（cwd が worktree の前提が崩れる）\n- Codex モードで worktree を使う場合は `references/codex-execution.md` の該当セクションを参照\n- worktree モードの詳細なライフサイクル（setup / merge / cleanup）は `references/worktree-protocol.md` を参照\n````\n\n## 作成後の確認\n- 既存コンテンツ（Step 0 〜 Step 4 UPDATE）が一切変更されていないこと\n- 追加セクションが末尾に存在すること\n- `worktree-protocol.md` へのリンクが正しいこと（Gate D Todo D2 で検証）\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B3",
+      "gate": "B",
+      "title": "references/codex-execution.md に worktree 対応セクション追加",
+      "status": "pending",
+      "dependencies": ["A1", "A2", "B1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/references/codex-execution.md",
+          "operation": "modify",
+          "summary": "Codexモード実行プロトコルに worktree 使用時の差分セクションを追加"
+        }
+      ],
+      "impl": "## 目的\n`references/codex-execution.md`（Codex モードの実行プロトコル）に、worktree 使用時の挙動差分を追加する。既存コンテンツは変更せず、末尾に新規セクションを追加する。\n\n## 編集対象\n`.claude/skills/dev/spec-run/references/codex-execution.md`\n\n## 追加箇所\nファイル末尾の「## Step 4 — UPDATE」セクションの後ろに以下を追加する。\n\n## 追加内容\n\n````markdown\n\n---\n\n## worktree モード（オプション）\n\nSKILL.md の Step 4 で worktree 使用を選択した場合、本 codex-execution プロトコルは **worktree 内の cwd** で実行される。差分は以下の通り。\n\n### 前提\n\n- `cd $WORKTREE_PATH` が Step 4.6 で実行済み\n- Bash tool の cwd は worktree 内\n- Codex プラグイン（`resolve-codex-plugin.sh`）は **worktree cwd でも動作する前提**（Gate D Todo D1 で検証済みであること）\n\n### 各 Step の差分\n\n| Step | 差分 |\n|------|------|\n| Step 0-1 `resolve-codex-plugin.sh` | worktree 内から実行。パス解決が成功することを確認 |\n| Step 0-2 仕様書読み込み | worktree 内のパスで Read（worktree は master から派生なので同じファイル構造） |\n| Preflight フェーズ | worktree 内で実行 |\n| Step 1 IMPL（Codex 委任） | `node \"$CODEX_COMPANION\" task --write --prompt-file .tmp/codex-prompt.md` を worktree cwd で実行。`.tmp/` は worktree 内に作成される（`mkdir -p .tmp` も worktree 側） |\n| Step 1 IMPL（Claude 保持） | worktree 内のファイルを直接編集、worktree 内でコミット |\n| Step 2 VERIFY | `codex review - < .tmp/codex-review-focus.md` を worktree cwd で実行。差分検出は `origin/master..HEAD` が worktree の feature/{slug} に対して自然に動作する |\n| Step 3 FIX | `task --write --resume-last` を worktree cwd で実行 |\n| Step 4 UPDATE | worktree 内の spec.md を更新 |\n\n### .tmp/ 配置に関する注意\n\n- `.tmp/` は `.gitignore` に登録済みなので worktree 側でも自動的に git 管理外\n- worktree ごとに独立した `.tmp/` を持つため、並行実行時にプロンプトファイル名の衝突は発生しない\n- 完了処理での `rm -f .tmp/codex-*.md` は:\n  - worktree 側: cleanup-worktree.sh で worktree ごと削除されるため不要\n  - master 側: cwd を master に戻した後、念のため削除（非 worktree モードと同じ処理）\n\n### Codex プラグインのパス解決\n\n`resolve-codex-plugin.sh` が worktree cwd で動作しない場合（Gate D 検証で判明した場合）、以下の対処を取る:\n\n- **対処 A**: master 側で `resolve-codex-plugin.sh` を実行して `$CODEX_COMPANION` を取得 → worktree に cd してから使う（パスは絶対パスなので worktree からも参照可能なはず）\n- **対処 B**: 動作しない場合は worktree モードと Codex モードの併用を禁止する旨を SKILL.md に記載（Gate D の検証結果次第）\n\n### 仕様書に記載されるエラー診断\n\n既存の「Codex エラー診断」セクションはそのまま適用される。worktree 内で実行した結果のエラーも同じ診断スクリプト・分類表・ユーザー報告テンプレートを使う。\n\n### worktree モードの詳細なライフサイクル\n\nsetup / merge / cleanup / コンフリクト解決の詳細は `references/worktree-protocol.md` を参照。\n````\n\n## 作成後の確認\n- 既存コンテンツが一切変更されていないこと\n- 追加セクションが末尾に存在すること\n- `worktree-protocol.md` および `references/execution.md` への相互参照が正しいこと（Gate D Todo D2 で検証）\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C1",
+      "gate": "C",
+      "title": "SKILL.md の Step 4 を「実行モード + worktree 選択」に書き換える",
+      "status": "pending",
+      "dependencies": ["B1", "B2", "B3"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/SKILL.md",
+          "operation": "modify",
+          "summary": "Step 4 のタイトルと内容を更新し、worktree 使用可否を同一 AskUserQuestion で聞くように変更"
+        }
+      ],
+      "impl": "## 目的\nSKILL.md の Step 4（現行: 実行モード選択）を「実行モード + worktree 選択」に書き換え、単一の AskUserQuestion tool call 内で 2 つの質問を同時に聞くようにする。\n\n## 編集対象\n`.claude/skills/dev/spec-run/SKILL.md`\n\n## 編集前（現行）\n\n```markdown\n### ステップ 4: 実行モード選択\n\nAskUserQuestion で実行モードを選択する:\n\n- **Claudeモード** — Claude Code が全 Todo を直接実行\n- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じてスキップ or 1回 or 3回並列）\n```\n\n## 編集後\n\n```markdown\n### ステップ 4: 実行モード + worktree 選択\n\nAskUserQuestion で**2 つの質問を同時に**聞く（1 tool call）:\n\n**質問 1: 実行モード**\n\n- **Claudeモード** — Claude Code が全 Todo を直接実行\n- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じてスキップ or 1回 or 3回並列）\n\n**質問 2: worktree 使用**\n\n- **使わない（Recommended）** — 現 cwd（通常 master）で直接作業する（現行動作）\n- **使う** — `feature/{slug}` の worktree 内で作業し、全 Gate 通過後にローカル `--no-ff` マージ + cleanup を自動実行\n\n「使う」を選択した場合は、次のステップ（4.5 / 4.6）を実行する前に `.claude/skills/dev/spec-run/references/worktree-protocol.md` を Read してそのライフサイクルに従う。「使わない」を選択した場合は Step 4.5 / 4.6 をスキップして Step 5 へ進む。\n```\n\n## 編集手順\n\n1. SKILL.md を Read\n2. Edit ツールで上記 `編集前` → `編集後` の置換を実行（old_string は編集前ブロック全体、new_string は編集後ブロック全体）\n3. Read で置換結果を確認\n\n## 作成後の確認\n- 「Step 4」のタイトルが「実行モード + worktree 選択」になっていること\n- 2 つの質問ブロックが存在すること\n- worktree-protocol.md への参照リンクが記載されていること\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C2",
+      "gate": "C",
+      "title": "SKILL.md に Step 4.5（dirty check）と Step 4.6（worktree setup）を追加",
+      "status": "pending",
+      "dependencies": ["C1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/SKILL.md",
+          "operation": "modify",
+          "summary": "Step 4 の後ろに worktree 選択時の前処理 2 ステップを追加"
+        }
+      ],
+      "impl": "## 目的\nSKILL.md の Step 4（Todo C1 で更新済み）と Step 5 の間に、worktree 選択時のみ実行される Step 4.5 / 4.6 を追加する。非 worktree モードの起動フローには影響しない。\n\n## 編集対象\n`.claude/skills/dev/spec-run/SKILL.md`\n\n## 追加位置\nTodo C1 で更新した「### ステップ 4: 実行モード + worktree 選択」セクションの直後（現行の「### ステップ 5: 実行プロトコルの読み込みと実行」の直前）。\n\n## 追加内容\n\n```markdown\n\n### ステップ 4.5: master dirty チェック（worktree 選択時のみ）\n\nStep 4 で「worktree を使う」を選択した場合のみ実行。選択していない場合は Step 5 へ直行。\n\n1. `git status --porcelain` を実行\n2. 出力が空なら → Step 4.6 へ\n3. 出力に行があれば AskUserQuestion で以下を選択:\n   - **コミット** — `/dev:simple-add` スキルを呼び出してコミット後、Step 4.6 へ\n   - **stash** — `git stash push -m \"spec-run worktree setup: {slug}\"` を実行後、Step 4.6 へ（pop はユーザー責任）\n   - **中断** — spec-run を停止、ユーザーに対応を任せる\n\n詳細は `references/worktree-protocol.md` の「フェーズ 1: dirty チェック」を参照。\n\n### ステップ 4.6: worktree setup（worktree 選択時のみ）\n\nStep 4 で「worktree を使う」を選択した場合のみ実行。選択していない場合は Step 5 へ直行。\n\n1. `MASTER_ROOT=\"$(pwd)\"` で master ルートを記憶（完了処理で戻るために必須）\n2. slug を決定: 仕様書ファイル名から拡張子を除いたもの（例: `260411_dashboard-table-view.md` → `260411_dashboard-table-view`）\n3. `bash .claude/skills/dev/spec-run/scripts/setup-worktree.sh {slug}` を実行\n4. stdout の 1 行を `$WORKTREE_PATH` として記憶\n5. stderr から reuse フラグを判定（\"already exists, reusing\" を含む場合）\n6. `cd \"$WORKTREE_PATH\"` で cwd を worktree に切り替え（以降の Bash コマンドは worktree 内）\n7. **reuse の場合のみ**: worktree 内で `git merge {base}` を実行して最新 spec を取り込む（base は setup-worktree.sh と同じ自動検出: `git symbolic-ref refs/remotes/origin/HEAD` → master → main）\n   - コンフリクト発生時: `references/worktree-protocol.md` の「コンフリクト自動解決」セクションに従う\n8. 完了後、Step 5 へ進む\n\n詳細（setup-worktree.sh の終了コード、base 検出ロジック、コンフリクト自動解決ルール）は `references/worktree-protocol.md` の「フェーズ 2 / フェーズ 3」を参照。\n```\n\n## 編集手順\n\n1. SKILL.md を Read（Todo C1 適用後の状態）\n2. Edit ツールで「### ステップ 5:」の直前に上記内容を挿入（old_string は「### ステップ 5: 実行プロトコルの読み込みと実行」の行、new_string は追加内容 + 元の「### ステップ 5:」行）\n3. Read で挿入結果を確認\n\n## 作成後の確認\n- Step 4.5 / 4.6 が Step 4 と Step 5 の間に存在すること\n- 両方のステップに「worktree 選択時のみ」の注記があること\n- worktree-protocol.md への参照が正しいこと\n- `MASTER_ROOT` の保存処理が記述されていること（完了処理で使う）\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C3",
+      "gate": "C",
+      "title": "SKILL.md の完了処理に worktree 終了処理（merge + cleanup）を追加",
+      "status": "pending",
+      "dependencies": ["C2"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/SKILL.md",
+          "operation": "modify",
+          "summary": "「全 Gate 通過後の完了処理」セクションに worktree 終了処理サブセクションを追加"
+        }
+      ],
+      "impl": "## 目的\nSKILL.md の「## 全 Gate 通過後の完了処理」セクション内、既存の「### 人間レビュー確認フロー」の後ろに「### worktree 終了処理」サブセクションを追加する。\n\n## 編集対象\n`.claude/skills/dev/spec-run/SKILL.md`\n\n## 追加位置\n既存の「### 人間レビュー確認フロー」サブセクションの末尾の直後、「## 参照」の直前。\n\n## 追加内容\n\n```markdown\n\n### worktree 終了処理（Step 4 で worktree を選択した場合のみ）\n\nStep 4 で「worktree を使う」を選択した場合、人間レビューの結果に応じて以下を実行する。worktree を選択していない場合はこのサブセクション全体をスキップ。\n\n#### 人間レビュー結果が OK の場合\n\n1. `git -C \"$WORKTREE_PATH\" status --porcelain` が空であることを確認（非空ならコミット漏れ → 先にコミット）\n2. **cwd を master ルートに戻す**: `cd \"$MASTER_ROOT\"`（Step 4.6 で保存済み）\n3. base ブランチを検出: `git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'`（失敗時は master → main の順で試行）\n4. `git checkout {base}`\n5. `git pull --ff-only 2>/dev/null || echo \"pull skipped (offline or diverged)\"` で最新を取り込む（失敗は警告のみ、続行）\n6. `git merge --no-ff feature/{slug} -m \"Merge feature/{slug} via spec-run\"` を実行\n7. コンフリクト発生時: `references/worktree-protocol.md` の「コンフリクト自動解決」セクションに従う（フェーズ 3 と同じロジック）\n8. `bash .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh {slug}` を実行\n9. cleanup が exit 0 なら完了。exit 2/3 なら stderr の内容をユーザーに報告（自動リトライしない）\n10. Codex モードの場合、master 側の `.tmp/codex-*.md` を削除（`rm -f .tmp/codex-*.md`）\n\n#### 人間レビュー結果が NG の場合\n\n- worktree を残したまま修正ループに入る（cwd は worktree のまま変更しない）\n- 修正完了後、再度「人間レビュー確認フロー」に戻って確認を取る\n- NG → 修正 → OK の一連の流れで最終的に「人間レビュー結果が OK の場合」のフローに合流する\n\n詳細なライフサイクルとエラーリカバリは `references/worktree-protocol.md` の「フェーズ 5 / 6 / 7」を参照。\n```\n\n## 編集手順\n\n1. SKILL.md を Read（Todo C1/C2 適用後の状態）\n2. Edit ツールで「### 人間レビュー確認フロー」サブセクションの末尾を特定し、その直後に上記内容を挿入\n3. Read で挿入結果を確認\n\n## 既存処理との整合性\n\n既存の「未コミットの変更がある場合はコミットする。」および「Codex モードの場合: 一時プロンプトファイルを削除する」は worktree 未選択時のデフォルト処理として残す。worktree 選択時は本サブセクションの処理で上書きする形になる。\n\n## 作成後の確認\n- 「### worktree 終了処理」サブセクションが「### 人間レビュー確認フロー」の後ろ、「## 参照」の前に存在すること\n- OK フロー（1〜10 ステップ）と NG フローの両方が記述されていること\n- `$MASTER_ROOT` / `$WORKTREE_PATH` の参照が Step 4.6 と整合していること\n- worktree-protocol.md への参照が正しいこと\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D1",
+      "gate": "D",
+      "title": "両シェルスクリプトの構文検証（`bash -n`）+ SLUG バリデーション・冪等性・Codex plugin 互換性の動作確認（master 履歴を汚染しないよう一時ブランチ `test/validate-worktree-cleanup` を使用）",
+      "status": "pending",
+      "dependencies": ["C3"],
+      "affectedFiles": [],
+      "impl": "## 目的\nGate A で作成した setup-worktree.sh / cleanup-worktree.sh、および Gate C で更新した SKILL.md に沿った一連のフローが実際に動作することを検証する。ファイル変更は行わず、動作確認とレポートのみ。\n\n## 検証項目\n\n### 1. 構文検証\n```bash\nbash -n .claude/skills/dev/spec-run/scripts/setup-worktree.sh\nbash -n .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh\n```\n両方ともエラーなく 0 exit することを確認。\n\n### 2. SLUG バリデーション\n```bash\nbash .claude/skills/dev/spec-run/scripts/setup-worktree.sh 'bad slug' || echo \"exit: $?\"\nbash .claude/skills/dev/spec-run/scripts/setup-worktree.sh '/etc' || echo \"exit: $?\"\nbash .claude/skills/dev/spec-run/scripts/setup-worktree.sh '' || echo \"exit: $?\"\n```\nいずれも exit 1 を返すことを確認。\n\n### 3. 新規作成動作確認\n```bash\n# テスト用 slug\nTEST_SLUG=\"test-worktree-validation\"\nbash .claude/skills/dev/spec-run/scripts/setup-worktree.sh \"$TEST_SLUG\"\n# 確認: .worktrees/test-worktree-validation/ 存在、feature/test-worktree-validation ブランチ存在\nls -la .worktrees/\ngit branch --list \"feature/$TEST_SLUG\"\n```\n\n### 4. 冪等性（reuse）確認\n```bash\n# 既に存在する状態で再実行\nbash .claude/skills/dev/spec-run/scripts/setup-worktree.sh \"$TEST_SLUG\"\n# stderr に \"already exists, reusing\" が含まれること\n```\n\n### 5. Codex プラグインのパス解決確認（worktree cwd 内）\n```bash\n# worktree 内に cd してから resolve-codex-plugin.sh を実行\n(cd \".worktrees/$TEST_SLUG\" && bash .claude/skills/dev/spec-run/scripts/resolve-codex-plugin.sh)\n```\n成功すれば Codex モードと worktree モードの併用が可能。失敗したら codex-execution.md の「対処 A」または「対処 B」を Todo C 群に追加する必要あり（その場合は Todo D1 を失敗扱いにして Gate C に戻る）。\n\n### 6. cleanup 動作確認（未マージ時の失敗ケース）\n```bash\n# 未マージ状態で cleanup 実行（feature ブランチに空コミットを作って未マージ状態を作る）\n(cd \".worktrees/$TEST_SLUG\" && git commit --allow-empty -m \"test commit\")\nbash .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh \"$TEST_SLUG\" || echo \"exit: $?\"\n# 期待: exit 3（feature ブランチ削除失敗で止まるが worktree 自体は削除されている可能性あり）\n```\n\n### 7. cleanup 動作確認（マージ済み時の正常ケース）\n\n**重要: master に直接テスト merge を作らない**。master 履歴を汚染しないよう、一時ブランチ `test/validate-worktree-cleanup` を master から切って、そこで検証する。\n\n```bash\n# 現在のブランチを記憶\nORIG_BRANCH=\"$(git rev-parse --abbrev-ref HEAD)\"\n\n# 一時ブランチを master から切る\ngit checkout -b test/validate-worktree-cleanup master\n\n# 一時ブランチ上に feature/$TEST_SLUG をマージ\ngit merge --no-ff \"feature/$TEST_SLUG\" -m \"test merge (will be discarded)\"\n\n# cleanup-worktree.sh を実行\nbash .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh \"$TEST_SLUG\"\n# 期待: exit 0\nls .worktrees/ 2>/dev/null || echo \"no worktrees dir\"\ngit branch --list \"feature/$TEST_SLUG\" # 空\n\n# 元のブランチに戻り、一時ブランチを削除（master は一切触らない）\ngit checkout \"$ORIG_BRANCH\"\ngit branch -D test/validate-worktree-cleanup\n```\n\n`git reset --hard` や master に対する破壊的操作は一切行わない。一時ブランチは `-D` で強制削除すれば master 履歴に影響しない。\n\n### 8. 最終確認\n```bash\n# master の HEAD が検証前と同じコミットであることを確認\ngit log master -1 --oneline\n# .worktrees/ ディレクトリが空または存在しないこと\nls .worktrees/ 2>/dev/null || echo \"no worktrees dir\"\n# テスト用 feature ブランチ・一時ブランチがどちらも残っていないこと\ngit branch --list \"feature/$TEST_SLUG\" \"test/validate-worktree-cleanup\"\n```\n\n## 判定\n\n- 1〜4, 6〜7 すべて期待通り → Review D1 に成功記録\n- 5 が失敗 → Gate C に差し戻し、codex-execution.md に対処を追記\n- 1〜4, 6〜7 のいずれかが失敗 → Gate A に差し戻し、該当スクリプトを修正\n\n## Review 記入例\n\n```markdown\n> **Review D1**: ✅ PASSED\n> - 構文検証: bash -n 両方とも 0 exit\n> - SLUG バリデーション: 3 ケースすべて exit 1\n> - 新規作成: .worktrees/test-worktree-validation/ と feature/test-worktree-validation 作成確認\n> - 冪等性: reuse メッセージ確認\n> - Codex plugin 互換性: resolve-codex-plugin.sh が worktree cwd で正常動作\n> - cleanup 失敗ケース: 未マージで exit 3\n> - cleanup 正常ケース: 一時ブランチ test/validate-worktree-cleanup 上で検証、exit 0、worktree / feature ブランチ削除確認\n> - master 履歴は検証前と不変、一時ブランチも削除済み\n```\n",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D2",
+      "gate": "D",
+      "title": "SKILL.md ↔ worktree-protocol.md ↔ execution 系の相互参照整合性確認",
+      "status": "pending",
+      "dependencies": ["C3"],
+      "affectedFiles": [],
+      "impl": "## 目的\nGate A-C で作成・更新したファイル間の相互参照リンクが壊れていないこと、用語の整合性が取れていることを確認する。ファイル変更は行わず、検証とレポートのみ。\n\n## 検証項目\n\n### 1. ファイル存在確認\n```bash\nls -la .claude/skills/dev/spec-run/scripts/setup-worktree.sh\nls -la .claude/skills/dev/spec-run/scripts/cleanup-worktree.sh\nls -la .claude/skills/dev/spec-run/references/worktree-protocol.md\n```\nすべて存在することを確認。\n\n### 2. SKILL.md からの参照リンク\n\nGrep で SKILL.md 内の `worktree-protocol.md` 参照を抽出:\n```\n```\n\nGrep ツールで `.claude/skills/dev/spec-run/SKILL.md` に対して `worktree-protocol` を検索。以下が存在することを確認:\n- Step 4 からの参照（worktree を選択したら Read する）\n- Step 4.5 からの参照（フェーズ 1）\n- Step 4.6 からの参照（フェーズ 2 / 3）\n- 完了処理 worktree 終了処理からの参照（フェーズ 5 / 6 / 7）\n\n### 3. execution.md / codex-execution.md からの参照\n\n両ファイルに対して Grep で `worktree-protocol` を検索し、末尾の worktree 対応セクションに参照があることを確認。\n\n### 4. worktree-protocol.md から他ファイルへの参照\n\n`worktree-protocol.md` 内で `setup-worktree.sh` と `cleanup-worktree.sh` へのパスが正しいこと:\n- `.claude/skills/dev/spec-run/scripts/setup-worktree.sh`\n- `.claude/skills/dev/spec-run/scripts/cleanup-worktree.sh`\n\n### 5. 用語統一チェック\n\n以下の用語が各ファイルで統一されているか Grep で確認:\n- `$WORKTREE_PATH`（変数名、$-prefix の扱い含む）\n- `$MASTER_ROOT`\n- `feature/{slug}` の記法\n- `.worktrees/{slug}`\n- 「worktree モード」という呼称\n\n不一致があれば該当ファイルを修正（この Todo 内で直接修正してよい）。\n\n### 6. Step 番号の整合性\n\nSKILL.md 内で以下の Step 番号が正しく連続しているか確認:\n- Step 1, 2, 3, 4, 4.5, 4.6, 5\n- 完了処理 の各サブセクション（人間レビュー確認フロー → worktree 終了処理）\n\n### 7. Codex モード × worktree モード併用の明示\n\nSKILL.md と codex-execution.md で、Codex モードと worktree モードの併用が可能である旨が明記されていることを確認。Todo D1 の検証で resolve-codex-plugin.sh が worktree で動作確認できた場合のみ有効。動作しない場合は併用禁止の注意書きがあるべき。\n\n## 判定\n\n- 1〜7 すべて問題なし → Review D2 に成功記録\n- 参照切れが見つかった場合 → 該当ファイルを修正（本 Todo 内で完了可能）\n- 用語不統一が見つかった場合 → 該当ファイルを修正（本 Todo 内で完了可能）\n\n## Review 記入例\n\n```markdown\n> **Review D2**: ✅ PASSED\n> - 全ファイル存在確認済み\n> - SKILL.md → worktree-protocol.md: 4 箇所の参照確認（Step 4/4.5/4.6/完了処理）\n> - execution.md / codex-execution.md → worktree-protocol.md: 各 1 箇所確認\n> - worktree-protocol.md → scripts/*.sh: 両パス正しい\n> - 用語統一: $WORKTREE_PATH / $MASTER_ROOT / feature/{slug} / .worktrees/{slug} 全ファイルで一致\n> - Step 番号連続性: 1→2→3→4→4.5→4.6→5 確認\n> - Codex × worktree 併用の明示: Todo D1 成功を受けて併用可能と記載済み\n```\n",
+      "relatedIssues": [],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-11",
+    "totalGates": 4,
+    "totalTodos": 10
+  }
+}
