@@ -22,6 +22,8 @@ export function getPlanSize(plan: PlanFile): PlanSize {
 
 export type SizeBin = 'S' | 'M' | 'L' | 'XL';
 
+export const SIZE_BINS: SizeBin[] = ['S', 'M', 'L', 'XL'];
+
 export const SIZE_BIN_LABEL: Record<SizeBin, string> = {
   S: 'S (1-3)',
   M: 'M (4-7)',
@@ -42,4 +44,17 @@ export function getSizeBin(total: number): SizeBin {
   if (total <= 7) return 'M';
   if (total <= 15) return 'L';
   return 'XL';
+}
+
+/**
+ * Plan 配列を規模ビンごとに集計する。
+ * 各ビンの件数をオブジェクトで返す。
+ */
+export function getSizeHistogram(plans: PlanFile[]): Record<SizeBin, number> {
+  const result: Record<SizeBin, number> = { S: 0, M: 0, L: 0, XL: 0 };
+  for (const plan of plans) {
+    const bin = getSizeBin(getPlanSize(plan).total);
+    result[bin] += 1;
+  }
+  return result;
 }

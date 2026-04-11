@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPlanSize, getSizeBin } from '../lib/plan-size';
+import { getPlanSize, getSizeBin, getSizeHistogram } from '../lib/plan-size';
 import type { PlanFile } from '../lib/types';
 
 function makePlan(overrides: Partial<PlanFile> = {}): PlanFile {
@@ -63,5 +63,27 @@ describe('getSizeBin', () => {
     expect(getSizeBin(15)).toBe('L');
     expect(getSizeBin(16)).toBe('XL');
     expect(getSizeBin(100)).toBe('XL');
+  });
+});
+
+describe('getSizeHistogram', () => {
+  it('空配列はすべて 0', () => {
+    expect(getSizeHistogram([])).toEqual({ S: 0, M: 0, L: 0, XL: 0 });
+  });
+
+  it('複数 Plan を正しく集計', () => {
+    const small = makePlan({ todos: [{ title: 't', steps: [] }] }); // total=1 → S
+    const mid = makePlan({
+      gates: [
+        { id: 'A', title: 'a', todos: [] },
+        { id: 'B', title: 'b', todos: [] },
+      ],
+      todos: Array.from({ length: 4 }, () => ({ title: 't', steps: [] })),
+    }); // total=6 → M
+    const big = makePlan({
+      gates: Array.from({ length: 4 }, (_, i) => ({ id: `G${i}`, title: 'g', todos: [] })),
+      todos: Array.from({ length: 12 }, () => ({ title: 't', steps: [] })),
+    }); // total=16 → XL
+    expect(getSizeHistogram([small, mid, big])).toEqual({ S: 1, M: 1, L: 0, XL: 1 });
   });
 });

@@ -5,15 +5,20 @@ import useSWR from "swr"
 
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { DateFilter } from "@/components/date-filter"
+import { GroupingToggle } from "@/components/grouping-toggle"
 import { KanbanBoard } from "@/components/kanban-board"
+import { PlanTable } from "@/components/plan-table"
 import { RepoSelector } from "@/components/repo-selector"
+import { SizeHistogram } from "@/components/size-histogram"
 import { SkeletonDashboard } from "@/components/skeleton-dashboard"
+import { ViewSwitcher, type ViewType } from "@/components/view-switcher"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardDescription,
   CardHeader,
 } from "@/components/ui/card"
+import type { SizeBin } from "@/lib/plan-size"
 import type { GitHubRepo, PlanFile, PlanStatus, RepoError } from "@/lib/types"
 
 const STORAGE_KEY = "plan-dashboard-selected-repos"
@@ -50,6 +55,10 @@ export default function Home() {
     fetcher
   )
   const [filterDays, setFilterDays] = useState<number>(30)
+  const [activeView, setActiveView] = useState<ViewType>("kanban")
+  const [kanbanGrouping, setKanbanGrouping] = useState(false)
+  const [tableGrouping, setTableGrouping] = useState(false)
+  const [sizeBinFilter, setSizeBinFilter] = useState<SizeBin | null>(null)
   const [selectedRepos, setSelectedRepos] = useState<string[]>(() => {
     if (typeof window === "undefined") {
       return []
@@ -234,7 +243,34 @@ export default function Home() {
             </ul>
           </div>
         )}
-        <KanbanBoard plans={filteredPlans} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <ViewSwitcher activeView={activeView} onViewChange={setActiveView} />
+          <GroupingToggle
+            enabled={activeView === "kanban" ? kanbanGrouping : tableGrouping}
+            onToggle={(next) => {
+              if (activeView === "kanban") setKanbanGrouping(next)
+              else setTableGrouping(next)
+            }}
+          />
+        </div>
+        {activeView === "kanban" ? (
+          <KanbanBoard plans={filteredPlans} groupByProject={kanbanGrouping} />
+        ) : (
+          <div className="space-y-4">
+            <SizeHistogram
+              plans={filteredPlans}
+              activeBin={sizeBinFilter}
+              onBinClick={(bin) =>
+                setSizeBinFilter((prev) => (prev === bin ? null : bin))
+              }
+            />
+            <PlanTable
+              plans={filteredPlans}
+              sizeBinFilter={sizeBinFilter}
+              groupByProject={tableGrouping}
+            />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )

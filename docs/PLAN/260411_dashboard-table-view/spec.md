@@ -259,50 +259,55 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo B1**: TanStack Table v8 導入 + PlanTable 土台
   > **Review B1**: ✅ PASSED
 
-- [ ] **Todo B2**: Plan 行レンダリング（カラム + 規模バー + ソート）
-  > **Review B2**:
+- [x] **Todo B2**: Plan 行レンダリング（カラム + 規模バー + ソート）
+  > **Review B2**: ✅ PASSED
 
-- [ ] **Todo B3**: Gate 展開行
-  > **Review B3**:
+- [x] **Todo B3**: Gate 展開行
+  > **Review B3**: ✅ PASSED
 
-- [ ] **Todo B4**: 全文表示ボタン（PlanMarkdownModal 接続）
-  > **Review B4**:
+- [x] **Todo B4**: 全文表示ボタン（PlanMarkdownModal 接続）
+  > **Review B4**: ✅ PASSED
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate C: 規模ヒストグラム
 
-- [ ] **Todo C1** [TDD]: `getSizeHistogram` ヘルパー実装
-  > **Review C1**:
+- [x] **Todo C1** [TDD]: `getSizeHistogram` ヘルパー実装
+  > **Review C1**: ✅ PASSED
 
-- [ ] **Todo C2**: SizeHistogram コンポーネント
-  > **Review C2**:
+- [x] **Todo C2**: SizeHistogram コンポーネント
+  > **Review C2**: ✅ PASSED
 
-- [ ] **Todo C3**: Table ↔ ヒストグラム連動フィルタ
-  > **Review C3**:
+- [x] **Todo C3**: Table ↔ ヒストグラム連動フィルタ
+  > **Review C3**: ✅ PASSED
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate D: プロジェクトグルーピング
 
-- [ ] **Todo D1**: GroupingToggle コンポーネント
-  > **Review D1**:
+- [x] **Todo D1**: GroupingToggle コンポーネント
+  > **Review D1**: ✅ PASSED
 
-- [ ] **Todo D2**: KanbanBoard 横スイムレーン対応
-  > **Review D2**:
+- [x] **Todo D2**: KanbanBoard 横スイムレーン対応
+  > **Review D2**: ✅ PASSED
 
-- [ ] **Todo D3**: PlanTable プロジェクトグルーピング対応
-  > **Review D3**:
+- [x] **Todo D3**: PlanTable プロジェクトグルーピング対応
+  > **Review D3**: ✅ PASSED
 
 **Gate D 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate E: 統合
 
-- [ ] **Todo E1**: page.tsx で全体統合（state + レイアウト）
-  > **Review E1**:
+- [x] **Todo E1**: page.tsx で全体統合（state + レイアウト）
+  > **Review E1**: ✅ PASSED
 
-- [ ] **Todo E2**: 動作確認 + ビュー独立性の検証
-  > **Review E2**:
+- [x] **Todo E2**: 動作確認 + ビュー独立性の検証
+  > **Review E2**: ✅ PASSED
+  > - `npx tsc --noEmit` → エラーなし
+  > - `npx vitest run` → 42 tests passed (`plan-size.test.ts` 6件含む。`types-contract.test.ts` の空スイート失敗は本仕様着手前から存在する既知事象)
+  > - `npm run lint` → E1/E2 起因のエラーなし（既存の `page.tsx` Date.now / `kanban-board.tsx` setState-in-effect / `plan-markdown-modal.tsx` 未使用 title / `plan-table.tsx` useReactTable 警告はいずれも本 spec 着手前から存在）
+  > - `npm run build` はサンドボックス環境で Google Fonts 取得不能のため失敗（ネットワーク制限のみ、コード由来ではない）
+  > - ビュー独立性・トグル動作はコードレビュー（E1 Correctness Review）で確認済み: `kanbanGrouping` / `tableGrouping` は独立 state、`sizeBinFilter` は同じバー再クリックで null に戻る、新規 state は localStorage 非永続。
 
 **Gate E 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
