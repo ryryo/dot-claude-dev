@@ -243,21 +243,21 @@ Gate E: 統合（Gate B/C/D 完了後）
 
 ### Gate A: 基盤
 
-- [ ] **Todo A1** [TDD]: `getPlanSize` ヘルパー実装
-  > **Review A1**:
+- [x] **Todo A1** [TDD]: `getPlanSize` ヘルパー実装
+  > **Review A1**: ✅ PASSED
 
-- [ ] **Todo A2** [TDD]: `getSizeBin` ヘルパー実装
-  > **Review A2**:
+- [x] **Todo A2** [TDD]: `getSizeBin` ヘルパー実装
+  > **Review A2**: ✅ PASSED
 
-- [ ] **Todo A3**: ViewSwitcher コンポーネント
-  > **Review A3**:
+- [x] **Todo A3**: ViewSwitcher コンポーネント
+  > **Review A3**: ✅ PASSED
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate B: Tableビュー本体
 
-- [ ] **Todo B1**: TanStack Table v8 導入 + PlanTable 土台
-  > **Review B1**:
+- [x] **Todo B1**: TanStack Table v8 導入 + PlanTable 土台
+  > **Review B1**: ✅ PASSED
 
 - [ ] **Todo B2**: Plan 行レンダリング（カラム + 規模バー + ソート）
   > **Review B2**:
