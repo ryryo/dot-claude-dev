@@ -1,14 +1,17 @@
 "use client"
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import {
   ColumnDef,
+  ExpandedState,
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
+import { ChevronRight } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { getPlanSize, getSizeBin } from '@/lib/plan-size'
@@ -35,8 +38,28 @@ interface PlanTableProps {
 
 export function PlanTable({ plans }: PlanTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'size', desc: false }])
+  const [expanded, setExpanded] = useState<ExpandedState>({})
 
   const columns = useMemo<ColumnDef<PlanFile>[]>(() => [
+    {
+      id: 'expander',
+      header: () => null,
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={row.getToggleExpandedHandler()}
+          aria-label={row.getIsExpanded() ? '閉じる' : '開く'}
+          className="flex size-6 items-center justify-center rounded hover:bg-muted"
+        >
+          <ChevronRight
+            className={cn(
+              'size-4 text-muted-foreground transition-transform',
+              row.getIsExpanded() && 'rotate-90'
+            )}
+          />
+        </button>
+      ),
+    },
     {
       id: 'projectName',
       accessorFn: (row) => row.projectName,
@@ -119,10 +142,13 @@ export function PlanTable({ plans }: PlanTableProps) {
   const table = useReactTable({
     data: plans,
     columns,
-    state: { sorting },
+    state: { sorting, expanded },
     onSortingChange: setSorting,
+    onExpandedChange: setExpanded,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: () => true,
   })
 
   return (
@@ -146,13 +172,22 @@ export function PlanTable({ plans }: PlanTableProps) {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-t hover:bg-muted/30">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-3 py-2 align-middle">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
+            <Fragment key={row.id}>
+              <tr className="border-t hover:bg-muted/30">
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="px-3 py-2 align-middle">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+              {row.getIsExpanded() && (
+                <tr className="bg-muted/20">
+                  <td colSpan={row.getVisibleCells().length} className="px-6 py-3">
+                    <PlanGateRows plan={row.original} />
+                  </td>
+                </tr>
+              )}
+            </Fragment>
           ))}
           {plans.length === 0 && (
             <tr>
@@ -164,5 +199,37 @@ export function PlanTable({ plans }: PlanTableProps) {
         </tbody>
       </table>
     </div>
+  )
+}
+
+function PlanGateRows({ plan }: { plan: PlanFile }) {
+  if (plan.gates.length === 0) {
+    return <p className="text-xs text-muted-foreground">Gate 情報がありません</p>
+  }
+  return (
+    <table className="w-full text-xs">
+      <thead>
+        <tr className="text-muted-foreground">
+          <th className="w-24 text-left font-medium">Gate</th>
+          <th className="text-left font-medium">タイトル</th>
+          <th className="w-32 text-right font-medium">Todo 進捗</th>
+        </tr>
+      </thead>
+      <tbody>
+        {plan.gates.map((g) => {
+          const total = g.todos.length
+          const done = g.todos.filter((t) => t.steps.every((s) => s.checked)).length
+          return (
+            <tr key={g.id} className="border-t border-border/60">
+              <td className="py-1 font-mono">{g.id}</td>
+              <td className="py-1">{g.title}</td>
+              <td className="py-1 text-right tabular-nums">
+                {done}/{total}
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
   )
 }

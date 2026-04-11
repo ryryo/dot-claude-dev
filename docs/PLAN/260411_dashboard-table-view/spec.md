@@ -262,8 +262,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo B2**: Plan 行レンダリング（カラム + 規模バー + ソート）
   > **Review B2**: ✅ PASSED
 
-- [ ] **Todo B3**: Gate 展開行
-  > **Review B3**:
+- [x] **Todo B3**: Gate 展開行
+  > **Review B3**: ✅ PASSED
 
 - [ ] **Todo B4**: 全文表示ボタン（PlanMarkdownModal 接続）
   > **Review B4**:
