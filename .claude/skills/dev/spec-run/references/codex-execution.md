@@ -27,11 +27,11 @@ Step 4 — UPDATE       仕様書のチェックボックスを更新する
 CODEX_COMPANION="$(bash .claude/skills/dev/spec-run/scripts/resolve-codex-plugin.sh)"
 ```
 
-失敗した場合は codex プラグインが未インストール。従来モードにフォールバックする。
+失敗した場合は codex プラグインが未インストール。Claudeモードにフォールバックする。
 
 ### 0-2. 仕様書の読み込み
 
-#### 従来モード
+#### シングルモード
 
 仕様書の「参照すべきファイル」を全て Read する。
 
@@ -71,7 +71,7 @@ Claude main session での実行が失敗した場合:
 
 - Preflight は Gate/Todo とは独立して実行する（Gate 冒頭ではなく spec-run 起動直後に1回だけ）
 - **Preflight セクションが無い場合は完全にスキップ**（既存仕様書との後方互換のため警告なし）
-- 従来モードと Codex モードで Preflight フェーズの動作は完全に同一
+- Claudeモードと Codex モードで Preflight フェーズの動作は完全に同一
 
 ## Step 1 — IMPL
 
@@ -281,7 +281,7 @@ Claude が直接修正し、再度 VERIFY を実行する。
 
 ## Step 4 — UPDATE
 
-### 従来モード
+### シングルモード
 
 各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。
 

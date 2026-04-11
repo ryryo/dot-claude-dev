@@ -1,11 +1,6 @@
 ---
 name: dev:spec
-description: |
-  自己完結した実装仕様書を作成する。
-  深掘り → 探索 → タスク分解 → 仕様書作成 → レビュー → 参照資料同梱。
-  別の作業エージェントがこの仕様書だけで実装を完遂できることがゴール。
-
-  Trigger: 仕様書を作成, /dev:spec, 実装計画, 実装仕様
+description: 自己完結した実装仕様書を作成する。別の作業エージェントがこの仕様書だけで実装を完遂できることがゴール。Trigger: 仕様書を作成, /dev:spec, 実装計画, 実装仕様
 context: fork
 allowed-tools:
   - Read
@@ -17,8 +12,6 @@ allowed-tools:
   - Task
   - AskUserQuestion
 ---
-
-# 実装仕様書作成（dev:spec）
 
 ## ゴール
 
@@ -129,8 +122,6 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 | Gate 数 >= 3 **または** Todo 数 >= 10 | ディレクトリモード |
 | 上記以外                      | 通常モード       |
 
-判定結果は Step 7 以降の出力先とテンプレート選択に影響する。
-
 ### Step 7: 仕様書ドラフト作成
 
 1. `date +%y%m%d` で日付を取得
@@ -140,7 +131,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 
 3. `references/templates/spec-template.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}.md` に Write
    - 冒頭に **Gate 0** セクションを含める（`/dev:spec-run` への参照）
-   - **Preflight がある場合**: Gate 0 直後に Preflight セクションを出力（テンプレートの書式に従う）。Preflight がなければセクション自体を省略する
+   - **Preflight がある場合**: Gate 0 直後に Preflight セクションを出力（テンプレートの書式に従う）
    - タスクリストは **Gate / Step 構造** で記述（テンプレートの「タスクリスト」セクション参照）
    - 各 Todo に **Step 1（IMPL）+ Step 2（Review 結果記入欄）** を含める
 
@@ -149,7 +140,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 3. `mkdir -p docs/PLAN/{YYMMDD}_{slug}` でディレクトリを作成
 4. **spec.md 作成**: `references/templates/spec-template-dir.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}/spec.md` に Write
    - 概要・設計決定・アーキテクチャ・依存図・チェックリスト（Todo 名のみ）・Review 記入欄
-   - **Preflight がある場合**: Gate 0 直後に Preflight チェックリストを出力（テンプレートの書式に従う）。Preflight がなければセクション自体を省略する
+   - **Preflight がある場合**: Gate 0 直後に Preflight チェックリストを出力（テンプレートの書式に従う）
    - 実装詳細は **書かない**（tasks.json に格納するため）
 5. **tasks.json 作成**: `references/templates/tasks.template.json` を Read し、構造に従って `docs/PLAN/{YYMMDD}_{slug}/tasks.json` に Write
    - `spec.slug`, `spec.title` を設定
@@ -204,7 +195,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 2. AskUserQuestion で修正方針を確認（自動修正 / 手動調整 / 無視して続行）
 3. 修正を反映して再レビュー
 
-**最大 2 回ループ**。3 回目は NEEDS_REVISION でもユーザー判断に委ねる。
+**最大 2 回ループ**。超えた場合はユーザー判断に委ねる。
 
 ### Step 10: 整合性チェック（ディレクトリモードのみ）
 

@@ -1,76 +1,42 @@
 ---
 name: dev:spec-run
-description: |
-  仕様書（docs/PLAN/*.md）の実行プロトコル。
-  IMPL → VERIFY の2層で Todo を実行する。
-  起動時に Codex モードを選択すると、デフォルトで全タスクを Codex プラグイン（task）に委任し、
-  VERIFY は codex review（複雑さに応じて1回 or 3回並列）で実行する。
-  仕様書の Gate 0 で参照される。
-  仕様書に Preflight セクションがある場合、Gate 実行前に Claude main session が
-  各 Preflight 項目（ネットワーク/グローバル書き込み/対話が必要な処理）を順次実行する。
-
-  Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
+description: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VERIFY の2層で Todo を実行。Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
 ---
-
-# 仕様書実行プロトコル（dev:spec-run）
-
-仕様書（`docs/PLAN/*.md` または `docs/PLAN/*/spec.md`）に基づいて作業するエージェント向けの実行プロトコル。
 
 ## 起動フロー
 
 ### ステップ 1: 仕様書の特定
 
-#### A. コンテキストから特定できる場合
-
-会話の文脈や Gate 0 からの参照で対象が明確。そのままステップ 1.5 へ進む。
-
-#### B. `/dev:spec-run` が単独で実行された場合
+対象が会話の文脈や Gate 0 から明確な場合はステップ 2 へ進む。それ以外は:
 
 1. `docs/PLAN/*.md` と `docs/PLAN/*/spec.md` を Glob で検索し、更新日順でソートする
 2. 上位 5 件を AskUserQuestion で提示する（最新を推奨マーク付き）
 3. ユーザーが選択した仕様書を対象とする
 
-### ステップ 1.5: 入力形式判定
+### ステップ 2: 入力形式判定
 
-仕様書と同じディレクトリに `tasks.json` が存在するか確認する:
+- `tasks.json` あり → **ディレクトリモード**（tasks.json から Todo を部分読み込みして実行）
+- `tasks.json` なし → **シングルモード**（単一 MD をそのまま処理）
 
-| 条件 | モード | 動作 |
-|------|--------|------|
-| `tasks.json` が存在する | **ディレクトリモード** | tasks.json から Todo を部分読み込みして実行 |
-| `tasks.json` が存在しない | **従来モード** | 単一 MD をそのまま処理 |
+### ステップ 3: 実行準備(必須)
 
-判定結果を以降の全ステップに引き継ぐ。
+- **シングルモード**: Gate 0 通過条件（参照すべきファイルの読み込み等）を実行
+- **ディレクトリモード**: spec.md の「参照すべきファイル」と tasks.json を並列 Read し、全体構造（gates, todo IDs, descriptions）を把握。各 Todo の `impl` はこの時点では読まない
 
-### ステップ 2: 実行準備(必須)
-
-- **従来モード**: Gate 0 通過条件（参照すべきファイルの読み込み等）を実行
-- **ディレクトリモード**: spec.md の「参照すべきファイル」を Read + tasks.json を Read して全体構造（gates, todo IDs）を把握。各 Todo の `impl` はこの時点では読まない
-
-次のステップへ進む。
-
-### ステップ 3: 実行モード選択
+### ステップ 4: 実行モード選択
 
 AskUserQuestion で実行モードを選択する:
 
-- **従来モード** — Claude Code が全 Todo を直接実行
-- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じて1回 or 3回並列）
+- **Claudeモード** — Claude Code が全 Todo を直接実行
+- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じてスキップ or 1回 or 3回並列）
 
-選択結果を以降の全 Gate・全 Todo に適用する。
-
-### ステップ 4: 実行プロトコルの読み込み
+### ステップ 5: 実行プロトコルの読み込み
 
 選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する。
 
-### ステップ 5: Preflight 実行（該当時のみ）
+### ステップ 6: Preflight 実行（該当時のみ）
 
-仕様書に `## Preflight` セクションが存在する場合、Gate の実行前に Claude main session が Preflight 項目を順次実行する。詳細は両モードの実行プロトコル（`references/execution.md` / `references/codex-execution.md`）の「Preflight フェーズ」を参照。
-
-Preflight セクションが無い場合はスキップ（既存仕様書との後方互換のため警告なし）。
-
-| 実行モード | 参照ファイル |
-|------------|-------------|
-| 従来モード | `references/execution.md` |
-| Codex モード | `references/codex-execution.md` |
+仕様書に `## Preflight` セクションが存在する場合、Gate の実行前に Claude main session が Preflight 項目を順次実行する。詳細は各モードの実行プロトコルの「Preflight フェーズ」を参照。セクションが無い場合はスキップ。
 
 ---
 
@@ -85,12 +51,13 @@ Gate 内の全 Todo について:
 ### 結果の記録
 
 **Preflight 完了時**:
+
 ```markdown
 - [x] **P1**: パッケージインストール — `pnpm install`
 - [x] **P2**: **[手動]** `.env.local` に `API_KEY` を設定
 ```
 
-**従来モード**: 仕様書の該当 Todo のチェックボックスと Review 記入欄を更新
+**シングルモード**: 仕様書の該当 Todo のチェックボックスと Review 記入欄を更新
 **ディレクトリモード**: spec.md のチェックボックスと Review blockquote を更新
 
 ```markdown
@@ -98,6 +65,7 @@ Gate 内の全 Todo について:
   > **Review A1**: ✅ PASSED
 - [x] **Todo A2**: フォーカスインジケーター
   > **Review A2**: ✅ PASSED (FIX 1回)
+  >
   > - stdin の null チェックを追加
 ```
 
@@ -124,11 +92,11 @@ rm -f .tmp/codex-*.md
 3. ユーザーが「NG / 修正が必要」を選択した場合:
    - 問題内容を確認し、必要な修正を実施してから再度確認する
 
-`## レビューステータス` セクションが存在しない場合はこのステップをスキップする。
+`## レビューステータス` セクションが存在しない場合はスキップ。
 
 ## 参照
 
-### 従来モード
+### Claudeモード
 
 - `references/execution.md` — 実行プロトコル
 - `roles/implementer.md` — 汎用実装ロール定義
