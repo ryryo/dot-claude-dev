@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPlanSize } from '../lib/plan-size';
+import { getPlanSize, getSizeBin } from '../lib/plan-size';
 import type { PlanFile } from '../lib/types';
 
 function makePlan(overrides: Partial<PlanFile> = {}): PlanFile {
@@ -49,5 +49,19 @@ describe('getPlanSize', () => {
       ],
     });
     expect(getPlanSize(plan).total).toBe(3);
+  });
+});
+
+describe('getSizeBin', () => {
+  it('境界値', () => {
+    expect(getSizeBin(0)).toBe('S');
+    expect(getSizeBin(1)).toBe('S');
+    expect(getSizeBin(3)).toBe('S');
+    expect(getSizeBin(4)).toBe('M');
+    expect(getSizeBin(7)).toBe('M');
+    expect(getSizeBin(8)).toBe('L');
+    expect(getSizeBin(15)).toBe('L');
+    expect(getSizeBin(16)).toBe('XL');
+    expect(getSizeBin(100)).toBe('XL');
   });
 });
