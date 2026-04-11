@@ -164,4 +164,4 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プ
 
 - master 側の spec.md を直接編集してはならない（cwd が worktree の前提が崩れる）
 - Codex モードで worktree を使う場合は `references/codex-execution.md` の該当セクションを参照
-- worktree モードの詳細なライフサイクル（setup / merge / cleanup）は `references/worktree-protocol.md` を参照
+- worktree セットアップ手順は `references/worktree-setup.md`、完了時の merge / cleanup は `references/worktree-teardown.md` を参照

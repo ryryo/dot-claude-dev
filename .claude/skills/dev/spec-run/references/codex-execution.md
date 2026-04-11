@@ -340,4 +340,4 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 codex-executi
 
 ### worktree モードの詳細なライフサイクル
 
-setup / merge / cleanup / コンフリクト解決の詳細は `references/worktree-protocol.md` を参照。
+worktree セットアップ手順は `references/worktree-setup.md`、完了時の merge / cleanup は `references/worktree-teardown.md` を参照。
