@@ -441,7 +441,7 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
 
 #### Todo 4: PlanDetail 3階層アコーディオン再構築
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/components/plan-detail.tsx`
   - **内容**: Gate → Todo → Step の3階層アコーディオンに再構築。Gate 排他制御を廃止、デフォルト全 open、Todo ヘッダに進捗、Step に description と Review ラベルを表示
   - **実装詳細**:
@@ -459,9 +459,9 @@ Gate B: 統合（型 + パーサー本体 + UI + 既存テスト更新）（Gate
     - アクセシビリティ: `CollapsibleTrigger` に `aria-label={`${gate.title} の Todo を開閉`}` 等を付与
   - **依存**: Todo 3（新型定義・新 parsePlanFile）
 
-- [ ] **Step 2 — Review B2**
+- [x] **Step 2 — Review B2**
 
-  > **Review B2**: [記入欄]
+  > **Review B2**: ✅ PASSED (FIX 1回) — 初回 base-ui の `data-state` 属性誤用を指摘 (Todo レベル chevron が回転しない). `group-data-[panel-open]:rotate-180` に修正 + 未使用 `useState` import 削除. 再レビューで PASS 確認.
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること。ビルド（`npm run build` または `next build`）と全テスト（`npm test`）が成功すること。ブラウザで既存 PLAN (`docs/PLAN/260410_kanban-card-detail.md` 相当のデータ) を表示して Gate → Todo → Step の3階層が正しく表示され、Step に1行説明が出ていること。
 
