@@ -298,8 +298,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 
 ### Gate E: 統合
 
-- [ ] **Todo E1**: page.tsx で全体統合（state + レイアウト）
-  > **Review E1**:
+- [x] **Todo E1**: page.tsx で全体統合（state + レイアウト）
+  > **Review E1**: ✅ PASSED
 
 - [ ] **Todo E2**: 動作確認 + ビュー独立性の検証
   > **Review E2**:
