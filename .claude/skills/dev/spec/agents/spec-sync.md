@@ -47,12 +47,17 @@ allowed_tools: Read, Edit, Write, Glob, Grep, Bash, AskUserQuestion
 | 依存関係 | 依存関係図 | `gates[].dependencies` + `todos[].dependencies` |
 | TDD ラベル | `[TDD]` ラベル有無 | `todos[].tdd` フィールド |
 | Review 記入欄 | `> **Review XX**:` blockquote | — |
+| Preflight ID 一致 | Preflight チェックリストの `**P1**` 等の ID | `preflight[].id` |
+| Preflight タイトル一致 | Preflight チェックリストのタイトル | `preflight[].title` |
+| Preflight 項目数 | Preflight セクションのチェックボックス数 | `preflight` 配列長 |
 
 **自動修正ルール**:
 - tasks.json の `metadata.totalGates` / `metadata.totalTodos` がカウントと不一致 → 自動修正
 - spec.md の Todo タイトルと tasks.json の `todos[].title` が不一致 → 変更された側に合わせる（git diff で判定）
 - spec.md に Review 記入欄がない Todo → blockquote を追加
 - 依存関係図の Gate 依存が tasks.json と不一致 → tasks.json を正として図を更新
+- spec.md の Preflight チェックリストと tasks.json の `preflight` 配列に差分がある → git diff で後から変更された方を正とする
+- `preflight` 配列が空（`[]`）かつ spec.md に Preflight セクションが残存している → セクション削除を自動実行
 
 ### Step 3: 意味的整合性チェック
 
@@ -92,6 +97,7 @@ C) 両方とも修正が必要（別の内容を指定）
 - 依存関係: 整合
 - TDD ラベル: 整合
 - Review 記入欄: 全 Todo に存在
+- Preflight: 一致 ({N} 件)
 
 ### 意味的整合性: ✅
 - impl ↔ 設計決定: 矛盾なし

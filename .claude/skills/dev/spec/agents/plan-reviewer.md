@@ -75,6 +75,15 @@ Read(CLAUDE.md)
 - [ ] テストタスク
 - [ ] 型定義/インターフェース変更タスク
 
+#### Preflight の妥当性
+
+- [ ] Preflight セクションの各項目が sandbox 不可な 3 カテゴリのみに該当している
+  - 許容: ネットワーク必須（npm install 等） / ワークスペース外書き込み（brew install 等） / 対話必須（gh auth login 等）
+  - 不可: `prisma generate` 等のローカルコード生成、ファイル編集のみ、テスト/ビルド実行
+- [ ] sandbox で実行可能な処理がコード Todo ではなく Preflight に紛れ込んでいないか（過剰抽出）
+- [ ] 手動操作必須項目に `[手動]` ラベルが明示されているか（`manual: true` の項目）
+- [ ] Preflight が無い場合、空のセクションが残存していないか（該当なければセクション自体を省略）
+
 #### Gate 0 と Review 構造
 
 - [ ] 冒頭に Gate 0（`/dev:spec-run` への参照）がある

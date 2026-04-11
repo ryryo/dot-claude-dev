@@ -6,6 +6,8 @@ description: |
   起動時に Codex モードを選択すると、デフォルトで全タスクを Codex プラグイン（task）に委任し、
   VERIFY は codex review（複雑さに応じて1回 or 3回並列）で実行する。
   仕様書の Gate 0 で参照される。
+  仕様書に Preflight セクションがある場合、Gate 実行前に Claude main session が
+  各 Preflight 項目（ネットワーク/グローバル書き込み/対話が必要な処理）を順次実行する。
 
   Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
 ---
@@ -59,6 +61,12 @@ AskUserQuestion で実行モードを選択する:
 
 選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する。
 
+### ステップ 5: Preflight 実行（該当時のみ）
+
+仕様書に `## Preflight` セクションが存在する場合、Gate の実行前に Claude main session が Preflight 項目を順次実行する。詳細は両モードの実行プロトコル（`references/execution.md` / `references/codex-execution.md`）の「Preflight フェーズ」を参照。
+
+Preflight セクションが無い場合はスキップ（既存仕様書との後方互換のため警告なし）。
+
 | 実行モード | 参照ファイル |
 |------------|-------------|
 | 従来モード | `references/execution.md` |
@@ -75,6 +83,12 @@ Gate 内の全 Todo について:
 3. **全 VERIFY の総合判定が PASS** であること
 
 ### 結果の記録
+
+**Preflight 完了時**:
+```markdown
+- [x] **P1**: パッケージインストール — `pnpm install`
+- [x] **P2**: **[手動]** `.env.local` に `API_KEY` を設定
+```
 
 **従来モード**: 仕様書の該当 Todo のチェックボックスと Review 記入欄を更新
 **ディレクトリモード**: spec.md のチェックボックスと Review blockquote を更新

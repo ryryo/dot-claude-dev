@@ -15,6 +15,19 @@
 
 **Gate 0 通過条件**: `/dev:spec-run` の実行プロトコルに従い、実行モード（従来 / Codex）を選択済みであること。
 
+## Preflight（環境セットアップ）
+
+> Codex / サブエージェントの sandbox 制限（ネットワーク不可 / ワークスペース外書き込み不可 / 対話不可）により、以下のいずれかに該当する処理のみを列挙する:
+> - **ネットワーク必須**: `npm/pnpm/yarn/bun/pip install`、`uv sync`、`npx create-*`、`git clone`、`curl`、リモート API 呼び出し 等
+> - **ワークスペース外書き込み**: `brew install`、`apt install`、`cargo install`、`~/.zshrc` 編集 等
+> - **対話必須**: `gh auth login`、`gcloud auth login`、OAuth フロー、パスワードプロンプト 等
+>
+> 該当がなければこのセクション全体を省略してよい。
+> これらは `/dev:spec-run` 実行時に Claude main session が先に実行する。
+
+- [ ] **P1**: {タイトル} — `{コマンド}`
+- [ ] **P2**: **[手動]** {タイトル}（ユーザーが {操作内容} を実行）
+
 ---
 
 ## 概要

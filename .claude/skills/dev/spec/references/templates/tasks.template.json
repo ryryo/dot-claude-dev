@@ -4,6 +4,15 @@
     "title": "",
     "specPath": "spec.md"
   },
+  "preflight": [
+    {
+      "id": "P1",
+      "title": "",
+      "command": "",
+      "manual": false,
+      "reason": ""
+    }
+  ],
   "gates": [
     {
       "id": "",

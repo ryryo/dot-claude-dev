@@ -91,7 +91,36 @@ allowed-tools:
 - `[TDD]` ラベルは Todo 単位で付与する。同一 Gate 内で混在可
 - `[TDD]` ラベル付き Todo は `dev:spec-run` の実行モードに応じて tdd-developer または codex-tdd-developer で実装する
 
-### Step 4b: 出力形式判定
+### Step 5: Preflight 抽出
+
+Step 3/4 で整理したタスク一覧から、**Codex / サブエージェントの sandbox では実行不可能な処理** を Preflight として抽出する。
+
+#### 抽出対象（3 カテゴリのみ）
+
+| カテゴリ | 理由コード | 具体例 |
+|---------|-----------|--------|
+| ネットワーク必須 | `network` | `npm/pnpm/yarn/bun/pip install`、`uv sync`、`npx create-*`、`git clone`、`curl`、リモート DB 接続、外部 API 呼び出し |
+| ワークスペース外書き込み | `global-write` | `brew install`、`apt install`、`cargo install`、`pipx install`、グローバル npm、`~/.zshrc` 編集 |
+| 対話必須 | `interactive` | `gh auth login`、`gcloud auth login`、OAuth フロー、パスワードプロンプト |
+
+**抽出しないもの**（sandbox で動作するためコード Todo に残す）:
+- `prisma generate`、`drizzle-kit generate` 等のローカルコード生成（ネットワーク不要）
+- ローカル DB マイグレーション（ローカル Postgres / SQLite）
+- `.env` ファイルの作成やコメント編集（値の手動設定が必要な場合のみ Preflight へ）
+- テスト実行、lint/format/build（依存導入済みの場合）
+
+#### 処理手順
+
+1. 全 Todo をスキャンし、上記 3 カテゴリに該当する処理を列挙する
+2. AskUserQuestion で抽出結果をユーザーに提示し確認する
+3. 承認されたものは Gate の Todo ではなく Preflight に移動する:
+   - **自動実行可能** (`manual: false`): `command` フィールドに実行コマンドを記述
+   - **ユーザー手動操作必須** (`manual: true`): `command` は空、タイトルに具体的な操作手順を記述、表記に `[手動]` を付与
+4. 該当がなければ Preflight はスキップ。仕様書に Preflight セクション自体を出力しない
+
+**ゲート**: 抽出対象が 3 カテゴリ外（`prisma generate` 等のローカル完結処理）に及んでいないこと。過剰抽出しない。
+
+### Step 6: 出力形式判定
 
 Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 
@@ -100,9 +129,9 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 | Gate 数 >= 3 **または** Todo 数 >= 10 | ディレクトリモード |
 | 上記以外                      | 通常モード       |
 
-判定結果は Step 5 以降の出力先とテンプレート選択に影響する。
+判定結果は Step 7 以降の出力先とテンプレート選択に影響する。
 
-### Step 5: 仕様書ドラフト作成
+### Step 7: 仕様書ドラフト作成
 
 1. `date +%y%m%d` で日付を取得
 2. AskUserQuestion で仕様書の slug を確定
@@ -111,6 +140,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 
 3. `references/templates/spec-template.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}.md` に Write
    - 冒頭に **Gate 0** セクションを含める（`/dev:spec-run` への参照）
+   - **Preflight がある場合**: Gate 0 直後に Preflight セクションを出力（テンプレートの書式に従う）。Preflight がなければセクション自体を省略する
    - タスクリストは **Gate / Step 構造** で記述（テンプレートの「タスクリスト」セクション参照）
    - 各 Todo に **Step 1（IMPL）+ Step 2（Review 結果記入欄）** を含める
 
@@ -119,16 +149,18 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 3. `mkdir -p docs/PLAN/{YYMMDD}_{slug}` でディレクトリを作成
 4. **spec.md 作成**: `references/templates/spec-template-dir.md` を Read し、その構成に従って `docs/PLAN/{YYMMDD}_{slug}/spec.md` に Write
    - 概要・設計決定・アーキテクチャ・依存図・チェックリスト（Todo 名のみ）・Review 記入欄
+   - **Preflight がある場合**: Gate 0 直後に Preflight チェックリストを出力（テンプレートの書式に従う）。Preflight がなければセクション自体を省略する
    - 実装詳細は **書かない**（tasks.json に格納するため）
 5. **tasks.json 作成**: `references/templates/tasks.template.json` を Read し、構造に従って `docs/PLAN/{YYMMDD}_{slug}/tasks.json` に Write
    - `spec.slug`, `spec.title` を設定
+   - **Preflight がある場合**: `preflight` 配列に各項目を格納（`id`, `title`, `command`, `manual`, `reason`）。Preflight がなければ `preflight: []` とする
    - `gates` 配列に全 Gate を格納
    - `todos` 配列に全 Todo を格納。各 Todo の `impl` フィールドに**実装詳細・コード例を含む完全な手順**を記述
    - `affectedFiles` は plan.json と同じ形式（`path`, `operation`, `summary`）
    - `tdd: true` は `[TDD]` ラベル付き Todo に設定
    - `metadata.totalGates`, `metadata.totalTodos` を設定
 
-### Step 6: 外部参照資料の同梱
+### Step 8: 外部参照資料の同梱
 
 仕様書内で参照しているファイルをすべてチェックし、**作業エージェントがアクセスできないもの**を `docs/PLAN/{YYMMDD}_{slug}/references/` に同梱する。
 
@@ -147,7 +179,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 2. **仕様書の参照パス更新**: 外部絶対パスを `references/` 内のパスに書き換え
 3. **最終確認**: 作業エージェントが「このリポジトリ内にある」と誤解するパス記述がないか通読
 
-### Step 7: レビュー
+### Step 9: レビュー
 
 → **Agent（sonnet）** に委譲（`agents/plan-reviewer.md` を Read してプロンプトとして使用）
 
@@ -174,16 +206,16 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 
 **最大 2 回ループ**。3 回目は NEEDS_REVISION でもユーザー判断に委ねる。
 
-### Step 8: 整合性チェック（ディレクトリモードのみ）
+### Step 10: 整合性チェック（ディレクトリモードのみ）
 
-**ディレクトリモードの場合のみ実行。通常モードではスキップして Step 9 へ。**
+**ディレクトリモードの場合のみ実行。通常モードではスキップして Step 11 へ。**
 
 → **Agent（opus）** に委譲（`agents/spec-sync.md` を Read してプロンプトとして使用）
 
 エージェントに渡す情報:
 - spec.md パス
 - tasks.json パス
-- 変更コンテキスト: Step 7 のレビューで修正が入った場合はその内容
+- 変更コンテキスト: Step 9 のレビューで修正が入った場合はその内容
 
 検証内容:
 1. **構造的整合性** — Todo ID/タイトル、Gate 構造、依存関係、TDD ラベル、metadata カウントが spec.md と tasks.json で一致しているか
@@ -193,7 +225,7 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 - 構造的不整合（ID 不一致、カウントずれ等）→ 自動修正
 - 意味的矛盾（impl と設計決定の矛盾等）→ AskUserQuestion で確認後に修正
 
-### Step 9: ユーザー最終確認
+### Step 11: ユーザー最終確認
 
 仕様書完成を報告し、AskUserQuestion で次のアクションを確認:
 
@@ -213,6 +245,8 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 - [ ] Gate 間の依存関係が依存関係図に図示されている
 - [ ] レビューが完了（APPROVED or ユーザー判断で続行）
 - [ ] ユーザーが承認済み
+- [ ] Preflight 該当がある場合、Preflight セクションが Gate 0 直後に出力されている
+- [ ] Preflight 項目は sandbox 不可な 3 カテゴリ（network / global-write / interactive）のみ（過剰抽出していない）
 
 ### 通常モード追加条件
 
@@ -226,11 +260,12 @@ Step 4 のグループ化結果をもとに、出力形式を自動判定する:
 - [ ] tasks.json の全 Todo に `impl` フィールドが存在し空でない
 - [ ] spec.md のチェックリストと tasks.json の Todo ID/タイトルが一致する
 - [ ] spec.md の各 Todo に Review 結果記入欄（blockquote）が定義されている
+- [ ] spec.md の Preflight チェックリストと tasks.json の preflight 配列の ID/タイトルが一致する（Preflight がある場合）
 
 ## 参照
 
-- `agents/plan-reviewer.md` — 仕様書全体のレビューエージェント指示書（Step 7）
-- `agents/spec-sync.md` — spec.md / tasks.json 整合性チェック + 修正エージェント（Step 8、ディレクトリモードのみ）
+- `agents/plan-reviewer.md` — 仕様書全体のレビューエージェント指示書（Step 9）
+- `agents/spec-sync.md` — spec.md / tasks.json 整合性チェック + 修正エージェント（Step 10、ディレクトリモードのみ）
 - `/dev:spec-run` — 仕様書実行プロトコル（Gate 0 で参照。`agents/reviewer.md` に統合済み）
 - `/dev:dig` — Step 2 で要件の深掘りに使用
 - `/dev:decomposition` — Step 3 でタスク分解に使用

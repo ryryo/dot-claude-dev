@@ -9,14 +9,12 @@
 ## 実行ステップ
 
 ```
-Step 0 — CONTEXT   仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
-
-【各 Gate 冒頭で実行】
-Step P — PREFLIGHT その Gate の環境構築系 Todo を Claude main session でまとめて先行実行
-Step 1 — IMPL      チェックリストで委任判断 → Codex or Claude
-Step 2 — VERIFY    codex review（複雑さに応じて1回 or 3回並列）
-Step 3 — FIX       FAIL がある場合のみ修正（最大3ラウンド）
-Step 4 — UPDATE    仕様書のチェックボックスを更新する
+Step 0 — CONTEXT      仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
+Preflight フェーズ     Preflight セクション該当時のみ、Claude main session が順次実行（スキップ条件あり）
+Step 1 — IMPL         チェックリストで委任判断 → Codex or Claude
+Step 2 — VERIFY       codex review（複雑さに応じて1回 or 3回並列）
+Step 3 — FIX          FAIL がある場合のみ修正（最大3ラウンド）
+Step 4 — UPDATE       仕様書のチェックボックスを更新する
 ```
 
 ## Step 0 — CONTEXT
@@ -42,6 +40,38 @@ CODEX_COMPANION="$(bash .claude/skills/dev/spec-run/scripts/resolve-codex-plugin
 1. spec.md の「参照すべきファイル」を全て Read する
 2. tasks.json を Read して全体構造（`gates`, Todo の `id`/`gate`/`title`/`dependencies`）を把握する
 3. 各 Todo の `impl` フィールドは**この時点では読まない**（部分読み込みで後述）
+
+## Preflight フェーズ（該当時のみ）
+
+> **Codex の `workspace-write` sandbox はネットワーク完全ブロック（DNS 解決不可）+ ワークスペース外書き込み禁止 + 対話不可。** Preflight 項目はこの制約を回避するため Claude main session が実行する。
+
+仕様書に `## Preflight` セクション（通常モード）または `tasks.json` の `preflight` 配列（ディレクトリモード）が存在し、項目が 1 件以上ある場合のみ実行する。該当が無ければ何もせず Step 1 へ進む。
+
+### 実行手順
+
+1. Preflight 項目を記載順に処理する（依存関係はないため順序通り）
+2. 各項目を判定する:
+   - `manual: false`（自動実行可能）→ Bash ツールで `command` を実行
+   - `manual: true`（ユーザー手動操作必須）→ AskUserQuestion で操作内容と完了確認を提示し、完了報告を待つ
+3. 実行成功 → 仕様書の該当チェックボックスを `[x]` に更新する
+4. 全 Preflight 完了後、Step 1 へ進む
+
+### Preflight 失敗時
+
+Claude main session での実行が失敗した場合:
+
+1. sandbox 起因ではないため diagnose スクリプトは不要
+2. エラー内容をユーザーに直接報告する
+3. AskUserQuestion で以下を選択させる:
+   - 1. 手動で対応後リトライ
+   - 2. この Preflight 項目をスキップして残りの Gate 実行を継続（リスク警告付き）
+   - 3. 作業中断
+
+### 注意
+
+- Preflight は Gate/Todo とは独立して実行する（Gate 冒頭ではなく spec-run 起動直後に1回だけ）
+- **Preflight セクションが無い場合は完全にスキップ**（既存仕様書との後方互換のため警告なし）
+- 従来モードと Codex モードで Preflight フェーズの動作は完全に同一
 
 ## Step 1 — IMPL
 
