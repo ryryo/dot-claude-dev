@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-table'
 
 import { Badge } from '@/components/ui/badge'
+import { getPlanSize, getSizeBin } from '@/lib/plan-size'
 import { cn } from '@/lib/utils'
 import type { PlanFile, PlanStatus } from '@/lib/types'
 
@@ -33,7 +34,7 @@ interface PlanTableProps {
 }
 
 export function PlanTable({ plans }: PlanTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'size', desc: false }])
 
   const columns = useMemo<ColumnDef<PlanFile>[]>(() => [
     {
@@ -65,6 +66,52 @@ export function PlanTable({ plans }: PlanTableProps) {
             {STATUS_LABEL[s]}
           </span>
         )
+      },
+    },
+    {
+      id: 'size',
+      accessorFn: (row) => getPlanSize(row).total,
+      header: '規模',
+      cell: (info) => {
+        const total = info.getValue<number>()
+        const bin = getSizeBin(total)
+        const maxBar = 20
+        const widthPct = Math.min(100, (total / maxBar) * 100)
+        return (
+          <div className="flex items-center gap-2">
+            <span className="w-6 text-right tabular-nums text-muted-foreground">{total}</span>
+            <div className="h-2 w-20 overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary/70" style={{ width: `${widthPct}%` }} />
+            </div>
+            <span className="w-6 text-xs text-muted-foreground">{bin}</span>
+          </div>
+        )
+      },
+      sortingFn: 'basic',
+    },
+    {
+      id: 'progress',
+      accessorFn: (row) => row.progress.percentage,
+      header: '進捗',
+      cell: (info) => {
+        const p = info.getValue<number>()
+        return (
+          <div className="flex items-center gap-2">
+            <span className="w-9 text-right tabular-nums text-muted-foreground">{p}%</span>
+            <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
+              <div className="h-full bg-primary" style={{ width: `${p}%` }} />
+            </div>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'createdDate',
+      accessorFn: (row) => row.createdDate ?? '',
+      header: '作成日',
+      cell: (info) => {
+        const v = info.getValue<string>()
+        return <span className="tabular-nums text-muted-foreground">{v || '–'}</span>
       },
     },
   ], [])

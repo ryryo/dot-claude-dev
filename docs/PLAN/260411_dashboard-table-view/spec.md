@@ -259,8 +259,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo B1**: TanStack Table v8 導入 + PlanTable 土台
   > **Review B1**: ✅ PASSED
 
-- [ ] **Todo B2**: Plan 行レンダリング（カラム + 規模バー + ソート）
-  > **Review B2**:
+- [x] **Todo B2**: Plan 行レンダリング（カラム + 規模バー + ソート）
+  > **Review B2**: ✅ PASSED
 
 - [ ] **Todo B3**: Gate 展開行
   > **Review B3**:
