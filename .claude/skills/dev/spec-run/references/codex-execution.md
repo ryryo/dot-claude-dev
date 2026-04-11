@@ -10,6 +10,9 @@
 
 ```
 Step 0 — CONTEXT   仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
+
+【各 Gate 冒頭で実行】
+Step P — PREFLIGHT その Gate の環境構築系 Todo を Claude main session でまとめて先行実行
 Step 1 — IMPL      チェックリストで委任判断 → Codex or Claude
 Step 2 — VERIFY    codex review（複雑さに応じて1回 or 3回並列）
 Step 3 — FIX       FAIL がある場合のみ修正（最大3ラウンド）
