@@ -37,6 +37,17 @@ export default function LoginPage() {
         return
       }
 
+      if (response.status === 429) {
+        const body = (await response.json().catch(() => null)) as { retryAfter?: number } | null
+        const retryAfter = typeof body?.retryAfter === "number" ? body.retryAfter : null
+        setError(
+          retryAfter
+            ? `試行回数が多すぎます。${Math.max(1, Math.ceil(retryAfter / 60))}分ほど待ってから再試行してください。`
+            : "試行回数が多すぎます。しばらく待ってから再試行してください。"
+        )
+        return
+      }
+
       setError("パスワードが正しくありません")
     } catch {
       setError("パスワードが正しくありません")

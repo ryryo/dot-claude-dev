@@ -4,13 +4,13 @@ export const MAX_AGE = 7 * 24 * 60 * 60
 const encoder = new TextEncoder()
 
 async function deriveSecret(): Promise<ArrayBuffer> {
-  const password = process.env.DASHBOARD_PASSWORD
+  const secret = process.env.DASHBOARD_COOKIE_SECRET
 
-  if (!password) {
-    throw new Error("DASHBOARD_PASSWORD is not set")
+  if (!secret) {
+    throw new Error("DASHBOARD_COOKIE_SECRET is not set")
   }
 
-  const data = encoder.encode(`cookie-secret:${password}`)
+  const data = encoder.encode(`cookie-secret:${secret}`)
   return crypto.subtle.digest("SHA-256", data)
 }
 
