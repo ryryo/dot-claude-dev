@@ -54,24 +54,26 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
 
   useEffect(() => {
     if (!groupByProject || !projects) return
-    const main = document.getElementById("main-content")
-    if (!main) return
 
     const handleScroll = () => {
-      const mainRect = main.getBoundingClientRect()
       let active = 0
       sectionRefs.current.forEach((ref, index) => {
         if (!ref) return
         const rect = ref.getBoundingClientRect()
-        if (rect.top <= mainRect.top + 80) {
+        if (rect.top <= window.innerHeight * 0.4) {
           active = index
         }
       })
       setActiveIndex(active)
     }
 
-    main.addEventListener("scroll", handleScroll, { passive: true })
-    return () => main.removeEventListener("scroll", handleScroll)
+    const main = document.getElementById("main-content")
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    main?.addEventListener("scroll", handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      main?.removeEventListener("scroll", handleScroll)
+    }
   }, [groupByProject, projects])
 
   const scrollToProject = (index: number) => {
@@ -80,9 +82,12 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
 
   if (groupByProject && projects) {
     return (
-      <div className="flex gap-3">
-        {/* Dot navigation */}
-        <div className="sticky top-0 self-start flex flex-col items-center justify-center min-h-[calc(100svh-8rem)] py-4">
+      <div>
+        {/* Fixed dot navigation */}
+        <div
+          className="fixed top-1/2 z-20 -translate-y-1/2 flex flex-col items-center rounded-full bg-background/70 px-1.5 py-2 shadow-sm backdrop-blur-sm"
+          style={{ left: "calc(var(--sidebar-width, 16rem) + 0.75rem)" }}
+        >
           {projects.map(([projectName], index) => (
             <div key={projectName} className="flex flex-col items-center">
               {index > 0 && (
@@ -103,7 +108,7 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
         </div>
 
         {/* Project sections */}
-        <div className="flex-1 space-y-4">
+        <div className="space-y-4">
           {projects.map(([projectName, projectPlans], index) => (
             <div
               key={projectName}
