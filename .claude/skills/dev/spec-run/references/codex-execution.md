@@ -293,3 +293,51 @@ spec.md のチェックボックスを `[x]` に更新し、Review 結果を blo
 - [x] **Todo A1**: カラーコントラスト修正
   > **Review A1**: ✅ PASSED
 ```
+
+---
+
+## worktree モード（オプション）
+
+SKILL.md の Step 4 で worktree 使用を選択した場合、本 codex-execution プロトコルは **worktree 内の cwd** で実行される。差分は以下の通り。
+
+### 前提
+
+- `cd $WORKTREE_PATH` が Step 4.6 で実行済み
+- Bash tool の cwd は worktree 内
+- Codex プラグイン（`resolve-codex-plugin.sh`）は **worktree cwd でも動作する前提**（Gate D Todo D1 で検証済みであること）
+
+### 各 Step の差分
+
+| Step | 差分 |
+|------|------|
+| Step 0-1 `resolve-codex-plugin.sh` | worktree 内から実行。パス解決が成功することを確認 |
+| Step 0-2 仕様書読み込み | worktree 内のパスで Read（worktree は master から派生なので同じファイル構造） |
+| Preflight フェーズ | worktree 内で実行 |
+| Step 1 IMPL（Codex 委任） | `node "$CODEX_COMPANION" task --write --prompt-file .tmp/codex-prompt.md` を worktree cwd で実行。`.tmp/` は worktree 内に作成される（`mkdir -p .tmp` も worktree 側） |
+| Step 1 IMPL（Claude 保持） | worktree 内のファイルを直接編集、worktree 内でコミット |
+| Step 2 VERIFY | `codex review - < .tmp/codex-review-focus.md` を worktree cwd で実行。差分検出は `origin/master..HEAD` が worktree の feature/{slug} に対して自然に動作する |
+| Step 3 FIX | `task --write --resume-last` を worktree cwd で実行 |
+| Step 4 UPDATE | worktree 内の spec.md を更新 |
+
+### .tmp/ 配置に関する注意
+
+- `.tmp/` は `.gitignore` に登録済みなので worktree 側でも自動的に git 管理外
+- worktree ごとに独立した `.tmp/` を持つため、並行実行時にプロンプトファイル名の衝突は発生しない
+- 完了処理での `rm -f .tmp/codex-*.md` は:
+  - worktree 側: cleanup-worktree.sh で worktree ごと削除されるため不要
+  - master 側: cwd を master に戻した後、念のため削除（非 worktree モードと同じ処理）
+
+### Codex プラグインのパス解決
+
+`resolve-codex-plugin.sh` が worktree cwd で動作しない場合（Gate D 検証で判明した場合）、以下の対処を取る:
+
+- **対処 A**: master 側で `resolve-codex-plugin.sh` を実行して `$CODEX_COMPANION` を取得 → worktree に cd してから使う（パスは絶対パスなので worktree からも参照可能なはず）
+- **対処 B**: 動作しない場合は worktree モードと Codex モードの併用を禁止する旨を SKILL.md に記載（Gate D の検証結果次第）
+
+### 仕様書に記載されるエラー診断
+
+既存の「Codex エラー診断」セクションはそのまま適用される。worktree 内で実行した結果のエラーも同じ診断スクリプト・分類表・ユーザー報告テンプレートを使う。
+
+### worktree モードの詳細なライフサイクル
+
+setup / merge / cleanup / コンフリクト解決の詳細は `references/worktree-protocol.md` を参照。
