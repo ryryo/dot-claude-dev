@@ -30,13 +30,9 @@ AskUserQuestion で実行モードを選択する:
 - **Claudeモード** — Claude Code が全 Todo を直接実行
 - **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じてスキップ or 1回 or 3回並列）
 
-### ステップ 5: 実行プロトコルの読み込み
+### ステップ 5: 実行プロトコルの読み込みと実行
 
-選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する。
-
-### ステップ 6: Preflight 実行（該当時のみ）
-
-仕様書に `## Preflight` セクションが存在する場合、Gate の実行前に Claude main session が Preflight 項目を順次実行する。詳細は各モードの実行プロトコルの「Preflight フェーズ」を参照。セクションが無い場合はスキップ。
+選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する（Preflight フェーズを含む）。
 
 ---
 
