@@ -265,8 +265,8 @@ Gate E: 統合（Gate B/C/D 完了後）
 - [x] **Todo B3**: Gate 展開行
   > **Review B3**: ✅ PASSED
 
-- [ ] **Todo B4**: 全文表示ボタン（PlanMarkdownModal 接続）
-  > **Review B4**:
+- [x] **Todo B4**: 全文表示ボタン（PlanMarkdownModal 接続）
+  > **Review B4**: ✅ PASSED
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 

@@ -11,8 +11,9 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, FileText } from 'lucide-react'
 
+import { PlanMarkdownModal } from '@/components/plan-markdown-modal'
 import { Badge } from '@/components/ui/badge'
 import { getPlanSize, getSizeBin } from '@/lib/plan-size'
 import { cn } from '@/lib/utils'
@@ -39,6 +40,7 @@ interface PlanTableProps {
 export function PlanTable({ plans }: PlanTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: 'size', desc: false }])
   const [expanded, setExpanded] = useState<ExpandedState>({})
+  const [modalPlan, setModalPlan] = useState<PlanFile | null>(null)
 
   const columns = useMemo<ColumnDef<PlanFile>[]>(() => [
     {
@@ -137,6 +139,23 @@ export function PlanTable({ plans }: PlanTableProps) {
         return <span className="tabular-nums text-muted-foreground">{v || '–'}</span>
       },
     },
+    {
+      id: 'actions',
+      header: () => null,
+      cell: ({ row }) => (
+        <button
+          type="button"
+          aria-label={`${row.original.title} の全文を読む`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setModalPlan(row.original)
+          }}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <FileText className="size-4" />
+        </button>
+      ),
+    },
   ], [])
 
   const table = useReactTable({
@@ -152,6 +171,7 @@ export function PlanTable({ plans }: PlanTableProps) {
   })
 
   return (
+    <>
     <div className="overflow-hidden rounded-lg border">
       <table className="w-full text-sm">
         <thead className="bg-muted/40">
@@ -199,6 +219,15 @@ export function PlanTable({ plans }: PlanTableProps) {
         </tbody>
       </table>
     </div>
+    <PlanMarkdownModal
+      open={modalPlan !== null}
+      onOpenChange={(open) => {
+        if (!open) setModalPlan(null)
+      }}
+      title={modalPlan?.title ?? ''}
+      markdown={modalPlan?.rawMarkdown ?? ''}
+    />
+    </>
   )
 }
 
