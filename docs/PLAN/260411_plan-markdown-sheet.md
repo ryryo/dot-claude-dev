@@ -108,7 +108,7 @@ Gate A: PlanMarkdownModal Sheet 化
 
 #### Todo A1: Dialog → Sheet に置き換え
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/components/plan-markdown-modal.tsx`
   - **内容**: `Dialog`/`DialogContent` を `Sheet`/`SheetContent` に置き換え、`SheetHeader` + `ScrollArea` を追加
   - **実装詳細**:
@@ -144,15 +144,17 @@ Gate A: PlanMarkdownModal Sheet 化
        ```
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
+  > **Review A1**: ✅ PASSED (P3 のみ)
+  > - P3: SheetContent のデフォルト `gap-4` によりヘッダー下に余白が生じる可能性。スコープ外として記録。
 
   > | 検証項目 | 結果 | コメント |
   > |---------|------|---------|
-  > | FileText アイコンをクリックすると右から Sheet がスライドインする | | |
-  > | SheetHeader にプランタイトルが表示される | | |
-  > | マークダウン全文がレンダリングされる | | |
-  > | コンテンツが長い場合にスクロールできる | | |
-  > | × ボタンまたは Sheet 外クリックで閉じられる | | |
+  > | FileText アイコンをクリックすると右から Sheet がスライドインする | | 人間確認待ち |
+  > | SheetHeader にプランタイトルが表示される | | 人間確認待ち |
+  > | マークダウン全文がレンダリングされる | | 人間確認待ち |
+  > | コンテンツが長い場合にスクロールできる | | 人間確認待ち |
+  > | × ボタンまたは Sheet 外クリックで閉じられる | | 人間確認待ち |
 
 **Gate A 通過条件**: `FileText` アイコンをクリックすると右から Sheet がスライドインし、タイトルとマークダウン全文が表示される。スクロール・閉じる動作が正常。全 Review 結果記入欄が埋まり、総合判定が PASS であること
 

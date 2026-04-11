@@ -3,10 +3,13 @@
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog"
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 
 interface PlanMarkdownModalProps {
   open: boolean
@@ -22,12 +25,21 @@ export function PlanMarkdownModal({
   markdown,
 }: PlanMarkdownModalProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl sm:max-w-3xl">
-        <div className="prose prose-sm dark:prose-invert max-w-none max-h-[80vh] overflow-y-auto">
-          <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex flex-col p-0"
+        style={{ maxWidth: "48rem" }}
+      >
+        <SheetHeader className="border-b px-6 py-4 shrink-0">
+          <SheetTitle>{title}</SheetTitle>
+        </SheetHeader>
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="prose prose-sm dark:prose-invert max-w-none px-6 py-4">
+            <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
   )
 }
