@@ -28,6 +28,8 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
   const [isMd, setIsMd] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const dotNavRef = useRef<HTMLDivElement>(null)
 
   const filteredPlans = sizeBinFilter
     ? plans.filter((p) => getSizeBin(getPlanSize(p).total) === sizeBinFilter)
@@ -51,6 +53,27 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
     }
     return Array.from(map.entries())
   }, [groupByProject, filteredPlans])
+
+  useEffect(() => {
+    if (!groupByProject || !projects) return
+    const main = document.getElementById("main-content")
+    if (!main) return
+
+    const updateLeft = () => {
+      if (!wrapperRef.current || !dotNavRef.current) return
+      dotNavRef.current.style.left = `${wrapperRef.current.getBoundingClientRect().left}px`
+    }
+
+    updateLeft()
+    const ro = new ResizeObserver(updateLeft)
+    ro.observe(main)
+    window.addEventListener("resize", updateLeft)
+
+    return () => {
+      ro.disconnect()
+      window.removeEventListener("resize", updateLeft)
+    }
+  }, [groupByProject, projects])
 
   useEffect(() => {
     if (!groupByProject || !projects) return
@@ -82,11 +105,11 @@ export function KanbanBoard({ plans, groupByProject = false, sizeBinFilter }: Ka
 
   if (groupByProject && projects) {
     return (
-      <div>
+      <div ref={wrapperRef}>
         {/* Fixed dot navigation */}
         <div
+          ref={dotNavRef}
           className="fixed top-1/2 z-20 -translate-y-1/2 flex flex-col items-center rounded-full bg-background/70 px-1.5 py-2 shadow-sm backdrop-blur-sm"
-          style={{ left: "calc(var(--sidebar-width, 16rem) + 0.75rem)" }}
         >
           {projects.map(([projectName], index) => (
             <div key={projectName} className="flex flex-col items-center">
