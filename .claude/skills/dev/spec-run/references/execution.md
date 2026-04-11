@@ -145,7 +145,7 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プ
 
 ### 前提
 
-- `cd $WORKTREE_PATH` が Step 4.6 で実行済み
+- `cd $WORKTREE_PATH` が `worktree-setup.md` フェーズ 2 末尾で実行済み
 - Bash tool の cwd は worktree 内
 - 以降の全 Bash / ファイル操作は worktree 内で完結する
 

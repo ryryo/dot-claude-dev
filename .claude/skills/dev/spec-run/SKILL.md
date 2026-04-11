@@ -34,14 +34,19 @@ AskUserQuestion で**2 つの質問を同時に**聞く（1 tool call）:
 
 **質問 2: worktree 使用**
 
-- **使わない（Recommended）** — 現 cwd（通常 master）で直接作業する（現行動作）
+- **使わない（Recommended）** — 現 cwd（通常 base ブランチ）で直接作業する（現行動作）
 - **使う** — `feature/{slug}` の worktree 内で作業し、全 Gate 通過後にローカル `--no-ff` マージ + cleanup を自動実行
 
-「使う」を選択した場合は `references/worktree-setup.md` を Read し、フェーズ 1（dirty チェック）→ フェーズ 2（setup）→ フェーズ 3（reuse 時 spec 同期）の順に実行してから Step 5 へ進む。「使わない」を選択した場合は Step 5 へ直行。
+「使わない」を選択した場合は Step 5 へ直行。
+
+#### worktree を「使う」を選択した場合のみ:
+
+`references/worktree-setup.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させてから Step 5 へ進む。
 
 ### ステップ 5: 実行プロトコルの読み込みと実行
 
-選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する（Preflight フェーズを含む）。
+選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する。
+Preflight フェーズを含む場合は、必ずPreflightの内容はClaudeのメインセッションで実行する。
 
 ---
 
@@ -101,7 +106,9 @@ rm -f .tmp/codex-*.md
 
 ### worktree 終了処理（Step 4 で worktree を選択した場合のみ）
 
-Step 4 で「worktree を使う」を選択した場合のみ実行。`references/worktree-teardown.md` を Read し、フェーズ 5（完了時 merge）→ フェーズ 6（cleanup）→ フェーズ 7（エラーリカバリ）に従う。人間レビューが NG の場合は worktree を残したまま修正ループに入り、OK になったら merge + cleanup を実行する。
+Step 4 で「worktree を使う」を選択した場合のみ実行。
+
+人間レビューが NG の場合は worktree を残したまま修正ループに入る。OK になったら `references/worktree-teardown.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させる。
 
 ## 参照
 

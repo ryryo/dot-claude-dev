@@ -302,7 +302,7 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 codex-executi
 
 ### 前提
 
-- `cd $WORKTREE_PATH` が Step 4.6 で実行済み
+- `cd $WORKTREE_PATH` が `worktree-setup.md` フェーズ 2 末尾で実行済み
 - Bash tool の cwd は worktree 内
 - Codex プラグイン（`resolve-codex-plugin.sh`）は **worktree cwd でも動作する前提**（Gate D Todo D1 で検証済みであること）
 
