@@ -583,12 +583,12 @@ Gate A: Schema 基盤
 
 > シングルモード廃止、SKILL.md・テンプレート・spec-sync agent を v2 対応に更新
 
-- [ ] **B1**: spec/SKILL.md からシングルモード分岐削除 + Step 7 を v2 schema 対応に更新
-  > **Review B1**: _未記入_
-- [ ] **B2**: spec-template-dir.md に generated マーカー追加 + spec-template.md 削除
-  > **Review B2**: _未記入_
-- [ ] **B3**: spec/agents/spec-sync.md を v2 schema 対応に更新
-  > **Review B3**: _未記入_
+- [x] **B1**: spec/SKILL.md からシングルモード分岐削除 + Step 7 を v2 schema 対応に更新
+  > **Review B1**: ⏭️ SKIPPED (docs only)
+- [x] **B2**: spec-template-dir.md に generated マーカー追加 + spec-template.md 削除
+  > **Review B2**: ⏭️ SKIPPED (docs only)
+- [x] **B3**: spec/agents/spec-sync.md を v2 schema 対応に更新
+  > **Review B3**: ⏭️ SKIPPED (docs only)
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
