@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "spec": {
+    "slug": "sample-v2-fixture",
+    "title": "Sample v2 Fixture",
+    "summary": "v2 schema と sync-spec-md の参照 fixture。5 種の review 状態を網羅",
+    "createdDate": "2026-04-12",
+    "specPath": "spec.md"
+  },
+  "status": "in-progress",
+  "reviewChecked": false,
+  "progress": { "completed": 7, "total": 10 },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "準備",
+      "description": "基盤セットアップとスキーマ定義",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "実装",
+      "description": "API ハンドラとビジネスロジックの実装",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "スキーマ定義",
+      "description": "テーブル定義と migration 生成",
+      "tdd": false,
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "db/schema.ts", "operation": "create", "summary": "テーブル定義" }
+      ],
+      "impl": "スキーマを定義する",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "A2",
+      "gate": "A",
+      "title": "リポジトリ層",
+      "description": "CRUD 操作のリポジトリ関数",
+      "tdd": true,
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "db/repository.ts", "operation": "create", "summary": "リポジトリ関数" }
+      ],
+      "impl": "リポジトリ関数を実装する",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        {
+          "kind": "review",
+          "title": "Step 2 — Review",
+          "checked": false,
+          "review": { "result": "IN_PROGRESS", "fixCount": 0, "summary": "" }
+        }
+      ]
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "[TDD] API ハンドラ",
+      "description": "POST /api/items エンドポイント",
+      "tdd": true,
+      "dependencies": ["A2"],
+      "affectedFiles": [
+        { "path": "api/items.ts", "operation": "create", "summary": "POST handler" }
+      ],
+      "impl": "API ハンドラを TDD で実装する",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        {
+          "kind": "review",
+          "title": "Step 2 — Review",
+          "checked": true,
+          "review": { "result": "PASSED", "fixCount": 2, "summary": "バリデーション追加後 OK" }
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "gate": "B",
+      "title": "ドキュメント更新",
+      "description": "API ドキュメントを更新",
+      "tdd": false,
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        { "path": "docs/api.md", "operation": "modify", "summary": "API ドキュメント" }
+      ],
+      "impl": "API ドキュメントを更新する",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        {
+          "kind": "review",
+          "title": "Step 2 — Review",
+          "checked": true,
+          "review": { "result": "SKIPPED", "fixCount": 0, "summary": "docs only" }
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "gate": "B",
+      "title": "エラーハンドリング",
+      "description": "グローバルエラーハンドラの実装",
+      "tdd": false,
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        { "path": "api/error-handler.ts", "operation": "create", "summary": "エラーハンドラ" }
+      ],
+      "impl": "エラーハンドラを実装する",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        {
+          "kind": "review",
+          "title": "Step 2 — Review",
+          "checked": false,
+          "review": { "result": "FAILED", "fixCount": 1, "summary": "500 エラー時のレスポンス形式が仕様と不一致" }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-12T00:00:00Z",
+    "totalGates": 2,
+    "totalTodos": 5
+  }
+}
