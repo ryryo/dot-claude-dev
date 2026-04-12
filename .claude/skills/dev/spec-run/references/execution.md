@@ -10,7 +10,7 @@ Preflight フェーズ     Preflight セクション該当時のみ、Claude mai
 Step 1 — IMPL         仕様書の Todo に従って実装する
 Step 2 — VERIFY       複雑さに応じてレビュワー 1体 or 3体を起動してレビューする
 Step 3 — FIX          FAIL がある場合のみ修正（最大3ラウンド）。全 PASS なら不要
-Step 4 — UPDATE       仕様書のチェックボックスを更新する
+Step 4 — UPDATE       モードに応じて tasks.json または spec.md を更新する
 ```
 
 ## Step 0 — CONTEXT
@@ -19,11 +19,13 @@ Step 4 — UPDATE       仕様書のチェックボックスを更新する
 
 仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）。
 
-### ディレクトリモード
+### ディレクトリモード（v1 / v2 共通）
 
 1. spec.md の「参照すべきファイル」を全て Read する
 2. tasks.json を Read して全体構造（`gates`, Todo の `id`/`gate`/`title`/`dependencies`）を把握する
 3. 各 Todo の `impl` フィールドは**この時点では読まない**（部分読み込みで後述）
+
+**v2 モードでの差分**: tasks.json の `steps[]` / `status` / `progress` フィールドも把握する。これらは Step 4 UPDATE で更新する対象になる。
 
 ## Preflight フェーズ（該当時のみ）
 
@@ -124,11 +126,25 @@ Step 3（FIX）も不要。そのまま Step 4（UPDATE）へ進む。
 
 ## Step 4 — UPDATE
 
-### シングルモード
+### v2 ディレクトリモード
 
-各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。
+**tasks.json のみを Edit して更新する。spec.md は直接編集しない**（PostToolUse hook が sync-spec-md を起動して spec.md を自動再生成する）。
 
-### ディレクトリモード
+更新対象フィールド:
+
+1. **該当 Todo の `steps[]`**:
+   - `steps[0].checked` (impl step): `true`
+   - `steps[1].checked` (review step): `true`
+   - `steps[1].review`: `{ "result": "PASSED"|"FAILED"|..., "fixCount": n, "summary": "..." }`
+
+2. **トップレベル `status` と `progress`**（再計算）:
+   - `total = sum of all todos[].steps[].length`（固定値、todos 数 × 2）
+   - `completed = count of all steps where checked == true`
+   - `status`: `completed == 0` → `not-started`、`0 < completed < total` → `in-progress`、`completed == total && !reviewChecked` → `in-review`、`completed == total && reviewChecked` → `completed`
+
+Edit 後、PostToolUse hook が自動的に sync-spec-md.mjs を起動し、spec.md の generated 領域が tasks.json の新しい状態に合わせて再生成される。spec.md を直接開いて確認する必要はない（必要なら hook 実行後に Read で確認可能）。
+
+### v1 ディレクトリモード
 
 spec.md のチェックボックスを `[x]` に更新し、Review 結果を blockquote に記入する:
 
@@ -136,6 +152,10 @@ spec.md のチェックボックスを `[x]` に更新し、Review 結果を blo
 - [x] **Todo A1**: カラーコントラスト修正
   > **Review A1**: ✅ PASSED
 ```
+
+### シングルモード
+
+各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。
 
 ---
 
@@ -158,7 +178,7 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プ
 | Step 1 IMPL | worktree 内のファイルを直接編集。コミットも worktree 内（`git commit` は自動的に feature/{slug} ブランチに対して行われる） |
 | Step 2 VERIFY | レビュワー Agent は worktree 内の差分に対してレビューする。Agent の cwd は継承される |
 | Step 3 FIX | worktree 内で修正、再コミット |
-| Step 4 UPDATE | **worktree 内の spec.md** のチェックボックスを更新。master 側の spec.md は完了処理の merge 後に反映される |
+| Step 4 UPDATE | v2: **worktree 内の tasks.json** を更新 → hook が worktree 内の spec.md を再生成 / v1/single: worktree 内の spec.md のチェックボックスを更新。master 側は完了処理の merge 後に反映 |
 
 ### 注意
 

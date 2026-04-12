@@ -14,7 +14,7 @@ Preflight フェーズ     Preflight セクション該当時のみ、Claude mai
 Step 1 — IMPL         チェックリストで委任判断 → Codex or Claude
 Step 2 — VERIFY       codex review（複雑さに応じて1回 or 3回並列）
 Step 3 — FIX          FAIL がある場合のみ修正（最大3ラウンド）
-Step 4 — UPDATE       仕様書のチェックボックスを更新する
+Step 4 — UPDATE       モードに応じて tasks.json または spec.md を更新する
 ```
 
 ## Step 0 — CONTEXT
@@ -35,11 +35,13 @@ CODEX_COMPANION="$(bash .claude/skills/dev/spec-run/scripts/resolve-codex-plugin
 
 仕様書の「参照すべきファイル」を全て Read する。
 
-#### ディレクトリモード
+#### ディレクトリモード（v1 / v2 共通）
 
 1. spec.md の「参照すべきファイル」を全て Read する
 2. tasks.json を Read して全体構造（`gates`, Todo の `id`/`gate`/`title`/`dependencies`）を把握する
 3. 各 Todo の `impl` フィールドは**この時点では読まない**（部分読み込みで後述）
+
+**v2 モードでの差分**: tasks.json の `steps[]` / `status` / `progress` フィールドも把握する。これらは Step 4 UPDATE で更新する対象になる。
 
 ## Preflight フェーズ（該当時のみ）
 
@@ -281,11 +283,29 @@ Claude が直接修正し、再度 VERIFY を実行する。
 
 ## Step 4 — UPDATE
 
-### シングルモード
+### v2 ディレクトリモード
 
-各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。
+Codex が tasks.json を Edit で更新する。**spec.md は直接編集しない。**
 
-### ディレクトリモード
+更新対象フィールド:
+
+1. **該当 Todo の `steps[]`**:
+   - `steps[0].checked` (impl step): `true`
+   - `steps[1].checked` (review step): `true`
+   - `steps[1].review`: `{ "result": "PASSED"|"FAILED"|..., "fixCount": n, "summary": "..." }`
+
+2. **トップレベル `status` と `progress`**（再計算）:
+   - `total = sum of all todos[].steps[].length`（固定値、todos 数 × 2）
+   - `completed = count of all steps where checked == true`
+   - `status`: `completed == 0` → `not-started`、`0 < completed < total` → `in-progress`、`completed == total && !reviewChecked` → `in-review`、`completed == total && reviewChecked` → `completed`
+
+**Codex 完了後の spec.md 同期**: PostToolUse hook は Claude Code のツール呼び出しに対して発火するため、Codex 内部の編集には反応しない。Codex 完了後、main session の Claude が手動で sync-spec-md を実行する:
+
+```bash
+node "${CLAUDE_PROJECT_DIR}/.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs" "${tasks_json_path}"
+```
+
+### v1 ディレクトリモード
 
 spec.md のチェックボックスを `[x]` に更新し、Review 結果を blockquote に記入する:
 
@@ -293,6 +313,10 @@ spec.md のチェックボックスを `[x]` に更新し、Review 結果を blo
 - [x] **Todo A1**: カラーコントラスト修正
   > **Review A1**: ✅ PASSED
 ```
+
+### シングルモード
+
+各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。
 
 ---
 
@@ -317,7 +341,7 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 codex-executi
 | Step 1 IMPL（Claude 保持） | worktree 内のファイルを直接編集、worktree 内でコミット |
 | Step 2 VERIFY | `codex review - < .tmp/codex-review-focus.md` を worktree cwd で実行。差分検出は `origin/master..HEAD` が worktree の feature/{slug} に対して自然に動作する |
 | Step 3 FIX | `task --write --resume-last` を worktree cwd で実行 |
-| Step 4 UPDATE | worktree 内の spec.md を更新 |
+| Step 4 UPDATE | v2: worktree 内の tasks.json を更新 → Codex 完了後に main session が `sync-spec-md.mjs` を手動実行 / v1/single: worktree 内の spec.md を更新 |
 
 ### .tmp/ 配置に関する注意
 

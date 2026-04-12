@@ -607,12 +607,12 @@ Gate A: Schema 基盤
 
 > frontmatter hook 宣言、schemaVersion 判定、Step 4 UPDATE の v2/v1 分岐
 
-- [ ] **D1**: spec-run/SKILL.md frontmatter に PostToolUse hook 追加 + ステップ 2 を schemaVersion 判定に変更
-  > **Review D1**: _未記入_
-- [ ] **D2**: execution.md の Step 4 UPDATE を v2/v1 分岐に更新
-  > **Review D2**: _未記入_
-- [ ] **D3**: codex-execution.md の Step 4 UPDATE を v2/v1 分岐に更新
-  > **Review D3**: _未記入_
+- [x] **D1**: spec-run/SKILL.md frontmatter に PostToolUse hook 追加 + ステップ 2 を schemaVersion 判定に変更
+  > **Review D1**: ✅ PASSED — hooks/PostToolUse/schemaVersion/v2分岐 全て確認
+- [x] **D2**: execution.md の Step 4 UPDATE を v2/v1 分岐に更新
+  > **Review D2**: ✅ PASSED — v2/v1/single 3分岐、sync-spec-md連携、worktree表 更新確認
+- [x] **D3**: codex-execution.md の Step 4 UPDATE を v2/v1 分岐に更新
+  > **Review D3**: ✅ PASSED — v2/v1/single 3分岐、Codex sync手動実行、worktree表 更新確認
 
 **Gate D 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
