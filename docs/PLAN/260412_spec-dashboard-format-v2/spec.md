@@ -596,10 +596,10 @@ Gate A: Schema 基盤
 
 > tasks.json → spec.md の generated 領域を再生成するスクリプトと hook wrapper
 
-- [ ] **C1**: [TDD] sync-spec-md.mjs 本体実装 + node --test テスト
-  > **Review C1**: _未記入_
-- [ ] **C2**: sync-spec-md-hook.sh（PostToolUse hook wrapper）実装
-  > **Review C2**: _未記入_
+- [x] **C1**: [TDD] sync-spec-md.mjs 本体実装 + node --test テスト
+  > **Review C1**: ✅ PASSED — 11 tests all pass, manual fixture test confirms 5 review states
+- [x] **C2**: sync-spec-md-hook.sh（PostToolUse hook wrapper）実装
+  > **Review C2**: ✅ PASSED — syntax check OK, all 4 manual test scenarios pass
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
