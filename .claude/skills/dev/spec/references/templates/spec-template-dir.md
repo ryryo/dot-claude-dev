@@ -1,7 +1,12 @@
 # 仕様書テンプレート（ディレクトリ構造用）
 
-ディレクトリ構造 `docs/PLAN/{YYMMDD}_{slug}/spec.md` は以下の構成で作成する。
+`docs/PLAN/{YYMMDD}_{slug}/spec.md` は以下の構成で作成する。
 実装詳細は `tasks.json` に格納されるため、このファイルは概要・設計・チェックリストに特化する。
+
+**注意**: 「## タスクリスト」節は `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーで囲み、
+マーカー内部は sync-spec-md スクリプトが tasks.json から自動生成する。
+初回の `/dev:spec` 出力時はプレースホルダとしてマーカーと最低限の構造を書いておけば、
+PostToolUse hook が tasks.json の Write を検知して内容を埋める。
 
 ---
 
@@ -88,38 +93,34 @@
 
 ## タスクリスト
 
-> **実装詳細は `tasks.json` を参照。** このセクションは進捗管理と Review 記録用。
+<!-- generated:begin -->
+<!-- このセクションは sync-spec-md が tasks.json から自動生成します。-->
+<!-- 手動編集は反映されません。変更は tasks.json に対して行ってください。-->
 
 ### 依存関係図
 
-[Gate 単位で依存関係を図示]
-```
-
-Gate A: {フェーズ名}
-├── Todo A1
-└── Todo A2
-
-Gate B: {フェーズ名}（Gate A 完了後）
-└── Todo B1
-
-```
+[Gate 単位で依存関係を図示 — sync-spec-md が tasks.json の gates[].dependencies から生成]
 
 ### Gate A: {フェーズ名}
 
-- [ ] **Todo A1**: {タイトル}
-  > **Review A1**:
+> {Gate description — あれば}
 
-- [ ] **Todo A2**: {タイトル}
-  > **Review A2**:
+- [ ] **A1**: {タイトル}
+  > **Review A1**: _未記入_
+
+- [ ] **A2**: {タイトル}
+  > **Review A2**: _未記入_
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate B: {フェーズ名}
 
-- [ ] **Todo B1**: {タイトル}
-  > **Review B1**:
+- [ ] **B1**: {タイトル}
+  > **Review B1**: _未記入_
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+
+<!-- generated:end -->
 
 ## レビューステータス
 
