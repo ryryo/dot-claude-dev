@@ -73,3 +73,84 @@ export interface RepoError {
 export interface ProjectsConfig {
   projects: ProjectConfig[];
 }
+
+// ===== tasks.json schema v2 =====
+
+export interface TasksJsonV2Spec {
+  slug: string;
+  title: string;
+  summary: string;
+  createdDate: string; // YYYY-MM-DD
+  specPath: string; // 通常 'spec.md'
+}
+
+export interface TasksJsonV2Progress {
+  completed: number;
+  total: number;
+}
+
+export interface TasksJsonV2Preflight {
+  id: string;
+  title: string;
+  command: string;
+  manual: boolean;
+  reason: string;
+}
+
+export interface TasksJsonV2Gate {
+  id: string;
+  title: string;
+  description: string;
+  dependencies: string[];
+  passCondition: string;
+}
+
+export interface TasksJsonV2AffectedFile {
+  path: string;
+  operation: string; // create | modify | delete 等
+  summary: string;
+}
+
+export interface TasksJsonV2Review {
+  result: ReviewResult;
+  fixCount: number;
+  summary: string;
+}
+
+export interface TasksJsonV2Step {
+  kind: StepKind;
+  title: string;
+  checked: boolean;
+  review?: TasksJsonV2Review | null;
+}
+
+export interface TasksJsonV2Todo {
+  id: string;
+  gate: string;
+  title: string;
+  description: string;
+  tdd: boolean;
+  dependencies: string[];
+  affectedFiles: TasksJsonV2AffectedFile[];
+  impl: string;
+  relatedIssues: string[];
+  steps: TasksJsonV2Step[];
+}
+
+export interface TasksJsonV2Metadata {
+  createdAt: string;
+  totalGates: number;
+  totalTodos: number;
+}
+
+export interface TasksJsonV2 {
+  schemaVersion: 2;
+  spec: TasksJsonV2Spec;
+  status: PlanStatus;
+  reviewChecked: boolean;
+  progress: TasksJsonV2Progress;
+  preflight: TasksJsonV2Preflight[];
+  gates: TasksJsonV2Gate[];
+  todos: TasksJsonV2Todo[];
+  metadata: TasksJsonV2Metadata;
+}
