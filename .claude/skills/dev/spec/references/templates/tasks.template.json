@@ -1,9 +1,15 @@
 {
+  "schemaVersion": 2,
   "spec": {
     "slug": "",
     "title": "",
+    "summary": "",
+    "createdDate": "",
     "specPath": "spec.md"
   },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": { "completed": 0, "total": 0 },
   "preflight": [
     {
       "id": "P1",
@@ -17,6 +23,7 @@
     {
       "id": "",
       "title": "",
+      "description": "",
       "dependencies": [],
       "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
     }
@@ -26,14 +33,18 @@
       "id": "",
       "gate": "",
       "title": "",
-      "status": "pending",
+      "description": "",
+      "tdd": false,
       "dependencies": [],
       "affectedFiles": [
         { "path": "", "operation": "", "summary": "" }
       ],
       "impl": "",
       "relatedIssues": [],
-      "tdd": false
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
     }
   ],
   "metadata": {

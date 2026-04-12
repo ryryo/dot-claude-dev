@@ -1,6 +1,12 @@
 ---
 name: dev:spec-run
 description: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VERIFY の2層で Todo を実行。Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
+hooks:
+  PostToolUse:
+    - matcher: "Edit|Write|MultiEdit"
+      hooks:
+        - type: command
+          command: "$CLAUDE_PROJECT_DIR/.claude/hooks/dev/sync-spec-md-hook.sh"
 ---
 
 ## 起動フロー
@@ -15,13 +21,18 @@ description: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VE
 
 ### ステップ 2: 入力形式判定
 
-- `tasks.json` あり → **ディレクトリモード**（tasks.json から Todo を部分読み込みして実行）
-- `tasks.json` なし → **シングルモード**（単一 MD をそのまま処理）
+仕様書の形式を以下の 3 種類で判定する:
+
+1. `tasks.json` が存在する場合、先頭 1 行を読んで `schemaVersion` を確認
+   - `schemaVersion >= 2` → **v2 ディレクトリモード**（sync-spec-md により spec.md は自動管理される。spec-run は tasks.json のみ更新）
+   - `schemaVersion` が未定義 or < 2 → **v1 ディレクトリモード**（従来どおり spec.md のチェックボックスと tasks.json の両方を更新）
+2. `tasks.json` が存在しない場合 → **シングルモード**（単一 MD をそのまま処理、既存 PLAN の互換パス）
 
 ### ステップ 3: 実行準備
 
+- **v2 ディレクトリモード**: spec.md の「参照すべきファイル」と tasks.json を並列 Read し、全体構造（gates, todo IDs, descriptions, steps, progress）を把握。各 Todo の `impl` はこの時点では読まない
+- **v1 ディレクトリモード**: 現状どおり spec.md + tasks.json を並列 Read。steps[] がないため Step 状態は spec.md のチェックボックスから推論
 - **シングルモード**: Gate 0 通過条件（参照すべきファイルの読み込み等）を実行
-- **ディレクトリモード**: spec.md の「参照すべきファイル」と tasks.json を並列 Read し、全体構造（gates, todo IDs, descriptions）を把握。各 Todo の `impl` はこの時点では読まない
 
 ### ステップ 4: 実行モード + worktree 選択
 
@@ -67,8 +78,27 @@ Gate 内の全 Todo について:
 - [x] **P2**: **[手動]** `.env.local` に `API_KEY` を設定
 ```
 
-**シングルモード**: 仕様書の該当 Todo のチェックボックスと Review 記入欄を更新
-**ディレクトリモード**: spec.md のチェックボックスと Review blockquote を更新
+**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook で自動再生成される
+
+```json
+{
+  "todos": [
+    {
+      "id": "A1",
+      "steps": [
+        { "kind": "impl",   "checked": true },
+        { "kind": "review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "OK" } }
+      ]
+    }
+  ],
+  "status": "in-progress",
+  "progress": { "completed": 2, "total": 16 }
+}
+```
+
+**重要**: `status` と `progress` も同時に再計算して書き込む（下の算出ルール参照）。
+
+**v1 ディレクトリモード**: 現状のまま spec.md のチェックボックスと Review blockquote を更新（PostToolUse hook は v1 tasks.json に対しては no-op でスキップ）
 
 ```markdown
 - [x] **Todo A1**: カラーコントラスト修正
@@ -77,6 +107,22 @@ Gate 内の全 Todo について:
   > **Review A2**: ✅ PASSED (FIX 1回)
   >
   > - stdin の null チェックを追加
+```
+
+**シングルモード**: 仕様書の該当 Todo のチェックボックスと Review 記入欄を更新
+
+#### status / progress の算出ルール（v2 のみ）
+
+```
+total     = sum of all todos[].steps[].length
+completed = count of all steps where checked == true
+progress  = { completed, total }
+
+status:
+  - completed == 0                               → "not-started"
+  - 0 < completed < total                        → "in-progress"
+  - completed == total && reviewChecked == false → "in-review"
+  - completed == total && reviewChecked == true  → "completed"
 ```
 
 ## 全 Gate 通過後の完了処理
@@ -95,9 +141,14 @@ rm -f .tmp/codex-*.md
 
 仕様書に `## レビューステータス` セクションが存在し、未チェックの `- [ ] **レビュー完了**` 行がある場合、以下を実行する。
 
+**v2 モード**: `## レビューステータス` セクションは generated 領域の外（人間編集領域）なので、従来どおり spec.md のチェックボックスを `[x]` に更新。同時に `tasks.json` のトップレベル `reviewChecked` を `true` に更新し、`status` を再計算する。
+
+**v1 / シングルモード**: 従来どおり spec.md のチェックボックスのみ更新。
+
 1. AskUserQuestion でブラウザ動作確認を促す（実装内容に応じた確認ポイントを添える）
 2. ユーザーが「OK / 確認済み」を選択した場合:
    - 仕様書の `- [ ] **レビュー完了**` を `- [x] **レビュー完了**` に更新する
+   - （v2 のみ）tasks.json の `reviewChecked: true` + `status: "completed"` に更新する
    - 変更をコミットする
 3. ユーザーが「NG / 修正が必要」を選択した場合:
    - 問題内容を確認し、必要な修正を実施してから再度確認する

@@ -1,5 +1,6 @@
+import { loadPlanFromTasksJson } from './plan-json-loader';
 import { parsePlanFile } from './plan-parser';
-import type { GitHubContent, GitHubRepo, PlanFile } from './types';
+import type { GitHubContent, GitHubRepo, PlanFile, TasksJsonV2 } from './types';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_REVALIDATE_SECONDS = 300;
@@ -64,8 +65,16 @@ export async function fetchPlanFiles(owner: string, repo: string): Promise<PlanF
       }
 
       if (entry.type === 'dir') {
+        const tasksJsonPath = `${entry.path}/tasks.json`;
         const specPath = `${entry.path}/spec.md`;
 
+        // 1. tasks.json を試す（v2 対応）
+        const v2Plan = await tryLoadV2(owner, repo, tasksJsonPath, specPath, projectName);
+        if (v2Plan) {
+          return v2Plan;
+        }
+
+        // 2. レガシー spec.md パス
         try {
           const content = await fetchFileContent(owner, repo, specPath);
           return parsePlanFile(content, specPath, projectName);
@@ -129,4 +138,45 @@ export async function fetchFileContent(owner: string, repo: string, path: string
 
   const data = (await response.json()) as { content: string; encoding: string };
   return Buffer.from(data.content, 'base64').toString('utf-8');
+}
+
+/**
+ * tasks.json を試行し、schemaVersion >= 2 なら PlanFile を返す。
+ * v1 または 404 の場合は null を返してフォールバック。
+ */
+async function tryLoadV2(
+  owner: string,
+  repo: string,
+  tasksJsonPath: string,
+  specPath: string,
+  projectName: string
+): Promise<PlanFile | null> {
+  let rawContent: string;
+  try {
+    rawContent = await fetchFileContent(owner, repo, tasksJsonPath);
+  } catch (error) {
+    if (isFileNotFoundError(error)) {
+      return null;
+    }
+    throw error;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawContent);
+  } catch {
+    return null;
+  }
+
+  if (!isV2TasksJson(parsed)) {
+    return null;
+  }
+
+  return loadPlanFromTasksJson(parsed, specPath, projectName);
+}
+
+function isV2TasksJson(value: unknown): value is TasksJsonV2 {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.schemaVersion === 'number' && v.schemaVersion >= 2;
 }
