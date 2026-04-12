@@ -39,14 +39,19 @@ allowed_tools: Read, Edit, Write, Glob, Grep, Bash, AskUserQuestion
 
 | チェック項目 | spec.md 側 | tasks.json 側 |
 |-------------|-----------|--------------|
+| schemaVersion | — | `schemaVersion` が 2 であること |
+| spec.summary / createdDate | — | `spec` オブジェクトに必須フィールドが存在すること |
+| generated マーカー | `<!-- generated:begin -->` と `<!-- generated:end -->` が両方存在 | — |
 | Todo ID 一致 | チェックリストの Todo ID | `todos[].id` |
 | Todo タイトル一致 | チェックリストのタイトル | `todos[].title` |
 | Gate 一致 | Gate セクション見出し | `gates[].id` + `gates[].title` |
+| gates[].description | — | 各 Gate に description が存在すること（空文字も可） |
+| todos[].description | — | 各 Todo に description が存在すること |
 | Gate 数 | Gate セクション数 | `metadata.totalGates` |
 | Todo 数 | チェックリストの Todo 数 | `metadata.totalTodos` |
 | 依存関係 | 依存関係図 | `gates[].dependencies` + `todos[].dependencies` |
 | TDD ラベル | `[TDD]` ラベル有無 | `todos[].tdd` フィールド |
-| Review 記入欄 | `> **Review XX**:` blockquote | — |
+| steps[] 構造 | — | 各 Todo の `steps[]` が 2 要素で `kind` が `impl` と `review` であること |
 | Preflight ID 一致 | Preflight チェックリストの `**P1**` 等の ID | `preflight[].id` |
 | Preflight タイトル一致 | Preflight チェックリストのタイトル | `preflight[].title` |
 | Preflight 項目数 | Preflight セクションのチェックボックス数 | `preflight` 配列長 |
@@ -54,10 +59,12 @@ allowed_tools: Read, Edit, Write, Glob, Grep, Bash, AskUserQuestion
 **自動修正ルール**:
 - tasks.json の `metadata.totalGates` / `metadata.totalTodos` がカウントと不一致 → 自動修正
 - spec.md の Todo タイトルと tasks.json の `todos[].title` が不一致 → 変更された側に合わせる（git diff で判定）
-- spec.md に Review 記入欄がない Todo → blockquote を追加
 - 依存関係図の Gate 依存が tasks.json と不一致 → tasks.json を正として図を更新
 - spec.md の Preflight チェックリストと tasks.json の `preflight` 配列に差分がある → git diff で後から変更された方を正とする
 - `preflight` 配列が空（`[]`）かつ spec.md に Preflight セクションが残存している → セクション削除を自動実行
+- `tasks.json` に `schemaVersion` がない or 2 未満 → AskUserQuestion で v1 互換か v2 新規かを確認。v2 新規なら 2 を書き込む
+- `spec.md` に generated マーカーが欠落 → `## タスクリスト` の位置にマーカーを挿入（内容は空で初期化、次回の sync-spec-md 実行で埋められる）
+- `todos[].steps` が 2 要素でない or kind が不正 → 標準 2 要素（impl + review）にリセット。既存の checked / review 値は保持
 
 ### Step 3: 意味的整合性チェック
 
@@ -92,11 +99,13 @@ C) 両方とも修正が必要（別の内容を指定）
 ✅ SPEC SYNC CHECK PASSED
 
 ### 構造的整合性: ✅
+- Schema バージョン: v2
+- generated マーカー: 存在確認
 - Todo ID/タイトル: 一致 ({N} 件)
 - Gate 構造: 一致 ({N} Gate)
 - 依存関係: 整合
 - TDD ラベル: 整合
-- Review 記入欄: 全 Todo に存在
+- steps[] 構造: 一致 ({N} Todo)
 - Preflight: 一致 ({N} 件)
 
 ### 意味的整合性: ✅
@@ -144,6 +153,6 @@ C) 両方とも修正が必要（別の内容を指定）
 ## 注意事項
 
 - **既存の plan-reviewer とは役割が異なる**: plan-reviewer は「計画品質」（粒度・漏れ・リスク）、本エージェントは「spec/tasks 間の整合性 + 修正」
-- **ディレクトリモード専用**: 通常モード（単一 .md ファイル）には tasks.json がないため不要
+- **v2 schema 対応**: v1 tasks.json（`schemaVersion` 未定義）の場合は整合性チェックをスキップし、warning を出力する
 - **過剰な修正を避ける**: 軽微な表現揺れ（「作成する」vs「追加する」）は指摘しない。構造やロジックに影響する不整合のみ対象
 - **impl の中身の品質は見ない**: impl のコードが正しいかは reviewer エージェントの仕事。本エージェントは「spec.md との整合性」のみ
