@@ -31,8 +31,6 @@ allowed-tools:
 | `docs/PLAN/{YYMMDD}_{slug}/tasks.json`      | schema v2 の構造化データ（Gate/Todo/Step 詳細・impl 手順を含む）    |
 | `docs/PLAN/{YYMMDD}_{slug}/references/`     | 参照資料（必要な場合のみ）                                          |
 
-Gate 数・Todo 数にかかわらず常にディレクトリモードで出力する（シングルモードは廃止）。
-
 ---
 
 ## ★ 実行手順（この順序を厳守）
