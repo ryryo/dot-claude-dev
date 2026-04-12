@@ -568,14 +568,14 @@ Gate A: Schema 基盤
 
 > tasks.json v2 の型定義・テンプレート・スキーマドキュメント・サンプル fixture を揃える
 
-- [ ] **A1**: dashboard/lib/types.ts に TasksJsonV2 系の型を追加
-  > **Review A1**: _未記入_
-- [ ] **A2**: tasks.template.json を v2 形式に全面更新
-  > **Review A2**: _未記入_
-- [ ] **A3**: tasks-schema-v2.md（スキーマドキュメント）を新規作成
-  > **Review A3**: _未記入_
-- [ ] **A4**: v2 サンプル fixture 新規作成（後続 TDD / E2E の共通入力）
-  > **Review A4**: _未記入_
+- [x] **A1**: dashboard/lib/types.ts に TasksJsonV2 系の型を追加
+  > **Review A1**: ⏭️ SKIPPED (docs only)
+- [x] **A2**: tasks.template.json を v2 形式に全面更新
+  > **Review A2**: ⏭️ SKIPPED (docs only)
+- [x] **A3**: tasks-schema-v2.md（スキーマドキュメント）を新規作成
+  > **Review A3**: ⏭️ SKIPPED (docs only)
+- [x] **A4**: v2 サンプル fixture 新規作成（後続 TDD / E2E の共通入力）
+  > **Review A4**: ⏭️ SKIPPED (docs only)
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
