@@ -620,8 +620,8 @@ Gate A: Schema 基盤
 
 > plan-json-loader の新設と fetchPlanFiles の schemaVersion 分岐
 
-- [ ] **E1**: [TDD] plan-json-loader.ts 実装 + vitest テスト
-  > **Review E1**: _未記入_
+- [x] **E1**: [TDD] plan-json-loader.ts 実装 + vitest テスト
+  > **Review E1**: ✅ PASSED — 11 tests pass, tsc --noEmit clean
 - [ ] **E2**: github.ts の fetchPlanFiles を schemaVersion 分岐に改修
   > **Review E2**: _未記入_
 - [ ] **E3**: 既存 plan-parser テストの動作確認 + dashboard 全体ビルド確認
