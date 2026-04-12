@@ -553,10 +553,6 @@ export function loadPlanFromTasksJson(
 
 ## タスクリスト
 
-<!-- generated:begin -->
-<!-- このセクションは sync-spec-md が tasks.json から自動生成します。-->
-<!-- 手動編集は反映されません。変更は tasks.json に対して行ってください。-->
-
 ### 依存関係図
 
 ```
@@ -645,8 +641,6 @@ Gate A: Schema 基盤
   > **Review F3**: _未記入_
 
 **Gate F 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
-
-<!-- generated:end -->
 
 ## レビューステータス
 
