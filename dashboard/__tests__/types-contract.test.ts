@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import type {
   GitHubContent,
   GitHubRepo,
@@ -6,45 +7,49 @@ import type {
   RepoError,
 } from '../lib/types';
 
-const project: ProjectConfig = {
-  name: 'dot-claude-dev',
-  repo: 'ryryo/dot-claude-dev',
-};
+describe('types contract', () => {
+  it('ProjectConfig, GitHubRepo, GitHubContent, RepoError are assignable', () => {
+    const project: ProjectConfig = {
+      name: 'dot-claude-dev',
+      repo: 'ryryo/dot-claude-dev',
+    };
 
-const config: ProjectsConfig = {
-  projects: [project],
-};
+    const config: ProjectsConfig = {
+      projects: [project],
+    };
 
-const repo: GitHubRepo = {
-  id: 1,
-  name: 'dot-claude-dev',
-  full_name: 'ryryo/dot-claude-dev',
-  private: false,
-  description: 'Codex dashboard',
-  updated_at: '2026-04-09T00:00:00Z',
-  html_url: 'https://github.com/ryryo/dot-claude-dev',
-};
+    const repo: GitHubRepo = {
+      id: 1,
+      name: 'dot-claude-dev',
+      full_name: 'ryryo/dot-claude-dev',
+      private: false,
+      description: 'Codex dashboard',
+      updated_at: '2026-04-09T00:00:00Z',
+      html_url: 'https://github.com/ryryo/dot-claude-dev',
+    };
 
-const content: GitHubContent = {
-  name: 'docs',
-  path: 'docs',
-  type: 'dir',
-  sha: 'abc123',
-};
+    const content: GitHubContent = {
+      name: 'docs',
+      path: 'docs',
+      type: 'dir',
+      sha: 'abc123',
+    };
 
-const repoError: RepoError = {
-  repo: 'ryryo/dot-claude-dev',
-  message: 'Failed to fetch repository contents',
-};
+    const repoError: RepoError = {
+      repo: 'ryryo/dot-claude-dev',
+      message: 'Failed to fetch repository contents',
+    };
 
-const legacyProject: ProjectConfig = {
-  name: 'dot-claude-dev',
-  // @ts-expect-error ProjectConfig should no longer accept path.
-  path: '/Users/example/dot-claude-dev',
-};
+    const legacyProject: ProjectConfig = {
+      name: 'dot-claude-dev',
+      // @ts-expect-error ProjectConfig should no longer accept path.
+      path: '/Users/example/dot-claude-dev',
+    };
 
-void config;
-void repo;
-void content;
-void repoError;
-void legacyProject;
+    expect(config).toBeDefined();
+    expect(repo).toBeDefined();
+    expect(content).toBeDefined();
+    expect(repoError).toBeDefined();
+    expect(legacyProject).toBeDefined();
+  });
+});
