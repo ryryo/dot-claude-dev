@@ -1,0 +1,384 @@
+{
+  "spec": {
+    "slug": "260412_spec-dashboard-format-v2",
+    "title": "Spec ↔ Dashboard フォーマット v2 移行",
+    "specPath": "spec.md"
+  },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "Schema 基盤",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "/dev:spec skill 改修",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "C",
+      "title": "sync-spec-md スクリプト実装",
+      "dependencies": ["B"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "D",
+      "title": "/dev:spec-run skill 改修",
+      "dependencies": ["C"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "E",
+      "title": "dashboard 改修",
+      "dependencies": ["D"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "F",
+      "title": "E2E 検証",
+      "dependencies": ["E"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "dashboard/lib/types.ts に TasksJsonV2 系の型を追加",
+      "status": "pending",
+      "dependencies": [],
+      "affectedFiles": [
+        {
+          "path": "dashboard/lib/types.ts",
+          "operation": "modify",
+          "summary": "v2 JSON スキーマ用の型定義を追加。既存 PlanFile / Gate / Todo / Step 型は無変更"
+        }
+      ],
+      "impl": "## 目的\n\ntasks.json schema v2 を TypeScript で表現する型を追加する。既存の dashboard 表示用型（`PlanFile`, `Gate`, `Todo`, `Step`）は UI とレガシー parser が依存しているため**無変更で維持**し、新たに v2 生 JSON 用の型を追加する。\n\n## 追加する型定義\n\n`dashboard/lib/types.ts` の末尾（既存 `ProjectsConfig` の後）に以下を追加:\n\n```typescript\n// ===== tasks.json schema v2 =====\n\nexport interface TasksJsonV2Spec {\n  slug: string;\n  title: string;\n  summary: string;\n  createdDate: string; // YYYY-MM-DD\n  specPath: string;    // 通常 'spec.md'\n}\n\nexport interface TasksJsonV2Progress {\n  completed: number;\n  total: number;\n}\n\nexport interface TasksJsonV2Preflight {\n  id: string;\n  title: string;\n  command: string;\n  manual: boolean;\n  reason: string;\n}\n\nexport interface TasksJsonV2Gate {\n  id: string;\n  title: string;\n  description: string;\n  dependencies: string[];\n  passCondition: string;\n}\n\nexport interface TasksJsonV2AffectedFile {\n  path: string;\n  operation: string; // create | modify | delete 等\n  summary: string;\n}\n\nexport interface TasksJsonV2Review {\n  result: ReviewResult;\n  fixCount: number;\n  summary: string;\n}\n\nexport interface TasksJsonV2Step {\n  kind: StepKind; // 'impl' | 'review'\n  title: string;\n  checked: boolean;\n  review?: TasksJsonV2Review | null; // kind === 'review' のときのみ\n}\n\nexport interface TasksJsonV2Todo {\n  id: string;\n  gate: string;\n  title: string;\n  description: string;\n  tdd: boolean;\n  dependencies: string[];\n  affectedFiles: TasksJsonV2AffectedFile[];\n  impl: string;\n  relatedIssues: string[];\n  steps: TasksJsonV2Step[];\n}\n\nexport interface TasksJsonV2Metadata {\n  createdAt: string;\n  totalGates: number;\n  totalTodos: number;\n}\n\nexport interface TasksJsonV2 {\n  schemaVersion: 2;\n  spec: TasksJsonV2Spec;\n  status: PlanStatus;\n  reviewChecked: boolean;\n  progress: TasksJsonV2Progress;\n  preflight: TasksJsonV2Preflight[];\n  gates: TasksJsonV2Gate[];\n  todos: TasksJsonV2Todo[];\n  metadata: TasksJsonV2Metadata;\n}\n```\n\n## 確認事項\n\n- 既存の `PlanStatus`, `StepKind`, `ReviewResult` 型を再利用する（重複定義しない）\n- `TasksJsonV2Step.review` は review kind のときのみ存在する想定だが、TypeScript の型としては optional + nullable で表現\n- 既存 `PlanFile` / `Gate` / `Todo` / `Step` インターフェースは**一切変更しない**\n\n## 検証\n\n```bash\ncd dashboard && pnpm tsc --noEmit\n```\n\nエラーなく通ること。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "A2",
+      "gate": "A",
+      "title": "tasks.template.json を v2 形式に全面更新",
+      "status": "pending",
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/references/templates/tasks.template.json",
+          "operation": "modify",
+          "summary": "v2 schema のテンプレートに全面書き換え。schemaVersion / summary / createdDate / status / progress / reviewChecked / gate.description / todo.description / todo.steps[] を含む"
+        }
+      ],
+      "impl": "## 目的\n\n`/dev:spec` が新規仕様書を作成する際に使用するテンプレートを v2 schema に置き換える。\n\n## 書き換え後の全文\n\n```json\n{\n  \"schemaVersion\": 2,\n  \"spec\": {\n    \"slug\": \"\",\n    \"title\": \"\",\n    \"summary\": \"\",\n    \"createdDate\": \"\",\n    \"specPath\": \"spec.md\"\n  },\n  \"status\": \"not-started\",\n  \"reviewChecked\": false,\n  \"progress\": { \"completed\": 0, \"total\": 0 },\n  \"preflight\": [\n    {\n      \"id\": \"P1\",\n      \"title\": \"\",\n      \"command\": \"\",\n      \"manual\": false,\n      \"reason\": \"\"\n    }\n  ],\n  \"gates\": [\n    {\n      \"id\": \"\",\n      \"title\": \"\",\n      \"description\": \"\",\n      \"dependencies\": [],\n      \"passCondition\": \"全 Review 結果記入欄が埋まり、総合判定が PASS であること\"\n    }\n  ],\n  \"todos\": [\n    {\n      \"id\": \"\",\n      \"gate\": \"\",\n      \"title\": \"\",\n      \"description\": \"\",\n      \"tdd\": false,\n      \"dependencies\": [],\n      \"affectedFiles\": [\n        { \"path\": \"\", \"operation\": \"\", \"summary\": \"\" }\n      ],\n      \"impl\": \"\",\n      \"relatedIssues\": [],\n      \"steps\": [\n        { \"kind\": \"impl\", \"title\": \"Step 1 — IMPL\", \"checked\": false },\n        { \"kind\": \"review\", \"title\": \"Step 2 — Review\", \"checked\": false, \"review\": null }\n      ]\n    }\n  ],\n  \"metadata\": {\n    \"createdAt\": \"\",\n    \"totalGates\": 0,\n    \"totalTodos\": 0\n  }\n}\n```\n\n## 変更点（v1 → v2）\n\n- トップレベルに `schemaVersion: 2`, `status`, `reviewChecked`, `progress` を追加\n- `spec` に `summary`, `createdDate` を追加\n- `gates[]` に `description` を追加\n- `todos[]` に `description`, `steps[]` を追加\n- `todos[].status: \"pending\"` を**削除**（`steps[].checked` で代替）\n- 既存 `spec.slug`, `spec.title`, `spec.specPath`, `preflight`, `gates[].id`, `gates[].title`, `gates[].dependencies`, `gates[].passCondition`, `todos[].id`, `todos[].gate`, `todos[].title`, `todos[].dependencies`, `todos[].affectedFiles`, `todos[].impl`, `todos[].relatedIssues`, `todos[].tdd`, `metadata` は維持\n\n## 検証\n\n```bash\njq . .claude/skills/dev/spec/references/templates/tasks.template.json\n```\n\nパースエラーが出ないこと。`schemaVersion` が 2 であること。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "A3",
+      "gate": "A",
+      "title": "tasks-schema-v2.md（スキーマドキュメント）を新規作成",
+      "status": "pending",
+      "dependencies": ["A2"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/references/templates/tasks-schema-v2.md",
+          "operation": "create",
+          "summary": "v2 schema の全フィールド説明、初期値、更新責任者表、status 算出ルールを定義するドキュメント"
+        }
+      ],
+      "impl": "## 目的\n\nv2 schema の仕様を一元的にドキュメント化する。spec 生成時・spec-run 更新時・dashboard 読み込み時の各エージェントが参照する single source of truth。\n\n## 作成ファイル\n\n`.claude/skills/dev/spec/references/templates/tasks-schema-v2.md`\n\n## 内容\n\n以下のセクションを含む markdown:\n\n1. **概要** — v1 からの変更点、なぜ v2 が必要か（spec.md ↔ tasks.json の二重管理問題の解消）\n2. **トップレベルフィールド** — `schemaVersion`, `spec`, `status`, `reviewChecked`, `progress`, `preflight`, `gates`, `todos`, `metadata` をそれぞれ型と目的と初期値で表形式\n3. **spec オブジェクト** — `slug` / `title` / `summary` / `createdDate` / `specPath` の説明\n4. **status / progress の算出ルール** — spec.md の「アーキテクチャ詳細」と同じロジックを転記\n   ```\n   total     = sum of all steps across all todos\n   completed = count of steps where checked == true\n   progress  = { completed, total }\n\n   status:\n     - total == 0                                   → \"not-started\"\n     - completed == 0                               → \"not-started\"\n     - 0 < completed < total                        → \"in-progress\"\n     - completed == total && reviewChecked == false → \"in-review\"\n     - completed == total && reviewChecked == true  → \"completed\"\n   ```\n5. **gates[] オブジェクト** — `id`, `title`, `description`, `dependencies`, `passCondition` の説明\n6. **todos[] オブジェクト** — `id`, `gate`, `title`, `description`, `tdd`, `dependencies`, `affectedFiles`, `impl`, `relatedIssues`, `steps` の説明\n   - `description` と `impl` の違い: `description` は dashboard カード表示用の 1 行サマリ、`impl` は実装エージェント用の長文手順\n7. **steps[] オブジェクト** — kind / title / checked / review\n   - `steps[]` は各 Todo 固定 2 要素（`kind: 'impl'` + `kind: 'review'`）\n   - review kind の要素は `review` フィールドを持つ。未記入時は `null`\n8. **review オブジェクト** — `result` / `fixCount` / `summary`\n   - `result`: `PASSED | FAILED | SKIPPED | IN_PROGRESS`\n9. **更新責任者表**\n   | フィールド | 更新責任者 | タイミング |\n   |---|---|---|\n   | `schemaVersion` | `/dev:spec` | 作成時のみ（以降不変） |\n   | `spec.slug`/`title`/`summary` | `/dev:spec` | 作成時 |\n   | `spec.createdDate` | `/dev:spec` | 作成時 |\n   | `status` | `/dev:spec-run` | 各 Step 更新時に再計算 |\n   | `reviewChecked` | `/dev:spec-run` | 人間レビュー完了時 |\n   | `progress` | `/dev:spec-run` | 各 Step 更新時に再計算 |\n   | `gates[]` | `/dev:spec` | 作成時（構造変更時を除き不変） |\n   | `todos[].steps[].checked` | `/dev:spec-run` | IMPL / Review 完了時 |\n   | `todos[].steps[].review` | `/dev:spec-run` | Review 完了時 |\n10. **サンプル完全版 JSON** — 実際の値が埋まった 1 Gate / 2 Todo の完成例\n11. **v1 からの移行ガイド** — 既存 v1 は plan-parser.ts でレガシー読み込みされるので移行不要。新規のみ v2 と記載\n\n## 検証\n\n- ファイルが存在すること\n- markdown の見出し構造が正しいこと\n- サンプル JSON が `jq .` でパースできること",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "A4",
+      "gate": "A",
+      "title": "v2 サンプル fixture 新規作成（後続 TDD / E2E の共通入力）",
+      "status": "pending",
+      "dependencies": ["A3"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/references/examples/sample-v2/tasks.json",
+          "operation": "create",
+          "summary": "v2 schema の実データ fixture。2 Gate × 5 Todo、全 review 状態を網羅"
+        },
+        {
+          "path": ".claude/skills/dev/spec/references/examples/sample-v2/spec.md",
+          "operation": "create",
+          "summary": "fixture 側の spec.md。generated マーカー込み"
+        }
+      ],
+      "impl": "## 目的\n\nv2 schema の参照実装 / sync-spec-md の E2E テスト入力 / dashboard 表示確認の共通基点となる fixture を新規作成する。\n\n## 配置\n\n.claude/skills/dev/spec/references/examples/sample-v2/ に spec.md と tasks.json を作成。\n\n## tasks.json の内容\n\n2 Gate × 5 Todo。5 つの review 状態を全てカバー:\n- A1: 完全未着手 (review: null)\n- A2: 進行中 (review: IN_PROGRESS)\n- B1: PASSED + FIX 2回\n- B2: SKIPPED (docs only)\n- B3: FAILED (要再修正)\n\nimpl は構造化オブジェクト形式（決定 #15）で記述。fixture 用ダミーなので goal + verify のみ。\nprogress.completed = 7, total = 10。status = in-progress。\n\n## spec.md の内容\n\n最小限の前置き + generated マーカー。マーカー間は sync-spec-md で再生成される想定で初期状態は空。\n\n## 検証\n\njq . tasks.json でパース成功、schemaVersion == 2、spec.md に generated マーカー 2 箇所。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "spec/SKILL.md からシングルモード分岐削除 + Step 7 を v2 schema 対応に更新",
+      "status": "pending",
+      "dependencies": ["A3"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/SKILL.md",
+          "operation": "modify",
+          "summary": "出力セクション・Step 6 削除・Step 7 を v2 schema 対応に全面更新・完了条件からシングル節削除・Step 10 の条件文削除"
+        }
+      ],
+      "impl": "## 目的\n\n`/dev:spec` のシングルモードを廃止してディレクトリモード一本化し、Step 7 の tasks.json 作成手順を v2 schema 対応に更新する。\n\n## 変更箇所\n\n### 1. 「## 出力」セクション（L26-41）\n\n現在のシングルモードとディレクトリモードの 2 つの表を、以下の 1 つに置き換える:\n\n```markdown\n## 出力\n\n| ファイル                                    | 内容                                                                |\n| ------------------------------------------- | ------------------------------------------------------------------- |\n| `docs/PLAN/{YYMMDD}_{slug}/spec.md`         | 概要・設計決定・アーキテクチャ・依存図・generated タスクリスト・Review 記録 |\n| `docs/PLAN/{YYMMDD}_{slug}/tasks.json`      | schema v2 の構造化データ（Gate/Todo/Step 詳細・impl 手順を含む）    |\n| `docs/PLAN/{YYMMDD}_{slug}/references/`     | 参照資料（必要な場合のみ）                                          |\n\nGate 数・Todo 数にかかわらず常にディレクトリモードで出力する（シングルモードは廃止）。\n```\n\n### 2. 「Step 6: 出力形式判定」セクション（L115-123）\n\n**セクションごと削除**。以降の Step 番号を繰り上げない（既存ルールとの一貫性のため番号は維持）か、あるいは Step 7 → Step 6 へ繰り上げる（こちらを採用）。\n\n採用方針: Step 7 以降を 1 つずつ繰り上げる。Step 7 → Step 6、Step 8 → Step 7、Step 9 → Step 8、Step 10 → Step 9、Step 11 → Step 10。\n\n### 3. 旧 Step 7 → 新 Step 6「仕様書ドラフト作成」（L124-151）\n\n- 「#### シングルモード（単一ファイル）」節を削除\n- 「#### ディレクトリモード」節を唯一の手順として記述、節見出しも外す\n- `tasks.json 作成` の手順 5 を v2 schema 対応に更新:\n\n```markdown\n5. **tasks.json 作成**: `references/templates/tasks.template.json` を Read し、構造に従って `docs/PLAN/{YYMMDD}_{slug}/tasks.json` に Write\n   - `schemaVersion: 2` を設定\n   - `spec.slug`, `spec.title`, `spec.summary`（1-2 文）, `spec.createdDate`（YYYY-MM-DD）を設定\n   - トップレベル `status: \"not-started\"`, `reviewChecked: false` を設定\n   - **Preflight がある場合**: `preflight` 配列に各項目を格納。なければ `preflight: []`\n   - `gates` 配列に全 Gate を格納。各 gate に `id`, `title`, `description`（1 行サマリ）, `dependencies`, `passCondition` を設定\n   - `todos` 配列に全 Todo を格納。各 Todo に以下を設定:\n     - `id`, `gate`, `title`, `description`（1 行サマリ、dashboard カード用）\n     - `tdd: true/false`（`[TDD]` ラベル付き Todo は `true`）\n     - `dependencies`, `affectedFiles`, `impl`（実装詳細・コード例を含む完全な手順）, `relatedIssues`\n     - `steps`: 必ず 2 要素 `[{kind: \"impl\", title: \"Step 1 — IMPL\", checked: false}, {kind: \"review\", title: \"Step 2 — Review\", checked: false, review: null}]`\n   - `progress`: 全 Todo の steps を合計して `{ completed: 0, total: (2 × todos.length) }` を設定\n   - `metadata.createdAt` (ISO 8601), `metadata.totalGates`, `metadata.totalTodos` を設定\n```\n\n### 4. 旧 Step 10 → 新 Step 9「整合性チェック」（L200-220）\n\n冒頭の「**ディレクトリモードの場合のみ実行。シングルモードではスキップして Step 11 へ。**」を削除（常に実行されるため）。\n\n### 5. 「## 完了条件」セクション（L232-255）\n\n- 「### シングルモード追加条件」節を削除\n- 「### ディレクトリモード追加条件」節の見出しを「### ディレクトリモード追加条件」→ 削除して直接項目のみに\n- 「### 共通」の後にディレクトリモードの条件を統合\n- 新規追加: `[ ] spec.md に <!-- generated:begin --> ... <!-- generated:end --> マーカーが存在する`\n- 新規追加: `[ ] tasks.json の schemaVersion が 2 である`\n- 新規追加: `[ ] tasks.json の各 Todo の steps[] が 2 要素（impl + review）である`\n- 既存の「spec.md の各 Todo に Review 結果記入欄（blockquote）が定義されている」は削除（sync が自動生成するため）\n\n### 6. 「## 参照」セクション（L257-263）\n\n- `agents/spec-sync.md` の説明文を更新: 「Step 9、ディレクトリモードのみ」→「Step 9、v2 schema 整合性 + generated マーカー確認」\n- `/dev:spec-run` の説明はそのまま\n\n## 検証\n\n- `grep -n 'シングルモード' .claude/skills/dev/spec/SKILL.md` で残存がないこと\n- `grep -n 'schemaVersion' .claude/skills/dev/spec/SKILL.md` で v2 の言及があること\n- Step 番号の連続性（Step 1, 2, 3, 4, 5, 6, 7, 8, 9, 10）",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B2",
+      "gate": "B",
+      "title": "spec-template-dir.md に generated マーカー追加 + spec-template.md 削除",
+      "status": "pending",
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/references/templates/spec-template-dir.md",
+          "operation": "modify",
+          "summary": "タスクリスト節全体を generated マーカーで囲む。人間編集節（レビューステータス・残存リスク）はマーカー外"
+        },
+        {
+          "path": ".claude/skills/dev/spec/references/templates/spec-template.md",
+          "operation": "delete",
+          "summary": "シングルモード廃止に伴い削除"
+        }
+      ],
+      "impl": "## 目的\n\nディレクトリモード版テンプレートに generated マーカーを追加し、シングルモード用テンプレートを削除する。\n\n## 変更 1: spec-template-dir.md\n\n### 対象: 「## タスクリスト」セクション（L89-122）\n\n現行のタスクリスト節全体を以下に置き換える:\n\n```markdown\n## タスクリスト\n\n<!-- generated:begin -->\n<!-- このセクションは sync-spec-md が tasks.json から自動生成します。-->\n<!-- 手動編集は反映されません。変更は tasks.json に対して行ってください。-->\n\n### 依存関係図\n\n[Gate 単位で依存関係を図示 — sync-spec-md が tasks.json の gates[].dependencies から生成]\n\n### Gate A: {フェーズ名}\n\n> {Gate description — あれば}\n\n- [ ] **A1**: {タイトル}\n  > **Review A1**: _未記入_\n\n- [ ] **A2**: {タイトル}\n  > **Review A2**: _未記入_\n\n**Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること\n\n### Gate B: {フェーズ名}\n\n- [ ] **B1**: {タイトル}\n  > **Review B1**: _未記入_\n\n**Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること\n\n<!-- generated:end -->\n```\n\n### 対象: テンプレート冒頭の注意書き\n\nファイル冒頭（L1-6）の説明文を更新:\n\n```markdown\n# 仕様書テンプレート（ディレクトリ構造用）\n\n`docs/PLAN/{YYMMDD}_{slug}/spec.md` は以下の構成で作成する。\n実装詳細は `tasks.json` に格納されるため、このファイルは概要・設計・チェックリストに特化する。\n\n**注意**: 「## タスクリスト」節は `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーで囲み、\nマーカー内部は sync-spec-md スクリプトが tasks.json から自動生成する。\n初回の `/dev:spec` 出力時はプレースホルダとしてマーカーと最低限の構造を書いておけば、\nPostToolUse hook が tasks.json の Write を検知して内容を埋める。\n```\n\n### 対象: 「## [TDD] ラベルの判定」セクション（L136-147）\n\nこのセクションは変更不要（v2 でも `[TDD]` ラベル判定ロジックは維持）。\n\n## 変更 2: spec-template.md の削除\n\n```bash\nrm .claude/skills/dev/spec/references/templates/spec-template.md\n```\n\nまた、`.claude/skills/dev/spec/SKILL.md` 内で `spec-template.md` を参照している箇所がないことを確認:\n\n```bash\ngrep -rn 'spec-template\\.md' .claude/skills/dev/spec/\n```\n\n（B1 で既に更新済みなら参照はない想定。残っていれば B1 の範囲で削除）\n\n## 検証\n\n- `cat .claude/skills/dev/spec/references/templates/spec-template-dir.md` で generated マーカーが存在\n- `ls .claude/skills/dev/spec/references/templates/spec-template.md` で Not Found\n- `grep -rn 'spec-template\\.md' .claude/skills/dev/spec/` で該当なし（spec-template-dir.md はヒット OK）",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "B3",
+      "gate": "B",
+      "title": "spec/agents/spec-sync.md を v2 schema 対応に更新",
+      "status": "pending",
+      "dependencies": ["B2"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/agents/spec-sync.md",
+          "operation": "modify",
+          "summary": "Review blockquote チェックを削除、steps[] 構造の検証追加、generated マーカー存在確認追加、シングルモード関連記述削除"
+        }
+      ],
+      "impl": "## 目的\n\nspec-sync agent を v2 schema 対応にする。generated 領域は sync-spec-md が自動生成するため、agent はそれ以外の意味的整合性と新しい必須フィールドの検証に特化する。\n\n## 変更箇所\n\n### 1. Step 2 構造的整合性チェックの表（L36-52）\n\n現行の表から以下を**削除**:\n- 「Review 記入欄」行（sync が自動生成するため不要）\n\n現行の表に以下を**追加**:\n- 「schemaVersion」行: `tasks.json` のトップレベル `schemaVersion` が 2 であること\n- 「spec.summary / createdDate」行: tasks.json の spec オブジェクトに必須フィールドが存在すること\n- 「generated マーカー」行: `spec.md` に `<!-- generated:begin -->` と `<!-- generated:end -->` が両方存在すること\n- 「steps[] 構造」行: 各 Todo の `steps[]` が 2 要素で、`kind` が `impl` と `review` であること\n- 「gates[].description」行: 各 Gate に description が存在すること（空文字も可）\n- 「todos[].description」行: 各 Todo に description が存在すること\n\n### 2. Step 2 の自動修正ルール（L54-60）\n\n以下のルールを**削除**:\n- 「spec.md に Review 記入欄がない Todo → blockquote を追加」（sync が生成するため不要）\n\n以下のルールを**追加**:\n- `tasks.json` に `schemaVersion` がない or 2 未満 → AskUserQuestion で v1 互換か v2 新規かを確認。v2 新規なら 2 を書き込む\n- `spec.md` に generated マーカーが欠落 → `## タスクリスト` の位置にマーカーを挿入（内容は空で初期化、次回の sync-spec-md 実行で埋められる）\n- `todos[].steps` が 2 要素でない or kind が不正 → 標準 2 要素（impl + review）にリセット。既存の checked / review 値は保持\n\n### 3. Step 3 意味的整合性チェック（L62-83）\n\n変更不要（impl と設計決定の矛盾検出は v2 でも必要）。\n\n### 4. 「## 注意事項」セクション（L144-149）\n\n以下を更新:\n- 「**ディレクトリモード専用**」→「**v2 schema 対応**: v1 tasks.json（`schemaVersion` 未定義）の場合は整合性チェックをスキップし、warning を出力する」\n\n### 5. 報告形式セクション（L87-131）\n\n表示項目を v2 の項目に合わせて更新:\n- 「Review 記入欄: 全 Todo に存在」を削除\n- 「Schema バージョン: v2」を追加\n- 「generated マーカー: 存在確認」を追加\n- 「steps[] 構造: 一致 ({N} Todo)」を追加\n\n## 検証\n\n- `grep -n 'Review 記入欄' .claude/skills/dev/spec/agents/spec-sync.md` で削除済みの記述が残っていないこと\n- `grep -n 'schemaVersion' .claude/skills/dev/spec/agents/spec-sync.md` で追加済みの記述があること\n- `grep -n 'シングルモード' .claude/skills/dev/spec/agents/spec-sync.md` で残存がないこと",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "C1",
+      "gate": "C",
+      "title": "[TDD] sync-spec-md.mjs 本体実装 + node --test テスト",
+      "status": "pending",
+      "dependencies": ["B3", "A4"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/scripts/sync-spec-md.mjs",
+          "operation": "create",
+          "summary": "pure 関数 generateTaskListSection + CLI エントリポイント。Node.js ESM"
+        },
+        {
+          "path": ".claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs",
+          "operation": "create",
+          "summary": "node --test ビルトインによる単体テスト"
+        }
+      ],
+      "impl": "## 目的\n\ntasks.json から spec.md の generated 領域を再生成する Node.js スクリプトを TDD で実装する。Pure 関数 `generateTaskListSection(tasksJson): string` を core とし、CLI エントリポイントはファイル I/O のみを担当する。\n\n## TDD フロー\n\n### RED: テスト先行\n\n`.claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs` を作成:\n\n```javascript\nimport { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { generateTaskListSection } from '../sync-spec-md.mjs';\n\nconst sampleTasksV2 = {\n  schemaVersion: 2,\n  spec: { slug: 'demo', title: 'Demo', summary: '', createdDate: '2026-04-12', specPath: 'spec.md' },\n  status: 'in-progress',\n  reviewChecked: false,\n  progress: { completed: 2, total: 4 },\n  preflight: [],\n  gates: [\n    { id: 'A', title: 'データ層', description: 'スキーマ整備', dependencies: [], passCondition: '全 Review 結果記入欄が埋まり、総合判定が PASS であること' },\n    { id: 'B', title: 'API 層', description: '', dependencies: ['A'], passCondition: '全 Review 結果記入欄が埋まり、総合判定が PASS であること' }\n  ],\n  todos: [\n    {\n      id: 'A1', gate: 'A', title: '[TDD] スキーマ定義', description: '',\n      tdd: true, dependencies: [], affectedFiles: [], impl: '', relatedIssues: [],\n      steps: [\n        { kind: 'impl',   title: 'Step 1 — IMPL',   checked: true },\n        { kind: 'review', title: 'Step 2 — Review', checked: true, review: { result: 'PASSED', fixCount: 0, summary: 'OK' } }\n      ]\n    },\n    {\n      id: 'B1', gate: 'B', title: 'POST /api handler', description: '',\n      tdd: false, dependencies: ['A1'], affectedFiles: [], impl: '', relatedIssues: [],\n      steps: [\n        { kind: 'impl',   title: 'Step 1 — IMPL',   checked: false },\n        { kind: 'review', title: 'Step 2 — Review', checked: false, review: null }\n      ]\n    }\n  ],\n  metadata: { createdAt: '', totalGates: 2, totalTodos: 2 }\n};\n\ntest('generateTaskListSection: 依存関係図を含む', () => {\n  const output = generateTaskListSection(sampleTasksV2);\n  assert.match(output, /### 依存関係図/);\n  assert.match(output, /Gate A/);\n  assert.match(output, /Gate B/);\n});\n\ntest('generateTaskListSection: Gate 見出しと description を出力', () => {\n  const output = generateTaskListSection(sampleTasksV2);\n  assert.match(output, /### Gate A: データ層/);\n  assert.match(output, /> スキーマ整備/);\n  assert.match(output, /### Gate B: API 層/);\n  // description が空の gate は blockquote を出さない\n  const gateBSection = output.slice(output.indexOf('### Gate B'));\n  assert.ok(!gateBSection.startsWith('### Gate B: API 層\\n\\n>'));\n});\n\ntest('generateTaskListSection: 完了 Todo は [x]、未完了は [ ]', () => {\n  const output = generateTaskListSection(sampleTasksV2);\n  assert.match(output, /- \\[x\\] \\*\\*A1\\*\\*:/);\n  assert.match(output, /- \\[ \\] \\*\\*B1\\*\\*:/);\n});\n\ntest('generateTaskListSection: Review 結果を PASSED として出力', () => {\n  const output = generateTaskListSection(sampleTasksV2);\n  assert.match(output, /> \\*\\*Review A1\\*\\*: ✅ PASSED — OK/);\n});\n\ntest('generateTaskListSection: Review 未記入は _未記入_', () => {\n  const output = generateTaskListSection(sampleTasksV2);\n  assert.match(output, /> \\*\\*Review B1\\*\\*: _未記入_/);\n});\n\ntest('generateTaskListSection: Gate 通過条件を出力', () => {\n  const output = generateTaskListSection(sampleTasksV2);\n  const matches = output.match(/\\*\\*Gate [AB] 通過条件\\*\\*/g);\n  assert.equal(matches?.length, 2);\n});\n\ntest('generateTaskListSection: FIX カウント 0 時は表示しない、1 以上で表示', () => {\n  const withFix = structuredClone(sampleTasksV2);\n  withFix.todos[0].steps[1].review.fixCount = 2;\n  const output = generateTaskListSection(withFix);\n  assert.match(output, /Review A1\\*\\*: ✅ PASSED \\(FIX 2回\\) — OK/);\n});\n\ntest('generateTaskListSection: FAILED / SKIPPED / IN_PROGRESS の表示', () => {\n  const cases = [\n    { result: 'FAILED',      summary: 'テスト失敗', expected: /❌ FAILED — テスト失敗/ },\n    { result: 'SKIPPED',     summary: 'docs only', expected: /⏭️ SKIPPED — docs only/ },\n    { result: 'IN_PROGRESS', summary: '',           expected: /⏳ IN_PROGRESS/ }\n  ];\n  for (const c of cases) {\n    const data = structuredClone(sampleTasksV2);\n    data.todos[0].steps[1].review = { result: c.result, fixCount: 0, summary: c.summary };\n    const output = generateTaskListSection(data);\n    assert.match(output, c.expected);\n  }\n});\n```\n\n```bash\n# RED 確認\ncd .claude/skills/dev/spec-run/scripts && node --test __tests__/sync-spec-md.test.mjs\n# ERR_MODULE_NOT_FOUND で失敗することを確認\n```\n\n### GREEN: sync-spec-md.mjs 実装\n\n`.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs` を作成:\n\n```javascript\n#!/usr/bin/env node\n// @ts-check\nimport { readFileSync, writeFileSync, existsSync } from 'node:fs';\nimport { dirname, resolve } from 'node:path';\nimport { fileURLToPath } from 'node:url';\n\nconst BEGIN_MARKER = '<!-- generated:begin -->';\nconst END_MARKER = '<!-- generated:end -->';\n\n/**\n * tasks.json (v2) から spec.md の generated 領域の文字列を生成する pure 関数\n * @param {any} tasksJson\n * @returns {string}\n */\nexport function generateTaskListSection(tasksJson) {\n  const lines = [];\n  lines.push('<!-- このセクションは sync-spec-md が tasks.json から自動生成します。-->');\n  lines.push('<!-- 手動編集は反映されません。変更は tasks.json に対して行ってください。-->');\n  lines.push('');\n  lines.push('### 依存関係図');\n  lines.push('');\n  lines.push('```');\n  for (const gate of tasksJson.gates ?? []) {\n    const deps = (gate.dependencies ?? []).join(', ');\n    const suffix = deps ? `（Gate ${deps} 完了後）` : '';\n    lines.push(`Gate ${gate.id}: ${gate.title}${suffix}`);\n  }\n  lines.push('```');\n  lines.push('');\n\n  for (const gate of tasksJson.gates ?? []) {\n    lines.push(`### Gate ${gate.id}: ${gate.title}`);\n    lines.push('');\n    if (gate.description && gate.description.trim() !== '') {\n      lines.push(`> ${gate.description}`);\n      lines.push('');\n    }\n    const gateTodos = (tasksJson.todos ?? []).filter((t) => t.gate === gate.id);\n    for (const todo of gateTodos) {\n      const allChecked = (todo.steps ?? []).every((s) => s.checked === true);\n      const box = allChecked ? 'x' : ' ';\n      lines.push(`- [${box}] **${todo.id}**: ${todo.title}`);\n      const reviewStep = (todo.steps ?? []).find((s) => s.kind === 'review');\n      const reviewLine = formatReviewLine(todo.id, reviewStep?.review ?? null);\n      lines.push(`  ${reviewLine}`);\n    }\n    lines.push('');\n    lines.push(`**Gate ${gate.id} 通過条件**: ${gate.passCondition}`);\n    lines.push('');\n  }\n\n  // 末尾の余分な改行を除去\n  while (lines.length > 0 && lines[lines.length - 1] === '') {\n    lines.pop();\n  }\n  lines.push('');\n\n  return lines.join('\\n');\n}\n\nfunction formatReviewLine(todoId, review) {\n  if (!review) {\n    return `> **Review ${todoId}**: _未記入_`;\n  }\n  const { result, fixCount, summary } = review;\n  const fixStr = fixCount > 0 ? ` (FIX ${fixCount}回)` : '';\n  const summaryStr = summary ? ` — ${summary}` : '';\n  switch (result) {\n    case 'PASSED':      return `> **Review ${todoId}**: ✅ PASSED${fixStr}${summaryStr}`;\n    case 'FAILED':      return `> **Review ${todoId}**: ❌ FAILED${summaryStr}`;\n    case 'SKIPPED':     return `> **Review ${todoId}**: ⏭️ SKIPPED${summaryStr}`;\n    case 'IN_PROGRESS': return `> **Review ${todoId}**: ⏳ IN_PROGRESS${summaryStr}`;\n    default:            return `> **Review ${todoId}**: ${result}${summaryStr}`;\n  }\n}\n\n/**\n * spec.md の generated 領域を置換する pure 関数\n * @param {string} specContent\n * @param {string} generatedSection\n * @returns {{ content: string, replaced: boolean }}\n */\nexport function replaceGeneratedSection(specContent, generatedSection) {\n  const beginIdx = specContent.indexOf(BEGIN_MARKER);\n  const endIdx = specContent.indexOf(END_MARKER);\n  if (beginIdx < 0 || endIdx < 0 || endIdx < beginIdx) {\n    return { content: specContent, replaced: false };\n  }\n  const before = specContent.slice(0, beginIdx + BEGIN_MARKER.length);\n  const after = specContent.slice(endIdx);\n  const next = `${before}\\n${generatedSection}\\n${after}`;\n  return { content: next, replaced: true };\n}\n\n/**\n * CLI エントリポイント: tasks.json のパスを受け取り spec.md を in-place 書き換え\n */\nfunction main() {\n  const tasksJsonPath = process.argv[2];\n  if (!tasksJsonPath) {\n    console.error('Usage: sync-spec-md.mjs <tasks-json-path>');\n    process.exit(1);\n  }\n\n  const absPath = resolve(tasksJsonPath);\n  if (!existsSync(absPath)) {\n    console.error(`sync-spec-md: tasks.json not found at ${absPath}`);\n    process.exit(0); // skip\n  }\n\n  let tasksJson;\n  try {\n    tasksJson = JSON.parse(readFileSync(absPath, 'utf-8'));\n  } catch (err) {\n    console.error(`sync-spec-md: failed to parse tasks.json: ${err.message}`);\n    process.exit(0); // skip\n  }\n\n  if (typeof tasksJson?.schemaVersion !== 'number' || tasksJson.schemaVersion < 2) {\n    // v1 / legacy: skip silently\n    process.exit(0);\n  }\n\n  const specPath = resolve(dirname(absPath), 'spec.md');\n  if (!existsSync(specPath)) {\n    console.error(`sync-spec-md: spec.md not found at ${specPath}, skipping`);\n    process.exit(0);\n  }\n\n  const specContent = readFileSync(specPath, 'utf-8');\n  const generatedSection = generateTaskListSection(tasksJson);\n  const { content: newContent, replaced } = replaceGeneratedSection(specContent, generatedSection);\n\n  if (!replaced) {\n    console.error(`sync-spec-md: generated markers not found in ${specPath}, skipping`);\n    process.exit(0);\n  }\n\n  if (newContent !== specContent) {\n    writeFileSync(specPath, newContent, 'utf-8');\n    console.error(`sync-spec-md: updated ${specPath}`);\n  }\n}\n\n// 直接実行時のみ main を呼ぶ\nif (import.meta.url === `file://${process.argv[1]}`) {\n  main();\n}\n```\n\n### GREEN 確認\n\n```bash\ncd .claude/skills/dev/spec-run/scripts && node --test __tests__/sync-spec-md.test.mjs\n# 全テスト PASS\n```\n\n### REFACTOR\n\n追加のテストケース（安全性検証）:\n\n```javascript\ntest('replaceGeneratedSection: マーカーがなければ replaced: false', () => {\n  const input = '# Title\\n\\n## タスクリスト\\n\\nno markers\\n';\n  const { content, replaced } = replaceGeneratedSection(input, 'NEW');\n  assert.equal(replaced, false);\n  assert.equal(content, input);\n});\n\ntest('sync が tasks.json を改変しない（無限ループ防止）', () => {\n  // CLI main は tasks.json を読み込むだけで write しないことを確認\n  // （main 関数の中に writeFileSync 呼び出しが 1 回だけ、spec.md に対してのみ）\n  const src = readFileSync(new URL('../sync-spec-md.mjs', import.meta.url), 'utf-8');\n  const writeCount = (src.match(/writeFileSync/g) ?? []).length;\n  assert.equal(writeCount, 1, 'writeFileSync は 1 箇所のみ (spec.md 向け)');\n  assert.ok(!src.includes('writeFileSync(absPath'), 'tasks.json (absPath) への write がないこと');\n});\n```\n\n```bash\nnode --test __tests__/sync-spec-md.test.mjs\n# 全 PASS\nchmod +x sync-spec-md.mjs\n```\n\n## 検証\n\n- `node --test .claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs` 全 PASS\n- 手動テスト: 本仕様書 tasks.json をダミーで v2 schemaVersion にして実行し、spec.md の generated 領域が置換されることを確認（元に戻す）\n- `bash -n` 相当のシンタックスチェック: `node --check .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs`",
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "C2",
+      "gate": "C",
+      "title": "sync-spec-md-hook.sh（PostToolUse hook wrapper）実装",
+      "status": "pending",
+      "dependencies": ["C1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/hooks/dev/sync-spec-md-hook.sh",
+          "operation": "create",
+          "summary": "PostToolUse hook wrapper。tasks.json の Edit/Write を検知して sync-spec-md.mjs を起動"
+        }
+      ],
+      "impl": "## 目的\n\n`/dev:spec-run` の SKILL.md frontmatter から呼ばれる PostToolUse hook wrapper を作成する。tool_name と file_path をフィルタし、tasks.json の書き換え時のみ sync-spec-md.mjs を起動する。既存の `commit-check.sh` と同じパターン。\n\n## 作成ファイル\n\n`.claude/hooks/dev/sync-spec-md-hook.sh`\n\n## 完全なスクリプト内容\n\n```bash\n#!/bin/bash\n# PostToolUse hook: tasks.json の Edit/Write を検知して sync-spec-md.mjs を起動\n# 発火条件を満たさない場合は silently exit 0\n#\n# stdin JSON payload:\n#   { \"tool_name\": \"Edit\"|\"Write\"|\"MultiEdit\"|..., \"tool_input\": { \"file_path\": \"...\" }, ... }\n\nset -e\n\nINPUT=$(cat)\n\n# tool_name フィルタ\nTOOL_NAME=$(echo \"$INPUT\" | jq -r '.tool_name // \"\"')\ncase \"$TOOL_NAME\" in\n  Edit|Write|MultiEdit) ;;\n  *) exit 0 ;;\nesac\n\n# file_path を取得\nFILE_PATH=$(echo \"$INPUT\" | jq -r '.tool_input.file_path // \"\"')\n[ -z \"$FILE_PATH\" ] && exit 0\n\n# tasks.json で終わらなければスキップ\ncase \"$FILE_PATH\" in\n  */tasks.json) ;;\n  *) exit 0 ;;\nesac\n\n# 絶対パスでなければ $CLAUDE_PROJECT_DIR 経由で解決\nif [[ \"$FILE_PATH\" != /* ]]; then\n  FILE_PATH=\"${CLAUDE_PROJECT_DIR:-$(pwd)}/$FILE_PATH\"\nfi\n\n# ファイルが存在しなければスキップ（Edit 直後は存在するはずだが保険）\n[ ! -f \"$FILE_PATH\" ] && exit 0\n\n# 同階層に spec.md がなければスキップ\nSPEC_DIR=$(dirname \"$FILE_PATH\")\n[ ! -f \"$SPEC_DIR/spec.md\" ] && exit 0\n\n# sync-spec-md.mjs のパスを解決\n# 1. プロジェクトの .claude/skills/dev/spec-run/scripts/ （symlink 経由）\n# 2. フォールバック: $CLAUDE_SHARED_DIR または ~/dot-claude-dev\nSYNC_SCRIPT=\"${CLAUDE_PROJECT_DIR:-$(pwd)}/.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs\"\nif [ ! -f \"$SYNC_SCRIPT\" ]; then\n  SYNC_SCRIPT=\"${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs\"\nfi\n\nif [ ! -f \"$SYNC_SCRIPT\" ]; then\n  echo \"sync-spec-md-hook: sync-spec-md.mjs not found, skipping\" >&2\n  exit 0\nfi\n\n# node が利用できない環境はスキップ\nif ! command -v node >/dev/null 2>&1; then\n  echo \"sync-spec-md-hook: node not found, skipping\" >&2\n  exit 0\nfi\n\n# sync-spec-md.mjs を起動（エラーも exit 0 で吸収）\nnode \"$SYNC_SCRIPT\" \"$FILE_PATH\" >&2 || {\n  echo \"sync-spec-md-hook: sync-spec-md.mjs failed (non-fatal), continuing\" >&2\n}\n\nexit 0\n```\n\n## 作成後の確認\n\n```bash\nchmod +x .claude/hooks/dev/sync-spec-md-hook.sh\nbash -n .claude/hooks/dev/sync-spec-md-hook.sh  # シンタックスチェック\n```\n\n### 手動テスト\n\n```bash\n# tool_name 不一致 → exit 0 silent\necho '{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"/tmp/tasks.json\"}}' | bash .claude/hooks/dev/sync-spec-md-hook.sh\necho \"exit=$?\"  # 0 になること\n\n# file_path が tasks.json でない → exit 0 silent\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/tmp/foo.txt\"}}' | bash .claude/hooks/dev/sync-spec-md-hook.sh\necho \"exit=$?\"  # 0\n\n# 存在しない tasks.json → exit 0 silent\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/tmp/nonexistent/tasks.json\"}}' | bash .claude/hooks/dev/sync-spec-md-hook.sh\necho \"exit=$?\"  # 0\n```\n\n## 検証\n\n- `bash -n` でシンタックスエラーなし\n- `chmod +x` 済み\n- 手動テストで不正入力に対して exit 0 を返すこと\n- tool_name / file_path の組み合わせを満たしたときのみ `node sync-spec-md.mjs` が呼ばれること",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D1",
+      "gate": "D",
+      "title": "spec-run/SKILL.md frontmatter に PostToolUse hook 追加 + ステップ 2 を schemaVersion 判定に変更",
+      "status": "pending",
+      "dependencies": ["C2"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/SKILL.md",
+          "operation": "modify",
+          "summary": "frontmatter に hooks.PostToolUse 追加、ステップ 2 入力形式判定を schemaVersion v2/v1/single 3 分岐に更新"
+        }
+      ],
+      "impl": "## 目的\n\n`/dev:spec-run` が v2 tasks.json を扱えるようにする:\n1. skill-scoped PostToolUse hook を宣言（tasks.json 編集時に sync-spec-md を自動起動）\n2. ステップ 2 入力形式判定を schemaVersion ベースに変更（v2 / v1 dir / single の 3 分岐）\n\n## 変更箇所\n\n### 1. frontmatter（L1-4）\n\n現行:\n\n```yaml\n---\nname: dev:spec-run\ndescription: ...\n---\n```\n\n更新後:\n\n```yaml\n---\nname: dev:spec-run\ndescription: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VERIFY の2層で Todo を実行。Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行\nallowed-tools:\n  - Read\n  - Write\n  - Edit\n  - Bash\n  - Glob\n  - Grep\n  - Task\n  - AskUserQuestion\nhooks:\n  PostToolUse:\n    - matcher: \"Edit|Write|MultiEdit\"\n      hooks:\n        - type: command\n          command: \"$CLAUDE_PROJECT_DIR/.claude/hooks/dev/sync-spec-md-hook.sh\"\n---\n```\n\n**注意**: 既存の frontmatter には `allowed-tools` が無いため、hook を追加するついでに明示する（前例 `.claude/.backup/skills/dev/developing/SKILL.md` に倣う）。\n\n### 2. 「### ステップ 2: 入力形式判定」セクション（L16-19）\n\n現行:\n\n```markdown\n### ステップ 2: 入力形式判定\n\n- `tasks.json` あり → **ディレクトリモード**（tasks.json から Todo を部分読み込みして実行）\n- `tasks.json` なし → **シングルモード**（単一 MD をそのまま処理）\n```\n\n更新後:\n\n```markdown\n### ステップ 2: 入力形式判定\n\n仕様書の形式を以下の 3 種類で判定する:\n\n1. `tasks.json` が存在する場合、先頭 1 行を読んで `schemaVersion` を確認\n   - `schemaVersion >= 2` → **v2 ディレクトリモード**（sync-spec-md により spec.md は自動管理される。spec-run は tasks.json のみ更新）\n   - `schemaVersion` が未定義 or < 2 → **v1 ディレクトリモード**（従来どおり spec.md のチェックボックスと tasks.json の両方を更新）\n2. `tasks.json` が存在しない場合 → **シングルモード**（単一 MD をそのまま処理、既存 112 PLAN の互換パス）\n\n判定例（Bash）:\n```bash\nif [ -f \"{spec_dir}/tasks.json\" ]; then\n  SCHEMA_V=$(jq -r '.schemaVersion // 0' \"{spec_dir}/tasks.json\")\n  if [ \"$SCHEMA_V\" -ge 2 ]; then\n    MODE=\"v2-dir\"\n  else\n    MODE=\"v1-dir\"\n  fi\nelse\n  MODE=\"single\"\nfi\n```\n```\n\n### 3. 「### ステップ 3: 実行準備」セクション（L21-24）\n\n3 モード対応に更新:\n\n```markdown\n### ステップ 3: 実行準備\n\n- **v2 ディレクトリモード**: spec.md の「参照すべきファイル」と tasks.json を並列 Read し、全体構造（gates, todo IDs, descriptions, steps, progress）を把握。各 Todo の `impl` はこの時点では読まない\n- **v1 ディレクトリモード**: 現状どおり spec.md + tasks.json を並列 Read。steps[] がないため Step 状態は spec.md のチェックボックスから推論\n- **シングルモード**: Gate 0 通過条件（参照すべきファイルの読み込み等）を実行\n```\n\n### 4. 「## Gate 通過条件」→「### 結果の記録」（L62-81）\n\n以下を追加（既存の記述を残しつつ v2 向けセクションを追加）:\n\n```markdown\n### 結果の記録\n\n**Preflight 完了時**: （既存のまま）\n\n**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook で自動再生成される\n\n```json\n{\n  \"todos\": [\n    {\n      \"id\": \"A1\",\n      \"steps\": [\n        { \"kind\": \"impl\",   \"checked\": true },\n        { \"kind\": \"review\", \"checked\": true, \"review\": { \"result\": \"PASSED\", \"fixCount\": 0, \"summary\": \"OK\" } }\n      ]\n    }\n  ],\n  \"status\": \"in-progress\",\n  \"progress\": { \"completed\": 2, \"total\": 16 }\n}\n```\n\n**重要**: `status` と `progress` も同時に再計算して書き込む（下の算出ルール参照）。\n\n**v1 ディレクトリモード**: 現状のまま spec.md のチェックボックスと Review blockquote を更新（ただし PostToolUse hook は v1 tasks.json に対しては no-op でスキップするので悪影響なし）\n\n**シングルモード**: 仕様書のチェックボックスと Review 記入欄を更新\n\n#### status / progress の算出ルール（v2 のみ）\n\n```\ntotal     = sum of all todos[].steps[].length\ncompleted = count of all steps where checked == true\nprogress  = { completed, total }\n\nstatus:\n  - completed == 0                               → \"not-started\"\n  - 0 < completed < total                        → \"in-progress\"\n  - completed == total && reviewChecked == false → \"in-review\"\n  - completed == total && reviewChecked == true  → \"completed\"\n```\n```\n\n### 5. 「### 人間レビュー確認フロー」（L94-105）\n\nv2 モード向けの注記を追加:\n\n```markdown\n### 人間レビュー確認フロー\n\n仕様書に `## レビューステータス` セクションが存在し、未チェックの `- [ ] **レビュー完了**` 行がある場合、以下を実行する。\n\n**v2 モード**: `## レビューステータス` セクションは generated 領域の外（人間編集領域）なので、従来どおり spec.md のチェックボックスを `[x]` に更新。同時に `tasks.json` のトップレベル `reviewChecked` を `true` に更新し、`status` を再計算する。\n\n**v1 / シングルモード**: 従来どおり spec.md のチェックボックスのみ更新。\n\n1. AskUserQuestion でブラウザ動作確認を促す（実装内容に応じた確認ポイントを添える）\n2. ユーザーが「OK / 確認済み」を選択した場合:\n   - 仕様書の `- [ ] **レビュー完了**` を `- [x] **レビュー完了**` に更新する\n   - （v2 のみ）tasks.json の `reviewChecked: true` + `status: \"completed\"` に更新する\n   - 変更をコミットする\n3. ユーザーが「NG / 修正が必要」を選択した場合:\n   - 問題内容を確認し、必要な修正を実施してから再度確認する\n```\n\n## 検証\n\n- `grep -n 'hooks:' .claude/skills/dev/spec-run/SKILL.md` で frontmatter に hooks ブロックがあること\n- `grep -n 'PostToolUse' .claude/skills/dev/spec-run/SKILL.md` で PostToolUse 宣言があること\n- `grep -n 'sync-spec-md-hook' .claude/skills/dev/spec-run/SKILL.md` で command 参照があること\n- `grep -n 'schemaVersion' .claude/skills/dev/spec-run/SKILL.md` で判定ロジックの記載があること\n- `grep -n 'v2-dir\\|v2 ディレクトリ' .claude/skills/dev/spec-run/SKILL.md` で v2 モードの記載があること",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D2",
+      "gate": "D",
+      "title": "execution.md の Step 4 UPDATE を v2/v1 分岐に更新",
+      "status": "pending",
+      "dependencies": ["D1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/references/execution.md",
+          "operation": "modify",
+          "summary": "Step 4 UPDATE セクションを v2/v1/single 3 分岐に更新。v2 では tasks.json のみ更新"
+        }
+      ],
+      "impl": "## 目的\n\nClaudeモードの実行プロトコル `execution.md` の Step 4 UPDATE を v2/v1/single の 3 モード分岐に更新する。\n\n## 変更箇所\n\n### 1. 冒頭の「## 実行ステップ」枠（L7-14）\n\n```\nStep 4 — UPDATE       仕様書のチェックボックスを更新する\n```\n\nの説明文を「モードに応じて tasks.json または spec.md を更新する」に変更。\n\n### 2. Step 0 — CONTEXT（L16-26）\n\n「### ディレクトリモード」の見出しを「### ディレクトリモード（v1 / v2 共通）」に変更し、以下の注記を追加:\n\n```markdown\n**v2 モードでの差分**: tasks.json の `steps[]` / `status` / `progress` フィールドも把握する。これらは Step 4 UPDATE で更新する対象になる。\n```\n\n### 3. Step 1 — IMPL（L58-78）\n\n変更不要（tasks.json からの impl 取得は v1/v2 共通）。\n\n### 4. Step 4 — UPDATE（L125-138）\n\n現行:\n\n```markdown\n## Step 4 — UPDATE\n\n### シングルモード\n\n各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。\n\n### ディレクトリモード\n\nspec.md のチェックボックスを `[x]` に更新し、Review 結果を blockquote に記入する:\n\n```markdown\n- [x] **Todo A1**: カラーコントラスト修正\n  > **Review A1**: ✅ PASSED\n```\n```\n\n更新後:\n\n```markdown\n## Step 4 — UPDATE\n\n### v2 ディレクトリモード\n\n**tasks.json のみを Edit して更新する。spec.md は直接編集しない**（PostToolUse hook が sync-spec-md を起動して spec.md を自動再生成する）。\n\n更新対象フィールド:\n\n1. **該当 Todo の `steps[]`**:\n   - `steps[0].checked` (impl step): `true`\n   - `steps[1].checked` (review step): `true`\n   - `steps[1].review`: `{ \"result\": \"PASSED\"|\"FAILED\"|..., \"fixCount\": n, \"summary\": \"...\" }`\n\n2. **トップレベル `status` と `progress`**（再計算）:\n   - `total = sum of all todos[].steps[].length`（固定値、todos 数 × 2）\n   - `completed = count of all steps where checked == true`\n   - `status`: `completed == 0` → `not-started`、`0 < completed < total` → `in-progress`、`completed == total && !reviewChecked` → `in-review`、`completed == total && reviewChecked` → `completed`\n\n Edit 例（jq を使う場合）:\n\n```bash\n# steps を更新\njq '\n  .todos |= map(\n    if .id == \"A1\" then\n      .steps[0].checked = true |\n      .steps[1].checked = true |\n      .steps[1].review = { \"result\": \"PASSED\", \"fixCount\": 0, \"summary\": \"OK\" }\n    else .\n    end\n  ) |\n  .progress.completed = ([.todos[].steps[] | select(.checked == true)] | length) |\n  .status = (if .progress.completed == 0 then \"not-started\"\n             elif .progress.completed < .progress.total then \"in-progress\"\n             elif .reviewChecked then \"completed\"\n             else \"in-review\" end)\n' tasks.json > tasks.json.tmp && mv tasks.json.tmp tasks.json\n```\n\nただし Claude は jq ではなく Edit ツールで直接編集するのが基本。jq は参考例。\n\nEdit 後、PostToolUse hook が自動的に sync-spec-md.mjs を起動し、spec.md の generated 領域が tasks.json の新しい状態に合わせて再生成される。spec.md を直接開いて確認する必要はない（必要なら hook 実行後に Read で確認可能）。\n\n### v1 ディレクトリモード\n\n（現行の「ディレクトリモード」の記述をそのまま）spec.md のチェックボックスを `[x]` に更新し、Review 結果を blockquote に記入する:\n\n```markdown\n- [x] **Todo A1**: カラーコントラスト修正\n  > **Review A1**: ✅ PASSED\n```\n\n### シングルモード\n\n各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。\n```\n\n### 5. 「## worktree モード（オプション）」の Step 4 UPDATE 行（L161）\n\n表の Step 4 UPDATE の記述を以下に更新:\n\n```markdown\n| Step 4 UPDATE | v2: **worktree 内の tasks.json** を更新 → hook が worktree 内の spec.md を再生成 / v1/single: worktree 内の spec.md のチェックボックスを更新 |\n```\n\n## 検証\n\n- `grep -n 'v2 ディレクトリモード' .claude/skills/dev/spec-run/references/execution.md` で追記されていること\n- `grep -n 'sync-spec-md' .claude/skills/dev/spec-run/references/execution.md` で hook 連携の言及があること\n- `grep -n 'jq' .claude/skills/dev/spec-run/references/execution.md` で jq 更新例が追加されていること\n- Step 4 UPDATE セクションで v2 / v1 / single の 3 つが明記されていること",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "D3",
+      "gate": "D",
+      "title": "codex-execution.md の Step 4 UPDATE を v2/v1 分岐に更新",
+      "status": "pending",
+      "dependencies": ["D2"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec-run/references/codex-execution.md",
+          "operation": "modify",
+          "summary": "Codex モードの Step 4 UPDATE を execution.md と同じく v2/v1/single 3 分岐に更新"
+        }
+      ],
+      "impl": "## 目的\n\nCodex モードの実行プロトコル `codex-execution.md` の Step 4 UPDATE を、D2 で作成した `execution.md` と同じ v2/v1/single 3 分岐に更新する。\n\n## 事前確認\n\n```bash\ncat .claude/skills/dev/spec-run/references/codex-execution.md | head -50\n```\n\nで現行構造を確認し、execution.md と同じ Step 4 UPDATE セクションの位置を特定する。\n\n## 変更箇所\n\n### Step 4 UPDATE セクション\n\ncodex-execution.md の Step 4 UPDATE を、execution.md の D2 で更新した Step 4 UPDATE と**同じ 3 分岐構造**に書き換える。記述内容は以下の差分を除き同じ:\n\n- **Codex 特有の差分**: jq による更新例ではなく、Codex が Edit ツールで tasks.json を直接編集する想定で記述\n- Codex エージェントが hook を発火させるため、Codex がこのロジックを理解している必要はない（main session の Claude が hook を管理する）\n- 記述末尾に「hook は main session の Claude Code プロセスで発火する。Codex は tasks.json のみを編集する責務」と明記\n\n### 記載する内容（execution.md との差分のみ）\n\n```markdown\n## Step 4 — UPDATE（Codex モード）\n\n### v2 ディレクトリモード\n\nCodex が tasks.json を Edit で更新する。spec.md は直接編集しない。\n\nCodex プロンプトに渡す更新指示の例:\n\n```\n<update_tasks_json>\nEdit tasks.json to mark the current todo as complete:\n\n1. Set todos[id=\"A1\"].steps[0].checked = true\n2. Set todos[id=\"A1\"].steps[1].checked = true\n3. Set todos[id=\"A1\"].steps[1].review = { \"result\": \"PASSED\", \"fixCount\": 0, \"summary\": \"...\" }\n4. Recalculate progress.completed (count all checked steps)\n5. Recalculate status per the formula in spec.md\n</update_tasks_json>\n```\n\n**Codex の書き換えが完了した時点で、main session の Claude が spec.md を Read して確認することで sync-spec-md hook が間接的に発火する状況は起きない**。PostToolUse hook は Claude Code のツール呼び出しに対して発火するため、Codex 内部の編集には反応しない。\n\nそのため、**Codex モードでは spec-run の main session Claude が Codex 完了後に spec.md を Edit で 1 byte だけ変更して書き戻す**（タイムスタンプ更新のための no-op write）か、**あるいは main session Claude が自分で tasks.json を Read → 変更なく Write** することで hook 発火のトリガーを与える。\n\n別解（推奨）: Codex 完了後、main session Claude が以下を手動実行:\n\n```bash\nnode \"${CLAUDE_PROJECT_DIR}/.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs\" \"${tasks_json_path}\"\n```\n\nこの手動実行を Step 4 UPDATE の最後に追加する。\n\n### v1 ディレクトリモード\n\n（現行どおり）Codex が spec.md と tasks.json の両方を更新する。\n\n### シングルモード\n\n（現行どおり）Codex が spec.md を更新する。\n```\n\n## 検証\n\n- `grep -n 'v2 ディレクトリモード' .claude/skills/dev/spec-run/references/codex-execution.md`\n- `grep -n 'sync-spec-md.mjs' .claude/skills/dev/spec-run/references/codex-execution.md` で手動実行の記述があること\n- Codex モードでの hook 発火制約についての記述があること\n\n## 注意\n\n現行 `codex-execution.md` の実際の構造を読んでから編集すること（execution.md と必ずしも同じ構造でない可能性あり）。Step 4 UPDATE 相当の箇所を特定してから書き換える。",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "E1",
+      "gate": "E",
+      "title": "[TDD] plan-json-loader.ts 実装 + vitest テスト",
+      "status": "pending",
+      "dependencies": ["D3", "A4"],
+      "affectedFiles": [
+        {
+          "path": "dashboard/lib/plan-json-loader.ts",
+          "operation": "create",
+          "summary": "v2 tasks.json を dashboard の PlanFile 型に変換する pure 関数"
+        },
+        {
+          "path": "dashboard/__tests__/plan-json-loader.test.ts",
+          "operation": "create",
+          "summary": "plan-json-loader の vitest テスト。3 パターン（未着手・進行中・完了）"
+        }
+      ],
+      "impl": "## 目的\n\nv2 tasks.json を受け取り、dashboard の既存 `PlanFile` 型に変換する pure 関数を TDD で実装する。既存 UI は `PlanFile` 型を参照しているため、この変換層を挟むことで UI を無変更のまま v2 対応できる。\n\n## TDD フロー\n\n### RED: テスト先行\n\n`dashboard/__tests__/plan-json-loader.test.ts` を作成:\n\n```typescript\nimport { describe, expect, it } from 'vitest';\nimport { loadPlanFromTasksJson } from '../lib/plan-json-loader';\nimport type { TasksJsonV2 } from '../lib/types';\n\nfunction makeSample(): TasksJsonV2 {\n  return {\n    schemaVersion: 2,\n    spec: {\n      slug: 'demo',\n      title: 'デモ仕様書',\n      summary: 'デモ機能の実装',\n      createdDate: '2026-04-12',\n      specPath: 'spec.md',\n    },\n    status: 'in-progress',\n    reviewChecked: false,\n    progress: { completed: 2, total: 4 },\n    preflight: [],\n    gates: [\n      {\n        id: 'A',\n        title: 'データ層',\n        description: 'スキーマ整備',\n        dependencies: [],\n        passCondition: '全 Review PASS',\n      },\n      {\n        id: 'B',\n        title: 'API 層',\n        description: '',\n        dependencies: ['A'],\n        passCondition: '全 Review PASS',\n      },\n    ],\n    todos: [\n      {\n        id: 'A1',\n        gate: 'A',\n        title: '[TDD] スキーマ定義',\n        description: 'items テーブルを作成',\n        tdd: true,\n        dependencies: [],\n        affectedFiles: [],\n        impl: '...',\n        relatedIssues: [],\n        steps: [\n          { kind: 'impl',   title: 'Step 1 — IMPL',   checked: true },\n          { kind: 'review', title: 'Step 2 — Review', checked: true, review: { result: 'PASSED', fixCount: 0, summary: 'OK' } },\n        ],\n      },\n      {\n        id: 'B1',\n        gate: 'B',\n        title: 'POST /api',\n        description: 'ハンドラ実装',\n        tdd: false,\n        dependencies: ['A1'],\n        affectedFiles: [],\n        impl: '...',\n        relatedIssues: [],\n        steps: [\n          { kind: 'impl',   title: 'Step 1 — IMPL',   checked: false },\n          { kind: 'review', title: 'Step 2 — Review', checked: false, review: null },\n        ],\n      },\n    ],\n    metadata: { createdAt: '', totalGates: 2, totalTodos: 2 },\n  };\n}\n\ndescribe('loadPlanFromTasksJson', () => {\n  it('spec メタデータを PlanFile にマッピングする', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.title).toBe('デモ仕様書');\n    expect(plan.summary).toBe('デモ機能の実装');\n    expect(plan.createdDate).toBe('2026-04-12');\n    expect(plan.projectName).toBe('owner/repo');\n    expect(plan.filePath).toBe('docs/PLAN/demo/spec.md');\n    expect(plan.fileName).toBe('spec.md');\n  });\n\n  it('status / reviewChecked をそのまま引き継ぐ', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.status).toBe('in-progress');\n    expect(plan.reviewChecked).toBe(false);\n  });\n\n  it('progress を percentage 付きで計算する', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.progress).toEqual({ completed: 2, total: 4, percentage: 50 });\n  });\n\n  it('Gate ごとに Todo を紐付ける', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.gates).toHaveLength(2);\n    expect(plan.gates[0].id).toBe('A');\n    expect(plan.gates[0].todos).toHaveLength(1);\n    expect(plan.gates[0].todos[0].title).toBe('[TDD] スキーマ定義');\n    expect(plan.gates[1].todos[0].title).toBe('POST /api');\n  });\n\n  it('各 Todo に impl step と review step を生成する', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    const todoA = plan.gates[0].todos[0];\n    expect(todoA.steps).toHaveLength(2);\n    expect(todoA.steps[0].kind).toBe('impl');\n    expect(todoA.steps[0].checked).toBe(true);\n    expect(todoA.steps[1].kind).toBe('review');\n    expect(todoA.steps[1].checked).toBe(true);\n    expect(todoA.steps[1].hasReview).toBe(true);\n    expect(todoA.steps[1].reviewFilled).toBe(true);\n    expect(todoA.steps[1].reviewResult).toBe('PASSED');\n    expect(todoA.steps[1].reviewFixCount).toBe(0);\n  });\n\n  it('Review 未記入のとき reviewFilled: false', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    const todoB = plan.gates[1].todos[0];\n    expect(todoB.steps[1].hasReview).toBe(true); // review step は存在するが\n    expect(todoB.steps[1].reviewFilled).toBe(false); // 未記入\n    expect(todoB.steps[1].reviewResult).toBeNull();\n  });\n\n  it('description は Todo レベルの description を Step に展開', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    const todoA = plan.gates[0].todos[0];\n    // dashboard UI が step.description を表示するため\n    expect(todoA.steps[0].description).toBe('items テーブルを作成');\n  });\n\n  it('todos (flat list) も Gate と同じ順序で取得できる', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.todos).toHaveLength(2);\n    expect(plan.todos[0].title).toBe('[TDD] スキーマ定義');\n    expect(plan.todos[1].title).toBe('POST /api');\n  });\n\n  it('completed 状態の場合 percentage: 100', () => {\n    const data = makeSample();\n    data.status = 'completed';\n    data.progress = { completed: 4, total: 4 };\n    data.todos[1].steps[0].checked = true;\n    data.todos[1].steps[1].checked = true;\n    data.todos[1].steps[1].review = { result: 'PASSED', fixCount: 1, summary: '修正後 OK' };\n    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.progress.percentage).toBe(100);\n    expect(plan.status).toBe('completed');\n  });\n\n  it('total 0 のとき percentage: 0', () => {\n    const data = makeSample();\n    data.progress = { completed: 0, total: 0 };\n    data.todos = [];\n    data.gates = [];\n    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.progress.percentage).toBe(0);\n  });\n\n  it('rawMarkdown は空文字（v2 は JSON 起点）', () => {\n    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');\n    expect(plan.rawMarkdown).toBe('');\n  });\n});\n```\n\n```bash\ncd dashboard && pnpm vitest run __tests__/plan-json-loader.test.ts\n# Cannot find module で失敗することを確認\n```\n\n### GREEN: plan-json-loader.ts 実装\n\n`dashboard/lib/plan-json-loader.ts` を作成:\n\n```typescript\nimport path from 'node:path';\nimport type {\n  Gate,\n  PlanFile,\n  ReviewResult,\n  Step,\n  TasksJsonV2,\n  TasksJsonV2Step,\n  Todo,\n} from './types';\n\nexport function loadPlanFromTasksJson(\n  tasksJson: TasksJsonV2,\n  filePath: string,\n  projectName: string\n): PlanFile {\n  const fileName = path.basename(filePath);\n\n  const gates: Gate[] = tasksJson.gates.map((g) => ({\n    id: g.id,\n    title: g.title,\n    todos: tasksJson.todos\n      .filter((t) => t.gate === g.id)\n      .map((t) => convertTodo(t)),\n  }));\n\n  const todos: Todo[] = tasksJson.todos.map((t) => convertTodo(t));\n\n  const total = tasksJson.progress.total;\n  const completed = tasksJson.progress.completed;\n  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);\n\n  return {\n    filePath,\n    fileName,\n    projectName,\n    title: tasksJson.spec.title,\n    createdDate: tasksJson.spec.createdDate || null,\n    reviewChecked: tasksJson.reviewChecked,\n    status: tasksJson.status,\n    gates,\n    todos,\n    progress: { total, completed, percentage },\n    summary: tasksJson.spec.summary,\n    rawMarkdown: '',\n  };\n}\n\nfunction convertTodo(t: TasksJsonV2['todos'][number]): Todo {\n  return {\n    title: t.title,\n    steps: t.steps.map((s) => convertStep(s, t.description)),\n  };\n}\n\nfunction convertStep(s: TasksJsonV2Step, todoDescription: string): Step {\n  const base: Step = {\n    title: s.title,\n    checked: s.checked,\n    kind: s.kind,\n    description: todoDescription,\n    hasReview: s.kind === 'review',\n    reviewFilled: false,\n    reviewResult: null,\n    reviewFixCount: null,\n  };\n\n  if (s.kind === 'review' && s.review) {\n    base.reviewFilled = true;\n    base.reviewResult = s.review.result as ReviewResult;\n    base.reviewFixCount = s.review.fixCount;\n  }\n\n  return base;\n}\n```\n\n```bash\ncd dashboard && pnpm vitest run __tests__/plan-json-loader.test.ts\n# 全テスト PASS\n```\n\n### REFACTOR\n\n- 型ガードを追加してランタイムの柔軟性を高めるか検討（v2 JSON が壊れている場合のフォールバック）\n- ただし pure なケースでは現状の実装で十分なので、壊れている JSON は E2 の fetch 層で handle\n- `tsc --noEmit` で型エラーなし確認\n\n```bash\ncd dashboard && pnpm tsc --noEmit\n```\n\n## 検証\n\n- `pnpm vitest run __tests__/plan-json-loader.test.ts` 全 PASS\n- `pnpm tsc --noEmit` エラーなし\n- `pnpm vitest run` （既存テストも含めた全件）で plan-parser 系のテストが壊れていないこと",
+      "relatedIssues": [],
+      "tdd": true
+    },
+    {
+      "id": "E2",
+      "gate": "E",
+      "title": "github.ts の fetchPlanFiles を schemaVersion 分岐に改修",
+      "status": "pending",
+      "dependencies": ["E1"],
+      "affectedFiles": [
+        {
+          "path": "dashboard/lib/github.ts",
+          "operation": "modify",
+          "summary": "fetchPlanFiles の dir entry 分岐で tasks.json を先に試し、schemaVersion >= 2 なら plan-json-loader で変換、それ以外は既存 plan-parser にフォールバック"
+        }
+      ],
+      "impl": "## 目的\n\n`fetchPlanFiles` の dir entry 分岐で、tasks.json の schemaVersion を見て v2 直読み or レガシー plan-parser にフォールバックする。既存の file entry パスと v1 dir パスは無変更。\n\n## 変更箇所\n\n### import 追加（L1-2）\n\n```typescript\nimport { parsePlanFile } from './plan-parser';\nimport { loadPlanFromTasksJson } from './plan-json-loader';\nimport type { GitHubContent, GitHubRepo, PlanFile, TasksJsonV2 } from './types';\n```\n\n### `fetchPlanFiles` 関数内の dir 分岐（L66-80）\n\n現行:\n\n```typescript\nif (entry.type === 'dir') {\n  const specPath = `${entry.path}/spec.md`;\n\n  try {\n    const content = await fetchFileContent(owner, repo, specPath);\n    return parsePlanFile(content, specPath, projectName);\n  } catch (error) {\n    if (isFileNotFoundError(error)) {\n      return null;\n    }\n    throw error;\n  }\n}\n```\n\n更新後:\n\n```typescript\nif (entry.type === 'dir') {\n  const tasksJsonPath = `${entry.path}/tasks.json`;\n  const specPath = `${entry.path}/spec.md`;\n\n  // 1. tasks.json を試す（v2 対応）\n  const v2Plan = await tryLoadV2(owner, repo, tasksJsonPath, specPath, projectName);\n  if (v2Plan) {\n    return v2Plan;\n  }\n\n  // 2. レガシー spec.md パス\n  try {\n    const content = await fetchFileContent(owner, repo, specPath);\n    return parsePlanFile(content, specPath, projectName);\n  } catch (error) {\n    if (isFileNotFoundError(error)) {\n      return null;\n    }\n    throw error;\n  }\n}\n```\n\n### 新規関数 `tryLoadV2`（ファイル末尾に追加）\n\n```typescript\n/**\n * tasks.json を試行し、schemaVersion >= 2 なら PlanFile を返す。\n * v1 または 404 の場合は null を返してフォールバック。\n */\nasync function tryLoadV2(\n  owner: string,\n  repo: string,\n  tasksJsonPath: string,\n  specPath: string,\n  projectName: string\n): Promise<PlanFile | null> {\n  let rawContent: string;\n  try {\n    rawContent = await fetchFileContent(owner, repo, tasksJsonPath);\n  } catch (error) {\n    if (isFileNotFoundError(error)) {\n      return null;\n    }\n    throw error;\n  }\n\n  let parsed: unknown;\n  try {\n    parsed = JSON.parse(rawContent);\n  } catch {\n    return null; // JSON 不正 → レガシーパスにフォールバック\n  }\n\n  if (!isV2TasksJson(parsed)) {\n    return null; // schemaVersion < 2 or 欠落\n  }\n\n  return loadPlanFromTasksJson(parsed, specPath, projectName);\n}\n\nfunction isV2TasksJson(value: unknown): value is TasksJsonV2 {\n  if (typeof value !== 'object' || value === null) return false;\n  const v = value as Record<string, unknown>;\n  return typeof v.schemaVersion === 'number' && v.schemaVersion >= 2;\n}\n```\n\n## 検証\n\n- `pnpm tsc --noEmit` エラーなし\n- 手動テスト 1: 既存 v1 PLAN を取得して表示できること（`fetchPlanFiles` を直接呼ぶテストスクリプトを一時作成、または dashboard を起動して既存プロジェクトのタブを開く）\n- 手動テスト 2: v2 schema のモック tasks.json をローカルに置き、`tryLoadV2` が期待通り動作すること（dashboard の既存テスト環境では GitHub API をモックしているため、vi.mock を使った unit test も可能。追加するか E3 で判断）\n\n## 注意\n\n- 既存 E1 のテスト `plan-json-loader.test.ts` は `loadPlanFromTasksJson` 単体のテスト。`fetchPlanFiles` 全体のテストは network mock が必要で重いので E2 では書かず、E3 の手動動作確認でカバーする",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "E3",
+      "gate": "E",
+      "title": "既存 plan-parser テストの動作確認 + dashboard 全体ビルド確認",
+      "status": "pending",
+      "dependencies": ["E2"],
+      "affectedFiles": [
+        {
+          "path": "dashboard/",
+          "operation": "verify",
+          "summary": "既存テスト全件 PASS + tsc/build 成功 + dev server でレガシー PLAN 表示確認"
+        }
+      ],
+      "impl": "## 目的\n\nGate E の改修後、既存 v1 PLAN の表示がレガシーパスで引き続き動作することと、dashboard のビルド・型チェック・全テスト PASS を確認する。\n\n## 実行手順\n\n### 1. 型チェック\n\n```bash\ncd dashboard && pnpm tsc --noEmit\n```\n\nエラー 0 件であること。\n\n### 2. 全テスト実行\n\n```bash\ncd dashboard && pnpm vitest run\n```\n\n- 既存 `plan-parser.test.ts` / `plan-parser-hierarchy.test.ts` / `plan-parser-summary.test.ts` が全 PASS（レガシーパスが壊れていないこと）\n- 新規 `plan-json-loader.test.ts`（E1 で作成）が全 PASS\n\n### 3. dashboard ビルド\n\n```bash\ncd dashboard && pnpm build\n```\n\nNext.js の本番ビルドが成功すること。\n\n### 4. 手動動作確認（dev server）\n\n```bash\ncd dashboard && pnpm dev\n```\n\nブラウザで http://localhost:3000 を開き以下を確認:\n\n- 既存の 112 PLAN（`docs/PLAN/260408_*`, `260409_*`, `260411_*` など）がそのまま表示される\n- 表示項目（title, summary, gates, todos, progress, reviewChecked, status）が以前と同じ\n- どのプロジェクトでもエラーが出ない\n- コンソールに不要な warning / error がない\n\n### 5. レガシーパスがどちらを通っているか確認\n\n`dashboard/lib/github.ts` の `fetchPlanFiles` に一時的にログを仕込んで確認するか、dev server のサーバログに以下のようなログが出ていないか:\n\n- `tryLoadV2` が v1 tasks.json で null を返すパスが通っていること\n- または `fetchFileContent` が tasks.json で 404 を返した後に spec.md を取りに行っていること\n\n**注意**: 常時ログを残さない。確認後にログは削除。\n\n## 検証\n\n- `pnpm tsc --noEmit` エラー 0\n- `pnpm vitest run` 全 PASS\n- `pnpm build` 成功\n- dev server で既存 PLAN が正常表示\n- 新規 v2 PLAN はまだ存在しないので E3 では確認しない（Gate F で別途検証）\n\n## 失敗時の対応\n\n- 既存 plan-parser テストが壊れた → E2 の改修を見直し、v1 パスが完全に無変更であることを確認\n- 型エラー → E1 の型定義（A1）と plan-json-loader の実装（E1）の不整合を修正\n- dev server で表示崩れ → 当該プロジェクトの tasks.json / spec.md を確認し、fallback が意図通り動いているか調査",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "F1",
+      "gate": "F",
+      "title": "既存 v1 PLAN が dashboard で引き続き表示されることを確認（レガシーパス回帰）",
+      "status": "pending",
+      "dependencies": ["E3"],
+      "affectedFiles": [
+        {
+          "path": "docs/PLAN/**",
+          "operation": "verify",
+          "summary": "既存 v1 PLAN を dashboard で表示して回帰がないことを確認"
+        }
+      ],
+      "impl": "## 目的\n\nGate A-E の全改修が完了した後、既存 v1 PLAN がレガシーパスで引き続き正しく表示されることを再確認する（E3 より広いスコープでの回帰確認）。\n\n## 実行手順\n\n### 1. dashboard dev server 起動\n\n```bash\ncd dashboard && pnpm dev\n```\n\n### 2. 既存プロジェクトの全タブを巡回\n\nブラウザで http://localhost:3000 を開き、登録されている全プロジェクトのタブを 1 つずつ開く。各タブで以下を確認:\n\n- PLAN 一覧が表示される\n- 各 PLAN カードの title, summary, status, progress バー, reviewChecked が以前と同じ\n- PLAN 詳細を開くと Gate / Todo / Step がすべて表示される\n- チェックボックスの表示状態（[x] / [ ]）が正しい\n- Review blockquote の表示（PASSED/FAILED/未記入）が正しい\n\n### 3. 特に確認する PLAN（既存で表示されていたもの）\n\n以下の既存 PLAN が壊れていないことを重点的に確認:\n\n- `docs/PLAN/260408_plan-dashboard/` （ディレクトリモード v1）\n- `docs/PLAN/260408_dashboard-redesign/` （ディレクトリモード v1）\n- `docs/PLAN/260409_dashboard-web-deploy/` （ディレクトリモード v1）\n- `docs/PLAN/260411_dashboard-table-view/` （ディレクトリモード v1）\n- `docs/PLAN/260411_spec-run-worktree-mode/` （ディレクトリモード v1）\n- シングルモード PLAN: `docs/PLAN/260409_dashboard-auth.md` 等の `.md` ファイル単体\n\n### 4. 異常があればスクリーンショットとログを記録\n\n- ブラウザのコンソールエラー\n- Next.js dev server のサーバーログ\n- どの PLAN で壊れているか具体的に記録\n\n### 5. 全 PASS なら Gate F の F2 に進む\n\n## 検証\n\n- 全プロジェクトタブでエラーなし\n- 既存 PLAN の表示項目が以前と同じ\n- コンソール・サーバーログに unhandled error / warning なし\n- progress バーのパーセンテージが正しい\n- レビューステータスの [x]/[ ] が正しい\n\n## 失敗時の対応\n\n- 特定 PLAN で表示崩れ → その PLAN の spec.md を確認し、plan-parser.ts が以前と同じ結果を返しているか確認\n- `fetchPlanFiles` が v1 tasks.json を読んで誤動作 → E2 の `tryLoadV2` の null 返却ロジックを再確認\n- 404 処理のバグ → `isFileNotFoundError` のマッチングを再確認",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "F2",
+      "gate": "F",
+      "title": "チェック同期 E2E（A4 fixture を手動 Edit → hook 発火 → spec.md 再生成を 4 シナリオで検証）",
+      "status": "pending",
+      "dependencies": ["F1"],
+      "affectedFiles": [
+        {
+          "path": ".claude/skills/dev/spec/references/examples/sample-v2/spec.md",
+          "operation": "verify",
+          "summary": "fixture の spec.md が tasks.json の状態変化に応じて generated 領域を再生成することを確認"
+        },
+        {
+          "path": ".claude/skills/dev/spec/references/examples/sample-v2/tasks.json",
+          "operation": "verify",
+          "summary": "fixture の tasks.json を一時的に編集して hook 経由で sync が発火することを確認。検証後に git checkout で復元"
+        }
+      ],
+      "impl": "## 目的\n\nA4 で作成した v2 サンプル fixture を使い、sync-spec-md の全経路（直接実行 + hook 経由）を確認する。checkbox 更新 / review 記入 / status 再計算の 4 シナリオを網羅し、期待通りの markdown が generated 領域に出力されることを確認する。\n\n## 前提\n\n- C1/C2 が完了済み（sync-spec-md.mjs と hook wrapper が稼働）\n- D1 が完了済み（spec-run SKILL.md frontmatter に PostToolUse hook 宣言済み）\n- A4 で fixture が作成済み\n\n## 手順\n\n### 0. fixture のバックアップ\n\ncp -R .claude/skills/dev/spec/references/examples/sample-v2 /tmp/sample-v2-backup\n\n### 1. 直接実行: sync-spec-md.mjs を CLI で起動\n\nnode .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs .claude/skills/dev/spec/references/examples/sample-v2/tasks.json\n\n期待: 依存関係図 + Gate A/B + 全 5 Todo のチェック状態 + 5 種の Review フォーマット（null/IN_PROGRESS/PASSED/SKIPPED/FAILED）が出力される。\n\n### 2. シナリオ検証（4 状態）\n\nfixture の tasks.json を Edit して以下を順に確認（各検証後 git checkout で復元）:\n- not-started: 全 checked=false, review=null → 全 [ ], 全 _未記入_\n- in-progress: A4 デフォルト → 混在状態\n- in-review: 全 checked=true, 全 PASSED, reviewChecked=false → 全 [x], 全 ✅\n- completed: in-review + reviewChecked=true → generated 領域は同じ\n\n### 3. hook 経由の発火確認\n\n/dev:spec-run セッション内で Edit → hook 発火 → spec.md 自動更新を確認。tasks.json は sync により書き換わっていないこと。\n\n### 4. エッジケース\n\ngenerated:end を削除 → sync 実行 → warning + exit 0 + spec.md 無変更を確認。復元。\n\n### 5. 後始末\n\ngit checkout .claude/skills/dev/spec/references/examples/sample-v2/\n\n## 検証\n\n4 シナリオ全て generated 領域が正しい、5 種の review フォーマット正しい、hook 経由でも動作、tasks.json が sync で変更されない、マーカー欠落時は safe skip。\n\n## 失敗時の対応\n\n- generated 出力が期待と異なる → C1 のテストケース追加で修正\n- hook が発火しない → D1 の frontmatter を再確認\n- hook ループ → sync が tasks.json に書き込んでいないか確認",
+      "relatedIssues": [],
+      "tdd": false
+    },
+    {
+      "id": "F3",
+      "gate": "F",
+      "title": "dashboard 表示 E2E（v2 fixture と既存 v1 PLAN の並行表示、schemaVersion 分岐の実動作）",
+      "status": "pending",
+      "dependencies": ["F2"],
+      "affectedFiles": [
+        {
+          "path": "dashboard/lib/github.ts",
+          "operation": "verify",
+          "summary": "fetchPlanFiles が v2 fixture を plan-json-loader 経由、v1 PLAN を plan-parser 経由で読むことを実動作で確認"
+        }
+      ],
+      "impl": "## 目的\n\nA4 で作成した v2 サンプル fixture を dashboard から読み込み、新旧分岐が実ブラウザで動作することを通しで確認する。\n\n## 前提\n\n- Gate E (E1-E3) が完了済み (fetchPlanFiles の schemaVersion 分岐実装済み)\n- A4 で fixture が作成済み\n\n## 手順\n\n### 1. dashboard のプロジェクト設定に dot-claude-dev が含まれていることを確認\n\n```bash\ncat dashboard/projects.json | jq '.projects[] | .name'\n# dot-claude-dev を含むリポジトリが登録されていること\n```\n\nfixture は `.claude/skills/dev/spec/references/examples/sample-v2/` 配下にあり、`docs/PLAN/` 配下ではない。dashboard が PLAN と認識するパスに無い場合、一時的に `docs/PLAN/sample-v2-fixture/` に **シンボリックリンク**を作成するか、検証時のみ fixture を `docs/PLAN/` 直下にコピーする。**検証後は必ず削除・復元**。\n\n```bash\n# シンボリックリンク方式（推奨、fixture を汚さない）\nln -s ../../.claude/skills/dev/spec/references/examples/sample-v2 \\\n      docs/PLAN/sample-v2-fixture-TEMP\n```\n\n### 2. dev server 起動\n\n```bash\ncd dashboard && pnpm dev\n```\n\n### 3. ブラウザで確認（http://localhost:3000）\n\n**v2 fixture の表示確認**:\n- dot-claude-dev タブに `sample-v2-fixture-TEMP` カードが表示される\n- title: \"Sample v2 Fixture\"\n- summary: \"v2 schema と sync-spec-md の参照 fixture...\"\n- status: \"in-progress\"\n- progress: 7/10（F3 の在庫数と合致）\n- reviewChecked: false\n- Gate A (準備), Gate B (実装) が表示される\n- 各 Todo (A1/A2/B1/B2/B3) のチェック状態とレビュー状態が正しく表示される\n  - A1: 未着手、_未記入_\n  - A2: 進行中、⏳ IN_PROGRESS\n  - B1: 完了、✅ PASSED (FIX 2回)\n  - B2: 完了、⏭️ SKIPPED\n  - B3: 進行中、❌ FAILED\n\n**v1 PLAN の並行表示確認**:\n- 既存 PLAN (260408_plan-dashboard 等) が同時に表示される\n- 新旧が混在しても表示崩れやエラーがない\n- 両パス（plan-json-loader と plan-parser）が同時に動作していることを確認\n\n### 4. 開発者ツールでの fetch 確認\n\nブラウザの Network タブで、dot-claude-dev の PLAN 取得時に:\n- sample-v2-fixture-TEMP → tasks.json が 200 で取得される（v2 パス）\n- 既存 v1 PLAN → tasks.json が存在するものは v1 判定で spec.md にフォールバック、存在しないものは 404 後 spec.md 取得（v1 パス）\n\n### 5. コンソール・サーバーログ確認\n\n- ブラウザのコンソールに error / warning がない\n- Next.js の dev server ログに unhandled error がない\n- 仮に `plan-json-loader` / `plan-parser` に debug ログを仕込んでいたら、どちらが呼ばれたか確認して削除\n\n### 6. 後始末\n\n```bash\nrm docs/PLAN/sample-v2-fixture-TEMP  # シンボリックリンク削除\ngit status  # クリーンなこと\n```\n\n## 検証\n\n- v2 fixture が dashboard で正しく表示される\n- 既存 v1 PLAN が同時に正しく表示される\n- schemaVersion 分岐が実動作で確認できる\n- ブラウザ / サーバーログにエラーなし\n- 後始末後にリポジトリがクリーン\n\n## 失敗時の対応\n\n- v2 fixture が表示されない → `fetchPlanFiles` の分岐ロジック (E2) を再確認、デバッグログで schemaVersion 判定を追う\n- v1 PLAN が壊れた → `plan-parser.ts` 経由のパスが無変更であることを確認、レガシーテストを再実行\n- 表示項目の不整合 → `plan-json-loader.ts` (E1) の `PlanFile` 変換マッピングを再確認\n- プロジェクト設定 / パス解決の問題 → `projects.json` と symlink の扱いを再確認",
+      "relatedIssues": [],
+      "tdd": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-12T00:00:00Z",
+    "totalGates": 6,
+    "totalTodos": 18
+  }
+}
