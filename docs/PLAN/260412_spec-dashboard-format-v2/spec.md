@@ -561,20 +561,20 @@ Gate A: Schema 基盤
        └→ Gate C: sync-spec-md スクリプト実装
             └→ Gate D: /dev:spec-run skill 改修
                  └→ Gate E: dashboard 改修
-                      └→ Gate F: 動作確認 / E2E 検証
+                      └→ Gate F: E2E 検証
 ```
 
 ### Gate A: Schema 基盤
 
 > tasks.json v2 の型定義・テンプレート・スキーマドキュメント・サンプル fixture を揃える
 
-- [ ] **A1**: dashboard/lib/types.ts に `TasksJsonV2` 系の型を追加
+- [ ] **A1**: dashboard/lib/types.ts に TasksJsonV2 系の型を追加
   > **Review A1**: _未記入_
 - [ ] **A2**: tasks.template.json を v2 形式に全面更新
   > **Review A2**: _未記入_
 - [ ] **A3**: tasks-schema-v2.md（スキーマドキュメント）を新規作成
   > **Review A3**: _未記入_
-- [ ] **A4**: v2 サンプル fixture 新規作成（後続の TDD / E2E の共通入力）
+- [ ] **A4**: v2 サンプル fixture 新規作成（後続 TDD / E2E の共通入力）
   > **Review A4**: _未記入_
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
@@ -596,7 +596,7 @@ Gate A: Schema 基盤
 
 > tasks.json → spec.md の generated 領域を再生成するスクリプトと hook wrapper
 
-- [ ] **C1**: [TDD] sync-spec-md.mjs 本体実装 + `node --test` テスト
+- [ ] **C1**: [TDD] sync-spec-md.mjs 本体実装 + node --test テスト
   > **Review C1**: _未記入_
 - [ ] **C2**: sync-spec-md-hook.sh（PostToolUse hook wrapper）実装
   > **Review C2**: _未記入_
@@ -607,7 +607,7 @@ Gate A: Schema 基盤
 
 > frontmatter hook 宣言、schemaVersion 判定、Step 4 UPDATE の v2/v1 分岐
 
-- [ ] **D1**: spec-run/SKILL.md frontmatter に PostToolUse hook を追加 + ステップ 2 を schemaVersion 判定に変更
+- [ ] **D1**: spec-run/SKILL.md frontmatter に PostToolUse hook 追加 + ステップ 2 を schemaVersion 判定に変更
   > **Review D1**: _未記入_
 - [ ] **D2**: execution.md の Step 4 UPDATE を v2/v1 分岐に更新
   > **Review D2**: _未記入_
@@ -624,16 +624,16 @@ Gate A: Schema 基盤
   > **Review E1**: _未記入_
 - [ ] **E2**: github.ts の fetchPlanFiles を schemaVersion 分岐に改修
   > **Review E2**: _未記入_
-- [ ] **E3**: 既存 plan-parser テストの動作確認 + 必要なら dashboard 全体ビルド確認
+- [ ] **E3**: 既存 plan-parser テストの動作確認 + dashboard 全体ビルド確認
   > **Review E3**: _未記入_
 
 **Gate E 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
-### Gate F: 動作確認 / E2E 検証
+### Gate F: E2E 検証
 
 > v1 レガシーパスの回帰なし、A4 で作成した fixture を使った sync hook 通しチェック、dashboard 新旧並行表示の実ブラウザ確認
 
-- [ ] **F1**: レガシー v1 回帰確認（既存 112 PLAN 1 件を dashboard 表示 + `plan-parser` テスト）
+- [ ] **F1**: 既存 v1 PLAN が dashboard で引き続き表示されることを確認（レガシーパス回帰）
   > **Review F1**: _未記入_
 - [ ] **F2**: チェック同期 E2E（A4 fixture を手動 Edit → hook 発火 → spec.md 再生成を 4 シナリオで検証）
   > **Review F2**: _未記入_

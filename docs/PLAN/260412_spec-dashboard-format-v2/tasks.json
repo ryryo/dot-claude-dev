@@ -310,7 +310,7 @@
       "dependencies": ["E2"],
       "affectedFiles": [
         {
-          "path": "dashboard/",
+          "path": "dashboard/__tests__/plan-parser.test.ts",
           "operation": "verify",
           "summary": "既存テスト全件 PASS + tsc/build 成功 + dev server でレガシー PLAN 表示確認"
         }
