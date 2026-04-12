@@ -70,12 +70,18 @@ describe('github', () => {
 
     vi.mocked(fetch)
       .mockResolvedValueOnce(createJsonResponse(contents))
+      // file entry: 250101_alpha.md
       .mockResolvedValueOnce(
         createJsonResponse({
           content: Buffer.from('# Alpha Plan\n\n- [ ] **Todo A**: body\n', 'utf-8').toString('base64'),
           encoding: 'base64',
         })
       )
+      // dir entry: tasks.json → 404 (v1 fallback)
+      .mockResolvedValueOnce(
+        createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
+      )
+      // dir entry: spec.md
       .mockResolvedValueOnce(
         createJsonResponse({
           content: Buffer.from('# Beta Spec\n\n- [x] **Todo B**: body\n', 'utf-8').toString('base64'),
@@ -106,6 +112,11 @@ describe('github', () => {
 
     vi.mocked(fetch)
       .mockResolvedValueOnce(createJsonResponse(contents))
+      // tasks.json → 404
+      .mockResolvedValueOnce(
+        createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
+      )
+      // spec.md → 404
       .mockResolvedValueOnce(
         createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
       );
@@ -113,7 +124,7 @@ describe('github', () => {
     await expect(fetchPlanFiles('octocat', 'hello-world')).resolves.toEqual([]);
   });
 
-  it('ディレクトリモードの spec.md が 404 以外なら再 throw する', async () => {
+  it('ディレクトリモードの tasks.json/spec.md が 404 以外なら再 throw する', async () => {
     process.env.GITHUB_TOKEN = 'test-token';
 
     const contents: GitHubContent[] = [
@@ -122,6 +133,7 @@ describe('github', () => {
 
     vi.mocked(fetch)
       .mockResolvedValueOnce(createJsonResponse(contents))
+      // tasks.json → 500 (non-404 error is rethrown)
       .mockResolvedValueOnce(
         createJsonResponse(
           { message: 'Internal Server Error' },
@@ -130,7 +142,7 @@ describe('github', () => {
       );
 
     await expect(fetchPlanFiles('octocat', 'hello-world')).rejects.toThrow(
-      'Failed to fetch file at docs/PLAN/feature-beta/spec.md: 500'
+      'Failed to fetch file at docs/PLAN/feature-beta/tasks.json: 500'
     );
   });
 

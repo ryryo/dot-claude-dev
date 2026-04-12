@@ -624,8 +624,8 @@ Gate A: Schema 基盤
   > **Review E1**: ✅ PASSED — 11 tests pass, tsc --noEmit clean
 - [x] **E2**: github.ts の fetchPlanFiles を schemaVersion 分岐に改修
   > **Review E2**: ✅ PASSED — tsc clean, v2→legacy fallback chain implemented
-- [ ] **E3**: 既存 plan-parser テストの動作確認 + dashboard 全体ビルド確認
-  > **Review E3**: _未記入_
+- [x] **E3**: 既存 plan-parser テストの動作確認 + dashboard 全体ビルド確認
+  > **Review E3**: ✅ PASSED (FIX 1回) — github.test.ts のモック更新後 60 tests pass, tsc clean, build は Google Fonts のみ
 
 **Gate E 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
