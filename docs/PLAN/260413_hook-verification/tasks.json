@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "spec": {
+    "slug": "260413_hook-verification",
+    "title": "Hook 実動作検証",
+    "summary": "sync-spec-md-hook.sh が /dev:spec-run 実行中に正しく発火するかを検証する最小スペック",
+    "createdDate": "2026-04-13",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": { "completed": 0, "total": 2 },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "Hook 検証",
+      "description": "PostToolUse hook が tasks.json 編集時に発火し spec.md を自動更新することを確認",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "hook-verify.txt を新規作成",
+      "description": "hook 検証用の1行テキストファイルを作成する",
+      "tdd": false,
+      "dependencies": [],
+      "affectedFiles": [
+        {
+          "path": "docs/PLAN/260413_hook-verification/hook-verify.txt",
+          "operation": "create",
+          "summary": "hook 発火確認用の軽量なファイル"
+        }
+      ],
+      "impl": "## 目的\n\n`sync-spec-md-hook.sh` が `/dev:spec-run` 実行中に tasks.json 編集時に発火することを検証する。\n\n## 手順\n\n1. `docs/PLAN/260413_hook-verification/hook-verify.txt` を新規作成する\n2. 内容: `hook verification: OK`\n\n## 検証\n\nファイルが存在し内容が正しいこと。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-13T00:00:00Z",
+    "totalGates": 1,
+    "totalTodos": 1
+  }
+}
