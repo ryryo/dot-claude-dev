@@ -1,12 +1,6 @@
 ---
 name: dev:spec-run
 description: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VERIFY の2層で Todo を実行。Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
-hooks:
-  PostToolUse:
-    - matcher: "Edit|Write|MultiEdit"
-      hooks:
-        - type: command
-          command: "$CLAUDE_PROJECT_DIR/.claude/hooks/dev/sync-spec-md-hook.sh"
 ---
 
 ## 起動フロー
@@ -78,7 +72,7 @@ Gate 内の全 Todo について:
 - [x] **P2**: **[手動]** `.env.local` に `API_KEY` を設定
 ```
 
-**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook で自動再生成される
+**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook（`.claude/settings.json` に登録済み）で自動再生成される
 
 ```json
 {

@@ -7,9 +7,9 @@
     "createdDate": "2026-04-13",
     "specPath": "spec.md"
   },
-  "status": "not-started",
+  "status": "in-review",
   "reviewChecked": false,
-  "progress": { "completed": 0, "total": 2 },
+  "progress": { "completed": 2, "total": 2 },
   "preflight": [],
   "gates": [
     {
@@ -38,8 +38,8 @@
       "impl": "## 目的\n\n`sync-spec-md-hook.sh` が `/dev:spec-run` 実行中に tasks.json 編集時に発火することを検証する。\n\n## 手順\n\n1. `docs/PLAN/260413_hook-verification/hook-verify.txt` を新規作成する\n2. 内容: `hook verification: OK`\n\n## 検証\n\nファイルが存在し内容が正しいこと。",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "SKIPPED", "fixCount": 0, "summary": "text file only — hook verified" } }
       ]
     }
   ],

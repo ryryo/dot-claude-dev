@@ -33,8 +33,8 @@ Gate A: Hook 検証
 
 > PostToolUse hook が tasks.json 編集時に発火し spec.md を自動更新することを確認
 
-- [ ] **A1**: hook-verify.txt を新規作成
-  > **Review A1**: _未記入_
+- [x] **A1**: hook-verify.txt を新規作成
+  > **Review A1**: ⏭️ SKIPPED — text file only — hook verified
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
