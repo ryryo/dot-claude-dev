@@ -33,10 +33,6 @@ cat > "$SETTINGS" << 'EOF'
           },
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-opencode.sh"
-          },
-          {
-            "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/setup-local.sh"
           }
         ]
