@@ -27,6 +27,7 @@ LINK_TARGETS=(
 )
 
 ALL_OK=true
+SHOWED_HINT=false
 
 echo "## Claude セットアップ確認: $PROJECT"
 echo "共有ディレクトリ: $SHARED"
@@ -47,6 +48,23 @@ for i in "${!LINK_NAMES[@]}"; do
   else
     printf "%-35s %-10s %s\n" "$LINK" "別パス" "$ACTUAL"
     ALL_OK=false
+    case "$ACTUAL" in
+      */dot-claude-dev/*|*/.dot-claude-dev/*)
+        if [ "$SHOWED_HINT" != "true" ]; then
+          echo ""
+          echo "  ⚠️  リンク先の dot-claude-dev が想定と異なります。"
+          ACTUAL_BASE=$(echo "$ACTUAL" | sed -E 's|/.claude/.*||')
+          echo "      実際の配置: $ACTUAL_BASE"
+          echo "      想定の配置: $SHARED"
+          echo ""
+          echo "      [修正方法] CLAUDE_SHARED_DIR を実際の配置に合わせて永続化:"
+          echo "        echo 'export CLAUDE_SHARED_DIR=\"$ACTUAL_BASE\"' >> ~/.zshrc"
+          echo "        source ~/.zshrc"
+          echo "        bash \"\$CLAUDE_SHARED_DIR/scripts/setup-claude.sh\""
+          SHOWED_HINT=true
+        fi
+        ;;
+    esac
   fi
 done
 
