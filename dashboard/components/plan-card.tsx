@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, FileText } from "lucide-react"
+import { ChevronDown, FileText, ListChecks } from "lucide-react"
 
 import { PlanDetail } from "@/components/plan-detail"
 import { PlanMarkdownModal } from "@/components/plan-markdown-modal"
+import { TasksDetailSheet } from "@/components/tasks-detail-sheet"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -30,12 +31,28 @@ interface PlanCardProps {
 
 export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: PlanCardProps) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [tasksOpen, setTasksOpen] = useState(false)
+  const [owner, repo] = plan.projectName.split('/')
+  const slug = plan.filePath.split('/')[2] ?? ''
 
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       <Card className="relative gap-0 overflow-hidden py-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         {/* アイコングループ: FileText + ChevronDown をまとめて絶対配置 */}
         <div className={cn("pointer-events-none absolute top-4 right-3 z-10 flex items-center gap-2", isNarrow && "hidden")}>
+          {plan.hasV2Tasks && (
+            <button
+              type="button"
+              aria-label={`${plan.title} のタスク詳細を開く`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setTasksOpen(true)
+              }}
+              className="text-muted-foreground hover:text-foreground pointer-events-auto cursor-pointer transition-colors"
+            >
+              <ListChecks className="size-4 shrink-0" />
+            </button>
+          )}
           <button
             type="button"
             aria-label={`${plan.title} の全文を読む`}
@@ -113,6 +130,16 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
         title={plan.title}
         markdown={plan.rawMarkdown}
       />
+      {plan.hasV2Tasks && owner && repo && slug && (
+        <TasksDetailSheet
+          open={tasksOpen}
+          onOpenChange={setTasksOpen}
+          owner={owner}
+          repo={repo}
+          slug={slug}
+          fallbackTitle={plan.title}
+        />
+      )}
     </Collapsible>
   )
 }
