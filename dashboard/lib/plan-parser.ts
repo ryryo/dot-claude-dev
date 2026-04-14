@@ -249,27 +249,34 @@ function parseGateTodos(gateContent: string): Todo[] {
   });
 }
 
+const REVIEW_COMPLETION_TITLE = 'レビュー完了';
+
 function parseSteps(content: string): Step[] {
   const matches = [...content.matchAll(STEP_BULLET_PATTERN)];
 
-  return matches.map((match, index) => {
-    const stepBlock = sliceBlock(content, match.index ?? 0, matches[index + 1]?.index ?? content.length);
-    const title = match[2];
-    const kind: StepKind = STEP_REVIEW_PATTERN.test(title) ? 'review' : 'impl';
-    const description = extractStepDescription(stepBlock);
-    const review = parseReviewBlockquote(stepBlock);
+  return matches
+    .filter((match) => {
+      const title = match[2];
+      return !title.startsWith(REVIEW_COMPLETION_TITLE);
+    })
+    .map((match, index, filteredMatches) => {
+      const stepBlock = sliceBlock(content, match.index ?? 0, filteredMatches[index + 1]?.index ?? content.length);
+      const title = match[2];
+      const kind: StepKind = STEP_REVIEW_PATTERN.test(title) ? 'review' : 'impl';
+      const description = extractStepDescription(stepBlock);
+      const review = parseReviewBlockquote(stepBlock);
 
-    return {
-      title,
-      checked: match[1] === 'x',
-      kind,
-      description,
-      hasReview: review.hasReview,
-      reviewFilled: review.reviewFilled,
-      reviewResult: review.reviewResult,
-      reviewFixCount: review.reviewFixCount,
-    };
-  });
+      return {
+        title,
+        checked: match[1] === 'x',
+        kind,
+        description,
+        hasReview: review.hasReview,
+        reviewFilled: review.reviewFilled,
+        reviewResult: review.reviewResult,
+        reviewFixCount: review.reviewFixCount,
+      };
+    });
 }
 
 function calculateProgress(todos: Todo[]): PlanFile['progress'] {
