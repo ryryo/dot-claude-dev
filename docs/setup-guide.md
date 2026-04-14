@@ -17,7 +17,7 @@
 ### 共有リポジトリ（このリポジトリ）
 
 ```
-~/dot-claude-dev/
+${CLAUDE_SHARED_DIR}/
 ├── .claude/
 │   ├── rules/
 │   │   ├── languages/     # 言語別コーディング規約（共通）
@@ -42,18 +42,17 @@
 ```
 your-project/.claude/
 ├── rules/
-│   ├── languages -> ~/dot-claude-dev/.claude/rules/languages  # リンク
-│   ├── workflow -> ~/dot-claude-dev/.claude/rules/workflow    # リンク
+│   ├── workflow -> ${CLAUDE_SHARED_DIR}/.claude/rules/workflow    # リンク
 │   └── project/                                               # プロジェクト固有（任意）
 ├── skills/
-│   ├── dev -> ~/dot-claude-dev/.claude/skills/dev             # リンク
+│   ├── dev -> ${CLAUDE_SHARED_DIR}/.claude/skills/dev             # リンク
 │   ├── meta-skill-creator -> ...                              # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
 ├── commands/
-│   ├── dev -> ~/dot-claude-dev/.claude/commands/dev           # リンク
+│   ├── dev -> ${CLAUDE_SHARED_DIR}/.claude/commands/dev           # リンク
 │   └── custom/                                                # プロジェクト固有（任意）
 ├── hooks/
-│   ├── dev -> ~/dot-claude-dev/.claude/hooks                  # リンク
+│   ├── dev -> ${CLAUDE_SHARED_DIR}/.claude/hooks/dev              # リンク
 │   └── project/                                               # プロジェクト固有（任意）
 ├── settings.json                                              # プロジェクト固有（フック設定等）
 └── settings.local.json                                        # ローカル設定
@@ -72,22 +71,22 @@ export CLAUDE_SHARED_DIR="$HOME/repos/claude-shared"
 git clone <this-repo-url> "$CLAUDE_SHARED_DIR"
 ```
 
-### 2. 参照先ディレクトリの確認（重要）
+### 2. 参照先ディレクトリの確認（自動）
 
-`setup-claude.sh` は既定で `~/dot-claude-dev` を参照します。実際の配置が異なる場合は、`CLAUDE_SHARED_DIR` を shell config に**永続化**してください。
+`setup-claude.sh` は以下の順で `dot-claude-dev` を探索します:
 
+1. `CLAUDE_SHARED_DIR` 環境変数（明示的に設定されていれば最優先）
+2. `$HOME/dot-claude-dev`
+3. `$HOME/dev/dot-claude-dev`
+4. `$HOME/.dot-claude-dev`（Remote 用）
+
+見つけた場合、自動で shell rc（`.zshrc` / `.bashrc` / `.profile`）に `export CLAUDE_SHARED_DIR=...` を追記します。
+既に設定済みなら重複追記しません。
+
+**明示指定が必要な場合** のみ、手動で追記してください:
 ```bash
-# 既定参照先の確認（未設定時）
-echo "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}"
-
-# 例: /Users/<user>/dev/dot-claude-dev に配置している場合
-# → .zshrc に永続化（一度だけ実行）
-echo 'export CLAUDE_SHARED_DIR="$HOME/dev/dot-claude-dev"' >> ~/.zshrc
-source ~/.zshrc
+echo 'export CLAUDE_SHARED_DIR="/path/to/your/dot-claude-dev"' >> ~/.zshrc
 ```
-
-> **Note**: `setup-claude.sh` はデフォルトパスと異なる場合に自動で永続化も行います。
-> ただし手動セットアップや自動化スクリプト経由の場合は、この手順を明示的に実施してください。
 
 ### 3. プロジェクトへの適用
 
@@ -244,10 +243,10 @@ SessionStartフックで以下が自動実行されます:
 
 ```bash
 # 共通設定の更新（全プロジェクトに自動反映）
-cd ~/dot-claude-dev && git pull
+cd "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}" && git pull
 
 # リンクが壊れた場合は再実行
-cd /path/to/your-project && bash ~/dot-claude-dev/scripts/setup-claude.sh
+cd /path/to/your-project && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
 ## チーム開発
