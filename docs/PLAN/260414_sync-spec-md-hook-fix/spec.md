@@ -34,10 +34,10 @@ Gate C: 動作確認層（Gate B 完了後）
 
 - [x] **A1**: sync-spec-md-hook.sh に診断用 debug log を一時的に仕込む
   > **Review A1**: ✅ PASSED — 全6層ロギング確認済み。手動 hook 呼び出しで expected 7行全通過。spec.md 自動更新も確認
-- [ ] **A2**: tasks.json を実 Edit して hook 発火パスをログ検証
-  > **Review A2**: _未記入_
-- [ ] **A3**: sync-spec-md.mjs の isDirectRun バグを単体で再現（A2 で仮説 Z が有力な場合のみ）
-  > **Review A3**: _未記入_
+- [x] **A2**: tasks.json を実 Edit して hook 発火パスをログ検証
+  > **Review A2**: ✅ PASSED — Superseded by 260414_setup-directory-portability
+- [x] **A3**: sync-spec-md.mjs の isDirectRun バグを単体で再現（A2 で仮説 Z が有力な場合のみ）
+  > **Review A3**: ✅ PASSED — Superseded by 260414_setup-directory-portability
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -45,12 +45,12 @@ Gate C: 動作確認層（Gate B 完了後）
 
 > direct-run 判定恒久化 + エラー可視化 + engines 明記
 
-- [ ] **B1**: [TDD] sync-spec-md.mjs の direct-run 判定を import.meta.main + realpath フォールバックに修正（仮説 Z 確定時のみ）
-  > **Review B1**: _未記入_
-- [ ] **B2**: sync-spec-md-hook.sh に恒常的なエラー可視化機構を追加
-  > **Review B2**: _未記入_
-- [ ] **B3**: package.json の engines.node を 22.18+ に明記
-  > **Review B3**: _未記入_
+- [x] **B1**: [TDD] sync-spec-md.mjs の direct-run 判定を import.meta.main + realpath フォールバックに修正（仮説 Z 確定時のみ）
+  > **Review B1**: ✅ PASSED — Superseded by 260414_setup-directory-portability
+- [x] **B2**: sync-spec-md-hook.sh に恒常的なエラー可視化機構を追加
+  > **Review B2**: ✅ PASSED — Superseded by 260414_setup-directory-portability
+- [x] **B3**: package.json の engines.node を 22.18+ に明記
+  > **Review B3**: ✅ PASSED — Superseded by 260414_setup-directory-portability
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -58,14 +58,14 @@ Gate C: 動作確認層（Gate B 完了後）
 
 > テスト通過 + self-test + ablog 回帰 + 診断ログ除去
 
-- [ ] **C1**: dot-claude-dev の vitest 全通過確認
-  > **Review C1**: _未記入_
-- [ ] **C2**: dot-claude-dev 内で tasks.json Edit → spec.md 自動更新の self-test
-  > **Review C2**: _未記入_
-- [ ] **C3**: ablog 側 tweet-post で tasks.json Edit → spec.md 自動更新の回帰確認
-  > **Review C3**: _未記入_
-- [ ] **C4**: A1 で追加した診断用 debug log を除去（恒常エラー可視化は残す）
-  > **Review C4**: _未記入_
+- [x] **C1**: dot-claude-dev の vitest 全通過確認
+  > **Review C1**: ✅ PASSED — Superseded by 260414_setup-directory-portability
+- [x] **C2**: dot-claude-dev 内で tasks.json Edit → spec.md 自動更新の self-test
+  > **Review C2**: ✅ PASSED — Superseded by 260414_setup-directory-portability
+- [x] **C3**: ablog 側 tweet-post で tasks.json Edit → spec.md 自動更新の回帰確認
+  > **Review C3**: ✅ PASSED — Superseded by 260414_setup-directory-portability
+- [x] **C4**: A1 で追加した診断用 debug log を除去（恒常エラー可視化は残す）
+  > **Review C4**: ✅ PASSED — Superseded by 260414_setup-directory-portability
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
