@@ -70,7 +70,7 @@ function makeSample(): TasksJsonV2 {
 
 describe('loadPlanFromTasksJson', () => {
   it('spec メタデータを PlanFile にマッピングする', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.title).toBe('デモ仕様書');
     expect(plan.summary).toBe('デモ機能の実装');
     expect(plan.createdDate).toBe('2026-04-12');
@@ -80,18 +80,18 @@ describe('loadPlanFromTasksJson', () => {
   });
 
   it('status / reviewChecked をそのまま引き継ぐ', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.status).toBe('in-progress');
     expect(plan.reviewChecked).toBe(false);
   });
 
   it('progress を percentage 付きで計算する', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.progress).toEqual({ completed: 2, total: 4, percentage: 50 });
   });
 
   it('Gate ごとに Todo を紐付ける', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.gates).toHaveLength(2);
     expect(plan.gates[0].id).toBe('A');
     expect(plan.gates[0].todos).toHaveLength(1);
@@ -100,7 +100,7 @@ describe('loadPlanFromTasksJson', () => {
   });
 
   it('各 Todo に impl step と review step を生成する', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     const todoA = plan.gates[0].todos[0];
     expect(todoA.steps).toHaveLength(2);
     expect(todoA.steps[0].kind).toBe('impl');
@@ -114,7 +114,7 @@ describe('loadPlanFromTasksJson', () => {
   });
 
   it('Review 未記入のとき reviewFilled: false', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     const todoB = plan.gates[1].todos[0];
     expect(todoB.steps[1].hasReview).toBe(true);
     expect(todoB.steps[1].reviewFilled).toBe(false);
@@ -122,13 +122,13 @@ describe('loadPlanFromTasksJson', () => {
   });
 
   it('description は Todo レベルの description を Step に展開', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     const todoA = plan.gates[0].todos[0];
     expect(todoA.steps[0].description).toBe('items テーブルを作成');
   });
 
   it('todos (flat list) も Gate と同じ順序で取得できる', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.todos).toHaveLength(2);
     expect(plan.todos[0].title).toBe('[TDD] スキーマ定義');
     expect(plan.todos[1].title).toBe('POST /api');
@@ -141,7 +141,7 @@ describe('loadPlanFromTasksJson', () => {
     data.todos[1].steps[0].checked = true;
     data.todos[1].steps[1].checked = true;
     data.todos[1].steps[1].review = { result: 'PASSED', fixCount: 1, summary: '修正後 OK' };
-    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.progress.percentage).toBe(100);
     expect(plan.status).toBe('completed');
   });
@@ -151,12 +151,13 @@ describe('loadPlanFromTasksJson', () => {
     data.progress = { completed: 0, total: 0 };
     data.todos = [];
     data.gates = [];
-    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo');
+    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.progress.percentage).toBe(0);
   });
 
-  it('rawMarkdown は空文字（v2 は JSON 起点）', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo');
-    expect(plan.rawMarkdown).toBe('');
+  it('rawMarkdown に渡した spec.md 内容がそのまま格納される', () => {
+    const specContent = '# Demo Spec\n\nThis is the spec.';
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', specContent);
+    expect(plan.rawMarkdown).toBe(specContent);
   });
 });

@@ -172,7 +172,14 @@ async function tryLoadV2(
     return null;
   }
 
-  return loadPlanFromTasksJson(parsed, specPath, projectName);
+  let specContent = '';
+  try {
+    specContent = await fetchFileContent(owner, repo, specPath);
+  } catch {
+    // spec.md が無い場合は空文字のまま
+  }
+
+  return loadPlanFromTasksJson(parsed, specPath, projectName, specContent);
 }
 
 function isV2TasksJson(value: unknown): value is TasksJsonV2 {

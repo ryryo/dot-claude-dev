@@ -12,7 +12,8 @@ import type {
 export function loadPlanFromTasksJson(
   tasksJson: TasksJsonV2,
   filePath: string,
-  projectName: string
+  projectName: string,
+  rawMarkdown: string
 ): PlanFile {
   const fileName = path.basename(filePath);
 
@@ -42,7 +43,7 @@ export function loadPlanFromTasksJson(
     todos,
     progress: { total, completed, percentage },
     summary: tasksJson.spec.summary,
-    rawMarkdown: '',
+    rawMarkdown,
   };
 }
 
