@@ -74,6 +74,11 @@ allowed-tools:
   - アサーションで検証可能（`expect(result).toEqual(expected)` のような比較が書ける）
 - `[TDD]` ラベルは Todo 単位で付与する。同一 Gate 内で混在可
 - `[TDD]` ラベル付き Todo は `dev:spec-run` の実行モードに応じて tdd-developer または codex-tdd-developer で実装する
+- **`[SIMPLE]` ラベルの判断**: 各 Todo が以下の条件を満たす場合、Todo に `[SIMPLE]` ラベルを付与する:
+  - impl が数行追加・import 追加・定数/文言追加・既知パターンの1箇所適用など軽微な変更のみで完結する（Claude の総合判断。ヒューリスティックの明文化なし）
+- `[SIMPLE]` ラベルの付与方法: title の頭に `[SIMPLE]` を付ける。`tasks.json` 側の別フィールドは作らない（`[TDD]` の `tdd:` とは非対称）
+- `[SIMPLE]` ラベルの効果: `dev:spec-run` の Codex モードで Codex 委任をスキップし Claude メインセッションが直接実装し、VERIFY も SKIPPED になる。Claude モードでは無視される
+- `[SIMPLE]` と `[TDD]` は通常排他的（Claude 判断に委譲。両立が必要なレアケースでは両方付与可）
 
 ### Step 5: Preflight 抽出
 
