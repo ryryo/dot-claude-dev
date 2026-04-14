@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, symlinkSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { generateTaskListSection, replaceGeneratedSection } from '../sync-spec-md.mjs';
 
 const sampleTasksV2 = {
@@ -120,11 +123,6 @@ test('sync が tasks.json を改変しない（無限ループ防止）', () => 
   assert.equal(callCount, 1, 'writeFileSync() 呼び出しは 1 箇所のみ (spec.md 向け)');
   assert.ok(!src.includes('writeFileSync(absPath'), 'tasks.json (absPath) への write がないこと');
 });
-
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, symlinkSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
 
 test('isDirectRun: symlink 経由で起動しても main() が実行されて spec.md が更新される', () => {
   const tmpDir = mkdtempSync(join(tmpdir(), 'sync-spec-md-symlink-'));
