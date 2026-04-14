@@ -197,12 +197,12 @@ Gate C: 結線・検証（Gate B 完了後）
 
 > 型定義・PlanFile への v2 識別フラグ追加・新 API route 実装
 
-- [ ] **A1**: PlanFile に hasV2Tasks フラグを追加
-  > **Review A1**: _未記入_
-- [ ] **A2**: v2 / v1 ローダーで hasV2Tasks を初期化
-  > **Review A2**: _未記入_
-- [ ] **A3**: /api/plans/tasks API route を新規実装
-  > **Review A3**: _未記入_
+- [x] **A1**: PlanFile に hasV2Tasks フラグを追加
+  > **Review A1**: ✅ PASSED — 型追加のみ。問題なし
+- [x] **A2**: v2 / v1 ローダーで hasV2Tasks を初期化
+  > **Review A2**: ✅ PASSED — v2/v1 両ローダーで正しく初期化。tsc+テスト PASS
+- [x] **A3**: /api/plans/tasks API route を新規実装
+  > **Review A3**: ✅ PASSED (FIX 2回) — owner/repo バリデーション追加・404 判定を正規表現に変更。テスト 70 PASS
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 

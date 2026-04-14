@@ -7,9 +7,9 @@
     "createdDate": "2026-04-14",
     "specPath": "spec.md"
   },
-  "status": "not-started",
+  "status": "in-progress",
   "reviewChecked": false,
-  "progress": { "completed": 0, "total": 16 },
+  "progress": { "completed": 6, "total": 16 },
   "preflight": [
     {
       "id": "P1",
@@ -60,8 +60,8 @@
       "impl": "## 目的\n\n`PlanFile` に v2 形式由来かを示す `hasV2Tasks: boolean` を追加する。これにより `PlanCard` / `PlanTable` で「タスク詳細アイコン」を v2 plan のときだけ表示できる。\n\n## 変更内容\n\n`dashboard/lib/types.ts` の `PlanFile` インターフェースに 1 行追加:\n\n```typescript\nexport interface PlanFile {\n  filePath: string;\n  fileName: string;\n  projectName: string;\n  title: string;\n  createdDate: string | null;\n  reviewChecked: boolean;\n  status: PlanStatus;\n  gates: Gate[];\n  todos: Todo[];\n  progress: {\n    total: number;\n    completed: number;\n    percentage: number;\n  };\n  summary: string;\n  rawMarkdown: string;\n  hasV2Tasks: boolean; // ← 追加\n}\n```\n\n## 確認事項\n\n- 既存 `TasksJsonV2*` 系の型は変更しない\n- `PlanFile` は `lib/github.ts` (v2 経路) と `lib/plan-parser.ts` (v1 経路) の 2 箇所で生成されるため、両方の初期化漏れに注意（A2 で対応）\n- A2 で初期化する前にこの変更だけをコミットすると tsc が落ちる可能性がある。A1 と A2 は同一コミットでも構わないが Step 上は順序を守る\n\n## 検証\n\n```bash\ncd dashboard && pnpm tsc --noEmit 2>&1 | grep -i 'hasV2Tasks' || echo 'no related type errors'\n```\n\n（A2 完了後に）`pnpm tsc --noEmit` がエラー 0 で通ること。",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "型追加のみ。問題なし" } }
       ]
     },
     {
@@ -91,8 +91,8 @@
       "impl": "## 目的\n\nA1 で追加した `hasV2Tasks` フィールドを、PlanFile を生成する 2 箇所で正しく初期化する。\n\n## 変更内容\n\n### 1. `dashboard/lib/plan-json-loader.ts`\n\n`loadPlanFromTasksJson` 関数の return 文に `hasV2Tasks: true` を追加:\n\n```typescript\nreturn {\n  filePath,\n  fileName,\n  projectName,\n  title: tasksJson.spec.title,\n  createdDate: tasksJson.spec.createdDate || null,\n  reviewChecked: tasksJson.reviewChecked,\n  status: tasksJson.status,\n  gates,\n  todos,\n  progress: { total, completed, percentage },\n  summary: tasksJson.spec.summary,\n  rawMarkdown,\n  hasV2Tasks: true, // ← 追加\n};\n```\n\n### 2. `dashboard/lib/plan-parser.ts`\n\n`parsePlanFile` 関数（28 行目付近）の return オブジェクト末尾に `hasV2Tasks: false,` を追加する。確認したところ `PlanFile` を返す return は 42 行目の 1 箇所のみ。他の return は `Gate` / `Todo` / `Step` を返すため変更不要。\n\n### 3. `dashboard/__tests__/plan-json-loader.test.ts`\n\n既存の expect で `hasV2Tasks: true` を検証するアサーションを追加。例えば:\n\n```typescript\nexpect(plan).toMatchObject({\n  // ... 既存のアサーション\n  hasV2Tasks: true,\n});\n```\n\nまたは:\n\n```typescript\nexpect(plan.hasV2Tasks).toBe(true);\n```\n\n既存テスト構造に合わせて統一する（テストファイルを Read してスタイルを揃えること）。\n\n### 4. v1 plan-parser のテストがあれば\n\n`dashboard/__tests__/` 配下に `plan-parser.test.ts` があるか Glob で確認。あれば `hasV2Tasks: false` のアサーションも追加。なければスキップ。\n\n## 検証\n\n```bash\ncd dashboard && pnpm tsc --noEmit && pnpm vitest run\n```\n\n型エラー 0、テスト全 PASS。",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "v2/v1 両ローダーで正しく初期化。tsc+テスト PASS" } }
       ]
     },
     {
@@ -117,8 +117,8 @@
       "impl": "## 目的\n\nクライアントから lazy fetch する `GET /api/plans/tasks?owner=X&repo=Y&slug=Z` を新規実装する。`fetchFileContent` で `docs/PLAN/{slug}/tasks.json` を取得し、`schemaVersion >= 2` のみ通す。\n\n## ファイル構成\n\n`dashboard/app/api/plans/tasks/route.ts`（新規ディレクトリ含めて作成）\n\n## 実装内容\n\n```typescript\nimport { NextResponse } from 'next/server';\n\nimport { fetchFileContent } from '@/lib/github';\nimport type { TasksJsonV2 } from '@/lib/types';\n\nconst SLUG_PATTERN = /^[A-Za-z0-9_-]+$/;\n\nexport async function GET(request: Request) {\n  const { searchParams } = new URL(request.url);\n  const owner = searchParams.get('owner')?.trim();\n  const repo = searchParams.get('repo')?.trim();\n  const slug = searchParams.get('slug')?.trim();\n\n  if (!owner || !repo || !slug) {\n    return NextResponse.json(\n      { error: 'owner, repo, slug are required' },\n      { status: 400 },\n    );\n  }\n\n  if (!SLUG_PATTERN.test(slug)) {\n    return NextResponse.json({ error: 'invalid slug' }, { status: 400 });\n  }\n\n  const path = `docs/PLAN/${slug}/tasks.json`;\n\n  let raw: string;\n  try {\n    raw = await fetchFileContent(owner, repo, path);\n  } catch (error) {\n    const message = error instanceof Error ? error.message : 'unknown';\n    if (message.includes('404')) {\n      return NextResponse.json({ error: 'tasks.json not found' }, { status: 404 });\n    }\n    return NextResponse.json({ error: message }, { status: 502 });\n  }\n\n  let parsed: unknown;\n  try {\n    parsed = JSON.parse(raw);\n  } catch {\n    return NextResponse.json({ error: 'invalid JSON' }, { status: 422 });\n  }\n\n  if (\n    typeof parsed !== 'object' ||\n    parsed === null ||\n    typeof (parsed as { schemaVersion?: unknown }).schemaVersion !== 'number' ||\n    (parsed as { schemaVersion: number }).schemaVersion < 2\n  ) {\n    return NextResponse.json(\n      { error: 'tasks.json is not v2 (schemaVersion >= 2 required)' },\n      { status: 422 },\n    );\n  }\n\n  return NextResponse.json(parsed as TasksJsonV2);\n}\n```\n\n## 認証\n\n`fetchFileContent` 内で `getHeaders()` が `process.env.GITHUB_TOKEN` を参照するため、追加の認証コードは不要。既存 `/api/plans/route.ts` と同じ規約。\n\n## キャッシュ\n\n`fetchFileContent` の内部 fetch には `next: { revalidate: 300 }` がすでに付与されているため、本ハンドラ側で追加の指定は不要。\n\n## テスト\n\n`dashboard/__tests__/tasks-route.test.ts` を新規作成。既存テスト（例: `dashboard/__tests__/plan-json-loader.test.ts`）の vitest 構文・モック手法に合わせる。\n\n最低限カバーするケース:\n\n1. **クエリ欠落** → 400\n2. **不正な slug**（`../etc/passwd` 等） → 400\n3. **404 エラー** → 404\n4. **JSON parse 失敗** → 422\n5. **schemaVersion=1** → 422\n6. **schemaVersion=2 正常系** → 200 + JSON\n\n`fetchFileContent` は `vi.mock('@/lib/github', ...)` でモック。\n\n## 検証\n\n```bash\ncd dashboard && pnpm vitest run __tests__/tasks-route.test.ts\n```\n\nテスト全 PASS。",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 2, "summary": "owner/repo バリデーション追加・404 判定を正規表現に変更。テスト 70 PASS" } }
       ]
     },
     {
