@@ -1,0 +1,213 @@
+{
+  "schemaVersion": 2,
+  "spec": {
+    "slug": "sync-spec-md-hook-fix",
+    "title": "sync-spec-md hook 動作不良の網羅的診断・修正",
+    "summary": "PostToolUse hook が tasks.json 編集時に spec.md を自動更新していない問題を、6 層に分けて実証的に切り分けて修正し、ablog プロジェクトでの end-to-end 動作確認まで行う。",
+    "createdDate": "2026-04-14",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": { "completed": 0, "total": 20 },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "診断層",
+      "description": "hook 発火の 6 層を実証的に切り分ける",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "修正層",
+      "description": "direct-run 判定恒久化 + エラー可視化 + engines 明記",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "C",
+      "title": "動作確認層",
+      "description": "テスト通過 + self-test + ablog 回帰 + 診断ログ除去",
+      "dependencies": ["B"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "sync-spec-md-hook.sh に診断用 debug log を一時的に仕込む",
+      "description": "hook が呼ばれたか / どの層を通過したかを /tmp/sync-spec-md-hook-debug.log に時系列出力する",
+      "tdd": false,
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": ".claude/hooks/dev/sync-spec-md-hook.sh", "operation": "edit", "summary": "冒頭と各フィルタ通過後に debug log 出力を追加" }
+      ],
+      "impl": "## 目的\n\nhook が実行時にどこまで進んだかを実証するための一時的なログ機構を追加する。Gate C4 で削除する。\n\n## 手順\n\n1. `/home/ryryo/dot-claude-dev/.claude/hooks/dev/sync-spec-md-hook.sh` を Read。\n\n2. 冒頭の `set -e` の直後に以下を挿入:\n\n```bash\n# [diagnostic] Gate A1 — 一時的な debug log。Gate C4 で除去。\nDEBUG_LOG=\"/tmp/sync-spec-md-hook-debug.log\"\n{\n  echo \"=== $(date -Iseconds) | PID $$ ===\"\n  echo \"CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-<unset>}\"\n  echo \"PWD=$(pwd)\"\n  echo \"script=$0\"\n} >> \"$DEBUG_LOG\"\n```\n\n3. `INPUT=$(cat)` の直後に:\n\n```bash\necho \"INPUT_LEN=${#INPUT}\" >> \"$DEBUG_LOG\"\n```\n\n4. tool_name case 文の `Edit|Write|MultiEdit) ;;` の直後（改行後）に:\n\n```bash\n    echo \"tool_name ok ($TOOL_NAME)\" >> \"$DEBUG_LOG\"\n```\n\n5. `FILE_PATH=$(echo ...)` 後の `[ -z \"$FILE_PATH\" ] && exit 0` の直前に:\n\n```bash\necho \"file_path=$FILE_PATH\" >> \"$DEBUG_LOG\"\n```\n\n6. `case \"$FILE_PATH\" in */tasks.json) ;;` の直後に:\n\n```bash\n    echo \"tasks.json filter ok\" >> \"$DEBUG_LOG\"\n```\n\n7. `SPEC_DIR=$(dirname \"$FILE_PATH\")` の直後（`[ ! -f ...]` の前）に:\n\n```bash\necho \"spec_dir=$SPEC_DIR\" >> \"$DEBUG_LOG\"\n```\n\n8. 最後の `node \"$SYNC_SCRIPT\" \"$FILE_PATH\" >&2 || { ... }` ブロックを以下に置き換え:\n\n```bash\necho \"calling node $SYNC_SCRIPT $FILE_PATH\" >> \"$DEBUG_LOG\"\nnode \"$SYNC_SCRIPT\" \"$FILE_PATH\" 2>&1 | tee -a \"$DEBUG_LOG\" >&2\nNODE_EXIT=${PIPESTATUS[0]}\necho \"node returned: $NODE_EXIT\" >> \"$DEBUG_LOG\"\n```\n\n9. スクリプトを保存し、実行権限があることを確認: `ls -la .claude/hooks/dev/sync-spec-md-hook.sh`。\n\n## 検証\n\n手動で hook を呼ぶ:\n\n```bash\nrm -f /tmp/sync-spec-md-hook-debug.log\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json\"}}' | \\\n  bash /home/ryryo/dot-claude-dev/.claude/hooks/dev/sync-spec-md-hook.sh\ncat /tmp/sync-spec-md-hook-debug.log\n```\n\n期待: 以下の行がログに含まれる:\n- `=== <timestamp> | PID ...`\n- `INPUT_LEN=...`\n- `tool_name ok (Edit)`\n- `file_path=/home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json`\n- `tasks.json filter ok`\n- `calling node ...`\n- `node returned: 0`\n\n手動実行で全ログが出ることを確認できたら Review 通過。\n\n## 注意\n\n- `set -e` 下なので失敗コマンドは即 exit する。`echo` は通常失敗しない。\n- `tee -a` 併用でログ粒度を保ちつつ既存の `>&2` を維持。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "A2",
+      "gate": "A",
+      "title": "tasks.json を実 Edit して hook 発火パスをログ検証",
+      "description": "ablog と dot-claude-dev 双方で実 Edit を行い、6 層マトリクスで原因層を特定する",
+      "tdd": false,
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json", "operation": "touch", "summary": "最小差分で Edit してログ観察。内容は戻して diff 0 にしない（progress 更新で自然に差分が残るため、この Todo 自体で追記される）" },
+        { "path": "/home/ryryo/ablog/docs/PLAN/260414_tweet-post/tasks.json", "operation": "touch", "summary": "ablog 側（symlink 経由配信プロジェクト）の実 Edit。最小差分、直後に元に戻してコミット不要" }
+      ],
+      "impl": "## 目的\n\nA1 で仕込んだ debug log を使って、PostToolUse hook が実際にどの層で止まっているか（あるいは最後まで通っているか）を実測する。\n\n**重要**: まず symlink の有無を排除して仮説を絞るため、**dot-claude-dev 本体（symlink なし直参照）を最初に検証する**。ここで動けば symlink 問題（仮説 Z）に絞れる。動かなければ hook 発火 / 設定の問題（仮説 X/Y）なので Gate B の設計自体を見直す。\n\n## 手順\n\n### STEP 1（最優先）: dot-claude-dev 本体（symlink なし直参照）の実 Edit\n\n1. `rm -f /tmp/sync-spec-md-hook-debug.log` でログクリア。\n\n2. Edit ツールで `/home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json` の `progress.completed` を `0` → `1` → `0` のように往復する最小差分 Edit を 1 回実施（状態値を変えずに発火させる）。\n\n3. 直後に `cat /tmp/sync-spec-md-hook-debug.log` で内容を確認。\n\n4. ログ内容を 6 層マトリクス（spec.md の「層別診断マトリクス」表）と照らして **dot-claude-dev 側の層別結果** を Review に記録:\n   - 層 1 (hook 起動): `=== <timestamp>` の有無\n   - 層 2 (INPUT 読み取り): `INPUT_LEN=N` の有無\n   - 層 3a (tool_name フィルタ): `tool_name ok (Edit)` の有無\n   - 層 3b (file_path 取得): `file_path=...` の有無\n   - 層 3c (tasks.json フィルタ): `tasks.json filter ok` の有無\n   - 層 4 (node 呼び出し): `calling node ...` の有無\n   - 層 5/6 (node 実行結果): `node returned: 0` の有無 + **spec.md の generated 領域が実際に更新されたか**\n\n5. **判定**:\n   - dot-claude-dev で spec.md が **更新される** → 仮説 Z（symlink 問題）が有力。STEP 2 に進む\n   - dot-claude-dev で spec.md が **更新されない** → 仮説 X/Y が現実（hook 発火 or 設定の問題）。この時点で spec-run を中断し、AskUserQuestion で設計見直しを提案（Gate B の現行計画を一旦棚上げ）\n\n### STEP 2（STEP 1 で dot-claude-dev 側が成功した場合のみ）: ablog 側（symlink 経由配信）の実 Edit\n\n1. `rm -f /tmp/sync-spec-md-hook-debug.log` で再度クリア。\n\n2. Edit ツールで `/home/ryryo/ablog/docs/PLAN/260414_tweet-post/tasks.json` の `progress.completed` を `4` → `5` → `4` のように往復する最小差分 Edit を実施。\n\n3. 直後に `cat /tmp/sync-spec-md-hook-debug.log`。\n\n4. ログを 6 層マトリクスで判定し、**ablog 側の層別結果** を Review に記録。dot-claude-dev 側との差分を明示する（「直参照では層 6 まで通過するが symlink 経由では層 5 で停止」など）。\n\n5. **重要**: ablog 側の tasks.json は必ず元の値に戻してから次の Todo へ進むこと。コミット差分を残さない。\n\n## 期待される結果（仮説ごと）\n\n**仮説 Z（想定）**: dot-claude-dev では層 1〜6 全通過、ablog では層 1〜4 は通過するが層 5/6（`node returned: 0` は出るが spec.md 未更新）で停止\n\n**仮説 Y（代替）**: dot-claude-dev / ablog 両方で層 3 のどこかで止まる → matcher or filter の問題\n\n**仮説 X（最悪）**: dot-claude-dev / ablog 両方で層 1 も出ない → そもそも hook が呼ばれていない → Claude Code 側設定の問題\n\n## 検証\n\n- STEP 1（dot-claude-dev 側）のログ結果が Review に記録されている\n- STEP 1 成功なら STEP 2 の結果も記録されている（2 側の層別比較つき）\n- 仮説（X/Y/Z）のどれに着地したかが Review に明記されている\n- ablog 側の tasks.json / spec.md に意図せぬ変更が残っていない\n\n## 注意\n\n- Edit が連続するとログが append されるので、必要に応じて適宜 `rm -f` でクリア。\n- ablog 側の Edit は progress.completed の往復（4→5→4）で、最終状態を元の値に戻すこと。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "A3",
+      "gate": "A",
+      "title": "sync-spec-md.mjs の isDirectRun バグを単体で再現（A2 で仮説 Z が有力な場合のみ）",
+      "description": "Node スクリプト単体で argv[1] と import.meta.url が symlink 環境で不一致になることを実測。A2 STEP 1 で dot-claude-dev 側の spec.md 更新が成功した場合のみ意味がある",
+      "tdd": false,
+      "dependencies": ["A2"],
+      "affectedFiles": [],
+      "impl": "## 目的\n\nA2 と並列で、sync-spec-md.mjs の `isDirectRun` 判定がなぜ false になるかを単体で実証する。A2 の層 5 結果と照合することで、原因を確定できる。\n\n## 手順\n\n1. symlink 経由のパスで実行し、現行ロジックでの判定結果を出す:\n\n```bash\ncat > /tmp/isdirectrun-probe.mjs <<'EOF'\nimport { resolve } from 'node:path';\nimport { realpathSync } from 'node:fs';\nimport { pathToFileURL } from 'node:url';\n\nconst argv1 = process.argv[1];\nconst currentLogic = argv1 && (\n  import.meta.url === `file://${argv1}` ||\n  import.meta.url === `file://${resolve(argv1)}`\n);\nconst proposedLogic = typeof import.meta.main === 'boolean'\n  ? import.meta.main\n  : (argv1 ? import.meta.url === pathToFileURL(realpathSync(argv1)).href : false);\nconsole.log(JSON.stringify({\n  argv1,\n  resolved: argv1 ? resolve(argv1) : null,\n  realpath: argv1 ? realpathSync(argv1) : null,\n  importMetaUrl: import.meta.url,\n  importMetaMain: import.meta.main,\n  currentLogic,\n  proposedLogic,\n}, null, 2));\nEOF\n```\n\n2. symlink 経由で実行（ablog から）:\n\n```bash\ncd /home/ryryo/ablog\ncp /tmp/isdirectrun-probe.mjs /home/ryryo/dot-claude-dev/.claude/skills/dev/spec-run/scripts/__probe.mjs\nnode /home/ryryo/ablog/.claude/skills/dev/spec-run/scripts/__probe.mjs\n```\n\n期待出力:\n- `argv1` = `/home/ryryo/ablog/.claude/skills/dev/spec-run/scripts/__probe.mjs`（symlink 経由）\n- `realpath` = `/home/ryryo/dot-claude-dev/.claude/skills/dev/spec-run/scripts/__probe.mjs`\n- `importMetaUrl` = `file:///home/ryryo/dot-claude-dev/...`（realpath 解決済み）\n- `currentLogic = false` ← **バグ確定**\n- `proposedLogic = true` ← **修正で治る確認**\n- `importMetaMain = true`（Node 22.18+）\n\n3. 直参照（dot-claude-dev 内）で実行:\n\n```bash\nnode /home/ryryo/dot-claude-dev/.claude/skills/dev/spec-run/scripts/__probe.mjs\n```\n\n期待: `currentLogic = true`（symlink がないので一致）、`proposedLogic = true`、`importMetaMain = true`。\n\n4. 検証終了後、probe ファイルを削除:\n\n```bash\nrm -f /home/ryryo/dot-claude-dev/.claude/skills/dev/spec-run/scripts/__probe.mjs /tmp/isdirectrun-probe.mjs\n```\n\n## 検証\n\n- symlink 経由で `currentLogic = false` / `proposedLogic = true` / `importMetaMain = true` が出力される\n- 直参照で全 `true`\n- probe ファイルが削除されている\n- Review に出力 JSON を添付\n\n## 注意\n\n- probe ファイルは tests ディレクトリではなく scripts 直下に一時配置（既存テストと独立させる）。削除忘れ注意。\n- Node バージョンが 22.18 未満だと `importMetaMain = undefined`。その場合は `package.json engines` 引き上げ（Todo B3）も必須になる。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "[TDD] sync-spec-md.mjs の direct-run 判定を import.meta.main + realpath フォールバックに修正（仮説 Z 確定時のみ）",
+      "description": "A2 で仮説 Z（symlink 問題）が確定した場合のみ実施。既存テストを壊さず、symlink 経由でも main() が呼ばれることを subprocess テストで検証。仮説 X/Y の場合は Gate B 構成を見直す前提条件として AskUserQuestion を実施",
+      "tdd": true,
+      "dependencies": ["A2", "A3"],
+      "affectedFiles": [
+        { "path": ".claude/skills/dev/spec-run/scripts/sync-spec-md.mjs", "operation": "edit", "summary": "末尾の isDirectRun 判定を import.meta.main + realpathSync/pathToFileURL フォールバックに差し替え" },
+        { "path": ".claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs", "operation": "edit", "summary": "subprocess で symlink 経由実行時に spec.md が更新されることを検証するテスト追加" }
+      ],
+      "impl": "## 目的\n\nsync-spec-md.mjs の direct-run 判定を Node 22.18+ の `import.meta.main` に切り替え、symlink 環境でも main() が確実に呼ばれるようにする。フォールバックは `realpathSync(argv[1]) + pathToFileURL()` で両側正規化。\n\n## TDD 手順（RED → GREEN → REFACTOR）\n\n### 1. RED — 失敗テストを追加\n\n`.claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs` の末尾に以下のテストを追加:\n\n```js\nimport { spawnSync } from 'node:child_process';\nimport { mkdtempSync, writeFileSync, readFileSync, symlinkSync, rmSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport path from 'node:path';\n\ntest('CLI 直接実行: symlink 経由でも main() が呼ばれ spec.md を更新する', () => {\n  // 一時ディレクトリに symlink ツリーを構築\n  const real = mkdtempSync(path.join(tmpdir(), 'sync-real-'));\n  const proj = mkdtempSync(path.join(tmpdir(), 'sync-proj-'));\n\n  // 実スクリプトを symlink で参照\n  const realScriptDir = path.join(real, 'scripts');\n  const projScriptDir = path.join(proj, 'scripts');\n  writeFileSync(path.join(real, 'sync-spec-md.mjs'),\n    readFileSync(new URL('../sync-spec-md.mjs', import.meta.url), 'utf-8'));\n  symlinkSync(path.join(real, 'sync-spec-md.mjs'),\n    path.join(proj, 'sync-spec-md.mjs'));\n\n  // tasks.json と spec.md を proj 側に用意\n  const tasksPath = path.join(proj, 'tasks.json');\n  const specPath = path.join(proj, 'spec.md');\n  writeFileSync(tasksPath, JSON.stringify(sampleTasksV2, null, 2));\n  writeFileSync(specPath, '<!-- generated:begin -->\\nPLACEHOLDER\\n<!-- generated:end -->\\n');\n\n  // symlink 経由で node 実行\n  const symlinkedScript = path.join(proj, 'sync-spec-md.mjs');\n  const res = spawnSync('node', [symlinkedScript, tasksPath], { encoding: 'utf-8' });\n\n  assert.equal(res.status, 0, `exit 0 expected, got ${res.status}. stderr: ${res.stderr}`);\n  const updated = readFileSync(specPath, 'utf-8');\n  assert.ok(updated.includes('### Gate A: データ層'),\n    `spec.md should be regenerated, got: ${updated}`);\n\n  rmSync(real, { recursive: true, force: true });\n  rmSync(proj, { recursive: true, force: true });\n});\n```\n\nこのテストは修正前の main なので **RED（失敗）** になることを `npm test` で確認する。\n\n### 2. GREEN — 実装修正\n\n`.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs` の先頭 import 群に以下を追加（既存の import 群と同階層に）:\n\n```js\nimport { realpathSync } from 'node:fs';\nimport { pathToFileURL } from 'node:url';\n```\n\n末尾の isDirectRun ブロックを以下に差し替え:\n\n```js\n// 直接実行時のみ main を呼ぶ\n// Node 22.18+ の import.meta.main を優先、それ以前は realpath + pathToFileURL で両側正規化\nconst isDirectRun = typeof import.meta.main === 'boolean'\n  ? import.meta.main\n  : (process.argv[1]\n      ? import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href\n      : false);\nif (isDirectRun) {\n  main();\n}\n```\n\n既存の `import { readFileSync, writeFileSync, existsSync } from 'node:fs';` に `realpathSync` を追加する場合は 1 行にまとめても良い:\n\n```js\nimport { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';\n```\n\n### 3. GREEN 確認\n\n```bash\ncd /home/ryryo/dot-claude-dev\nnpm test\n```\n\n期待: 追加テストも含めて全通過。\n\n### 4. REFACTOR\n\n- コメントを整理（Node 22.18+ の根拠を 1 行）\n- import 順序を ESLint / 既存スタイルに合わせて整理\n- 追加テストが見やすい位置（他の CLI 関連テストの近く）にあるか確認\n- 再度 `npm test` で全通過確認\n\n## 検証\n\n- `npm test` で全テスト通過（既存 11 件 + 新規 1 件 = 12 件）\n- `node --version` が 22.18+ であること（現環境 22.20 なので OK）\n- 手動 probe (`bash`):\n  ```bash\n  rm -f /tmp/sync-spec-md-hook-debug.log\n  # ablog 側で tasks.json を Edit すると spec.md が自動更新される（Gate C で正式確認するがここでも単発検証可能）\n  node /home/ryryo/ablog/.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs \\\n    /home/ryryo/ablog/docs/PLAN/260414_tweet-post/tasks.json\n  ```\n  でエラーなく動作（spec.md 未更新なら内容変化ないので黙っているが、tasks.json の状態を変えれば更新される）。\n\n## 失敗時の対応\n\n- subprocess テストがタイムアウトする → `spawnSync` の `timeout: 5000` を追加\n- Windows 環境（将来）で tmpdir の symlink が失敗 → テストに `process.platform === 'win32'` でスキップ条件を追加（今回は適用不要）\n- `import.meta.main` が undefined の古い Node → engines を 22.18+ に制約し、B3 で明記",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "B2",
+      "gate": "B",
+      "title": "sync-spec-md-hook.sh に恒常的なエラー可視化機構を追加",
+      "description": "sync-spec-md.mjs の exit / stderr を /tmp/sync-spec-md-hook.log に永続出力し、silent failure の再発を即検知可能にする。B1 の実施有無に関係なく独立して価値がある",
+      "tdd": false,
+      "dependencies": ["A2"],
+      "affectedFiles": [
+        { "path": ".claude/hooks/dev/sync-spec-md-hook.sh", "operation": "edit", "summary": "node 呼び出し部を ERR_LOG への append 付き実装に差し替え" }
+      ],
+      "impl": "## 目的\n\nsync-spec-md.mjs が将来再び silent failure したとき（例えばフォーマット変更で replace 失敗など）、即検知できるよう hook 側に恒常的なエラーログを残す。診断用の DEBUG_LOG とは別物で、Gate C4 でも **残す**。\n\n## 手順\n\n1. `.claude/hooks/dev/sync-spec-md-hook.sh` を Read。\n\n2. 末尾の `node` 実行ブロックを以下に書き換え:\n\n```bash\nERR_LOG=\"/tmp/sync-spec-md-hook.log\"\nNODE_STDERR=$(mktemp)\nif ! node \"$SYNC_SCRIPT\" \"$FILE_PATH\" 2>\"$NODE_STDERR\"; then\n  {\n    echo \"=== $(date -Iseconds) | sync-spec-md.mjs failed ===\"\n    echo \"script=$SYNC_SCRIPT\"\n    echo \"tasks_json=$FILE_PATH\"\n    echo \"--- stderr ---\"\n    cat \"$NODE_STDERR\"\n    echo\n  } >> \"$ERR_LOG\"\n  cat \"$NODE_STDERR\" >&2\nfi\nrm -f \"$NODE_STDERR\"\n```\n\n3. A1 で仕込んだ debug log（`DEBUG_LOG=\"/tmp/sync-spec-md-hook-debug.log\"` への append 群）は **このタスクでは触らない**。Gate C4 で一括除去する。ただし node 呼び出し部は B2 の新実装に置き換わるので、A1 の `calling node` / `node returned` は B2 実装に組み込んで残すか、DEBUG_LOG に残すかを選択する:\n   - **推奨**: A1 の `calling node ... >> \"$DEBUG_LOG\"` と `node returned: ... >> \"$DEBUG_LOG\"` は削除し（node 呼び出しは B2 で書き換えたため旧コードなし）、B2 の ERR_LOG への記録で代替する。\n   - DEBUG_LOG は A1 で追加した前段（起動・INPUT・フィルタ）のログのみ残す。\n\n4. ファイルを保存、実行権限を確認: `ls -la .claude/hooks/dev/sync-spec-md-hook.sh` で `rwx` が付いていること。\n\n## 検証\n\n1. 意図的に失敗させる probe:\n\n```bash\nrm -f /tmp/sync-spec-md-hook.log\n# 存在しないパスを渡して node を失敗させる\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/nonexistent/tasks.json\"}}' | \\\n  bash /home/ryryo/dot-claude-dev/.claude/hooks/dev/sync-spec-md-hook.sh\n# ファイル存在チェックで silently exit 0 されるケースが先に起こる可能性あり\n# その場合は代わりに壊れた JSON で試す\n```\n\n壊れた JSON 経由の probe:\n\n```bash\nTMP=$(mktemp -d)\ncp /home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/spec.md \"$TMP/spec.md\"\necho 'INVALID JSON' > \"$TMP/tasks.json\"\nrm -f /tmp/sync-spec-md-hook.log\nnode /home/ryryo/dot-claude-dev/.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs \"$TMP/tasks.json\" 2>&1 || true\n# sync-spec-md.mjs 内の try/catch で exit 0 なので ERR_LOG には残らないかも\n# 今回の目的は hook 経由での node exit 非 0 を ERR_LOG に残すこと\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"'$TMP'/tasks.json\"}}' | \\\n  bash /home/ryryo/dot-claude-dev/.claude/hooks/dev/sync-spec-md-hook.sh\n# spec.md がないので hook は silently exit 0 → ERR_LOG に残らない\n# spec.md を同ディレクトリに用意した上で壊れた tasks.json を渡す\ncat /tmp/sync-spec-md-hook.log || echo \"(log empty — expected silent for schema<2)\"\nrm -rf \"$TMP\"\n```\n\n実運用では schema 検証などで exit 非 0 を出すことは稀だが、**今後の故障時に ERR_LOG にエビデンスが残る**ことが本 Todo の価値。\n\n2. 正常系の非回帰確認: dot-claude-dev 内で通常の tasks.json Edit（Gate C2 でも実施）後、`/tmp/sync-spec-md-hook.log` が空のまま（正常なので失敗ログは追記されない）であること。\n\n## 注意\n\n- ログローテートなし。`/tmp/sync-spec-md-hook.log` は大きくなる想定なしだが、ユーザーが定期的にクリーンできる。\n- 本実装は「失敗時のみ」ログ出力。正常系は静かなまま。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "B3",
+      "gate": "B",
+      "title": "package.json の engines.node を 22.18+ に明記",
+      "description": "import.meta.main の導入バージョン要件を明示し、フォールバック分岐への依存を減らす。B1 の実施有無に関係なく独立して価値がある",
+      "tdd": false,
+      "dependencies": ["A2"],
+      "affectedFiles": [
+        { "path": "package.json", "operation": "edit", "summary": "engines.node: \">=22.18.0\" を追加" }
+      ],
+      "impl": "## 目的\n\n`import.meta.main` は Node 22.18+ でネイティブサポート（2025-07 リリース）。dot-claude-dev が前提とする Node バージョンを明示することで、CI/ローカル開発者の環境不整合を早期検知する。\n\n## 手順\n\n1. `/home/ryryo/dot-claude-dev/package.json` を Read。\n\n2. `\"author\": \"\"` の行の直前か直後に以下を追加（キーの並びは既存に揃える）:\n\n```json\n  \"engines\": {\n    \"node\": \">=22.18.0\"\n  },\n```\n\nすでに `engines` フィールドがある場合はマージ。`node` 値がより緩い（例: `>=20`）場合は 22.18.0 に引き上げる。\n\n3. JSON 構文確認: `node -e 'JSON.parse(require(\"fs\").readFileSync(\"package.json\",\"utf-8\"))'` で構文エラーがないこと。\n\n## 検証\n\n- `node --version` が 22.18+ であること（現環境 22.20 なので OK）\n- `npm test` が引き続き通過する（依存なしの JSON 変更なので影響軽微）\n- `cat package.json | jq .engines` で `{\"node\": \">=22.18.0\"}` が返る\n\n## 注意\n\n- `npm install` 時に engines 不一致があると warning が出る（デフォルト）。strict に失敗させたい場合は `.npmrc` の `engine-strict=true` を設定する運用議論が別途必要だが、本 Todo では扱わない。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C1",
+      "gate": "C",
+      "title": "dot-claude-dev の vitest 全通過確認",
+      "description": "B1 で追加した subprocess テストを含め、既存テストとの非回帰を確認",
+      "tdd": false,
+      "dependencies": ["B1", "B2", "B3"],
+      "affectedFiles": [],
+      "impl": "## 目的\n\nB1 の新規テストを含めて `npm test` が全通過することを確認し、既存のユニットテスト（generateTaskListSection / replaceGeneratedSection 系、writeFileSync の重複禁止チェックなど）に回帰がないことを保証する。\n\n## 手順\n\n```bash\ncd /home/ryryo/dot-claude-dev\nnpm test 2>&1 | tee /tmp/vitest-C1.log\n```\n\n1. 結果を確認。全通過（fail 0）であること。\n2. ログに `CLI 直接実行: symlink 経由でも main() が呼ばれ...` が含まれていること。\n3. ログに 12 件程度のテスト件数が出ていること（既存 11 + B1 追加 1）。\n\n## 検証\n\n- `npm test` exit 0\n- B1 の新テストが PASS 表示される\n- 既存テストの fail は 0\n- ログファイル `/tmp/vitest-C1.log` を Review の証跡として添付\n\n## 失敗時の対応\n\n- B1 の新テストが fail → B1 に戻って修正\n- 既存テストが fail → sync-spec-md.mjs への修正（import 追加など）で副作用が出ている可能性。diff を確認し、pure 関数側に触っていないかチェック\n- Windows 固有の問題 → 対象外（今回の環境は WSL2 Linux）",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C2",
+      "gate": "C",
+      "title": "dot-claude-dev 内で tasks.json Edit → spec.md 自動更新の self-test",
+      "description": "本仕様書の tasks.json を実 Edit して、hook 経由で本 spec.md の generated 領域が自動更新されることを dogfood 確認",
+      "tdd": false,
+      "dependencies": ["C1"],
+      "affectedFiles": [
+        { "path": "docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json", "operation": "edit", "summary": "本 Todo の step 完了マークを付ける（通常の spec-run 実行で発生する Edit で十分）" },
+        { "path": "docs/PLAN/260414_sync-spec-md-hook-fix/spec.md", "operation": "auto-regen", "summary": "hook 経由で generated 領域が自動再生成される（手動編集しない）" }
+      ],
+      "impl": "## 目的\n\ndot-claude-dev 内で本仕様書の tasks.json を実 Edit して、hook が正常に発火して spec.md が自動更新されることを dogfood 確認する。これで「dot-claude-dev 側は完全に動く」ことが保証される。\n\n## 前提分岐\n\nA2 の結果で分岐する:\n\n- **仮説 Z 確定（B1 実施済み）**: 以下「ケース A」を実施\n- **仮説 X/Y で B1 スキップ**: 以下「ケース B」を実施（B2/B3 は独立して実施されているはず）\n\n## ケース A: 仮説 Z 確定 + B1 実施済み\n\n1. spec-run プロトコルが B1-B3 で本 tasks.json を Edit した際、hook により spec.md の generated 領域が自動更新されているはず。\n\n2. 確認コマンド:\n\n```bash\ngrep -n '\\*\\*B1\\*\\*\\|\\*\\*B2\\*\\*\\|\\*\\*B3\\*\\*' /home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/spec.md\n```\n\n期待: B1-B3 が `- [x]` + Review 記入済み（tasks.json の完了状態が反映されている）\n\n3. もし未同期（`[ ]` のままや `_未記入_`）なら、その時点で hook または sync-spec-md.mjs に残存バグがある → FAIL → B1 に戻る\n\n## ケース B: 仮説 X/Y で B1 スキップ（B2/B3 のみ実施済み）\n\n1. B1 未実施の場合、sync-spec-md.mjs 自体は修正されていない。したがって hook は相変わらず動かない想定。\n\n2. **本 Todo の意義は仮説 Z 条件下のみ有効**のため、ケース B では以下のいずれかを選択:\n   - **2-a.** AskUserQuestion で「B1 を未実施のまま C2 を実施する意味はないので skip する」を確認し、C2 の step[1] review を `SKIPPED — B1 未実施のため適用外` として完了\n   - **2-b.** もしユーザーが B1 相当の修正を別仕様書で完了させた後なら、ケース A と同じ手順で検証\n\n3. spec-run プロトコルは A2 で仮説 X/Y が判明した時点で C2-C4 の妥当性も再検討するよう、AskUserQuestion をかけること（Gate A2 の Review で記録済みであれば、それに従う）\n\n## 共通検証（どちらのケースでも）\n\n4. `/tmp/sync-spec-md-hook.log` を確認:\n\n```bash\ncat /tmp/sync-spec-md-hook.log 2>/dev/null || echo \"(log empty — no errors, expected)\"\n```\n\n期待: 空または存在しない（正常なのでエラーログなし）\n\n## 検証\n\n- ケース A: spec.md の B1-B3 行がすべて `- [x]` + Review 結果記入済みに自動更新されている\n- ケース B: ユーザー合意の下で SKIPPED として記録している\n- `/tmp/sync-spec-md-hook.log` にエラー記録なし\n\n## 失敗時の対応\n\n- spec.md が未同期 → `cat /tmp/sync-spec-md-hook-debug.log`（A1 の診断ログ）で最終 Edit の痕跡を確認\n- hook が呼ばれていない → Claude Code 側の PostToolUse hook 発火条件を再確認（matcher が Edit/Write/MultiEdit を含んでいるか）\n- hook は呼ばれているが node が失敗 → `/tmp/sync-spec-md-hook.log`（B2 の ERR_LOG）で内容確認",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C3",
+      "gate": "C",
+      "title": "ablog 側 tweet-post で tasks.json Edit → spec.md 自動更新の回帰確認",
+      "description": "symlink 経由で配信されているプロジェクトでも hook + sync が機能するか end-to-end 確認",
+      "tdd": false,
+      "dependencies": ["C2"],
+      "affectedFiles": [
+        { "path": "/home/ryryo/ablog/docs/PLAN/260414_tweet-post/tasks.json", "operation": "touch", "summary": "最小差分で往復 Edit。コミット不要" }
+      ],
+      "impl": "## 目的\n\nsymlink 経由配信（ablog の `.claude/skills/dev` → dot-claude-dev）でも hook + sync が正しく動くことを実証する。これが今回の修正の主目的の検証。\n\n## 手順\n\n1. ablog 側の現状確認:\n\n```bash\ncd /home/ryryo/ablog\ngit status docs/PLAN/260414_tweet-post/\n```\n\n期待: clean（tweet-post の最新コミット `82da54f` 以降、未コミット差分なし）\n\n2. spec.md の現状（hook バグ時代の状態）を保存してから更新を検証:\n\n```bash\ncp /home/ryryo/ablog/docs/PLAN/260414_tweet-post/spec.md /tmp/tweet-post-spec-before.md\ngrep -c 'A1\\*\\*: .* \\.claude/skills/tweet-post' /home/ryryo/ablog/docs/PLAN/260414_tweet-post/spec.md\n```\n\n3. ablog 側 tasks.json の **progress.completed** を 4→5→4 に往復 Edit（実質値を変えずに hook を発火させる）。最終状態は元の 4 に戻す:\n   - 1 回目の Edit: `\"completed\": 4,` を `\"completed\": 5,` に（Edit ツールで）\n   - 1 回目 Edit 直後、spec.md は sync 結果により更新される\n   - 2 回目の Edit: `\"completed\": 5,` を `\"completed\": 4,` に（元に戻す）\n   - 2 回目 Edit 後も spec.md は sync される\n\n4. spec.md の generated 領域を確認:\n\n```bash\ngrep -n '\\*\\*A1\\*\\*\\|\\*\\*A2\\*\\*' /home/ryryo/ablog/docs/PLAN/260414_tweet-post/spec.md\n```\n\n期待: A1/A2 がどちらも `- [x]` になっており、Review が `⏭️ SKIPPED — ...` になっていること（tasks.json 側の完了状態が反映されている）。**hook バグ時代は `- [ ]` / `_未記入_` のままだった**\n\n5. `/tmp/sync-spec-md-hook.log` を確認（B2 の ERR_LOG）:\n\n```bash\ncat /tmp/sync-spec-md-hook.log 2>/dev/null | tail -20 || echo \"(log empty — no errors)\"\n```\n\n期待: 空または存在しない\n\n6. ablog 側の git 状態確認:\n\n```bash\ncd /home/ryryo/ablog && git diff docs/PLAN/260414_tweet-post/tasks.json\n```\n\n期待: progress.completed は元の 4 に戻っており、spec.md の generated 領域が自動で同期された状態で差分が出る（これは期待する回復差分なので Gate 通過後にユーザー選択で commit する）\n\n## 検証\n\n- ablog 側 spec.md の A1/A2 行が `- [x]` + Review 記入済みに更新されている\n- ERR_LOG が空または存在しない\n- tasks.json の progress.completed は元の値（4）に戻っている\n- spec.md の差分は意図した自動同期結果のみ\n\n## 失敗時の対応\n\n- spec.md が未更新 → `/tmp/sync-spec-md-hook-debug.log` と `/tmp/sync-spec-md-hook.log` を確認し、A1 / B2 のどこで止まっているか判定\n- symlink 解決が効いていない → sync-spec-md.mjs の isDirectRun 実装を再確認（Node 22.20 なら `import.meta.main` が true になるはず）\n- ablog 側の差分が意図しない場所にも出る → sync-spec-md.mjs が generated 領域以外を触っていないか確認（既存テスト `replaceGeneratedSection: マーカー間を正しく置換する` がその保証）\n\n## 注意\n\n- 本 Todo が PASS すると、ablog 側 spec.md には自動同期結果の差分が残る。これはユーザーがレビュー後 commit するのが自然。Gate 通過後のユーザー最終確認フェーズで扱う。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C4",
+      "gate": "C",
+      "title": "A1 で追加した診断用 debug log を除去（恒常エラー可視化は残す）",
+      "description": "本番環境に一時診断ログが残らないようクリーンアップ。B2 の ERR_LOG（恒常）は残す",
+      "tdd": false,
+      "dependencies": ["C3"],
+      "affectedFiles": [
+        { "path": ".claude/hooks/dev/sync-spec-md-hook.sh", "operation": "edit", "summary": "A1 で追加した DEBUG_LOG 関連行を全て削除。B2 の ERR_LOG 実装は残す" }
+      ],
+      "impl": "## 目的\n\nA1 で追加した診断用の `DEBUG_LOG=/tmp/sync-spec-md-hook-debug.log` 関連の行を除去し、hook スクリプトを本番品質に戻す。B2 で追加した恒常的な ERR_LOG（`/tmp/sync-spec-md-hook.log`）は **残す**。\n\n## 手順\n\n1. `.claude/hooks/dev/sync-spec-md-hook.sh` を Read し、A1 で追加した `DEBUG_LOG=...` や `echo ... >> \"$DEBUG_LOG\"` 行を特定。\n\n2. 以下の行を Edit で削除:\n   - 冒頭の `DEBUG_LOG=\"/tmp/sync-spec-md-hook-debug.log\"` と直後の `{ echo ...; } >> \"$DEBUG_LOG\"` ブロック\n   - `echo \"INPUT_LEN=${#INPUT}\" >> \"$DEBUG_LOG\"`\n   - `echo \"tool_name ok ($TOOL_NAME)\" >> \"$DEBUG_LOG\"`\n   - `echo \"file_path=$FILE_PATH\" >> \"$DEBUG_LOG\"`\n   - `echo \"tasks.json filter ok\" >> \"$DEBUG_LOG\"`\n   - `echo \"spec_dir=$SPEC_DIR\" >> \"$DEBUG_LOG\"`\n   - `[diagnostic] Gate A1` コメント行\n\n**注**: A1 で追加した `calling node ... >> \"$DEBUG_LOG\"` と `node returned: ... >> \"$DEBUG_LOG\"` の 2 行は、B2 の `node` 実行ブロック書き換えで既に消滅しているはず（B2 は node 呼び出し部ごと置換する）。C4 の段階では既に存在しないので、対象外。\n\n3. B2 で追加した以下の行は **残す**:\n   - `ERR_LOG=\"/tmp/sync-spec-md-hook.log\"`\n   - `NODE_STDERR=$(mktemp)` 以降の失敗時ログ機構\n\n4. 既存の `/tmp/sync-spec-md-hook-debug.log` ファイルを削除:\n\n```bash\nrm -f /tmp/sync-spec-md-hook-debug.log\n```\n\n5. スクリプト全体を通読し、行の意味が通っているか確認。特に B2 の node 呼び出し部が残っていることを確認。\n\n6. 動作確認: 適当な Edit（本 tasks.json 自体の Edit で OK）を行い、`/tmp/sync-spec-md-hook-debug.log` が再生成されないことを確認:\n\n```bash\nls /tmp/sync-spec-md-hook-debug.log 2>&1 || echo \"(not created — expected)\"\n```\n\n期待: ファイルが存在しない（診断ログ除去成功）\n\n## 検証\n\n- sync-spec-md-hook.sh の diff で `DEBUG_LOG` 関連行が全て削除されている\n- `ERR_LOG` 関連行は残っている\n- Edit を 1 回実施した後 `/tmp/sync-spec-md-hook-debug.log` が作られない\n- `/tmp/sync-spec-md-hook.log` は作られない（正常系なので）または存在するが空\n- sync 機構が引き続き動作する（spec.md が tasks.json に同期される）\n\n## 失敗時の対応\n\n- `DEBUG_LOG` 行の削除漏れ → もう一度 grep で確認: `grep DEBUG_LOG .claude/hooks/dev/sync-spec-md-hook.sh` が空になっていること\n- 誤って `ERR_LOG` 行まで削除 → B2 の実装を再適用\n- sync が動かなくなった → 削除で必要な行まで消した可能性。git diff で確認",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-14T00:00:00Z",
+    "totalGates": 3,
+    "totalTodos": 10
+  }
+}
