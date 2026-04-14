@@ -77,12 +77,15 @@ export function TasksDetailTodo({ todo }: TasksDetailTodoProps) {
             {todo.steps.map((step, index) => (
               <li key={index} className="flex items-start gap-2">
                 {step.checked ? (
-                  <CheckCircle2 className="size-3.5 text-green-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="size-3.5 text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
                 ) : (
-                  <Circle className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                  <Circle className="size-3.5 text-muted-foreground shrink-0 mt-0.5" aria-hidden="true" />
                 )}
                 <div className="min-w-0">
-                  <span>{step.title}</span>
+                  <span>
+                    <span className="sr-only">{step.checked ? "完了" : "未完了"}: </span>
+                    {step.title}
+                  </span>
                   {step.kind === "review" && step.review && (
                     <div className="mt-1 rounded bg-muted px-2 py-1 space-y-0.5">
                       <div className="flex items-center gap-2">
@@ -90,7 +93,9 @@ export function TasksDetailTodo({ todo }: TasksDetailTodoProps) {
                           variant={
                             step.review.result === "PASSED"
                               ? "default"
-                              : "destructive"
+                              : step.review.result === "FAILED"
+                                ? "destructive"
+                                : "secondary"
                           }
                         >
                           {step.review.result}
