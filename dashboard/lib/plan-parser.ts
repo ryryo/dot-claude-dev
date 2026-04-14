@@ -122,7 +122,7 @@ function firstSentence(text: string): string {
   return (match ? match[1] : text).trim();
 }
 
-const REVIEW_FIRST_LINE_PATTERN = /^\s*>\s*\*\*Review\s+[\w\d]+\*\*[:：]\s*(.*)$/m;
+const REVIEW_FIRST_LINE_PATTERN = /^\s*>\s*\*\*Review\s+[\w\d]+\*\*[:：][^\S\n]*(.*)$/m;
 const REVIEW_RESULT_PATTERN = /(PASSED|FAILED|SKIPPED|IN[_\s-]?PROGRESS)/i;
 const REVIEW_FIX_COUNT_PATTERN = /FIX\s*(\d+)\s*回/;
 const COMMIT_HASH_PATTERN = /\b(?:commit|commits)\s+[0-9a-f,\s]+/gi;
