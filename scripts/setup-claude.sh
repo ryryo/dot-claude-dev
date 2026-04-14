@@ -3,18 +3,47 @@
 
 set -e
 
-SHARED_DIR="${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}"
+# CLAUDE_SHARED_DIR の解決
+# 1. env var 明示があればそれを採用
+# 2. 未設定なら 3 候補を探索（先頭優先）
+# 3. いずれも見つからなければエラー
+if [ -n "$CLAUDE_SHARED_DIR" ]; then
+  SHARED_DIR="$CLAUDE_SHARED_DIR"
+  SHARED_DIR_SOURCE="env"
+else
+  SHARED_DIR_SOURCE="discovered"
+  for CANDIDATE in "$HOME/dot-claude-dev" "$HOME/dev/dot-claude-dev" "$HOME/.dot-claude-dev"; do
+    if [ -d "$CANDIDATE" ]; then
+      SHARED_DIR="$CANDIDATE"
+      echo "✓ Discovered dot-claude-dev at: $SHARED_DIR"
+      break
+    fi
+  done
+fi
 
-if [ ! -d "$SHARED_DIR" ]; then
-  echo "Error: Shared directory not found: $SHARED_DIR"
-  echo "Please clone/create the shared directory first:"
-  echo "  git clone <your-repo> $SHARED_DIR"
+if [ -z "$SHARED_DIR" ]; then
+  echo "Error: dot-claude-dev not found in any of:"
+  echo "  - \$HOME/dot-claude-dev"
+  echo "  - \$HOME/dev/dot-claude-dev"
+  echo "  - \$HOME/.dot-claude-dev"
+  echo ""
+  echo "Please clone the repo or set CLAUDE_SHARED_DIR:"
+  echo "  git clone <your-repo> \$HOME/dot-claude-dev"
+  echo "  # or"
+  echo "  export CLAUDE_SHARED_DIR=/path/to/your/dot-claude-dev"
   exit 1
 fi
 
-# デフォルトパスと異なる場合、CLAUDE_SHARED_DIR を shell config に自動永続化
+# デフォルトパスと異なる場合 OR 探索で見つけた場合、CLAUDE_SHARED_DIR を shell config に自動永続化
 DEFAULT_DIR="$HOME/dot-claude-dev"
-if [ "$SHARED_DIR" != "$DEFAULT_DIR" ]; then
+should_persist=false
+if [ "$SHARED_DIR_SOURCE" = "discovered" ] && [ "$SHARED_DIR" != "$DEFAULT_DIR" ]; then
+  should_persist=true
+elif [ "$SHARED_DIR_SOURCE" = "env" ] && [ "$SHARED_DIR" != "$DEFAULT_DIR" ]; then
+  should_persist=true
+fi
+
+if [ "$should_persist" = "true" ]; then
   if [ -f "$HOME/.zshrc" ]; then
     SHELL_RC="$HOME/.zshrc"
   elif [ -f "$HOME/.bashrc" ]; then
