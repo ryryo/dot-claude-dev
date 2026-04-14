@@ -210,12 +210,12 @@ Gate C: 結線・検証（Gate B 完了後）
 
 > lazy fetch フックと TasksDetailSheet / TasksDetailTodo を実装
 
-- [ ] **B1**: useTasksJson カスタムフックを実装
-  > **Review B1**: _未記入_
-- [ ] **B2**: TasksDetailSheet コンポーネント（メタ・Preflight・Gate 骨格）
-  > **Review B2**: _未記入_
-- [ ] **B3**: TasksDetailTodo サブコンポーネント（Todo 詳細・impl markdown）
-  > **Review B3**: _未記入_
+- [x] **B1**: useTasksJson カスタムフックを実装
+  > **Review B1**: ✅ PASSED — enabled/cache/tickRef 全パス PASS。テスト5件PASS
+- [x] **B2**: TasksDetailSheet コンポーネント（メタ・Preflight・Gate 骨格）
+  > **Review B2**: ✅ PASSED (FIX 1回) — Accordion multiple prop 修正・ダミーTodo を正式 import に差し替え
+- [x] **B3**: TasksDetailTodo サブコンポーネント（Todo 詳細・impl markdown）
+  > **Review B3**: ✅ PASSED (FIX 1回) — SKIPPED/IN_PROGRESSバッジをsecondaryに変更・sr-only アクセシビリティ追加
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
