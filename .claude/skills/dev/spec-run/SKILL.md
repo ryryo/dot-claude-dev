@@ -72,7 +72,7 @@ Gate 内の全 Todo について:
 - [x] **P2**: **[手動]** `.env.local` に `API_KEY` を設定
 ```
 
-**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook（`.claude/settings.json` に登録済み）で自動再生成される
+**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook（`.claude/settings.json` に登録済み）で自動再生成される。hook が未発火の環境では `node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>` を明示的に実行して同期する
 
 ```json
 {

@@ -144,6 +144,8 @@ Step 3（FIX）も不要。そのまま Step 4（UPDATE）へ進む。
 
 Edit 後、PostToolUse hook が自動的に sync-spec-md.mjs を起動し、spec.md の generated 領域が tasks.json の新しい状態に合わせて再生成される。spec.md を直接開いて確認する必要はない（必要なら hook 実行後に Read で確認可能）。
 
+**hook 未発火時のフォールバック**: Edit 完了後に Read で spec.md を確認し、generated 領域が更新されていなければ、Bash で明示的に `node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>` を実行する。hook が Claude Code 以外の環境（opencode 等）で動作しない場合に備えた措置。
+
 ### v1 ディレクトリモード
 
 spec.md のチェックボックスを `[x]` に更新し、Review 結果を blockquote に記入する:
