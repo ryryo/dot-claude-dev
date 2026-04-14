@@ -119,7 +119,11 @@ function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV2 }) {
 
       <section className="space-y-2">
         <h3 className="text-sm font-semibold">Gates</h3>
-        <Accordion multiple className="w-full">
+        <Accordion
+          multiple
+          defaultValue={tasks.gates.map((g) => g.id)}
+          className="w-full"
+        >
           {tasks.gates.map((gate) => {
             const todos = tasks.todos.filter((t) => t.gate === gate.id)
 
