@@ -39,3 +39,7 @@ composer.lock
 # Dashboard
 dashboard/.next/
 dashboard/node_modules/
+
+# Pi Coding Agent
+.pi/settings.json
+.pi/AGENTS.md
