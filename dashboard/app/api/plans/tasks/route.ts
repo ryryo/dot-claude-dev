@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server';
 import { fetchFileContent } from '@/lib/github';
 import type { TasksJsonV2 } from '@/lib/types';
 
-// GitHub owner/repo names: alphanumeric, hyphens, dots, underscores (no slashes or special chars)
+// GitHub owner names: must start with alphanumeric, may contain hyphens/dots/underscores
 const OWNER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const REPO_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+// GitHub repo names: may start with dot (e.g. .github), no slashes or URL metacharacters
+const REPO_PATTERN = /^[A-Za-z0-9._-]+$/;
 const SLUG_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 export async function GET(request: Request) {

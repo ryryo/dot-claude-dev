@@ -45,6 +45,20 @@ describe('GET /api/plans/tasks', () => {
     expect(fetchFileContent).not.toHaveBeenCalled();
   });
 
+  it('.github のようなドット始まりのリポジトリ名を許可する', async () => {
+    vi.mocked(fetchFileContent).mockRejectedValueOnce(
+      new Error('Failed to fetch file at docs/PLAN/feature/tasks.json: 404'),
+    );
+
+    const response = await GET(
+      new Request('http://localhost/api/plans/tasks?owner=octocat&repo=.github&slug=feature'),
+    );
+
+    // fetchFileContent が呼ばれていること（バリデーションで弾かれていないこと）
+    expect(fetchFileContent).toHaveBeenCalledWith('octocat', '.github', 'docs/PLAN/feature/tasks.json');
+    expect(response.status).toBe(404);
+  });
+
   it('tasks.json が 404 のとき 404 を返す', async () => {
     vi.mocked(fetchFileContent).mockRejectedValueOnce(
       new Error('Failed to fetch file at docs/PLAN/feature/tasks.json: 404'),
