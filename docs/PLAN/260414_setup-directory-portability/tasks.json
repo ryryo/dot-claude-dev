@@ -7,10 +7,10 @@
     "createdDate": "2026-04-14",
     "specPath": "spec.md"
   },
-  "status": "in-progress",
+  "status": "completed",
   "reviewChecked": false,
   "progress": {
-    "completed": 16,
+    "completed": 18,
     "total": 18
   },
   "preflight": [],
@@ -397,13 +397,17 @@
         {
           "kind": "impl",
           "title": "Step 1 — IMPL",
-          "checked": false
+          "checked": true
         },
         {
           "kind": "review",
           "title": "Step 2 — Review",
-          "checked": false,
-          "review": null
+          "checked": true,
+          "review": {
+            "result": "PASSED",
+            "fixCount": 0,
+            "summary": "DEBUG_LOG除去完了。ERR_LOG恒常機構は保持。syntax OK"
+          }
         }
       ]
     }
