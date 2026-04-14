@@ -33,6 +33,18 @@ describe('GET /api/plans/tasks', () => {
     expect(fetchFileContent).not.toHaveBeenCalled();
   });
 
+  it('不正な owner/repo のとき 400 を返す', async () => {
+    const response = await GET(
+      new Request(
+        'http://localhost/api/plans/tasks?owner=o&repo=r/contents/other/tasks.json%23&slug=feature',
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'invalid owner or repo' });
+    expect(fetchFileContent).not.toHaveBeenCalled();
+  });
+
   it('tasks.json が 404 のとき 404 を返す', async () => {
     vi.mocked(fetchFileContent).mockRejectedValueOnce(
       new Error('Failed to fetch file at docs/PLAN/feature/tasks.json: 404'),

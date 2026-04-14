@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { fetchFileContent } from '@/lib/github';
 import type { TasksJsonV2 } from '@/lib/types';
 
+// GitHub owner/repo names: alphanumeric, hyphens, dots, underscores (no slashes or special chars)
+const OWNER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const REPO_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const SLUG_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 export async function GET(request: Request) {
@@ -18,6 +21,10 @@ export async function GET(request: Request) {
     );
   }
 
+  if (!OWNER_PATTERN.test(owner) || !REPO_PATTERN.test(repo)) {
+    return NextResponse.json({ error: 'invalid owner or repo' }, { status: 400 });
+  }
+
   if (!SLUG_PATTERN.test(slug)) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 400 });
   }
@@ -29,7 +36,8 @@ export async function GET(request: Request) {
     raw = await fetchFileContent(owner, repo, path);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown';
-    if (message.includes('404')) {
+    // fetchFileContent throws "Failed to fetch file at {path}: {status}" — match the trailing status number
+    if (/:\s*404$/.test(message)) {
       return NextResponse.json({ error: 'tasks.json not found' }, { status: 404 });
     }
     return NextResponse.json({ error: message }, { status: 502 });
