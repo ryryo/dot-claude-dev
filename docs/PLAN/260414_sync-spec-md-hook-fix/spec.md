@@ -16,7 +16,60 @@
 
 ### 発端
 
-ablog プロジェクト（`/home/ryryo/ablog/docs/PLAN/260414_tweet-post/` で `/dev:spec-run` 実行中）で、`tasks.json` を `Edit` しても `spec.md` の generated 領域 (`<!-- generated:begin -->` ... `<!-- generated:end -->`) が更新されないことが発覚。tasks.json 側では A1 Todo が `checked: true` + Review `SKIPPED` になっているのに、spec.md 側は `[ ]` / `_未記入_` のまま。
+ablog プロジェクト（`/home/ryryo/ablog/docs/PLAN/260414_tweet-post/` で `/dev:spec-run` 実行中）で、`tasks.json` を `Edit` しても `spec.md` の generated 領域 (`<!-- generated:begin -->
+<!-- このセクションは sync-spec-md が tasks.json から自動生成します。-->
+<!-- 手動編集は反映されません。変更は tasks.json に対して行ってください。-->
+
+### 依存関係図
+
+```
+Gate A: 診断層
+Gate B: 修正層（Gate A 完了後）
+Gate C: 動作確認層（Gate B 完了後）
+```
+
+### Gate A: 診断層
+
+> hook 発火の 6 層を実証的に切り分ける
+
+- [x] **A1**: sync-spec-md-hook.sh に診断用 debug log を一時的に仕込む
+  > **Review A1**: ✅ PASSED — 全6層ロギング確認済み。手動 hook 呼び出しで expected 7行全通過。spec.md 自動更新も確認
+- [ ] **A2**: tasks.json を実 Edit して hook 発火パスをログ検証
+  > **Review A2**: _未記入_
+- [ ] **A3**: sync-spec-md.mjs の isDirectRun バグを単体で再現（A2 で仮説 Z が有力な場合のみ）
+  > **Review A3**: _未記入_
+
+**Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+
+### Gate B: 修正層
+
+> direct-run 判定恒久化 + エラー可視化 + engines 明記
+
+- [ ] **B1**: [TDD] sync-spec-md.mjs の direct-run 判定を import.meta.main + realpath フォールバックに修正（仮説 Z 確定時のみ）
+  > **Review B1**: _未記入_
+- [ ] **B2**: sync-spec-md-hook.sh に恒常的なエラー可視化機構を追加
+  > **Review B2**: _未記入_
+- [ ] **B3**: package.json の engines.node を 22.18+ に明記
+  > **Review B3**: _未記入_
+
+**Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+
+### Gate C: 動作確認層
+
+> テスト通過 + self-test + ablog 回帰 + 診断ログ除去
+
+- [ ] **C1**: dot-claude-dev の vitest 全通過確認
+  > **Review C1**: _未記入_
+- [ ] **C2**: dot-claude-dev 内で tasks.json Edit → spec.md 自動更新の self-test
+  > **Review C2**: _未記入_
+- [ ] **C3**: ablog 側 tweet-post で tasks.json Edit → spec.md 自動更新の回帰確認
+  > **Review C3**: _未記入_
+- [ ] **C4**: A1 で追加した診断用 debug log を除去（恒常エラー可視化は残す）
+  > **Review C4**: _未記入_
+
+**Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+
+<!-- generated:end -->`) が更新されないことが発覚。tasks.json 側では A1 Todo が `checked: true` + Review `SKIPPED` になっているのに、spec.md 側は `[ ]` / `_未記入_` のまま。
 
 ### 既存の `260413_hook-verification` が不十分だった理由
 

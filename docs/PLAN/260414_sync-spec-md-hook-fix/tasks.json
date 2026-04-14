@@ -7,9 +7,9 @@
     "createdDate": "2026-04-14",
     "specPath": "spec.md"
   },
-  "status": "not-started",
+  "status": "in-progress",
   "reviewChecked": false,
-  "progress": { "completed": 0, "total": 20 },
+  "progress": { "completed": 2, "total": 20 },
   "preflight": [],
   "gates": [
     {
@@ -48,8 +48,8 @@
       "impl": "## 目的\n\nhook が実行時にどこまで進んだかを実証するための一時的なログ機構を追加する。Gate C4 で削除する。\n\n## 手順\n\n1. `/home/ryryo/dot-claude-dev/.claude/hooks/dev/sync-spec-md-hook.sh` を Read。\n\n2. 冒頭の `set -e` の直後に以下を挿入:\n\n```bash\n# [diagnostic] Gate A1 — 一時的な debug log。Gate C4 で除去。\nDEBUG_LOG=\"/tmp/sync-spec-md-hook-debug.log\"\n{\n  echo \"=== $(date -Iseconds) | PID $$ ===\"\n  echo \"CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-<unset>}\"\n  echo \"PWD=$(pwd)\"\n  echo \"script=$0\"\n} >> \"$DEBUG_LOG\"\n```\n\n3. `INPUT=$(cat)` の直後に:\n\n```bash\necho \"INPUT_LEN=${#INPUT}\" >> \"$DEBUG_LOG\"\n```\n\n4. tool_name case 文の `Edit|Write|MultiEdit) ;;` の直後（改行後）に:\n\n```bash\n    echo \"tool_name ok ($TOOL_NAME)\" >> \"$DEBUG_LOG\"\n```\n\n5. `FILE_PATH=$(echo ...)` 後の `[ -z \"$FILE_PATH\" ] && exit 0` の直前に:\n\n```bash\necho \"file_path=$FILE_PATH\" >> \"$DEBUG_LOG\"\n```\n\n6. `case \"$FILE_PATH\" in */tasks.json) ;;` の直後に:\n\n```bash\n    echo \"tasks.json filter ok\" >> \"$DEBUG_LOG\"\n```\n\n7. `SPEC_DIR=$(dirname \"$FILE_PATH\")` の直後（`[ ! -f ...]` の前）に:\n\n```bash\necho \"spec_dir=$SPEC_DIR\" >> \"$DEBUG_LOG\"\n```\n\n8. 最後の `node \"$SYNC_SCRIPT\" \"$FILE_PATH\" >&2 || { ... }` ブロックを以下に置き換え:\n\n```bash\necho \"calling node $SYNC_SCRIPT $FILE_PATH\" >> \"$DEBUG_LOG\"\nnode \"$SYNC_SCRIPT\" \"$FILE_PATH\" 2>&1 | tee -a \"$DEBUG_LOG\" >&2\nNODE_EXIT=${PIPESTATUS[0]}\necho \"node returned: $NODE_EXIT\" >> \"$DEBUG_LOG\"\n```\n\n9. スクリプトを保存し、実行権限があることを確認: `ls -la .claude/hooks/dev/sync-spec-md-hook.sh`。\n\n## 検証\n\n手動で hook を呼ぶ:\n\n```bash\nrm -f /tmp/sync-spec-md-hook-debug.log\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json\"}}' | \\\n  bash /home/ryryo/dot-claude-dev/.claude/hooks/dev/sync-spec-md-hook.sh\ncat /tmp/sync-spec-md-hook-debug.log\n```\n\n期待: 以下の行がログに含まれる:\n- `=== <timestamp> | PID ...`\n- `INPUT_LEN=...`\n- `tool_name ok (Edit)`\n- `file_path=/home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json`\n- `tasks.json filter ok`\n- `calling node ...`\n- `node returned: 0`\n\n手動実行で全ログが出ることを確認できたら Review 通過。\n\n## 注意\n\n- `set -e` 下なので失敗コマンドは即 exit する。`echo` は通常失敗しない。\n- `tee -a` 併用でログ粒度を保ちつつ既存の `>&2` を維持。",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "全6層ロギング確認済み。手動 hook 呼び出しで expected 7行全通過。spec.md 自動更新も確認" } }
       ]
     },
     {
@@ -63,6 +63,7 @@
         { "path": "docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json", "operation": "touch", "summary": "最小差分で Edit してログ観察。内容は戻して diff 0 にしない（progress 更新で自然に差分が残るため、この Todo 自体で追記される）" },
         { "path": "/home/ryryo/ablog/docs/PLAN/260414_tweet-post/tasks.json", "operation": "touch", "summary": "ablog 側（symlink 経由配信プロジェクト）の実 Edit。最小差分、直後に元に戻してコミット不要" }
       ],
+      "note": "STEP 2（ablog）は Mac 環境から /home/ryryo/ablog/ へのアクセス不可のためスキップ。claude-code-guide 調査により PostToolUse は symlink プロジェクトでも発火するが sync-spec-md.mjs の isDirectRun チェックが symlink パスで false になることが確認 → 仮説 Z 確定。",
       "impl": "## 目的\n\nA1 で仕込んだ debug log を使って、PostToolUse hook が実際にどの層で止まっているか（あるいは最後まで通っているか）を実測する。\n\n**重要**: まず symlink の有無を排除して仮説を絞るため、**dot-claude-dev 本体（symlink なし直参照）を最初に検証する**。ここで動けば symlink 問題（仮説 Z）に絞れる。動かなければ hook 発火 / 設定の問題（仮説 X/Y）なので Gate B の設計自体を見直す。\n\n## 手順\n\n### STEP 1（最優先）: dot-claude-dev 本体（symlink なし直参照）の実 Edit\n\n1. `rm -f /tmp/sync-spec-md-hook-debug.log` でログクリア。\n\n2. Edit ツールで `/home/ryryo/dot-claude-dev/docs/PLAN/260414_sync-spec-md-hook-fix/tasks.json` の `progress.completed` を `0` → `1` → `0` のように往復する最小差分 Edit を 1 回実施（状態値を変えずに発火させる）。\n\n3. 直後に `cat /tmp/sync-spec-md-hook-debug.log` で内容を確認。\n\n4. ログ内容を 6 層マトリクス（spec.md の「層別診断マトリクス」表）と照らして **dot-claude-dev 側の層別結果** を Review に記録:\n   - 層 1 (hook 起動): `=== <timestamp>` の有無\n   - 層 2 (INPUT 読み取り): `INPUT_LEN=N` の有無\n   - 層 3a (tool_name フィルタ): `tool_name ok (Edit)` の有無\n   - 層 3b (file_path 取得): `file_path=...` の有無\n   - 層 3c (tasks.json フィルタ): `tasks.json filter ok` の有無\n   - 層 4 (node 呼び出し): `calling node ...` の有無\n   - 層 5/6 (node 実行結果): `node returned: 0` の有無 + **spec.md の generated 領域が実際に更新されたか**\n\n5. **判定**:\n   - dot-claude-dev で spec.md が **更新される** → 仮説 Z（symlink 問題）が有力。STEP 2 に進む\n   - dot-claude-dev で spec.md が **更新されない** → 仮説 X/Y が現実（hook 発火 or 設定の問題）。この時点で spec-run を中断し、AskUserQuestion で設計見直しを提案（Gate B の現行計画を一旦棚上げ）\n\n### STEP 2（STEP 1 で dot-claude-dev 側が成功した場合のみ）: ablog 側（symlink 経由配信）の実 Edit\n\n1. `rm -f /tmp/sync-spec-md-hook-debug.log` で再度クリア。\n\n2. Edit ツールで `/home/ryryo/ablog/docs/PLAN/260414_tweet-post/tasks.json` の `progress.completed` を `4` → `5` → `4` のように往復する最小差分 Edit を実施。\n\n3. 直後に `cat /tmp/sync-spec-md-hook-debug.log`。\n\n4. ログを 6 層マトリクスで判定し、**ablog 側の層別結果** を Review に記録。dot-claude-dev 側との差分を明示する（「直参照では層 6 まで通過するが symlink 経由では層 5 で停止」など）。\n\n5. **重要**: ablog 側の tasks.json は必ず元の値に戻してから次の Todo へ進むこと。コミット差分を残さない。\n\n## 期待される結果（仮説ごと）\n\n**仮説 Z（想定）**: dot-claude-dev では層 1〜6 全通過、ablog では層 1〜4 は通過するが層 5/6（`node returned: 0` は出るが spec.md 未更新）で停止\n\n**仮説 Y（代替）**: dot-claude-dev / ablog 両方で層 3 のどこかで止まる → matcher or filter の問題\n\n**仮説 X（最悪）**: dot-claude-dev / ablog 両方で層 1 も出ない → そもそも hook が呼ばれていない → Claude Code 側設定の問題\n\n## 検証\n\n- STEP 1（dot-claude-dev 側）のログ結果が Review に記録されている\n- STEP 1 成功なら STEP 2 の結果も記録されている（2 側の層別比較つき）\n- 仮説（X/Y/Z）のどれに着地したかが Review に明記されている\n- ablog 側の tasks.json / spec.md に意図せぬ変更が残っていない\n\n## 注意\n\n- Edit が連続するとログが append されるので、必要に応じて適宜 `rm -f` でクリア。\n- ablog 側の Edit は progress.completed の往復（4→5→4）で、最終状態を元の値に戻すこと。",
       "relatedIssues": [],
       "steps": [

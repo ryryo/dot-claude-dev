@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 2,
+  "spec": {
+    "slug": "setup-directory-portability",
+    "title": "setup-project のディレクトリポータビリティ改善",
+    "summary": "複数ホスト / 複数 OS の間で dot-claude-dev を git 共有する際、$HOME 配下の配置差異で生じるパス解決問題と、symlink 経由で hook の main() が呼ばれない問題（旧 spec 継承）をまとめて解消する。",
+    "createdDate": "2026-04-14",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": { "completed": 0, "total": 18 },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "核心バグ修正 [TDD]",
+      "description": "symlink 経由で hook の main() が呼ばれない問題を最優先で倒す",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "セットアップ自動化",
+      "description": "Mac サブディレクトリ配置でも setup-claude.sh が自動で動くようにする",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "C",
+      "title": "可視化と要件明示",
+      "description": "hook 失敗の恒常観測と Node バージョン要件の明示",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "D",
+      "title": "オプション改善",
+      "description": "ドキュメントと開発環境設定を CLAUDE_SHARED_DIR 前提に統一",
+      "dependencies": ["B", "C"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "E",
+      "title": "検証と最終化",
+      "description": "全テスト通過確認と診断ログ除去",
+      "dependencies": ["D"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "[TDD] sync-spec-md.mjs の isDirectRun バグ修正（symlink 対応）",
+      "description": "import.meta.main と realpathSync を使い symlink 経由で呼ばれた時も main() が実行されるようにする",
+      "tdd": true,
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": ".claude/skills/dev/spec-run/scripts/sync-spec-md.mjs", "operation": "modify", "summary": "isDirectRun 判定を import.meta.main + pathToFileURL(realpathSync) に変更" },
+        { "path": ".claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs", "operation": "modify", "summary": "symlink 経由 subprocess 実行テストを追加" }
+      ],
+      "impl": "### RED フェーズ\n\n`.claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs` に symlink 経由 subprocess テストを追加する:\n\n```js\nimport { describe, it, expect, beforeAll, afterAll } from 'vitest';\nimport { spawnSync } from 'node:child_process';\nimport { mkdtempSync, symlinkSync, writeFileSync, rmSync, mkdirSync, readFileSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join, resolve } from 'node:path';\n\ndescribe('isDirectRun (symlink 経由)', () => {\n  let tmpDir;\n  let symlinkedScript;\n  const originalScript = resolve('.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs');\n\n  beforeAll(() => {\n    tmpDir = mkdtempSync(join(tmpdir(), 'sync-spec-md-symlink-'));\n    symlinkedScript = join(tmpDir, 'sync-spec-md.mjs');\n    symlinkSync(originalScript, symlinkedScript);\n\n    // 最小のダミー spec ディレクトリを作成\n    const specDir = join(tmpDir, 'spec');\n    mkdirSync(specDir);\n    const tasksJson = { schemaVersion: 2, gates: [], todos: [] };\n    writeFileSync(join(specDir, 'tasks.json'), JSON.stringify(tasksJson));\n    writeFileSync(join(specDir, 'spec.md'), '<!-- generated:begin -->\\nold\\n<!-- generated:end -->\\n');\n  });\n\n  afterAll(() => {\n    rmSync(tmpDir, { recursive: true, force: true });\n  });\n\n  it('symlink 経由で起動しても main() が実行されて spec.md が更新される', () => {\n    const tasksPath = join(tmpDir, 'spec', 'tasks.json');\n    const result = spawnSync('node', [symlinkedScript, tasksPath], { encoding: 'utf-8' });\n    expect(result.status).toBe(0);\n    const specContent = readFileSync(join(tmpDir, 'spec', 'spec.md'), 'utf-8');\n    expect(specContent).not.toContain('old');\n    expect(specContent).toContain('<!-- generated:begin -->');\n  });\n});\n```\n\n→ `npm test` で RED（新規テストが落ちる）を確認\n\n### GREEN フェーズ\n\n`.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs` の冒頭 import に以下を追加:\n\n```js\nimport { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';\nimport { dirname, resolve } from 'node:path';\nimport { pathToFileURL } from 'node:url';\n```\n\n末尾（line 148-155 付近）の isDirectRun ブロックを以下に置き換え:\n\n```js\n// 直接実行時のみ main を呼ぶ（symlink 経由でも動作するよう realpath 解決）\nconst isDirectRun = import.meta.main ?? (\n  process.argv[1] &&\n  import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href\n);\nif (isDirectRun) {\n  main();\n}\n```\n\n→ `npm test` で全通過（既存 + 新規）を確認\n\n### REFACTOR フェーズ\n\n- 修正不要な既存ロジックには手を入れない\n- import 順序が ESLint 等で指摘されれば整える\n\n### 検証コマンド\n\n```bash\ncd /Users/ryryo/dev/dot-claude-dev\nnpm test -- --run .claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs\n```\n\n既存テスト（pure 関数テスト）と新規テスト（symlink subprocess）がすべて PASS すること。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "setup-claude.sh に CLAUDE_SHARED_DIR 未設定検出 + 探索 + shell rc 自動追記を実装",
+      "description": "CLAUDE_SHARED_DIR 未設定時に $HOME 配下を探索し、見つかれば採用 + shell rc に永続化する",
+      "tdd": false,
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "scripts/setup-claude.sh", "operation": "modify", "summary": "未設定検出 + 3 候補探索 + 見つけた場合も rc 追記するロジックを line 6 直後に挿入" }
+      ],
+      "impl": "### 修正箇所\n\n`scripts/setup-claude.sh` line 6 の `SHARED_DIR=\"${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}\"` を以下に置き換え:\n\n```bash\n# CLAUDE_SHARED_DIR の解決\n# 1. env var 明示があればそれを採用\n# 2. 未設定なら 3 候補を探索（先頭優先）\n# 3. いずれも見つからなければエラー\nif [ -n \"$CLAUDE_SHARED_DIR\" ]; then\n  SHARED_DIR=\"$CLAUDE_SHARED_DIR\"\n  SHARED_DIR_SOURCE=\"env\"\nelse\n  SHARED_DIR_SOURCE=\"discovered\"\n  for CANDIDATE in \"$HOME/dot-claude-dev\" \"$HOME/dev/dot-claude-dev\" \"$HOME/.dot-claude-dev\"; do\n    if [ -d \"$CANDIDATE\" ]; then\n      SHARED_DIR=\"$CANDIDATE\"\n      echo \"✓ Discovered dot-claude-dev at: $SHARED_DIR\"\n      break\n    fi\n  done\nfi\n\nif [ -z \"$SHARED_DIR\" ]; then\n  echo \"Error: dot-claude-dev not found in any of:\"\n  echo \"  - \\$HOME/dot-claude-dev\"\n  echo \"  - \\$HOME/dev/dot-claude-dev\"\n  echo \"  - \\$HOME/.dot-claude-dev\"\n  echo \"\"\n  echo \"Please clone the repo or set CLAUDE_SHARED_DIR:\"\n  echo \"  git clone <your-repo> \\$HOME/dot-claude-dev\"\n  echo \"  # or\"\n  echo \"  export CLAUDE_SHARED_DIR=/path/to/your/dot-claude-dev\"\n  exit 1\nfi\n```\n\n元の line 8-13（`if [ ! -d \"$SHARED_DIR\" ]; then ... exit 1`）は上記の discovered フローに統合されたため削除。\n\n### 永続化ロジックの拡張（line 15-34）\n\n既存の「デフォルトパスと異なる場合のみ rc 追記」ロジックを、「探索で見つけた場合も追記」に広げる:\n\n```bash\n# デフォルトパスと異なる場合 OR env var 未設定で探索により見つけた場合、CLAUDE_SHARED_DIR を shell config に自動永続化\nDEFAULT_DIR=\"$HOME/dot-claude-dev\"\nshould_persist=false\nif [ \"$SHARED_DIR_SOURCE\" = \"discovered\" ] && [ \"$SHARED_DIR\" != \"$DEFAULT_DIR\" ]; then\n  should_persist=true\nelif [ \"$SHARED_DIR_SOURCE\" = \"env\" ] && [ \"$SHARED_DIR\" != \"$DEFAULT_DIR\" ]; then\n  should_persist=true\nfi\n\nif [ \"$should_persist\" = \"true\" ]; then\n  # 既存の SHELL_RC 選定 + grep 重複チェック + 追記ロジックはそのまま\n  ...\nfi\n```\n\n### 検証手順\n\n1. **ケース 1（env var 明示）**:\n   ```bash\n   CLAUDE_SHARED_DIR=/Users/ryryo/dev/dot-claude-dev bash scripts/setup-claude.sh --dry-run 2>&1 | head -5\n   # → \"Shared directory: /Users/ryryo/dev/dot-claude-dev\" が表示される\n   ```\n2. **ケース 2（未設定 + Mac サブディレクトリ）**:\n   ```bash\n   # .zshrc から CLAUDE_SHARED_DIR 行を一時的に退避\n   env -u CLAUDE_SHARED_DIR bash scripts/setup-claude.sh 2>&1 | grep -E \"Discovered|Error\"\n   # → \"✓ Discovered dot-claude-dev at: /Users/ryryo/dev/dot-claude-dev\"\n   ```\n3. **ケース 3（どこにもない）**: tmpdir を $HOME に見立てた隔離環境で `Error: dot-claude-dev not found` が出ることを確認\n4. **rc 追記確認**: 探索で見つけた直後の `.zshrc` に `export CLAUDE_SHARED_DIR=...` 行が追加されていること。再実行時は重複追記されないこと。\n\n### 注意事項\n\n- 本スクリプトは `set -e` が冒頭にあるため、変数未定義参照に注意（`[ -z \"$SHARED_DIR\" ]` 等は意図通り動く）\n- 既存の動作（デフォルト $HOME/dot-claude-dev が存在し env var 未設定）は discovered パス経由で完全互換\n- Mac/WSL/Linux/Remote で同じスクリプトが動くことを保証（GNU/BSD sed 差異は不使用のため問題なし）\n- 探索候補は OS 非依存。Mac で $HOME 直下 / WSL でサブディレクトリという将来の配置変更にも追加修正なしで対応\n- 3 候補外のカスタム配置（$HOME/repos/... 等）は CLAUDE_SHARED_DIR env var を明示設定する運用を前提（spec.md 設計決定事項 #4b 参照）",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C1",
+      "gate": "C",
+      "title": "[SIMPLE] sync-spec-md-hook.sh に失敗時 ERR_LOG 記録を追加",
+      "description": "node 実行失敗時のみ /tmp/sync-spec-md-hook.log に記録する恒常機構を追加",
+      "tdd": false,
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": ".claude/hooks/dev/sync-spec-md-hook.sh", "operation": "modify", "summary": "line 76-80 の node 呼び出し部に失敗時 ERR_LOG を追加" }
+      ],
+      "impl": "### 修正箇所\n\n`.claude/hooks/dev/sync-spec-md-hook.sh` line 76-80 の既存ブロック:\n\n```bash\n# sync-spec-md.mjs を起動（[diagnostic] tee でログに残す）\necho \"calling node $SYNC_SCRIPT $FILE_PATH\" >> \"$DEBUG_LOG\"\nnode \"$SYNC_SCRIPT\" \"$FILE_PATH\" 2>&1 | tee -a \"$DEBUG_LOG\" >&2\nNODE_EXIT=${PIPESTATUS[0]}\necho \"node returned: $NODE_EXIT\" >> \"$DEBUG_LOG\"\n```\n\nを以下に置き換え（Gate E2 での A1 診断ログ除去を見据え、ERR_LOG は恒常機構として独立させる）:\n\n```bash\n# sync-spec-md.mjs を起動\n# - 成功時: stderr 出力を破棄、終了コード 0\n# - 失敗時: stderr を /tmp/sync-spec-md-hook.log に記録（タイムスタンプ + FILE_PATH + エラー内容）\nERR_LOG=\"/tmp/sync-spec-md-hook.log\"\nERR_TMP=$(mktemp -t sync-spec-md-hook.XXXXXX)\nif ! node \"$SYNC_SCRIPT\" \"$FILE_PATH\" 2> \"$ERR_TMP\"; then\n  {\n    echo \"=== $(date -Iseconds) | PID $$ ===\"\n    echo \"FILE_PATH=$FILE_PATH\"\n    cat \"$ERR_TMP\"\n    echo \"\"\n  } >> \"$ERR_LOG\"\nfi\nrm -f \"$ERR_TMP\"\n```\n\n**注意**:\n- 旧コードの `NODE_EXIT=${PIPESTATUS[0]}` と `echo \"node returned: $NODE_EXIT\"` はいずれも A1 診断のために `tee -a $DEBUG_LOG` と組み合わせて意味を持っていたログ。本改修で `tee` を削除し失敗時のみ ERR_LOG に記録する方針に切り替えるため、`NODE_EXIT` キャプチャと node returned ログ行はまとめて削除する（成功/失敗は `if ! node ...` で十分判別される）。\n- A1 由来の他の `>> \"$DEBUG_LOG\"` 行（`calling node ...` を含む line 77 の echo、line 10-17 のヘッダ、line 20, 26, 33, 39, 54 のフィルタ通過ログ）は C1 では残す。A1 診断ログ除去は E2 で一括実施する。\n- Gate E2 で A1 診断ログを一括除去した後も、ERR_LOG 関連のコードブロック（上記 `ERR_LOG=...` 〜 `rm -f \"$ERR_TMP\"` の部分）は恒常機構として残す。\n\n### 検証手順\n\n1. **成功ケース**: `tasks.json` を通常 Edit して hook 発火 → `/tmp/sync-spec-md-hook.log` に追記されないこと\n2. **失敗ケース**: `tasks.json` に不正な JSON を書き込んで hook 発火 → `/tmp/sync-spec-md-hook.log` にタイムスタンプ + エラー内容が追記されること\n   ```bash\n   rm -f /tmp/sync-spec-md-hook.log\n   # 壊れた tasks.json で Edit を発火\n   cat /tmp/sync-spec-md-hook.log\n   # → === 2026-04-14T... | PID ... === / FILE_PATH=... / SyntaxError: ...\n   ```",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C2",
+      "gate": "C",
+      "title": "[SIMPLE] package.json に engines.node >= 22.18.0 を明記",
+      "description": "import.meta.main が Node 22.18+ で追加されたため、前提バージョンを明示する",
+      "tdd": false,
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "package.json", "operation": "modify", "summary": "engines フィールドを追加" }
+      ],
+      "impl": "### 修正箇所\n\n`package.json` の `devDependencies` の後（または `description` の後）に `engines` を追加:\n\n```json\n{\n  \"name\": \"dot-claude-dev\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Claude Code Story-Driven Development Framework\",\n  \"type\": \"module\",\n  \"engines\": {\n    \"node\": \">=22.18.0\"\n  },\n  \"scripts\": { ... },\n  ...\n}\n```\n\n### 検証コマンド\n\n```bash\nnode -e 'const p = require(\"./package.json\"); if (!p.engines || !p.engines.node) process.exit(1); console.log(p.engines.node)'\n# → \">=22.18.0\"\n\n# JSON 構文確認\nnode -e 'JSON.parse(require(\"fs\").readFileSync(\"package.json\",\"utf-8\"))'\n# → エラーなし\n```",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "D1",
+      "gate": "D",
+      "title": "[SIMPLE] docs/setup-guide.md を CLAUDE_SHARED_DIR 前提の記述に一斉更新",
+      "description": "3 環境対応を正式にドキュメント化し、セットアップの単一起点を CLAUDE_SHARED_DIR に揃える",
+      "tdd": false,
+      "dependencies": ["B1", "C1", "C2"],
+      "affectedFiles": [
+        { "path": "docs/setup-guide.md", "operation": "modify", "summary": "ディレクトリ構造図・インストール手順・リモート環境セクションを CLAUDE_SHARED_DIR 前提に統一" }
+      ],
+      "impl": "### 修正ポイント\n\n1. **line 20 ディレクトリ構造図**: `~/dot-claude-dev/` を `${CLAUDE_SHARED_DIR}/` に変更（または併記で両方示す）\n2. **line 46-56 シンボリックリンク先**: `~/dot-claude-dev/.claude/...` を `${CLAUDE_SHARED_DIR}/.claude/...` に変更\n3. **line 75-90 `2. 参照先ディレクトリの確認`**: B1 の新機能（自動探索 + 自動追記）を反映した説明に書き換え:\n   ```markdown\n   ### 2. 参照先ディレクトリの確認（自動）\n\n   `setup-claude.sh` は以下の順で `dot-claude-dev` を探索します:\n\n   1. `CLAUDE_SHARED_DIR` 環境変数（明示的に設定されていれば最優先）\n   2. `$HOME/dot-claude-dev`\n   3. `$HOME/dev/dot-claude-dev`\n   4. `$HOME/.dot-claude-dev`（Remote 用）\n\n   見つけた場合、自動で shell rc（`.zshrc` / `.bashrc` / `.profile`）に `export CLAUDE_SHARED_DIR=...` を追記します。\n   既に設定済みなら重複追記しません。\n\n   **明示指定が必要な場合** のみ、手動で追記してください:\n   \\`\\`\\`bash\n   echo 'export CLAUDE_SHARED_DIR=\"/path/to/your/dot-claude-dev\"' >> ~/.zshrc\n   \\`\\`\\`\n   ```\n4. **line 247-251 更新セクション**: `cd ~/dot-claude-dev` を `cd \"${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}\"` に変更\n\n### 検証手順\n\n- `grep -n \"~/dot-claude-dev\" docs/setup-guide.md` でハードコードパスが残っていないか確認\n- 更新後に markdown 構文が壊れていないか目視確認（コードブロックの閉じ、リンク等）",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "D2",
+      "gate": "D",
+      "title": "[SIMPLE] .claude/launch.json の npm shim ハードコードを削除",
+      "description": "Mac の nodenv shim パス（/Users/ryryo/.anyenv/...）を汎用の npm に変更する",
+      "tdd": false,
+      "dependencies": ["B1", "C1", "C2"],
+      "affectedFiles": [
+        { "path": ".claude/launch.json", "operation": "modify", "summary": "runtimeExecutable を npm に変更" }
+      ],
+      "impl": "### 修正箇所\n\n`.claude/launch.json` の `runtimeExecutable` をハードコードから汎用 `npm` に変更:\n\n```json\n{\n  \"version\": \"0.0.1\",\n  \"configurations\": [\n    {\n      \"name\": \"dashboard\",\n      \"runtimeExecutable\": \"npm\",\n      \"runtimeArgs\": [\"run\", \"dev\"],\n      \"port\": 3000,\n      \"cwd\": \"dashboard\"\n    }\n  ]\n}\n```\n\n### 検証\n\n- JSON 構文確認: `node -e 'JSON.parse(require(\"fs\").readFileSync(\".claude/launch.json\",\"utf-8\"))'`\n- VS Code / Claude Code でデバッグ起動時に PATH 上の `npm` が解決されること。nodenv 利用者は IDE 側で PATH 追加。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "D3",
+      "gate": "D",
+      "title": "check-claude-setup.sh に別パス dot-claude-dev 発見時の指針表示を追加",
+      "description": "リンク先が別パスの dot-claude-dev を指している場合に CLAUDE_SHARED_DIR 設定方法を案内する",
+      "tdd": false,
+      "dependencies": ["B1", "C1", "C2"],
+      "affectedFiles": [
+        { "path": ".claude/skills/setup-project/scripts/check-claude-setup.sh", "operation": "modify", "summary": "「別パス」判定の時に CLAUDE_SHARED_DIR 設定ガイドを stderr に出力" }
+      ],
+      "impl": "### 修正箇所\n\n`.claude/skills/setup-project/scripts/check-claude-setup.sh` line 47-49（「別パス」検出ブロック）を以下に拡張:\n\n```bash\nelse\n  printf \"%-35s %-10s %s\\n\" \"$LINK\" \"別パス\" \"$ACTUAL\"\n  ALL_OK=false\n  # 別パスで dot-claude-dev 配下を指しているなら CLAUDE_SHARED_DIR 設定を案内\n  case \"$ACTUAL\" in\n    */dot-claude-dev/*|*/.dot-claude-dev/*)\n      if [ \"$SHOWED_HINT\" != \"true\" ]; then\n        echo \"\"\n        echo \"  ⚠️  リンク先の dot-claude-dev が想定と異なります。\"\n        echo \"      実際の配置: $(echo \"$ACTUAL\" | sed -E 's|/.claude/.*||')\"\n        echo \"      想定の配置: $SHARED\"\n        echo \"\"\n        echo \"      [修正方法] CLAUDE_SHARED_DIR を実際の配置に合わせて永続化:\"\n        ACTUAL_BASE=$(echo \"$ACTUAL\" | sed -E 's|/.claude/.*||')\n        echo \"        echo 'export CLAUDE_SHARED_DIR=\\\"$ACTUAL_BASE\\\"' >> ~/.zshrc\"\n        echo \"        source ~/.zshrc\"\n        echo \"        bash \\\"\\$CLAUDE_SHARED_DIR/scripts/setup-claude.sh\\\"\"\n        SHOWED_HINT=true\n      fi\n      ;;\n  esac\nfi\n```\n\nループ開始前（line 29 `ALL_OK=true` の直後）に `SHOWED_HINT=false` を追加してヒント重複表示を防止。\n\n### 検証手順\n\n1. 正常なプロジェクトで実行 → 従来通り「✓ 全リンク正常」\n2. 別パス（例: `/Users/ryryo/dev/dot-claude-dev/...` を指すリンク、`$SHARED` は `$HOME/dot-claude-dev`）をシミュレート → 「別パス」表示後に案内ブロックが 1 回だけ表示されること\n3. `set -e` を破壊しないこと（grep や sed の失敗で早期終了しない）",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "E1",
+      "gate": "E",
+      "title": "npm test 全通過確認 + dot-claude-dev 内 self-test 実施",
+      "description": "全ユニットテスト通過と、tasks.json Edit → spec.md 自動更新の live 検証",
+      "tdd": false,
+      "dependencies": ["D1", "D2", "D3"],
+      "affectedFiles": [
+        { "path": ".claude/skills/dev/spec-run/scripts/sync-spec-md.mjs", "operation": "verify", "summary": "symlink 経由で isDirectRun が true になり main() が呼ばれることを live 検証" },
+        { "path": ".claude/skills/dev/spec-run/scripts/__tests__/sync-spec-md.test.mjs", "operation": "verify", "summary": "既存 pure 関数テスト + A1 追加 symlink subprocess テストが npm test で全通過することを確認" },
+        { "path": ".claude/hooks/dev/sync-spec-md-hook.sh", "operation": "verify", "summary": "成功ケースで ERR_LOG が空、失敗ケースで ERR_LOG に記録されることを live 検証" },
+        { "path": "docs/PLAN/260414_setup-directory-portability/tasks.json", "operation": "verify", "summary": "Edit 発火で hook が走り spec.md の generated 領域が自動更新されることを確認する対象ファイル" }
+      ],
+      "impl": "### Step 1: npm test 全通過確認\n\n```bash\ncd /Users/ryryo/dev/dot-claude-dev\nnpm test -- --run\n```\n\n- 既存テスト（sync-spec-md の pure 関数テスト等）\n- A1 で追加した symlink subprocess テスト\n- 全て PASS であること\n\n### Step 2: dot-claude-dev 内 self-test\n\n**前提**: A1 の修正を反映した `sync-spec-md.mjs` が symlink なしで呼ばれる経路でも、symlink 経由でも両方動作することを確認。\n\n#### 直接呼び出しテスト（symlink なし）\n\n```bash\nrm -f /tmp/sync-spec-md-hook-debug.log /tmp/sync-spec-md-hook.log\n# Edit ツールで docs/PLAN/260414_setup-directory-portability/tasks.json の progress.completed を往復編集\n# 例: 0 → 0 のダミー Edit\n\ncat /tmp/sync-spec-md-hook-debug.log\n# → 6 層すべて通過（tool_name ok / file_path / tasks.json filter ok / calling node / node returned: 0）\n\ncat /tmp/sync-spec-md-hook.log\n# → 空（成功ケースなので ERR_LOG は書かれない）\n```\n\n#### 失敗系での ERR_LOG 動作確認\n\n```bash\n# 存在しない tasks.json を狙って node を直接失敗させる（リハーサル）\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/tmp/nonexistent/tasks.json\"}}' | bash .claude/hooks/dev/sync-spec-md-hook.sh\n# このケースは spec.md が無いので早期 exit 0（ERR_LOG には書かれない）\n\n# 壊れた tasks.json をリアルに作って発火\nmkdir -p /tmp/broken-spec\necho 'not-json' > /tmp/broken-spec/tasks.json\necho '<!-- generated:begin -->\\n<!-- generated:end -->' > /tmp/broken-spec/spec.md\necho '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/tmp/broken-spec/tasks.json\"}}' | bash .claude/hooks/dev/sync-spec-md-hook.sh\ncat /tmp/sync-spec-md-hook.log\n# → タイムスタンプ + FILE_PATH + SyntaxError が記録されていること\nrm -rf /tmp/broken-spec\n```\n\n### Step 3: spec.md 自動更新の live 確認\n\ntasks.json の進捗 Edit で本 spec の spec.md の generated 領域が自動更新されることを Read で確認。\n\n### 注意事項\n\n- `hook 変更後はセッション再起動が必要` （memory の feedback 参照）ため、C1 で hook を編集したら Edit ツールでの live 発火確認前にセッション再起動する必要がある旨を Review に記録する\n- ablog での回帰検証は Mac から不可。WSL 側で人間が実施することを spec.md のレビューステータスに記載済み",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "E2",
+      "gate": "E",
+      "title": "Gate A1（旧 spec）由来の診断ログを sync-spec-md-hook.sh から除去（ERR_LOG は残す）",
+      "description": "旧 spec で仕込んだ DEBUG_LOG 記録を削除し、C1 で追加した ERR_LOG のみ残す",
+      "tdd": false,
+      "dependencies": ["E1"],
+      "affectedFiles": [
+        { "path": ".claude/hooks/dev/sync-spec-md-hook.sh", "operation": "modify", "summary": "DEBUG_LOG 関連の行を一括除去、ERR_LOG は保持" }
+      ],
+      "impl": "### 除去対象行\n\n`.claude/hooks/dev/sync-spec-md-hook.sh` から以下の旧診断ログコードを削除:\n\n- line 10-17: `DEBUG_LOG=\"/tmp/sync-spec-md-hook-debug.log\"` とヘッダ出力ブロック全体\n- line 20: `echo \"INPUT_LEN=${#INPUT}\" >> \"$DEBUG_LOG\"`\n- line 26: `echo \"tool_name ok ($TOOL_NAME)\" >> \"$DEBUG_LOG\"`\n- line 33: `echo \"file_path=$FILE_PATH\" >> \"$DEBUG_LOG\"`\n- line 39: `echo \"tasks.json filter ok\" >> \"$DEBUG_LOG\"`\n- line 54: `echo \"spec_dir=$SPEC_DIR\" >> \"$DEBUG_LOG\"`\n- C1 で追加した末尾の `echo \"node returned: $?\" >> \"$DEBUG_LOG\"`\n- `echo \"calling node $SYNC_SCRIPT $FILE_PATH\" >> \"$DEBUG_LOG\"`\n\n### 保持対象（ERR_LOG 機構）\n\n```bash\nERR_LOG=\"/tmp/sync-spec-md-hook.log\"\nERR_TMP=$(mktemp -t sync-spec-md-hook.XXXXXX)\nif ! node \"$SYNC_SCRIPT\" \"$FILE_PATH\" 2> \"$ERR_TMP\"; then\n  {\n    echo \"=== $(date -Iseconds) | PID $$ ===\"\n    echo \"FILE_PATH=$FILE_PATH\"\n    cat \"$ERR_TMP\"\n    echo \"\"\n  } >> \"$ERR_LOG\"\nfi\nrm -f \"$ERR_TMP\"\n```\n\n### 除去後の確認\n\n```bash\ngrep -n 'DEBUG_LOG\\|sync-spec-md-hook-debug.log' .claude/hooks/dev/sync-spec-md-hook.sh\n# → 何も出力されないこと\n\ngrep -n 'ERR_LOG\\|sync-spec-md-hook.log' .claude/hooks/dev/sync-spec-md-hook.sh\n# → ERR_LOG 定義とブロックが残っていること\n\n# 一時ファイル削除\nrm -f /tmp/sync-spec-md-hook-debug.log\n```\n\n### 検証手順\n\n1. スクリプトが syntax OK: `bash -n .claude/hooks/dev/sync-spec-md-hook.sh`\n2. Edit ツールで tasks.json を発火 → `/tmp/sync-spec-md-hook-debug.log` が生成されないこと（成功ケース）\n3. 壊れた tasks.json で発火 → `/tmp/sync-spec-md-hook.log` に記録される（ERR_LOG 残存確認）",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-14T00:00:00+09:00",
+    "totalGates": 5,
+    "totalTodos": 9
+  }
+}

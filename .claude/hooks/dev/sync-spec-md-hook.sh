@@ -7,22 +7,37 @@
 
 set -e
 
+# [diagnostic] Gate A1 — 一時的な debug log。Gate C4 で除去。
+DEBUG_LOG="/tmp/sync-spec-md-hook-debug.log"
+{
+  echo "=== $(date -Iseconds) | PID $$ ==="
+  echo "CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-<unset>}"
+  echo "PWD=$(pwd)"
+  echo "script=$0"
+} >> "$DEBUG_LOG"
+
 INPUT=$(cat)
+echo "INPUT_LEN=${#INPUT}" >> "$DEBUG_LOG"
 
 # tool_name フィルタ
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""')
 case "$TOOL_NAME" in
-  Edit|Write|MultiEdit) ;;
+  Edit|Write|MultiEdit)
+    echo "tool_name ok ($TOOL_NAME)" >> "$DEBUG_LOG"
+    ;;
   *) exit 0 ;;
 esac
 
 # file_path を取得
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
+echo "file_path=$FILE_PATH" >> "$DEBUG_LOG"
 [ -z "$FILE_PATH" ] && exit 0
 
 # tasks.json で終わらなければスキップ
 case "$FILE_PATH" in
-  */tasks.json) ;;
+  */tasks.json)
+    echo "tasks.json filter ok" >> "$DEBUG_LOG"
+    ;;
   *) exit 0 ;;
 esac
 
@@ -36,6 +51,7 @@ fi
 
 # 同階層に spec.md がなければスキップ
 SPEC_DIR=$(dirname "$FILE_PATH")
+echo "spec_dir=$SPEC_DIR" >> "$DEBUG_LOG"
 [ ! -f "$SPEC_DIR/spec.md" ] && exit 0
 
 # sync-spec-md.mjs のパスを解決
@@ -57,9 +73,10 @@ if ! command -v node >/dev/null 2>&1; then
   exit 0
 fi
 
-# sync-spec-md.mjs を起動（エラーも exit 0 で吸収）
-node "$SYNC_SCRIPT" "$FILE_PATH" >&2 || {
-  echo "sync-spec-md-hook: sync-spec-md.mjs failed (non-fatal), continuing" >&2
-}
+# sync-spec-md.mjs を起動（[diagnostic] tee でログに残す）
+echo "calling node $SYNC_SCRIPT $FILE_PATH" >> "$DEBUG_LOG"
+node "$SYNC_SCRIPT" "$FILE_PATH" 2>&1 | tee -a "$DEBUG_LOG" >&2
+NODE_EXIT=${PIPESTATUS[0]}
+echo "node returned: $NODE_EXIT" >> "$DEBUG_LOG"
 
 exit 0
