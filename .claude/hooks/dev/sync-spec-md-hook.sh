@@ -7,36 +7,23 @@
 
 set -e
 
-# [diagnostic] Gate A1 — 一時的な debug log。Gate C4 で除去。
-DEBUG_LOG="/tmp/sync-spec-md-hook-debug.log"
-{
-  echo "=== $(date -Iseconds) | PID $$ ==="
-  echo "CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-<unset>}"
-  echo "PWD=$(pwd)"
-  echo "script=$0"
-} >> "$DEBUG_LOG"
-
 INPUT=$(cat)
-echo "INPUT_LEN=${#INPUT}" >> "$DEBUG_LOG"
 
 # tool_name フィルタ
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""')
 case "$TOOL_NAME" in
   Edit|Write|MultiEdit)
-    echo "tool_name ok ($TOOL_NAME)" >> "$DEBUG_LOG"
     ;;
   *) exit 0 ;;
 esac
 
 # file_path を取得
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""')
-echo "file_path=$FILE_PATH" >> "$DEBUG_LOG"
 [ -z "$FILE_PATH" ] && exit 0
 
 # tasks.json で終わらなければスキップ
 case "$FILE_PATH" in
   */tasks.json)
-    echo "tasks.json filter ok" >> "$DEBUG_LOG"
     ;;
   *) exit 0 ;;
 esac
@@ -51,7 +38,6 @@ fi
 
 # 同階層に spec.md がなければスキップ
 SPEC_DIR=$(dirname "$FILE_PATH")
-echo "spec_dir=$SPEC_DIR" >> "$DEBUG_LOG"
 [ ! -f "$SPEC_DIR/spec.md" ] && exit 0
 
 # sync-spec-md.mjs のパスを解決
