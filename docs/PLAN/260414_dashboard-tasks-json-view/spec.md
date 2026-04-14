@@ -10,7 +10,7 @@
 
 > Codex / サブエージェントの sandbox 制限により、ネットワーク必須の処理を `/dev:spec-run` 実行時に Claude main session が先に実行する。詳細は `tasks.json` の `preflight` 配列を参照。
 
-- [ ] **P1**: shadcn Accordion コンポーネントを dashboard に追加
+- [x] **P1**: shadcn Accordion コンポーネントを dashboard に追加
 
 ---
 
