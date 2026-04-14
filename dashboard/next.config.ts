@@ -7,6 +7,9 @@ const configDir = path.dirname(fileURLToPath(import.meta.url))
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: configDir,
+  turbopack: {
+    root: configDir,
+  },
 }
 
 export default nextConfig
