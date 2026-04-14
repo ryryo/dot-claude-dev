@@ -12,9 +12,10 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { ChevronRight, FileText } from 'lucide-react'
+import { ChevronRight, FileText, ListChecks } from 'lucide-react'
 
 import { PlanMarkdownModal } from '@/components/plan-markdown-modal'
+import { TasksDetailSheet } from '@/components/tasks-detail-sheet'
 import { Badge } from '@/components/ui/badge'
 import { getPlanSize, getSizeBin, SizeBin } from '@/lib/plan-size'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,7 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
   const [sorting, setSorting] = useState<SortingState>([{ id: 'size', desc: false }])
   const [expanded, setExpanded] = useState<ExpandedState>({})
   const [modalPlan, setModalPlan] = useState<PlanFile | null>(null)
+  const [tasksPlan, setTasksPlan] = useState<PlanFile | null>(null)
 
   const data = useMemo(() => {
     if (!sizeBinFilter) return plans
@@ -157,17 +159,32 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
       id: 'actions',
       header: () => null,
       cell: ({ row }) => (
-        <button
-          type="button"
-          aria-label={`${row.original.title} の全文を読む`}
-          onClick={(e) => {
-            e.stopPropagation()
-            setModalPlan(row.original)
-          }}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <FileText className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {row.original.hasV2Tasks && (
+            <button
+              type="button"
+              aria-label={`${row.original.title} のタスク詳細を開く`}
+              onClick={(e) => {
+                e.stopPropagation()
+                setTasksPlan(row.original)
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <ListChecks className="size-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label={`${row.original.title} の全文を読む`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setModalPlan(row.original)
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <FileText className="size-4" />
+          </button>
+        </div>
       ),
     },
   ], [])
@@ -286,6 +303,20 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
       title={modalPlan?.title ?? ''}
       markdown={modalPlan?.rawMarkdown ?? ''}
     />
+    {tasksPlan && (() => {
+      const [o, r] = tasksPlan.projectName.split('/')
+      const s = tasksPlan.filePath.split('/')[2] ?? ''
+      return (
+        <TasksDetailSheet
+          open={tasksPlan !== null}
+          onOpenChange={(open) => { if (!open) setTasksPlan(null) }}
+          owner={o ?? ''}
+          repo={r ?? ''}
+          slug={s}
+          fallbackTitle={tasksPlan.title}
+        />
+      )
+    })()}
     </>
   )
 }

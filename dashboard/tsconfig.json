@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@testing-library/react": ["./test-support/testing-library-react.ts"],
       "@/*": ["./*"]
     }
   },

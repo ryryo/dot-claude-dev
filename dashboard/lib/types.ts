@@ -41,6 +41,7 @@ export interface PlanFile {
   };
   summary: string;
   rawMarkdown: string;
+  hasV2Tasks: boolean;
 }
 
 export interface ProjectConfig {

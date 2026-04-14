@@ -44,6 +44,7 @@ export function loadPlanFromTasksJson(
     progress: { total, completed, percentage },
     summary: tasksJson.spec.summary,
     rawMarkdown,
+    hasV2Tasks: true,
   };
 }
 

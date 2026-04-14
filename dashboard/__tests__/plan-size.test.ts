@@ -16,6 +16,7 @@ function makePlan(overrides: Partial<PlanFile> = {}): PlanFile {
     progress: { total: 0, completed: 0, percentage: 0 },
     summary: '',
     rawMarkdown: '',
+    hasV2Tasks: false,
     ...overrides,
   };
 }

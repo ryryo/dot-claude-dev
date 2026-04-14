@@ -52,6 +52,7 @@ export function parsePlanFile(content: string, filePath: string, projectName: st
     progress,
     summary,
     rawMarkdown: content,
+    hasV2Tasks: false,
   };
 }
 
