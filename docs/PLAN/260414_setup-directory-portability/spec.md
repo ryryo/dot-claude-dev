@@ -229,7 +229,7 @@ Gate E: 検証と最終化（Gate D 完了後）
 
 ## レビューステータス
 
-- [ ] **レビュー完了** — 人間による最終確認（WSL 環境で ablog 回帰 + Remote 環境で `CLAUDE_CODE_REMOTE=true` 実行時の `setup-claude-remote.sh` → 新 `setup-claude.sh` チェーンを目視確認）
+- [x] **レビュー完了** — 人間による最終確認（WSL 環境で ablog 回帰 + Remote 環境で `CLAUDE_CODE_REMOTE=true` 実行時の `setup-claude-remote.sh` → 新 `setup-claude.sh` チェーンを目視確認）
 
 ## 残存リスク
 
