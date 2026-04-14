@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // @ts-check
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const BEGIN_MARKER = '<!-- generated:begin -->';
 const END_MARKER = '<!-- generated:end -->';
@@ -146,9 +147,9 @@ function main() {
 }
 
 // 直接実行時のみ main を呼ぶ
-const isDirectRun = process.argv[1] && (
-  import.meta.url === `file://${process.argv[1]}` ||
-  import.meta.url === `file://${resolve(process.argv[1])}`
+const isDirectRun = import.meta.main ?? (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href
 );
 if (isDirectRun) {
   main();

@@ -120,3 +120,34 @@ test('sync が tasks.json を改変しない（無限ループ防止）', () => 
   assert.equal(callCount, 1, 'writeFileSync() 呼び出しは 1 箇所のみ (spec.md 向け)');
   assert.ok(!src.includes('writeFileSync(absPath'), 'tasks.json (absPath) への write がないこと');
 });
+
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, symlinkSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+
+test('isDirectRun: symlink 経由で起動しても main() が実行されて spec.md が更新される', () => {
+  const tmpDir = mkdtempSync(join(tmpdir(), 'sync-spec-md-symlink-'));
+  try {
+    const originalScript = resolve('.claude/skills/dev/spec-run/scripts/sync-spec-md.mjs');
+    const symlinkedScript = join(tmpDir, 'sync-spec-md.mjs');
+    symlinkSync(originalScript, symlinkedScript);
+
+    const specDir = join(tmpDir, 'spec');
+    mkdirSync(specDir);
+    const tasksJson = { schemaVersion: 2, gates: [], todos: [] };
+    writeFileSync(join(specDir, 'tasks.json'), JSON.stringify(tasksJson));
+    writeFileSync(join(specDir, 'spec.md'), '<!-- generated:begin -->\nold\n<!-- generated:end -->\n');
+
+    const tasksPath = join(specDir, 'tasks.json');
+    const result = spawnSync('node', [symlinkedScript, tasksPath], { encoding: 'utf-8' });
+    assert.equal(result.status, 0, `node exited with status ${result.status}: ${result.stderr}`);
+
+    const specContent = readFileSync(join(specDir, 'spec.md'), 'utf-8');
+    assert.ok(!specContent.includes('old'), 'spec.md の古い内容が置換されていること');
+    assert.ok(specContent.includes('<!-- generated:begin -->'), 'generated:begin マーカーが残っていること');
+    assert.ok(specContent.includes('<!-- generated:end -->'), 'generated:end マーカーが残っていること');
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
