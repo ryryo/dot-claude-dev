@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Claude Code Story-Driven Development Framework",
   "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
