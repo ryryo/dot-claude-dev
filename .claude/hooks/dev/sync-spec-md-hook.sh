@@ -73,10 +73,19 @@ if ! command -v node >/dev/null 2>&1; then
   exit 0
 fi
 
-# sync-spec-md.mjs を起動（[diagnostic] tee でログに残す）
-echo "calling node $SYNC_SCRIPT $FILE_PATH" >> "$DEBUG_LOG"
-node "$SYNC_SCRIPT" "$FILE_PATH" 2>&1 | tee -a "$DEBUG_LOG" >&2
-NODE_EXIT=${PIPESTATUS[0]}
-echo "node returned: $NODE_EXIT" >> "$DEBUG_LOG"
+# sync-spec-md.mjs を起動
+# - 成功時: stderr 出力を破棄、終了コード 0
+# - 失敗時: stderr を /tmp/sync-spec-md-hook.log に記録（タイムスタンプ + FILE_PATH + エラー内容）
+ERR_LOG="/tmp/sync-spec-md-hook.log"
+ERR_TMP=$(mktemp -t sync-spec-md-hook.XXXXXX)
+if ! node "$SYNC_SCRIPT" "$FILE_PATH" 2> "$ERR_TMP"; then
+  {
+    echo "=== $(date -Iseconds) | PID $$ ==="
+    echo "FILE_PATH=$FILE_PATH"
+    cat "$ERR_TMP"
+    echo ""
+  } >> "$ERR_LOG"
+fi
+rm -f "$ERR_TMP"
 
 exit 0
