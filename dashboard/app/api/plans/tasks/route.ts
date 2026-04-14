@@ -1,0 +1,58 @@
+import { NextResponse } from 'next/server';
+
+import { fetchFileContent } from '@/lib/github';
+import type { TasksJsonV2 } from '@/lib/types';
+
+const SLUG_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const owner = searchParams.get('owner')?.trim();
+  const repo = searchParams.get('repo')?.trim();
+  const slug = searchParams.get('slug')?.trim();
+
+  if (!owner || !repo || !slug) {
+    return NextResponse.json(
+      { error: 'owner, repo, slug are required' },
+      { status: 400 },
+    );
+  }
+
+  if (!SLUG_PATTERN.test(slug)) {
+    return NextResponse.json({ error: 'invalid slug' }, { status: 400 });
+  }
+
+  const path = `docs/PLAN/${slug}/tasks.json`;
+
+  let raw: string;
+  try {
+    raw = await fetchFileContent(owner, repo, path);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown';
+    if (message.includes('404')) {
+      return NextResponse.json({ error: 'tasks.json not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: 'invalid JSON' }, { status: 422 });
+  }
+
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    typeof (parsed as { schemaVersion?: unknown }).schemaVersion !== 'number' ||
+    (parsed as { schemaVersion: number }).schemaVersion < 2
+  ) {
+    return NextResponse.json(
+      { error: 'tasks.json is not v2 (schemaVersion >= 2 required)' },
+      { status: 422 },
+    );
+  }
+
+  return NextResponse.json(parsed as TasksJsonV2);
+}

@@ -160,4 +160,9 @@ describe('loadPlanFromTasksJson', () => {
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', specContent);
     expect(plan.rawMarkdown).toBe(specContent);
   });
+
+  it('v2 tasks 由来の PlanFile として hasV2Tasks: true を返す', () => {
+    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
+    expect(plan.hasV2Tasks).toBe(true);
+  });
 });
