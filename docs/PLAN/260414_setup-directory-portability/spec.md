@@ -176,8 +176,8 @@ Gate E: 検証と最終化（Gate D 完了後）
 
 > symlink 経由で hook の main() が呼ばれない問題を最優先で倒す
 
-- [ ] **A1**: [TDD] sync-spec-md.mjs の isDirectRun バグ修正（symlink 対応）
-  > **Review A1**: _未記入_
+- [x] **A1**: [TDD] sync-spec-md.mjs の isDirectRun バグ修正（symlink 対応）
+  > **Review A1**: ✅ PASSED — 3体並列レビュー全PASSED。import.meta.main + realpathSync フォールバックで symlink 対応OK
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -185,8 +185,8 @@ Gate E: 検証と最終化（Gate D 完了後）
 
 > Mac サブディレクトリ配置でも setup-claude.sh が自動で動くようにする
 
-- [ ] **B1**: setup-claude.sh に CLAUDE_SHARED_DIR 未設定検出 + 探索 + shell rc 自動追記を実装
-  > **Review B1**: _未記入_
+- [x] **B1**: setup-claude.sh に CLAUDE_SHARED_DIR 未設定検出 + 探索 + shell rc 自動追記を実装
+  > **Review B1**: ✅ PASSED — correctness review PASSED。3候補探索 + 永続化ロジック正常
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -194,10 +194,10 @@ Gate E: 検証と最終化（Gate D 完了後）
 
 > hook 失敗の恒常観測と Node バージョン要件の明示
 
-- [ ] **C1**: [SIMPLE] sync-spec-md-hook.sh に失敗時 ERR_LOG 記録を追加
-  > **Review C1**: _未記入_
-- [ ] **C2**: [SIMPLE] package.json に engines.node >= 22.18.0 を明記
-  > **Review C2**: _未記入_
+- [x] **C1**: [SIMPLE] sync-spec-md-hook.sh に失敗時 ERR_LOG 記録を追加
+  > **Review C1**: ✅ PASSED — correctness review PASSED。ERR_LOG 機構正常
+- [x] **C2**: [SIMPLE] package.json に engines.node >= 22.18.0 を明記
+  > **Review C2**: ✅ PASSED — SKIPPED (config only)
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -205,12 +205,12 @@ Gate E: 検証と最終化（Gate D 完了後）
 
 > ドキュメントと開発環境設定を CLAUDE_SHARED_DIR 前提に統一
 
-- [ ] **D1**: [SIMPLE] docs/setup-guide.md を CLAUDE_SHARED_DIR 前提の記述に一斉更新
-  > **Review D1**: _未記入_
-- [ ] **D2**: [SIMPLE] .claude/launch.json の npm shim ハードコードを削除
-  > **Review D2**: _未記入_
-- [ ] **D3**: check-claude-setup.sh に別パス dot-claude-dev 発見時の指針表示を追加
-  > **Review D3**: _未記入_
+- [x] **D1**: [SIMPLE] docs/setup-guide.md を CLAUDE_SHARED_DIR 前提の記述に一斉更新
+  > **Review D1**: ✅ PASSED — SKIPPED (docs only)
+- [x] **D2**: [SIMPLE] .claude/launch.json の npm shim ハードコードを削除
+  > **Review D2**: ✅ PASSED — SKIPPED (config only)
+- [x] **D3**: check-claude-setup.sh に別パス dot-claude-dev 発見時の指針表示を追加
+  > **Review D3**: ✅ PASSED — correctness review PASSED。別パス検出 + CLAUDE_SHARED_DIR 案内正常
 
 **Gate D 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -218,10 +218,10 @@ Gate E: 検証と最終化（Gate D 完了後）
 
 > 全テスト通過確認と診断ログ除去
 
-- [ ] **E1**: npm test 全通過確認 + dot-claude-dev 内 self-test 実施
-  > **Review E1**: _未記入_
-- [ ] **E2**: Gate A1（旧 spec）由来の診断ログを sync-spec-md-hook.sh から除去（ERR_LOG は残す）
-  > **Review E2**: _未記入_
+- [x] **E1**: npm test 全通過確認 + dot-claude-dev 内 self-test 実施
+  > **Review E1**: ✅ PASSED — 全12テスト通過。ERR_LOG機構確認OK（JSON parse失敗はexit 0で設計通り）。hook変更有の場合はセッション再起動が必要
+- [x] **E2**: Gate A1（旧 spec）由来の診断ログを sync-spec-md-hook.sh から除去（ERR_LOG は残す）
+  > **Review E2**: ✅ PASSED — DEBUG_LOG除去完了。ERR_LOG恒常機構は保持。syntax OK
 
 **Gate E 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
