@@ -29,6 +29,7 @@
 | **dev:git-reflect**      | Git履歴から作業セッションを自動検出し、ブロック単位で振り返りサマリーを生成。Triggers: 振り返り, git振り返り, 最近何やった                         |
 | **dev:design-e2e-qa**    | 実装済みサイトのデザイン品質を体系的にチェック。配置・余白・比率・レスポンシブの問題を検出し一覧化。修正は行わない。Triggers: デザインQA, デザインチェック, /design-e2e-qa |
 | **dev:refresh-claude-web-cookie** | claude.ai の sessionKey Cookie を Chrome から抽出し、有効性確認後に Vercel 環境変数（Production / Development）とローカル env を即時更新。Triggers: Cookie更新, sessionKey更新, Cookie切れ |
+| **dev:fix-plan** | docs/PLAN 配下の計画書ファイル（tasks.json / spec.md）のフォーマット不整合や値の不備を検出・修正。テンプレートとパーサーを正として包括的に診断・修復。Triggers: 計画書が壊れた, プランの修正, /dev:fix-plan, plan fix |
 
 ### メタスキル
 
