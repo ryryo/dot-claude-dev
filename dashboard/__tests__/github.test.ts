@@ -157,6 +157,7 @@ describe('github', () => {
         description: 'sample',
         updated_at: '2026-04-09T00:00:00Z',
         html_url: 'https://github.com/octocat/hello-world',
+        default_branch: 'main',
       },
     ];
 

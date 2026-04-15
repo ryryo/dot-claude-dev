@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { Inter, Noto_Sans_JP, IBM_Plex_Mono } from "next/font/google"
 import { cn } from "@/lib/utils"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,7 +36,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={cn(inter.variable, notoSansJP.variable, ibmPlexMono.variable)}>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Toaster richColors closeButton position="top-right" />
+      </body>
     </html>
   )
 }

@@ -57,6 +57,7 @@ export interface GitHubRepo {
   description: string | null;
   updated_at: string;
   html_url: string;
+  default_branch: string;
 }
 
 export interface GitHubContent {

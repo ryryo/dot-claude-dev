@@ -26,6 +26,7 @@ describe('types contract', () => {
       description: 'Codex dashboard',
       updated_at: '2026-04-09T00:00:00Z',
       html_url: 'https://github.com/ryryo/dot-claude-dev',
+      default_branch: 'master',
     };
 
     const content: GitHubContent = {

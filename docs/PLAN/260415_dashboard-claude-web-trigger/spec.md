@@ -14,7 +14,7 @@
 - [x] **P2**: Toast 通知用に shadcn sonner を導入（2026-04-15 完了）
 - [x] **P3**: Vercel env に CLAUDE_SESSION_KEY / CLAUDE_ORG_UUID / CLAUDE_ENV_ID を設定（2026-04-15 完了）
 - [x] **P4**: Vercel + 内部 API の e2e 検証（probe endpoint 経由で Path B 確定、2026-04-15 完了）
-- [ ] **P5**: dashboard/.env.example を更新（CLAUDE_* サンプル行追加 + ANTHROPIC_ROUTINE_* 旧エントリ削除）
+- [x] **P5**: dashboard/.env.example を更新（CLAUDE_* サンプル行追加 + ANTHROPIC_ROUTINE_* 旧エントリ削除、A3 として実施・既コミット 32b54cf 反映済み）
 
 ---
 
@@ -244,12 +244,12 @@ Gate D: 動作検証（Gate C 完了後）
 
 > 型拡張・Toaster 配線・.env.example 修正。後続の API・UI が依存する土台を整える。
 
-- [ ] **A1**: [SIMPLE] GitHubRepo 型に default_branch を追加
-  > **Review A1**: _未記入_
-- [ ] **A2**: [SIMPLE] dashboard/app/layout.tsx に <Toaster /> をマウント
-  > **Review A2**: _未記入_
-- [ ] **A3**: [SIMPLE] dashboard/.env.example を CLAUDE_* 前提に書き換え
-  > **Review A3**: _未記入_
+- [x] **A1**: [SIMPLE] GitHubRepo 型に default_branch を追加
+  > **Review A1**: ✅ PASSED — GitHubRepo に default_branch: string を追加。tsc 通過 (関連エラーなし)。テストモック __tests__/github.test.ts と __tests__/types-contract.test.ts も同フィールドを満たすよう更新。
+- [x] **A2**: [SIMPLE] dashboard/app/layout.tsx に <Toaster /> をマウント
+  > **Review A2**: ✅ PASSED — layout.tsx に Toaster import 追加 + <Toaster richColors closeButton position='top-right' /> を <body> 内 children 直後に配置。components/ui/sonner.tsx は P2 で導入済み確認。tsc 関連エラーなし。
+- [x] **A3**: [SIMPLE] dashboard/.env.example を CLAUDE_* 前提に書き換え
+  > **Review A3**: ⏭️ SKIPPED — 既コミット 32b54cf で .env.example は CLAUDE_SESSION_KEY / CLAUDE_ORG_UUID / CLAUDE_ENV_ID 行追加・ANTHROPIC_ROUTINE_* 行削除済み。今回は Read で現状を確認、変更不要のため SKIPPED。
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
