@@ -220,9 +220,7 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
               <CardHeader className="flex flex-row items-center justify-between gap-3 px-4 pt-4 pb-0">
                 <CardTitle className="text-base font-semibold">{column.label}</CardTitle>
                 <div className="flex items-center gap-2">
-                  {column.status === 'in-review' && (
-                    <ReviewColumnCopyButton plans={columnPlans} />
-                  )}
+                  <ColumnCopyButton plans={columnPlans} label={column.label} />
                   <Badge variant="secondary" className="tabular-nums">
                     {columnPlans.length}
                   </Badge>
@@ -259,7 +257,7 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
   )
 }
 
-function ReviewColumnCopyButton({ plans }: { plans: PlanFile[] }) {
+function ColumnCopyButton({ plans, label }: { plans: PlanFile[]; label: string }) {
   const [copied, setCopied] = useState(false)
   const disabled = plans.length === 0
 
@@ -274,14 +272,14 @@ function ReviewColumnCopyButton({ plans }: { plans: PlanFile[] }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch (err) {
-      console.error('Failed to copy review paths:', err)
+      console.error('Failed to copy plan paths:', err)
     }
   }
 
   return (
     <button
       type="button"
-      aria-label={`レビュー待ち${plans.length}件のパスをコピー`}
+      aria-label={`${label}${plans.length}件のパスをコピー`}
       aria-disabled={disabled}
       onClick={handleClick}
       disabled={disabled}
