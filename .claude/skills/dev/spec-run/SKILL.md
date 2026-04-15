@@ -131,6 +131,27 @@ status:
 rm -f .tmp/codex-*.md
 ```
 
+### worktree 運用の確認（Step 4 で worktree を選択した場合のみ）
+
+Step 4 で worktree を使っていない場合はスキップし、そのまま「人間レビュー確認フロー」へ進む。
+
+AskUserQuestion で**マージと人間レビューの順序**を聞く:
+
+- **先にマージ（Recommended）** — 人間レビューを後回しにして、すぐに worktree をマージ + cleanup する。レビューで問題が見つかった場合は base ブランチで fix-forward 対応
+- **レビュー後にマージ** — 人間レビューで OK を得てから worktree をマージ + cleanup する（NG なら worktree に留まって修正ループ）
+
+#### 「先にマージ」を選択した場合
+
+1. `references/worktree-teardown.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させる（マージ + cleanup）
+2. その後「人間レビュー確認フロー」に進む
+3. レビューが NG になった場合は、base ブランチ上で修正コミットを追加して fix-forward 対応する（worktree は既に cleanup 済み）
+
+#### 「レビュー後にマージ」を選択した場合
+
+1. 「人間レビュー確認フロー」を実行する
+2. レビュー OK になったら `references/worktree-teardown.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させる
+3. レビュー NG の場合は worktree を残したまま修正ループに入る（OK になるまでマージしない）
+
 ### 人間レビュー確認フロー
 
 仕様書に `## レビューステータス` セクションが存在し、未チェックの `- [ ] **レビュー完了**` 行がある場合、以下を実行する。
@@ -145,15 +166,10 @@ rm -f .tmp/codex-*.md
    - （v2 のみ）tasks.json の `reviewChecked: true` + `status: "completed"` に更新する
    - 変更をコミットする
 3. ユーザーが「NG / 修正が必要」を選択した場合:
-   - 問題内容を確認し、必要な修正を実施してから再度確認する
+   - worktree が未 cleanup（「レビュー後にマージ」を選んでいる）ならその中で修正ループ
+   - worktree が cleanup 済み（「先にマージ」を選んでいる）なら base ブランチで fix-forward
 
 `## レビューステータス` セクションが存在しない場合はスキップ。
-
-### worktree 終了処理（Step 4 で worktree を選択した場合のみ）
-
-Step 4 で「worktree を使う」を選択した場合のみ実行。
-
-人間レビューが NG の場合は worktree を残したまま修正ループに入る。OK になったら `references/worktree-teardown.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させる。
 
 ## 参照
 
