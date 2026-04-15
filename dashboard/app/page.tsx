@@ -1,7 +1,8 @@
 "use client"
 
+import { RefreshCw } from "lucide-react"
 import { useMemo, useState } from "react"
-import useSWR from "swr"
+import useSWR, { useSWRConfig } from "swr"
 
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { DateFilter } from "@/components/date-filter"
@@ -17,8 +18,10 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import type { SizeBin } from "@/lib/plan-size"
 import type { GitHubRepo, PlanFile, PlanStatus, RepoError } from "@/lib/types"
+import { clearTasksJsonCache } from "@/lib/use-tasks-json"
 
 const STORAGE_KEY = "plan-dashboard-selected-repos"
 
@@ -53,11 +56,13 @@ export default function Home() {
     "/api/repos",
     fetcher
   )
+  const { mutate } = useSWRConfig()
   const [filterDays, setFilterDays] = useState<number>(30)
   const [activeView, setActiveView] = useState<ViewType>("kanban")
   const [kanbanGrouping, setKanbanGrouping] = useState(false)
   const [tableGrouping, setTableGrouping] = useState(false)
   const [sizeBinFilter, setSizeBinFilter] = useState<SizeBin | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   const [selectedRepos, setSelectedRepos] = useState<string[]>(() => {
     if (typeof window === "undefined") {
       return []
@@ -78,6 +83,18 @@ export default function Home() {
     plansUrl,
     fetcher
   )
+
+  const handleRefresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      await fetch("/api/refresh", { method: "POST" })
+      clearTasksJsonCache()
+      await mutate(() => true, undefined, { revalidate: true })
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const handleToggleRepo = (fullName: string) => {
     setSelectedRepos((current) => {
@@ -222,13 +239,25 @@ export default function Home() {
         <span className="text-sm font-semibold">PLAN Board</span>
         <ViewSwitcher activeView={activeView} onViewChange={setActiveView} />
       </div>
-      <GroupingToggle
-        enabled={activeView === "kanban" ? kanbanGrouping : tableGrouping}
-        onToggle={(next) => {
-          if (activeView === "kanban") setKanbanGrouping(next)
-          else setTableGrouping(next)
-        }}
-      />
+      <div className="flex items-center gap-2">
+        <GroupingToggle
+          enabled={activeView === "kanban" ? kanbanGrouping : tableGrouping}
+          onToggle={(next) => {
+            if (activeView === "kanban") setKanbanGrouping(next)
+            else setTableGrouping(next)
+          }}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          aria-label="GitHub から最新を取得"
+        >
+          <RefreshCw className={refreshing ? "animate-spin" : ""} />
+          更新
+        </Button>
+      </div>
     </div>
   )
 

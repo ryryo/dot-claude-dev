@@ -4,10 +4,12 @@ import type { GitHubContent, GitHubRepo, PlanFile, TasksJsonV2 } from './types';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_REVALIDATE_SECONDS = 300;
+export const GITHUB_CACHE_TAG = 'github';
 
 type GitHubRequestInit = RequestInit & {
   next: {
     revalidate: number;
+    tags: string[];
   };
 };
 
@@ -28,7 +30,7 @@ function getHeaders(): HeadersInit {
 function getRequestOptions(): GitHubRequestInit {
   return {
     headers: getHeaders(),
-    next: { revalidate: GITHUB_REVALIDATE_SECONDS },
+    next: { revalidate: GITHUB_REVALIDATE_SECONDS, tags: [GITHUB_CACHE_TAG] },
   };
 }
 

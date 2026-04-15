@@ -23,6 +23,10 @@ function cacheKey(args: { owner: string; repo: string; slug: string }) {
   return `${args.owner}/${args.repo}#${args.slug}`;
 }
 
+export function clearTasksJsonCache() {
+  cache.clear();
+}
+
 export function useTasksJson(
   args: UseTasksJsonArgs,
 ): { state: UseTasksJsonState; reload: () => void } {
