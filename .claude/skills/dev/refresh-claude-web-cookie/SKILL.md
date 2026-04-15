@@ -118,10 +118,10 @@ curl -s "${VERCEL_KV_REST_API_URL}/get/sessionKey" \
 ENV_FILE="${CLAUDE_WEB_ENV_FILE:-$HOME/.claude-web-session.env}"
 touch "$ENV_FILE"
 
-if grep -q "^CLAUDE_AI_SESSION_KEY=" "$ENV_FILE" 2>/dev/null; then
-  sed -i '' "s|^CLAUDE_AI_SESSION_KEY=.*|CLAUDE_AI_SESSION_KEY=${COOKIE_VALUE}|" "$ENV_FILE"
+if grep -q "^CLAUDE_SESSION_KEY=" "$ENV_FILE" 2>/dev/null; then
+  sed -i '' "s|^CLAUDE_SESSION_KEY=.*|CLAUDE_SESSION_KEY=${COOKIE_VALUE}|" "$ENV_FILE"
 else
-  echo "CLAUDE_AI_SESSION_KEY=${COOKIE_VALUE}" >> "$ENV_FILE"
+  echo "CLAUDE_SESSION_KEY=${COOKIE_VALUE}" >> "$ENV_FILE"
 fi
 ```
 
