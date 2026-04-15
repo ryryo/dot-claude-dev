@@ -7,8 +7,8 @@
     "createdDate": "2026-04-13",
     "specPath": "spec.md"
   },
-  "status": "in-review",
-  "reviewChecked": false,
+  "status": "completed",
+  "reviewChecked": true,
   "progress": { "completed": 2, "total": 2 },
   "preflight": [],
   "gates": [

@@ -287,7 +287,7 @@ status:
 
 > {description}（あれば）
 
-- [ ] **A1**: {title}
+- [x] **A1**: {title}
   > **Review A1**: _未記入_
 
 **Gate A 通過条件**: {passCondition}
@@ -340,7 +340,7 @@ Gate A: データ層
 
 > スキーマ・リポジトリ層の整備
 
-- [ ] **A1**: [TDD] スキーマ定義とマイグレーション
+- [x] **A1**: [TDD] スキーマ定義とマイグレーション
   > **Review A1**: _未記入_
 - [x] **A2**: [TDD] リポジトリ層の実装
   > **Review A2**: ✅ PASSED — 整合性確認
