@@ -15,7 +15,6 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   PromptInput,
-  PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
@@ -154,21 +153,19 @@ export function SessionLauncherDialog({
           </div>
 
           <PromptInput onSubmit={(msg) => handleSubmit(msg.text)}>
-            <PromptInputBody>
-              <PromptInputTextarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Claude に依頼するタスクを入力..."
-                disabled={isLoading}
+            <PromptInputTextarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Claude に依頼するタスクを入力..."
+              disabled={isLoading}
+            />
+            <PromptInputFooter>
+              <PromptInputTools />
+              <PromptInputSubmit
+                disabled={!canSubmit}
+                status={isLoading ? 'submitted' : undefined}
               />
-              <PromptInputFooter>
-                <PromptInputTools />
-                <PromptInputSubmit
-                  disabled={!canSubmit}
-                  status={isLoading ? 'submitted' : undefined}
-                />
-              </PromptInputFooter>
-            </PromptInputBody>
+            </PromptInputFooter>
           </PromptInput>
 
           {state.status === 'success' && (
