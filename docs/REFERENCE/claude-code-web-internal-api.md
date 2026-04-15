@@ -1,78 +1,61 @@
-# Claude Code Web — 内部 REST API 調査メモ
+# Claude Code Web — 内部 REST API リファレンス
 
 調査日: 2026-04-15  
-調査手法: Claude in Chrome MCP でブラウザを操作し、fetch インターセプターを注入してリクエストを全量捕捉
+調査手法: Claude in Chrome MCP + fetch/XHR インターセプター + JS バンドル解析
 
 ---
 
 ## 結論
 
-**curl 等から直接セッションを作成することは技術的に可能。** ただし認証に `sessionKeyLC` Cookie（Web セッション Cookie）が必要であり、公式サポートの外部 API ではない。
+**`sessionKeyLC` Cookie + 正しいヘッダーで `POST /v1/sessions` → 200 を実証済み。**  
+Vercel サーバーレス関数から `fetch` でセッションを作成できる（永続サーバー不要）。
+
+> ⚠️ 非公開の内部 API。予告なく変更される可能性がある。
 
 ---
 
-## 発見したエンドポイント一覧
+## 認証
 
-すべてのベース URL は `https://claude.ai`。
+### sessionKeyLC Cookie
 
-| メソッド | パス | 用途 |
+すべての `/v1/*` エンドポイントはブラウザセッション Cookie で認証する。
+
+| 項目 | 内容 |
+|---|---|
+| Cookie 名 | `sessionKeyLC` |
+| HttpOnly | ❌（`document.cookie` から取得可能） |
+| 失効条件 | ログアウト / パスワード変更 / セッション期限切れ |
+| 取得方法 | ブラウザで claude.ai にログイン後、DevTools または `document.cookie` で取得 |
+
+---
+
+## 必須リクエストヘッダー
+
+JS バンドル解析 + ブラウザ実行テストで確認済み（2026-04-15）。
+
+| ヘッダー | 値 | 欠落時のエラー |
 |---|---|---|
-| GET | `/v1/sessions` | セッション一覧取得（ページネーション: `?after_id=session_xxx`） |
-| POST | `/v1/sessions` | **セッション作成（本体）** |
-| GET | `/v1/sessions/{session_id}/events?limit=1000` | セッション内イベント一覧取得 |
-| GET | `/v1/sessions/{session_id}/share-status` | セッションの共有状態取得 |
-| GET | `/v1/environment_providers/private/organizations/{org_id}/environments` | 利用可能な実行環境一覧 |
-| POST | `/v1/code/sessions/cse_{session_id}/client/presence` | クライアント presence（Heartbeat） |
-| POST | `/v1/session_ingress/session/{session_id}/git_proxy/compare` | セッション内 git diff |
-| POST | `/v1/code/github/batch-branch-status` | ブランチ状態の一括確認 |
-| GET | `/api/organizations/{org_id}` | 組織情報取得 |
-| GET | `/api/organizations/{org_id}/code/repos?skip_status=true` | 接続済み GitHub リポジトリ一覧 |
-| POST | `/api/organizations/{org_id}/dust/generate_title_and_branch` | セッションタイトル＆ブランチ名の自動生成 |
+| `anthropic-version` | `2023-06-01` | `"anthropic-version: header is required"` |
+| `anthropic-beta` | `ccr-byoc-2025-07-29` | `"no schema found for anthropic-beta header value"` |
+| `anthropic-client-feature` | `ccr` | Web UI が常に付与（ccr = Claude Code Relay と思われる） |
+| `x-organization-uuid` | `{org_uuid}` | 任意だが Web UI は常に付与 |
+
+> `anthropic-beta: managed-agents-2026-04-01` は別スキーマ（GET の valid チェックには使えるが POST /v1/sessions は不可）。
 
 ---
 
-## セッション作成フロー
+## セッション作成
 
-### Step 1 — 実行環境 ID を取得
-
-```http
-GET /v1/environment_providers/private/organizations/{org_id}/environments
-```
-
-レスポンスから `environment_id`（例: `env_01AgnTYbWgkEvJy9tGzX87ej`）を取得する。  
-この値はアカウント固定で変化しないため、一度取得すれば使い回せる。
-
----
-
-### Step 2 — タイトル＆ブランチ名を生成（任意）
+### 完全なリクエスト例
 
 ```http
-POST /api/organizations/{org_id}/dust/generate_title_and_branch
+POST https://claude.ai/v1/sessions
+Cookie: sessionKeyLC=<value>
 Content-Type: application/json
-
-{
-  "first_session_message": "YOUR_PROMPT",
-  "title_style": "default"
-}
-```
-
-レスポンス例（推定）:
-```json
-{
-  "title": "HI2 Implementation",
-  "branch": "claude/hi2-implementation-of29R"
-}
-```
-
-タイトルを自分で決める場合はこのステップをスキップして Step 3 で直接 `"title"` を指定すればよい。
-
----
-
-### Step 3 — セッション作成
-
-```http
-POST /v1/sessions
-Content-Type: application/json
+anthropic-version: 2023-06-01
+anthropic-beta: ccr-byoc-2025-07-29
+anthropic-client-feature: ccr
+x-organization-uuid: <org_uuid>
 
 {
   "title": "任意のタイトル",
@@ -80,7 +63,7 @@ Content-Type: application/json
     {
       "type": "event",
       "data": {
-        "uuid": "<ランダム UUID>",
+        "uuid": "<random-uuid>",
         "session_id": "",
         "type": "user",
         "parent_tool_use_id": null,
@@ -106,7 +89,7 @@ Content-Type: application/json
         "git_info": {
           "type": "github",
           "repo": "{owner}/{repo}",
-          "branches": ["claude/{suggested-branch-name}"]
+          "branches": ["claude/{suggested-branch}"]
         }
       }
     ],
@@ -115,100 +98,135 @@ Content-Type: application/json
 }
 ```
 
-レスポンスに含まれる `session_id` で `https://claude.ai/code/{session_id}` が有効なセッション URL になる。
+レスポンスの `id` フィールドがセッション ID。`https://claude.ai/code/{id}` でアクセス可能。
 
-#### フィールド説明
+### フィールド説明
 
 | フィールド | 説明 |
 |---|---|
-| `title` | サイドバーに表示されるセッション名。任意の文字列で OK |
-| `events[].data.uuid` | クライアント側で生成するランダム UUID（重複しなければ何でもよい） |
-| `events[].data.session_id` | 新規作成時は空文字列 `""` |
-| `events[].data.type` | 最初のユーザーメッセージなので `"user"` |
-| `events[].data.message.content` | 最初のプロンプト本文 |
-| `environment_id` | Step 1 で取得した実行環境 ID |
-| `session_context.sources[].revision` | クローン対象ブランチ（`refs/heads/{branch}`形式） |
-| `session_context.outcomes[].git_info.branches` | Claude が作業に使うブランチ候補（`claude/` プレフィックス推奨） |
-| `session_context.model` | 使用モデル（例: `"claude-sonnet-4-6"`） |
+| `title` | サイドバーに表示されるセッション名（任意の文字列） |
+| `events[].data.uuid` | クライアント生成のランダム UUID（`crypto.randomUUID()` で可） |
+| `events[].data.session_id` | 新規作成時は `""` |
+| `events[].data.type` | ユーザー最初のメッセージなので `"user"` |
+| `environment_id` | 実行環境 ID（アカウント固定。下記エンドポイントで取得） |
+| `session_context.sources[].revision` | `refs/heads/{branch}` 形式 |
+| `session_context.outcomes[].git_info.branches` | Claude の作業ブランチ候補（`claude/` プレフィックス推奨） |
+| `session_context.model` | `"claude-sonnet-4-6"` 等 |
 
----
+### タイトル自動生成（任意）
 
-## 必須ヘッダー
+```http
+POST https://claude.ai/api/organizations/{org_id}/dust/generate_title_and_branch
+Content-Type: application/json
 
-`/v1/*` エンドポイントには Cookie に加えて以下のヘッダーが必須（JS バンドル解析 + 実行テストで確認）:
-
-| ヘッダー | 値 | 備考 |
-|---|---|---|
-| `anthropic-version` | `2023-06-01` | 欠落時: `"anthropic-version: header is required"` |
-| `anthropic-beta` | `ccr-byoc-2025-07-29` | Web UI の正しい値。`managed-agents-2026-04-01` は別スキーマ（POST 不可） |
-| `anthropic-client-feature` | `ccr` | Web UI が常に付与 |
-| `x-organization-uuid` | `{org_uuid}` | 任意だが Web UI は常に付与 |
-
-`ccr` は Claude Code Relay の略と思われる。`ccr-byoc-2025-07-29` で **POST /v1/sessions の 200 確認済み**（2026-04-15）。
-
----
-
-## 認証
-
-### Cookie ベース認証
-
-`claude.ai` のすべての `/v1/*` および `/api/*` エンドポイントは、明示的な `Authorization` ヘッダーを使用せず、ブラウザセッション Cookie で認証される。
-
+{"first_session_message": "YOUR_PROMPT", "title_style": "default"}
 ```
+
+スキップして `title` を直接指定しても動作する。
+
+---
+
+## セッション有効性チェック
+
+```http
+GET https://claude.ai/v1/sessions
+anthropic-version: 2023-06-01
+anthropic-beta: managed-agents-2026-04-01
 Cookie: sessionKeyLC=<value>
 ```
 
-- `sessionKeyLC` はブラウザの `document.cookie` から取得可能（HttpOnly ではない）
-- curl で使う場合: `--cookie "sessionKeyLC=<value>"`
-- 有効期限はブラウザセッションに依存（クリアされると無効）
+- **200** `{"data": []}` → Cookie 有効
+- **401** → Cookie 期限切れ
 
-### curl サンプル
-
-```bash
-# 環境 ID 取得
-curl -s "https://claude.ai/v1/environment_providers/private/organizations/{org_id}/environments" \
-  --cookie "sessionKeyLC=<your_cookie>"
-
-# セッション作成
-curl -s -X POST "https://claude.ai/v1/sessions" \
-  --cookie "sessionKeyLC=<your_cookie>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "My Session",
-    "events": [{
-      "type": "event",
-      "data": {
-        "uuid": "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx",
-        "session_id": "",
-        "type": "user",
-        "parent_tool_use_id": null,
-        "message": {"role": "user", "content": "Fix the failing tests"}
-      }
-    }],
-    "environment_id": "env_01AgnTYbWgkEvJy9tGzX87ej",
-    "session_context": {
-      "sources": [{"type": "git_repository", "url": "https://github.com/ryryo/dot-claude-dev", "revision": "refs/heads/master"}],
-      "outcomes": [{"type": "git_repository", "git_info": {"type": "github", "repo": "ryryo/dot-claude-dev", "branches": ["claude/fix-tests"]}}],
-      "model": "claude-sonnet-4-6"
-    }
-  }'
-```
+> GET では `managed-agents-2026-04-01` でも動く。POST は `ccr-byoc-2025-07-29` が必須。
 
 ---
 
-## セッション URL の構造
+## Vercel サーバーレス実装サンプル
 
-| 状態 | URL パターン |
-|---|---|
-| 入力前（新規画面） | `https://claude.ai/code/draft_{uuid}` |
-| 送信後（セッション確立） | `https://claude.ai/code/session_{id}` |
-| 内部セッション ID | `cse_{id}`（presence / heartbeat エンドポイントで使用） |
+Cookie を Vercel KV に保存し、サーバーレス関数から動的に読んでセッション作成する構成。
+
+```typescript
+// app/api/sessions/launch/route.ts
+import { kv } from '@vercel/kv'
+
+const ORG_UUID = process.env.CLAUDE_ORG_UUID!
+const ENV_ID   = process.env.CLAUDE_ENV_ID!   // env_01AgnTYbWgkEvJy9tGzX87ej
+
+export async function POST(req: Request) {
+  const { repo, branch, prompt } = await req.json()
+
+  const sessionKeyLC = await kv.get<string>('sessionKeyLC')
+  if (!sessionKeyLC) {
+    return Response.json({ error: 'Cookie not set. Run /refresh-claude-web-cookie' }, { status: 500 })
+  }
+
+  const res = await fetch('https://claude.ai/v1/sessions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': `sessionKeyLC=${sessionKeyLC}`,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta': 'ccr-byoc-2025-07-29',
+      'anthropic-client-feature': 'ccr',
+      'x-organization-uuid': ORG_UUID,
+    },
+    body: JSON.stringify({
+      title: prompt.slice(0, 60),
+      events: [{
+        type: 'event',
+        data: {
+          uuid: crypto.randomUUID(),
+          session_id: '',
+          type: 'user',
+          parent_tool_use_id: null,
+          message: { role: 'user', content: prompt }
+        }
+      }],
+      environment_id: ENV_ID,
+      session_context: {
+        sources: [{ type: 'git_repository', url: `https://github.com/${repo}`, revision: `refs/heads/${branch}` }],
+        outcomes: [{ type: 'git_repository', git_info: { type: 'github', repo, branches: [`claude/${branch}`] } }],
+        model: 'claude-sonnet-4-6'
+      }
+    })
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    // 401 の場合は Cookie 切れ → /refresh-claude-web-cookie を実行するよう通知
+    return Response.json({ error: err, cookieExpired: res.status === 401 }, { status: res.status })
+  }
+
+  const session = await res.json()
+  return Response.json({ sessionUrl: `https://claude.ai/code/${session.id}` })
+}
+```
 
 ---
 
 ## その他の確認済みエンドポイント
 
-### presence（ハートビート）
+### 環境 ID 取得
+
+```http
+GET /v1/environment_providers/private/organizations/{org_id}/environments
+```
+
+アカウント固定値。一度取得すれば使い回せる。
+
+### セッションイベント取得（ポーリング）
+
+```http
+GET /v1/sessions/{session_id}/events?limit=1000
+anthropic-version: 2023-06-01
+anthropic-beta: ccr-byoc-2025-07-29
+anthropic-client-feature: ccr
+```
+
+セッション内の全イベント（ユーザー入力・ツール呼び出し・AI 応答）を取得。
+
+### Presence（ハートビート）
 
 ```http
 POST /v1/code/sessions/cse_{session_id}/client/presence
@@ -217,16 +235,6 @@ Content-Type: application/json
 {"client_id": "<UUID>"}
 ```
 
-セッション接続を維持するためのハートビート。定期的に POST する。
-
-### セッションイベント取得
-
-```http
-GET /v1/sessions/{session_id}/events?limit=1000
-```
-
-セッション内のすべてのイベント（ユーザーメッセージ、ツール呼び出し、AI 応答など）を取得。ポーリングまたはロングポールで UI を更新している模様。
-
 ### ブランチステータス一括確認
 
 ```http
@@ -234,9 +242,7 @@ POST /v1/code/github/batch-branch-status
 Content-Type: application/json
 
 {
-  "repo_branches": [
-    {"repo": "ryryo/dot-claude-dev", "branch": "claude/some-branch"}
-  ],
+  "repo_branches": [{"repo": "owner/repo", "branch": "claude/xxx"}],
   "discover_session_prs": true,
   "session_ids": ["session_01XXXX"]
 }
@@ -244,15 +250,26 @@ Content-Type: application/json
 
 ---
 
-## 注意事項
+## URL パターン
 
-- これらは **非公開の内部 API** であり、予告なく変更・廃止される可能性がある
-- `sessionKeyLC` Cookie はブラウザログアウト・パスワード変更で無効になる
-- Rate limit やアカウント制限については未確認
-- 公式の外部連携には **Routines API** または **`claude --remote` CLI** を使うこと（詳細: `claude-code-web-session-creation.md`）
+| 状態 | URL |
+|---|---|
+| 入力前（新規画面） | `https://claude.ai/code/draft_{uuid}` |
+| セッション確立後 | `https://claude.ai/code/session_{id}` |
+| 内部 ID（presence 用） | `cse_{id}` |
 
 ---
 
-## 関連ドキュメント
+## 注意事項
 
-- [claude-code-web-session-creation.md](./claude-code-web-session-creation.md) — `claude --remote` CLI と Routines API による公式連携の整理
+- Cloudflare の Bot Protection により **素の curl からは 403**（ブラウザ TLS フィンガープリントが必要）。サーバーサイド `fetch` は通る
+- `CLAUDE_CODE_OAUTH_TOKEN`（CLI 用 OAuth）は `/v1/sessions` では使えない（Cloudflare がブロック）
+- Cookie の有効期限は未確認（ログアウトで即無効）
+- Rate limit は未確認
+
+---
+
+## 関連
+
+- [claude-code-web-session-creation.md](./claude-code-web-session-creation.md) — 公式経路（`claude --remote` / Routines API）の整理
+- `.claude/skills/dev/refresh-claude-web-cookie/SKILL.md` — Cookie 期限切れ時の自動更新スキル
