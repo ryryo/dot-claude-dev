@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 2,
+  "spec": {
+    "slug": "dashboard-claude-web-trigger",
+    "title": "ダッシュボードから Claude Code Web セッションを起動する FAB + Dialog",
+    "summary": "PLAN ダッシュボード画面右下に Floating Action Button を配置し、サイドバー選択中のリポジトリから 1 つを選んで Routines API 経由で Claude Code Web セッションを起動する。起動成功時は新規タブを自動オープンしつつ Dialog 内にも URL を残す。",
+    "createdDate": "2026-04-15",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": { "completed": 0, "total": 8 },
+  "preflight": [
+    {
+      "id": "P1",
+      "title": "ai-elements の PromptInput を shadcn registry 経由で導入",
+      "command": "cd dashboard && npx shadcn@latest add @ai-elements/prompt-input",
+      "manual": false,
+      "reason": "ネットワーク必須。レジストリから components/ai-elements/prompt-input.tsx と peer deps を取得。"
+    },
+    {
+      "id": "P2",
+      "title": "Toast 通知用に shadcn sonner を導入",
+      "command": "cd dashboard && npx shadcn@latest add sonner",
+      "manual": false,
+      "reason": "ネットワーク必須。components/ui/sonner.tsx と sonner npm パッケージを取得。"
+    },
+    {
+      "id": "P3",
+      "title": "[手動] claude.ai/code/routines で『汎用エージェント』ルーチンを作成し API トリガーを発行",
+      "command": "",
+      "manual": true,
+      "reason": "対話必須。claude.ai 上で UI 操作してルーチン作成・トークン発行する必要がある。発行後トークンは 1 度しか表示されないので必ず控える。Routine prompt は `以下の指示を実行せよ。Branch: 行があれば最初に git checkout <branch> を実行: $TEXT` のような薄いシェルにする。"
+    },
+    {
+      "id": "P4",
+      "title": "[手動] dashboard/.env.local と Vercel env に ANTHROPIC_ROUTINE_TRIGGER_ID / ANTHROPIC_ROUTINE_TOKEN を設定",
+      "command": "",
+      "manual": true,
+      "reason": "対話必須・ワークスペース外書き込み相当。P3 で取得したトークンを secret として保管し、ローカルと本番両方の env に反映する。"
+    }
+  ],
+  "gates": [
+    {
+      "id": "A",
+      "title": "基盤準備",
+      "description": "型拡張・Toaster 配線。後続の API・UI が依存する土台を整える。",
+      "dependencies": [],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "B",
+      "title": "Routines API ラッパーとエンドポイント",
+      "description": "純関数の Routines クライアントと、env を読む Next.js Route Handler を実装する。",
+      "dependencies": ["A"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "C",
+      "title": "FAB と Launcher Dialog の UI 構築",
+      "description": "右下 FAB → Dialog → PromptInput → 起動・結果表示の UI 層を組み上げ、page.tsx に統合する。",
+      "dependencies": ["A", "B"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    },
+    {
+      "id": "D",
+      "title": "動作検証",
+      "description": "ブラウザでハッピーパスとエラーパスを通し、想定どおりに動くことを確認する。",
+      "dependencies": ["C"],
+      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
+    }
+  ],
+  "todos": [
+    {
+      "id": "A1",
+      "gate": "A",
+      "title": "[SIMPLE] GitHubRepo 型に default_branch を追加",
+      "description": "GitHub の repo メタに含まれる default_branch を型で扱えるようにし、フォームでの『main / master 表示』に使えるようにする。",
+      "tdd": false,
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/lib/types.ts", "operation": "modify", "summary": "GitHubRepo に `default_branch: string` を追加" }
+      ],
+      "impl": "## 確定事実\n\n- `dashboard/lib/github.ts` の `fetchUserRepos` は GitHub API レスポンスを `response.json() as Promise<GitHubRepo[]>` で型アサートしてそのまま返している (pass-through 実装)。\n- GitHub `List user repositories` API のレスポンスには `default_branch` フィールドがランタイムで既に含まれている。\n- したがって `lib/types.ts` の型定義に `default_branch: string` を追加するだけで、`/api/repos` のレスポンスは追加コードなしで `default_branch` を返す状態になる。\n\n## 手順\n\n1. `dashboard/lib/types.ts` を Read。\n2. `GitHubRepo` インターフェース末尾 (`html_url` の次) に `default_branch: string;` を追加。\n3. `pnpm tsc --noEmit` (or `npm run lint`) で型エラーが出ないことを確認。\n\n## 触らないファイル\n\n- `dashboard/app/api/repos/route.ts`: 既存実装のまま。変更不要。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "A2",
+      "gate": "A",
+      "title": "[SIMPLE] dashboard/app/layout.tsx に <Toaster /> をマウント",
+      "description": "P2 で導入する sonner の Toaster を root layout に配置し、以降のコンポーネントから toast() を呼べるようにする。",
+      "tdd": false,
+      "dependencies": [],
+      "affectedFiles": [
+        { "path": "dashboard/app/layout.tsx", "operation": "modify", "summary": "<Toaster /> を <body> 末尾に追加し `@/components/ui/sonner` から import" }
+      ],
+      "impl": "1. dashboard/app/layout.tsx を Read。\n2. `import { Toaster } from '@/components/ui/sonner'` を追加。\n3. <body> 内、children の直後に `<Toaster richColors closeButton position=\"top-right\" />` を追加 (位置は既存 UI と被らない top-right 推奨)。\n4. dev サーバー再起動して console エラーが出ないことを確認。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "B1",
+      "gate": "B",
+      "title": "[TDD] dashboard/lib/routines-client.ts で Routines API /fire を呼ぶ純関数を実装",
+      "description": "fetch を引数で受ける純関数 launchClaudeWebSession を作り、入力検証・正常系・各種エラー (missing-env / 401 / 403 / 429 / network / non-2xx) を網羅。",
+      "tdd": true,
+      "dependencies": ["A1"],
+      "affectedFiles": [
+        { "path": "dashboard/lib/routines-client.ts", "operation": "create", "summary": "launchClaudeWebSession({ triggerId, token, repo, branch, prompt, fetchImpl? }) → Promise<{ ok: true, sessionId, sessionUrl } | { ok: false, code, message }> を実装" },
+        { "path": "dashboard/__tests__/lib/routines-client.test.ts", "operation": "create", "summary": "vitest で fetch を mock し、6 ケース (missing-env / happy / 401 / 403 / 429 / network throw) を検証" }
+      ],
+      "impl": "## API 仕様 (docs/REFERENCE/claude-code-web-session-creation.md と一致)\n\nendpoint: POST https://api.anthropic.com/v1/claude_code/routines/{triggerId}/fire\nheaders:\n  Authorization: Bearer {token}\n  anthropic-beta: experimental-cc-routine-2026-04-01\n  anthropic-version: 2023-06-01\n  Content-Type: application/json\nbody: { text: string }\n\nレスポンス成功 (200 想定):\n{\n  type: 'routine_fire',\n  claude_code_session_id: 'session_...',\n  claude_code_session_url: 'https://claude.ai/code/session_...'\n}\n\n## 関数シグネチャ\n\n```ts\nexport interface LaunchInput {\n  triggerId: string;\n  token: string;\n  repo: string;        // owner/name\n  branch: string;      // default branch name (表示・プロンプト埋め込み用)\n  prompt: string;\n  fetchImpl?: typeof fetch;  // tests から差し込み可\n}\n\nexport type LaunchResult =\n  | { ok: true; sessionId: string; sessionUrl: string }\n  | { ok: false; code: 'missing-env' | 'invalid-input' | 'unauthorized' | 'forbidden' | 'rate-limit' | 'upstream-error' | 'network'; message: string };\n\nexport async function launchClaudeWebSession(input: LaunchInput): Promise<LaunchResult>\n```\n\n## 内部ロジック\n\n1. `triggerId` / `token` が空文字なら `{ok:false, code:'missing-env', message:'ANTHROPIC_ROUTINE_* env が未設定です'}` を返す。\n2. `repo` / `prompt` が空なら `{ok:false, code:'invalid-input', message:'リポジトリとプロンプトは必須です'}` を返す。\n3. text を構築: `Repo: ${repo}\\nBranch: ${branch}\\n\\nTask: ${prompt}` (改行コード厳守)。\n4. `fetchImpl ?? fetch` で POST。`try/catch` で network エラーを `{ok:false, code:'network', message: err.message}` にラップ。\n5. レスポンス status で分岐:\n   - 200/201: body.json() を読み、`claude_code_session_id` / `claude_code_session_url` を取り出す。どちらか欠けたら `upstream-error`。\n   - 401: `unauthorized`\n   - 403: `forbidden`\n   - 429: `rate-limit`\n   - その他: `upstream-error` (status と body.message? を message に含める)\n\n## テストケース (6 件)\n\n1. missing-env: triggerId='' → code='missing-env'\n2. happy path: fetch が 200 + 正規 body → ok:true で sessionId/sessionUrl が返る\n3. 401: code='unauthorized'\n4. 403: code='forbidden'\n5. 429: code='rate-limit'\n6. fetch が throw: code='network'\n\n各テストで fetch mock の引数 (URL, headers, body.text) も assert する。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "B2",
+      "gate": "B",
+      "title": "POST /api/sessions/launch route handler",
+      "description": "env から triggerId/token を読み、リクエスト body を検証して routines-client を呼び出し、結果を JSON で返す Next.js Route Handler。",
+      "tdd": false,
+      "dependencies": ["B1"],
+      "affectedFiles": [
+        { "path": "dashboard/app/api/sessions/launch/route.ts", "operation": "create", "summary": "POST handler。auth check (既存パターン踏襲) → body parse → launchClaudeWebSession 呼び出し → 結果を 200/4xx/5xx で返す" }
+      ],
+      "impl": "## 認証は middleware 任せ\n\n- `dashboard/proxy.ts` (Next.js middleware) の matcher が `/((?!login|api/auth|_next|favicon.ico).*)` で `/api/sessions/launch` を含むため、未認証アクセスはこの route handler に到達する前に block される。\n- したがって route.ts 内で **追加の認証コードは書かない**。書くと冗長な二重認証になり middleware と挙動がズレる。\n- 実装前に `dashboard/proxy.ts` を Read して matcher が変更されていないこと、`/api/sessions/launch` が除外されていないことを確認する。\n\n## ファイル: dashboard/app/api/sessions/launch/route.ts\n\n```ts\nimport { NextResponse } from 'next/server';\nimport { launchClaudeWebSession } from '@/lib/routines-client';\n\nexport const runtime = 'nodejs';\n\nexport async function POST(req: Request) {\n  // 1. body parse + 検証\n  let body: { repo?: string; branch?: string; prompt?: string };\n  try {\n    body = await req.json();\n  } catch {\n    return NextResponse.json({ error: '不正な JSON' }, { status: 400 });\n  }\n  const { repo, branch, prompt } = body;\n  if (!repo || !branch || !prompt) {\n    return NextResponse.json({ error: 'repo / branch / prompt は必須です' }, { status: 400 });\n  }\n\n  // 2. env\n  const triggerId = process.env.ANTHROPIC_ROUTINE_TRIGGER_ID ?? '';\n  const token = process.env.ANTHROPIC_ROUTINE_TOKEN ?? '';\n\n  // 3. call\n  const result = await launchClaudeWebSession({ triggerId, token, repo, branch, prompt });\n\n  // 4. status code map\n  if (result.ok) {\n    return NextResponse.json({ sessionId: result.sessionId, sessionUrl: result.sessionUrl });\n  }\n  switch (result.code) {\n    case 'missing-env':\n      return NextResponse.json({ error: result.message }, { status: 500 });\n    case 'invalid-input':\n      return NextResponse.json({ error: result.message }, { status: 400 });\n    case 'rate-limit':\n      return NextResponse.json({ error: result.message }, { status: 429 });\n    case 'unauthorized':\n    case 'forbidden':\n    case 'network':\n    case 'upstream-error':\n    default:\n      // upstream の auth 失敗 / 通信エラー / その他は client 側 auth エラーと区別するため 502 を返す\n      return NextResponse.json({ error: result.message }, { status: 502 });\n  }\n}\n```\n\n## 注意\n\n- `runtime = 'nodejs'` を明示 (env 読み取りのため。default で nodejs だが将来 edge に切り替わる事故を防ぐ)。\n- env が空文字でも routines-client が `missing-env` を返すので、ここでは通すだけ。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C1",
+      "gate": "C",
+      "title": "components/session-launcher-fab.tsx (右下固定 FAB ボタン)",
+      "description": "画面右下に常駐する円形 FAB ボタン。クリックで Dialog を開く。Dialog 自体は C2、開閉 state はこの FAB が保持。",
+      "tdd": false,
+      "dependencies": ["A1", "A2"],
+      "affectedFiles": [
+        { "path": "dashboard/components/session-launcher-fab.tsx", "operation": "create", "summary": "FAB ボタン + Dialog 開閉 state + SessionLauncherDialog 呼び出しのコンテナ" }
+      ],
+      "impl": "## ファイル: dashboard/components/session-launcher-fab.tsx\n\n```tsx\n'use client';\n\nimport { useState } from 'react';\nimport { Plus } from 'lucide-react';\nimport { Button } from '@/components/ui/button';\nimport { SessionLauncherDialog } from '@/components/session-launcher-dialog';\nimport type { GitHubRepo } from '@/lib/types';\n\ninterface SessionLauncherFabProps {\n  selectedRepos: string[];\n  repos: GitHubRepo[];\n}\n\nexport function SessionLauncherFab({ selectedRepos, repos }: SessionLauncherFabProps) {\n  const [open, setOpen] = useState(false);\n  // selectedRepos に該当する GitHubRepo オブジェクトを抽出 (default_branch を渡すため)\n  const candidateRepos = repos.filter((r) => selectedRepos.includes(r.full_name));\n\n  return (\n    <>\n      <Button\n        size=\"icon\"\n        className=\"fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-40\"\n        onClick={() => setOpen(true)}\n        aria-label=\"Claude Code Web セッションを起動\"\n        disabled={candidateRepos.length === 0}\n      >\n        <Plus className=\"h-6 w-6\" />\n      </Button>\n      <SessionLauncherDialog\n        open={open}\n        onOpenChange={setOpen}\n        candidateRepos={candidateRepos}\n      />\n    </>\n  );\n}\n```\n\n## 注意\n\n- candidateRepos が 0 件のとき (サイドバーで何も選択していない) は FAB を disabled にし、tooltip で『サイドバーでリポジトリを選択してください』を出すかアイコンを薄くする (まずは disabled のみで OK)。\n- z-40 はサイドバー (z-20 想定) より上、Dialog overlay (z-50) より下。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C2",
+      "gate": "C",
+      "title": "components/session-launcher-dialog.tsx (Dialog 中身: フォーム + 送信 + 結果表示)",
+      "description": "Dialog 内に Repo Select、デフォルトブランチ表示、ai-elements の PromptInput、送信ボタンを配置。送信成功時は新規タブを window.open + Dialog 内に session_url とコピーボタンを残す。",
+      "tdd": false,
+      "dependencies": ["A1", "B2", "C1"],
+      "affectedFiles": [
+        { "path": "dashboard/components/session-launcher-dialog.tsx", "operation": "create", "summary": "controlled Dialog コンポーネント。form state + fetch /api/sessions/launch + toast + 結果表示" }
+      ],
+      "impl": "## ファイル: dashboard/components/session-launcher-dialog.tsx\n\n```tsx\n'use client';\n\nimport { useEffect, useState } from 'react';\nimport { Copy, ExternalLink, Loader2 } from 'lucide-react';\nimport { toast } from 'sonner';\nimport { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';\nimport { Button } from '@/components/ui/button';\nimport { PromptInput, PromptInputTextarea, PromptInputToolbar, PromptInputSubmit } from '@/components/ai-elements/prompt-input';\nimport type { GitHubRepo } from '@/lib/types';\n\ninterface SessionLauncherDialogProps {\n  open: boolean;\n  onOpenChange: (open: boolean) => void;\n  candidateRepos: GitHubRepo[];\n}\n\ntype LaunchState =\n  | { status: 'idle' }\n  | { status: 'loading' }\n  | { status: 'success'; sessionUrl: string }\n  | { status: 'error'; message: string };\n\nexport function SessionLauncherDialog({ open, onOpenChange, candidateRepos }: SessionLauncherDialogProps) {\n  const [selectedRepo, setSelectedRepo] = useState<string>(candidateRepos[0]?.full_name ?? '');\n  const [prompt, setPrompt] = useState('');\n  const [state, setState] = useState<LaunchState>({ status: 'idle' });\n\n  // candidateRepos が変わったら選択をリセット\n  useEffect(() => {\n    if (!candidateRepos.find((r) => r.full_name === selectedRepo)) {\n      setSelectedRepo(candidateRepos[0]?.full_name ?? '');\n    }\n  }, [candidateRepos, selectedRepo]);\n\n  // Dialog を閉じたら state リセット\n  useEffect(() => {\n    if (!open) {\n      setPrompt('');\n      setState({ status: 'idle' });\n    }\n  }, [open]);\n\n  const repo = candidateRepos.find((r) => r.full_name === selectedRepo);\n  const branch = repo?.default_branch ?? '';\n  const canSubmit = !!repo && prompt.trim().length > 0 && state.status !== 'loading';\n\n  const handleSubmit = async () => {\n    if (!repo) return;\n    setState({ status: 'loading' });\n    try {\n      const res = await fetch('/api/sessions/launch', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ repo: repo.full_name, branch: repo.default_branch, prompt: prompt.trim() }),\n      });\n      const json = await res.json();\n      if (!res.ok) {\n        const msg = json.error ?? `HTTP ${res.status}`;\n        setState({ status: 'error', message: msg });\n        toast.error('セッション起動に失敗しました', { description: msg });\n        return;\n      }\n      const sessionUrl = json.sessionUrl as string;\n      setState({ status: 'success', sessionUrl });\n      toast.success('Claude Code Web セッションを起動しました', { description: '新規タブで開きます' });\n      window.open(sessionUrl, '_blank', 'noopener,noreferrer');\n    } catch (err) {\n      const msg = err instanceof Error ? err.message : 'unknown error';\n      setState({ status: 'error', message: msg });\n      toast.error('通信エラー', { description: msg });\n    }\n  };\n\n  return (\n    <Dialog open={open} onOpenChange={onOpenChange}>\n      <DialogContent className=\"sm:max-w-lg\">\n        <DialogHeader>\n          <DialogTitle>Claude Code Web セッション起動</DialogTitle>\n          <DialogDescription>\n            選択したリポジトリのデフォルトブランチで新しいセッションを開始します。\n          </DialogDescription>\n        </DialogHeader>\n\n        <div className=\"space-y-4\">\n          {/* Repo selector — ネイティブ select で十分。サイドバー選択 repos のみが対象 */}\n          <div className=\"space-y-1.5\">\n            <label htmlFor=\"repo-select\" className=\"text-sm font-medium\">リポジトリ</label>\n            <select\n              id=\"repo-select\"\n              value={selectedRepo}\n              onChange={(e) => setSelectedRepo(e.target.value)}\n              className=\"w-full rounded-md border border-input bg-background px-3 py-2 text-sm\"\n              disabled={candidateRepos.length === 0}\n            >\n              {candidateRepos.map((r) => (\n                <option key={r.full_name} value={r.full_name}>{r.full_name}</option>\n              ))}\n            </select>\n          </div>\n\n          {/* Branch 表示 — 選択不可、参考表示のみ */}\n          <div className=\"space-y-1.5\">\n            <p className=\"text-sm font-medium\">ブランチ</p>\n            <p className=\"rounded-md border border-dashed bg-muted/30 px-3 py-2 text-sm font-mono\">\n              {branch || '—'}\n              <span className=\"ml-2 text-xs text-muted-foreground\">(デフォルトブランチから起動)</span>\n            </p>\n          </div>\n\n          {/* PromptInput — ai-elements */}\n          <PromptInput onSubmit={(_msg) => handleSubmit()} className=\"border\">\n            <PromptInputTextarea\n              value={prompt}\n              onChange={(e) => setPrompt(e.target.value)}\n              placeholder=\"Claude に依頼するタスクを入力...\"\n              disabled={state.status === 'loading'}\n            />\n            <PromptInputToolbar>\n              <div className=\"flex-1\" />\n              <PromptInputSubmit disabled={!canSubmit} status={state.status === 'loading' ? 'streaming' : undefined} />\n            </PromptInputToolbar>\n          </PromptInput>\n\n          {/* 起動成功時の URL 表示 */}\n          {state.status === 'success' && (\n            <div className=\"rounded-md border border-green-500/30 bg-green-500/10 p-3\">\n              <p className=\"text-sm font-medium text-green-700 dark:text-green-300\">セッション URL</p>\n              <div className=\"mt-2 flex items-center gap-2\">\n                <code className=\"flex-1 truncate text-xs\">{state.sessionUrl}</code>\n                <Button size=\"sm\" variant=\"outline\" onClick={() => navigator.clipboard.writeText(state.sessionUrl)}>\n                  <Copy className=\"h-3 w-3\" />\n                </Button>\n                <Button size=\"sm\" variant=\"outline\" onClick={() => window.open(state.sessionUrl, '_blank', 'noopener,noreferrer')}>\n                  <ExternalLink className=\"h-3 w-3\" />\n                </Button>\n              </div>\n            </div>\n          )}\n\n          {state.status === 'error' && (\n            <div className=\"rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive\">\n              {state.message}\n            </div>\n          )}\n        </div>\n\n        <DialogFooter>\n          <Button variant=\"outline\" onClick={() => onOpenChange(false)}>閉じる</Button>\n        </DialogFooter>\n      </DialogContent>\n    </Dialog>\n  );\n}\n```\n\n## 注意点\n\n- ai-elements の PromptInput の正確な props は P1 後に references/ai-elements-prompt-input.md を Read して合わせる。代表的に PromptInput / PromptInputTextarea / PromptInputToolbar / PromptInputSubmit を組み合わせる。\n- repo Select は shadcn の Select コンポーネントが入っていない (components/ui/ にない) ので、ネイティブ <select> で十分。後から shadcn select を入れても良い。\n- 送信中はテキストエリアと Submit を disable し、Loader2 で視覚化。\n- window.open がブラウザでブロックされた場合に備えて、Dialog 内の URL は閉じるまで残す。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "C3",
+      "gate": "C",
+      "title": "[SIMPLE] dashboard/app/page.tsx に SessionLauncherFab をマウント",
+      "description": "DashboardLayout の children 末尾、または return ツリー直下に <SessionLauncherFab> を追加し、selectedRepos と reposData.repos を渡す。",
+      "tdd": false,
+      "dependencies": ["C1", "C2"],
+      "affectedFiles": [
+        { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "import 追加 + DashboardLayout の </DashboardLayout> 直前/直後に <SessionLauncherFab> を配置" }
+      ],
+      "impl": "1. dashboard/app/page.tsx を Read (現在 Home コンポーネントで selectedRepos と reposData が利用可能)。\n2. import を追加: `import { SessionLauncherFab } from '@/components/session-launcher-fab'`\n3. DashboardLayout の children 内 (`<div className=\"space-y-4\">...</div>` の後、または DashboardLayout 自体の外側でも fixed positioning なら問題ないが、SidebarInset の中に置くと collapsed 状態と整合するので children 末尾が無難) に追加:\n```tsx\n<SessionLauncherFab selectedRepos={selectedRepos} repos={reposData.repos} />\n```\n4. dev サーバーで右下に FAB が出ること、サイドバー未選択時に disabled になることを確認。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    },
+    {
+      "id": "D1",
+      "gate": "D",
+      "title": "ブラウザでハッピーパス + エラーパスを手動検証",
+      "description": "FAB → Dialog → 起動 → 新規タブ + URL 表示までのフローと、env 未設定・空プロンプト・429 などのエラー表示を一通り確認する。",
+      "tdd": false,
+      "dependencies": ["C3"],
+      "affectedFiles": [],
+      "impl": "## 検証シナリオ (ブラウザで実行、結果を Review に記入)\n\n### ハッピーパス\n1. dashboard/.env.local に有効な ANTHROPIC_ROUTINE_TRIGGER_ID / ANTHROPIC_ROUTINE_TOKEN を設定済みで `pnpm dev` (or `npm run dev`)。\n2. http://localhost:3000 を開きログイン。\n3. サイドバーで 1 件以上のリポジトリを選択。\n4. 右下 FAB が active になることを確認。クリックで Dialog 開く。\n5. リポジトリ select に選択中 repos が並ぶ、ブランチ欄に default branch 名 (例: main) が表示される。\n6. プロンプト入力 → 送信。\n7. Toast『セッションを起動しました』、新規タブで claude.ai/code/<id> が開く。\n8. Dialog 内に URL とコピー / 外部開ボタンが残る。コピーで clipboard 確認。\n\n### エラーパス (3 件)\n- **env 未設定**: .env.local の `ANTHROPIC_ROUTINE_TRIGGER_ID` を空にして dev 再起動 → 送信 → Toast『セッション起動に失敗しました』+ Dialog バナーに『ANTHROPIC_ROUTINE_* env が未設定です』表示。HTTP 500。\n- **未選択時の disable**: サイドバーで全リポを外す → FAB が disabled。Dialog 開けない。\n- **空プロンプト**: Dialog を開いてプロンプト未入力のまま Submit ボタンが disabled で押せないこと。\n\n### 検証スコープ外 (理由)\n- 401 / 429 / network エラーは routines-client 単体テスト (B1) で網羅済みのため、手動再現はしない。MSW 等の HTTP モックは未導入。\n\n## 完了条件\n- ハッピーパス 8 ステップ + エラーパス 3 件が全て期待どおりに動く。\n- Console に未処理エラーが出ない。\n- Network タブで /api/sessions/launch のリクエストの body.text フィールドに `Repo:`, `Branch:`, `Task:` が含まれている。",
+      "relatedIssues": [],
+      "steps": [
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
+        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+      ]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-15T16:51:03+0900",
+    "totalGates": 4,
+    "totalTodos": 8
+  }
+}
