@@ -1,7 +1,18 @@
+---
+name: dev:refresh-claude-web-cookie
+description: |
+  claude.ai の sessionKey Cookie を Chrome プロファイルから抽出し、有効性確認後に
+  Vercel 環境変数（本番）とローカル env ファイルの両方を即時更新するスキル。
+  再デプロイ不要でゼロダウンタイム更新が可能。
+
+  Trigger:
+  Cookie更新, sessionKey更新, Cookie切れ, /dev:refresh-claude-web-cookie, /refresh-claude-web-cookie
+---
+
 # refresh-claude-web-cookie
 
 `sessionKey` Cookie（claude.ai の認証トークン）を Chrome プロファイルから抽出し、
-**Vercel KV**（本番）と**ローカル env ファイル**の両方を即時更新するスキル。
+**Vercel 環境変数**（本番）と**ローカル env ファイル**の両方を即時更新するスキル。
 再デプロイ不要でゼロダウンタイム更新が可能。
 
 ## トリガー
