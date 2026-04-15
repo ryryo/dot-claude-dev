@@ -122,7 +122,7 @@ export function SessionLauncherDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="repo-select" className="text-sm font-medium">
               リポジトリ
@@ -174,7 +174,7 @@ export function SessionLauncherDialog({
                 セッション URL
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <code className="flex-1 truncate text-xs">{state.sessionUrl}</code>
+                <code className="min-w-0 flex-1 truncate text-xs">{state.sessionUrl}</code>
                 <Button
                   size="sm"
                   variant="outline"
