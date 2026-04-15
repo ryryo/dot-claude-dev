@@ -7,9 +7,9 @@
     "createdDate": "2026-04-15",
     "specPath": "spec.md"
   },
-  "status": "not-started",
-  "reviewChecked": false,
-  "progress": { "completed": 0, "total": 6 },
+  "status": "completed",
+  "reviewChecked": true,
+  "progress": { "completed": 6, "total": 6 },
   "preflight": [],
   "gates": [
     {
@@ -42,8 +42,8 @@
       "impl": "### 目的\n\n`PlanFile.filePath` を `docs/PLAN/{YYMMDD}_{slug}` 形式のディレクトリパスに正規化する。UI 側から呼ばれる純粋関数として実装し、TDD でテストを先に書く。\n\n### 作成ファイル 1: `dashboard/__tests__/plan-path.test.ts`\n\n`dashboard/__tests__/plan-parser.test.ts` の describe/it パターンに倣い、Vitest で 4 ケースを定義する。\n\n```typescript\nimport { describe, expect, it } from 'vitest';\n\nimport { getPlanDirectoryPath } from '../lib/plan-path';\n\ndescribe('getPlanDirectoryPath', () => {\n  it('v2 形式 (末尾 /spec.md) はディレクトリパスに変換する', () => {\n    expect(\n      getPlanDirectoryPath('docs/PLAN/260412_spec-dashboard-format-v2/spec.md')\n    ).toBe('docs/PLAN/260412_spec-dashboard-format-v2');\n  });\n\n  it('v2 形式 (末尾 /tasks.json) はディレクトリパスに変換する', () => {\n    expect(\n      getPlanDirectoryPath('docs/PLAN/260412_foo/tasks.json')\n    ).toBe('docs/PLAN/260412_foo');\n  });\n\n  it('レガシー単独 .md は拡張子を除去する', () => {\n    expect(\n      getPlanDirectoryPath('docs/PLAN/260411_dashboard-auth-hardening.md')\n    ).toBe('docs/PLAN/260411_dashboard-auth-hardening');\n  });\n\n  it('既にディレクトリパスならそのまま返す', () => {\n    expect(\n      getPlanDirectoryPath('docs/PLAN/260410_foo')\n    ).toBe('docs/PLAN/260410_foo');\n  });\n});\n```\n\n### 作成ファイル 2: `dashboard/lib/plan-path.ts`\n\n正規表現ベースの単純な実装にとどめる。`path.basename` 等は不要（文字列の末尾パターンマッチで十分）。\n\n```typescript\nexport function getPlanDirectoryPath(filePath: string): string {\n  if (filePath.endsWith('/spec.md')) {\n    return filePath.slice(0, -'/spec.md'.length);\n  }\n  if (filePath.endsWith('/tasks.json')) {\n    return filePath.slice(0, -'/tasks.json'.length);\n  }\n  if (filePath.endsWith('.md')) {\n    return filePath.slice(0, -'.md'.length);\n  }\n  return filePath;\n}\n```\n\n### 検証\n\n```bash\ncd dashboard && npm test -- plan-path\n```\n\n4 ケース全て PASS すること。",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "4ケース全PASS。純粋関数として正確に実装。ストーリー・API・リスク・セキュリティ全観点PASS" } }
       ]
     },
     {
@@ -59,8 +59,8 @@
       "impl": "### 目的\n\n`PlanCard` 右上のアイコン群（L42-72）に `Copy` アイコンボタンを追加し、クリックで `getPlanDirectoryPath(plan.filePath)` をクリップボードへコピーする。\n\n### 変更箇所\n\n`dashboard/components/plan-card.tsx`:\n\n1. **import 追加** (L4):\n   ```typescript\n   import { Check, ChevronDown, Copy, FileText, ListChecks } from \"lucide-react\"\n   ```\n\n2. **getPlanDirectoryPath import 追加**:\n   ```typescript\n   import { getPlanDirectoryPath } from \"@/lib/plan-path\"\n   ```\n\n3. **state 追加** (L33-34 の近く):\n   ```typescript\n   const [copied, setCopied] = useState(false)\n   ```\n\n4. **ハンドラ追加** (関数本体内):\n   ```typescript\n   const handleCopyPath = async (e: React.MouseEvent) => {\n     e.stopPropagation()\n     try {\n       await navigator.clipboard.writeText(getPlanDirectoryPath(plan.filePath))\n       setCopied(true)\n       setTimeout(() => setCopied(false), 1500)\n     } catch (err) {\n       console.error('Failed to copy plan path:', err)\n     }\n   }\n   ```\n\n5. **ボタン追加** (L43 の `plan.hasV2Tasks && (` 直前、つまりアイコングループの先頭):\n   ```tsx\n   <button\n     type=\"button\"\n     aria-label={`${plan.title} のパスをコピー`}\n     onClick={handleCopyPath}\n     className=\"text-muted-foreground hover:text-foreground pointer-events-auto cursor-pointer transition-colors\"\n   >\n     {copied ? (\n       <Check className=\"size-4 shrink-0\" />\n     ) : (\n       <Copy className=\"size-4 shrink-0\" />\n     )}\n   </button>\n   ```\n\n### 重要\n\n- 既存の `ListChecks` / `FileText` ボタンと同じ `className` / `stopPropagation` パターンに揃える\n- `isNarrow` 時は親の L42 `isNarrow && \"hidden\"` により自動的に非表示になる（追加対応不要）\n\n### 検証\n\n1. `cd dashboard && npm run dev` で起動\n2. ブラウザで計画書カードにホバーし、アイコン群の先頭に Copy アイコンが見えること\n3. Copy アイコンをクリック → Check に一瞬切替 → 1.5 秒後に Copy に戻ること\n4. 貼り付けて `docs/PLAN/{YYMMDD}_{slug}` 形式になっていること\n5. Collapsible がクリックで開閉しないこと（stopPropagation 効果）\n6. `npm run build` / `npm run lint` が PASS すること",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "全6要件PASS。既存ボタンと同パターン。stopPropagation/aria-label/isNarrow対応すべて正確" } }
       ]
     },
     {
@@ -76,8 +76,8 @@
       "impl": "### 目的\n\n`KanbanBoard` の「レビュー待ち」カラムヘッダーに `Copy` アイコンボタンを追加し、表示中の `columnPlans` を改行区切りでクリップボードにコピーする。\n\n### 変更箇所\n\n`dashboard/components/kanban-board.tsx`:\n\n1. **import 追加** (既存 import 行を拡張):\n   - `useState` は L3 で既に import 済み（追加不要）\n   - 新規 lucide-react アイコン追加:\n     ```typescript\n     import { Check, Copy } from \"lucide-react\"\n     ```\n   - パスユーティリティ追加:\n     ```typescript\n     import { getPlanDirectoryPath } from \"@/lib/plan-path\"\n     ```\n\n2. **新規コンポーネント** (ファイル末尾または `KanbanGrid` の直後に追加):\n   ```tsx\n   function ReviewColumnCopyButton({ plans }: { plans: PlanFile[] }) {\n     const [copied, setCopied] = useState(false)\n     const disabled = plans.length === 0\n\n     const handleClick = async (e: React.MouseEvent) => {\n       e.stopPropagation()\n       if (disabled) return\n       const text = plans\n         .map((p) => getPlanDirectoryPath(p.filePath))\n         .join('\\n')\n       try {\n         await navigator.clipboard.writeText(text)\n         setCopied(true)\n         setTimeout(() => setCopied(false), 1500)\n       } catch (err) {\n         console.error('Failed to copy review paths:', err)\n       }\n     }\n\n     return (\n       <button\n         type=\"button\"\n         aria-label={`レビュー待ち${plans.length}件のパスをコピー`}\n         aria-disabled={disabled}\n         onClick={handleClick}\n         disabled={disabled}\n         className={cn(\n           \"text-muted-foreground hover:text-foreground cursor-pointer transition-colors\",\n           disabled && \"cursor-not-allowed opacity-40 hover:text-muted-foreground\"\n         )}\n       >\n         {copied ? (\n           <Check className=\"size-4 shrink-0\" />\n         ) : (\n           <Copy className=\"size-4 shrink-0\" />\n         )}\n       </button>\n     )\n   }\n   ```\n\n3. **CardHeader の修正** (L217-222):\n   ```tsx\n   <CardHeader className=\"flex flex-row items-center justify-between gap-3 px-4 pt-4 pb-0\">\n     <CardTitle className=\"text-base font-semibold\">{column.label}</CardTitle>\n     <div className=\"flex items-center gap-2\">\n       {column.status === 'in-review' && (\n         <ReviewColumnCopyButton plans={columnPlans} />\n       )}\n       <Badge variant=\"secondary\" className=\"tabular-nums\">\n         {columnPlans.length}\n       </Badge>\n     </div>\n   </CardHeader>\n   ```\n\n### 注意点\n\n- `ReviewColumnCopyButton` は `KanbanGrid` の外に定義し、他カラムでは呼ばない（`column.status === 'in-review'` の条件分岐で制御）\n- `groupByProject` モードでも `KanbanGrid` はプロジェクトごとに呼ばれるため、各プロジェクトの in-review カラムに独立したボタンが出る → 設計通り\n- `PlanFile` の import は既存行にあるため追加不要\n\n### 検証\n\n1. `cd dashboard && npm run dev` で起動\n2. ブラウザで「レビュー待ち」カラムのタイトル右側に Copy アイコンが見えること\n3. 他の 3 カラム（未実装 / 実装中 / 完了）にはボタンが出ないこと\n4. レビュー待ち件数が 0 のときは disabled（opacity 下がる）になること\n5. 件数 >0 のときクリック → Check に切替 → ペースト：改行区切りの `docs/PLAN/...` リストになること\n6. `groupByProject` モード切替時、各プロジェクトの in-review カラムに個別のボタンが表示されること\n7. `npm run build` / `npm run lint` が PASS すること",
       "relatedIssues": [],
       "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
+        { "kind": "impl", "title": "Step 1 — IMPL", "checked": true },
+        { "kind": "review", "title": "Step 2 — Review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "全要件PASS。ReviewColumnCopyButton・disabled状態・in-reviewのみ表示・groupByProject対応すべて正確" } }
       ]
     }
   ],
