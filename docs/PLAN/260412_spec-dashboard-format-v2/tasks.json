@@ -15,31 +15,41 @@
     {
       "id": "B",
       "title": "/dev:spec skill 改修",
-      "dependencies": ["A"],
+      "dependencies": [
+        "A"
+      ],
       "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
     },
     {
       "id": "C",
       "title": "sync-spec-md スクリプト実装",
-      "dependencies": ["B"],
+      "dependencies": [
+        "B"
+      ],
       "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
     },
     {
       "id": "D",
       "title": "/dev:spec-run skill 改修",
-      "dependencies": ["C"],
+      "dependencies": [
+        "C"
+      ],
       "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
     },
     {
       "id": "E",
       "title": "dashboard 改修",
-      "dependencies": ["D"],
+      "dependencies": [
+        "D"
+      ],
       "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
     },
     {
       "id": "F",
       "title": "E2E 検証",
-      "dependencies": ["E"],
+      "dependencies": [
+        "E"
+      ],
       "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
     }
   ],
@@ -48,7 +58,7 @@
       "id": "A1",
       "gate": "A",
       "title": "dashboard/lib/types.ts に TasksJsonV2 系の型を追加",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [],
       "affectedFiles": [
         {
@@ -65,8 +75,10 @@
       "id": "A2",
       "gate": "A",
       "title": "tasks.template.json を v2 形式に全面更新",
-      "status": "pending",
-      "dependencies": ["A1"],
+      "status": "completed",
+      "dependencies": [
+        "A1"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/references/templates/tasks.template.json",
@@ -82,8 +94,10 @@
       "id": "A3",
       "gate": "A",
       "title": "tasks-schema-v2.md（スキーマドキュメント）を新規作成",
-      "status": "pending",
-      "dependencies": ["A2"],
+      "status": "completed",
+      "dependencies": [
+        "A2"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/references/templates/tasks-schema-v2.md",
@@ -99,8 +113,10 @@
       "id": "A4",
       "gate": "A",
       "title": "v2 サンプル fixture 新規作成（後続 TDD / E2E の共通入力）",
-      "status": "pending",
-      "dependencies": ["A3"],
+      "status": "completed",
+      "dependencies": [
+        "A3"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/references/examples/sample-v2/tasks.json",
@@ -121,8 +137,10 @@
       "id": "B1",
       "gate": "B",
       "title": "spec/SKILL.md からシングルモード分岐削除 + Step 7 を v2 schema 対応に更新",
-      "status": "pending",
-      "dependencies": ["A3"],
+      "status": "completed",
+      "dependencies": [
+        "A3"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/SKILL.md",
@@ -138,8 +156,10 @@
       "id": "B2",
       "gate": "B",
       "title": "spec-template-dir.md に generated マーカー追加 + spec-template.md 削除",
-      "status": "pending",
-      "dependencies": ["B1"],
+      "status": "completed",
+      "dependencies": [
+        "B1"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/references/templates/spec-template-dir.md",
@@ -160,8 +180,10 @@
       "id": "B3",
       "gate": "B",
       "title": "spec/agents/spec-sync.md を v2 schema 対応に更新",
-      "status": "pending",
-      "dependencies": ["B2"],
+      "status": "completed",
+      "dependencies": [
+        "B2"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/agents/spec-sync.md",
@@ -177,8 +199,11 @@
       "id": "C1",
       "gate": "C",
       "title": "[TDD] sync-spec-md.mjs 本体実装 + node --test テスト",
-      "status": "pending",
-      "dependencies": ["B3", "A4"],
+      "status": "completed",
+      "dependencies": [
+        "B3",
+        "A4"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec-run/scripts/sync-spec-md.mjs",
@@ -199,8 +224,10 @@
       "id": "C2",
       "gate": "C",
       "title": "sync-spec-md-hook.sh（PostToolUse hook wrapper）実装",
-      "status": "pending",
-      "dependencies": ["C1"],
+      "status": "completed",
+      "dependencies": [
+        "C1"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/hooks/dev/sync-spec-md-hook.sh",
@@ -216,8 +243,10 @@
       "id": "D1",
       "gate": "D",
       "title": "spec-run/SKILL.md frontmatter に PostToolUse hook 追加 + ステップ 2 を schemaVersion 判定に変更",
-      "status": "pending",
-      "dependencies": ["C2"],
+      "status": "completed",
+      "dependencies": [
+        "C2"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec-run/SKILL.md",
@@ -233,8 +262,10 @@
       "id": "D2",
       "gate": "D",
       "title": "execution.md の Step 4 UPDATE を v2/v1 分岐に更新",
-      "status": "pending",
-      "dependencies": ["D1"],
+      "status": "completed",
+      "dependencies": [
+        "D1"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec-run/references/execution.md",
@@ -250,8 +281,10 @@
       "id": "D3",
       "gate": "D",
       "title": "codex-execution.md の Step 4 UPDATE を v2/v1 分岐に更新",
-      "status": "pending",
-      "dependencies": ["D2"],
+      "status": "completed",
+      "dependencies": [
+        "D2"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec-run/references/codex-execution.md",
@@ -267,8 +300,11 @@
       "id": "E1",
       "gate": "E",
       "title": "[TDD] plan-json-loader.ts 実装 + vitest テスト",
-      "status": "pending",
-      "dependencies": ["D3", "A4"],
+      "status": "completed",
+      "dependencies": [
+        "D3",
+        "A4"
+      ],
       "affectedFiles": [
         {
           "path": "dashboard/lib/plan-json-loader.ts",
@@ -289,8 +325,10 @@
       "id": "E2",
       "gate": "E",
       "title": "github.ts の fetchPlanFiles を schemaVersion 分岐に改修",
-      "status": "pending",
-      "dependencies": ["E1"],
+      "status": "completed",
+      "dependencies": [
+        "E1"
+      ],
       "affectedFiles": [
         {
           "path": "dashboard/lib/github.ts",
@@ -306,8 +344,10 @@
       "id": "E3",
       "gate": "E",
       "title": "既存 plan-parser テストの動作確認 + dashboard 全体ビルド確認",
-      "status": "pending",
-      "dependencies": ["E2"],
+      "status": "completed",
+      "dependencies": [
+        "E2"
+      ],
       "affectedFiles": [
         {
           "path": "dashboard/__tests__/plan-parser.test.ts",
@@ -323,8 +363,10 @@
       "id": "F1",
       "gate": "F",
       "title": "既存 v1 PLAN が dashboard で引き続き表示されることを確認（レガシーパス回帰）",
-      "status": "pending",
-      "dependencies": ["E3"],
+      "status": "completed",
+      "dependencies": [
+        "E3"
+      ],
       "affectedFiles": [
         {
           "path": "docs/PLAN/**",
@@ -340,8 +382,10 @@
       "id": "F2",
       "gate": "F",
       "title": "チェック同期 E2E（A4 fixture を手動 Edit → hook 発火 → spec.md 再生成を 4 シナリオで検証）",
-      "status": "pending",
-      "dependencies": ["F1"],
+      "status": "completed",
+      "dependencies": [
+        "F1"
+      ],
       "affectedFiles": [
         {
           "path": ".claude/skills/dev/spec/references/examples/sample-v2/spec.md",
@@ -362,8 +406,10 @@
       "id": "F3",
       "gate": "F",
       "title": "dashboard 表示 E2E（v2 fixture と既存 v1 PLAN の並行表示、schemaVersion 分岐の実動作）",
-      "status": "pending",
-      "dependencies": ["F2"],
+      "status": "completed",
+      "dependencies": [
+        "F2"
+      ],
       "affectedFiles": [
         {
           "path": "dashboard/lib/github.ts",
