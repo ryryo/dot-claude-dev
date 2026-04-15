@@ -257,10 +257,10 @@ Gate D: 動作検証（Gate C 完了後）
 
 > 純関数の claude.ai 内部 API クライアントと、env を読む Next.js Route Handler を実装する。
 
-- [ ] **B1**: [TDD] dashboard/lib/claude-web-client.ts で POST /v1/sessions を呼ぶ純関数を実装
-  > **Review B1**: _未記入_
-- [ ] **B2**: POST /api/sessions/launch route handler
-  > **Review B2**: _未記入_
+- [x] **B1**: [TDD] dashboard/lib/claude-web-client.ts で POST /v1/sessions を呼ぶ純関数を実装
+  > **Review B1**: ✅ PASSED — TDD で 7 テスト (missing-env / invalid-input / happy / 401 / 403 / 429 / network) すべて GREEN。reviewer-correctness が API ヘッダ・body・status code map・security (sessionKey 漏洩なし) を仕様書と reference doc に対し全 PASS 判定。
+- [x] **B2**: POST /api/sessions/launch route handler
+  > **Review B2**: ✅ PASSED — thin wrapper として B1 を呼ぶ実装、auth は proxy.ts middleware に委譲、runtime='nodejs' 明示。reviewer-correctness が status code map (missing-env→500 / invalid-input→400 / rate-limit→429 / cookie-expired→401+cookieExpired / forbidden/network/upstream→502) を全 PASS 判定。sessionKey はレスポンスに含めない。
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
