@@ -205,7 +205,7 @@ Gate B: フロントエンド UI（Gate A 完了後）
 
 ### Gate A: バックエンド（パーサー・テンプレート）
 
-- [ ] **Step 1 — IMPL: 型定義 & 日付解析**
+- [x] **Step 1 — IMPL: 型定義 & 日付解析**
   - **対象**: `dashboard/lib/types.ts`, `dashboard/lib/plan-parser.ts`
   - **内容**: `PlanFile` に `createdDate: string | null` と `reviewChecked: boolean` を追加。`parsePlanFile` 内で `fileName`（ファイルモード）または `filePath` の親ディレクトリ名（ディレクトリモード）から YYMMDD を解析し、`20YY-MM-DD` 形式の文字列として `createdDate` に格納する
   - **実装詳細**:
@@ -216,10 +216,10 @@ Gate B: フロントエンド UI（Gate A 完了後）
   - **[TDD]**: あり — `parseDateFromFileName` は純粋関数で入出力が明確
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
   > **Review A1**:
 
-- [ ] **Step 3 — IMPL: レビューステータス解析 & ステータス判定更新**
+- [x] **Step 3 — IMPL: レビューステータス解析 & ステータス判定更新**
   - **対象**: `dashboard/lib/plan-parser.ts`
   - **内容**: `## レビューステータス` セクションを検出し、`- [x] **レビュー完了**` のチェック状態を `reviewChecked` として返す。`determineStatus` を更新して、全 TODO 完了時にレビューセクションの有無で `in-review` / `completed` を分岐
   - **実装詳細**:
@@ -235,10 +235,10 @@ Gate B: フロントエンド UI（Gate A 完了後）
   - **[TDD]**: あり — `determineStatus` は純粋関数
   - **依存**: Todo A1
 
-- [ ] **Step 4 — Review A2**
+- [x] **Step 4 — Review A2**
   > **Review A2**:
 
-- [ ] **Step 5 — IMPL: spec テンプレートにレビューセクション追加**
+- [x] **Step 5 — IMPL: spec テンプレートにレビューセクション追加**
   - **対象**: `.claude/skills/dev/spec/references/templates/spec-template.md`, `.claude/skills/dev/spec/references/templates/spec-template-dir.md`
   - **内容**: 両テンプレートの `## 残存リスク` セクションの直前に `## レビューステータス` セクションを追加
   - **実装詳細**:
@@ -249,14 +249,14 @@ Gate B: フロントエンド UI（Gate A 完了後）
     ```
   - **依存**: なし
 
-- [ ] **Step 6 — Review A3**
+- [x] **Step 6 — Review A3**
   > **Review A3**:
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
 ### Gate B: フロントエンド UI
 
-- [ ] **Step 1 — IMPL: サイドバーパス表示修正**
+- [x] **Step 1 — IMPL: サイドバーパス表示修正**
   - **対象**: `dashboard/components/project-filter.tsx`
   - **内容**: プロジェクトパスの表示を `break-all` から `truncate` に変更し、tooltip でフルパスを表示
   - **実装詳細**:
@@ -264,10 +264,10 @@ Gate B: フロントエンド UI（Gate A 完了後）
     - `title` 属性でホバー時にフルパスを表示（shadcn Tooltip は過剰なのでネイティブ title で十分）
   - **依存**: なし
 
-- [ ] **Step 2 — Review B1**
+- [x] **Step 2 — Review B1**
   > **Review B1**:
 
-- [ ] **Step 3 — IMPL: DateFilter コンポーネント作成**
+- [x] **Step 3 — IMPL: DateFilter コンポーネント作成**
   - **対象**: `dashboard/components/date-filter.tsx`（新規）, `dashboard/components/ui/slider.tsx`（新規）
   - **内容**: プリセットボタン（1 週間 / 1 ヶ月 / 3 ヶ月 / すべて）+ 日数スライダーのフィルターコンポーネントを作成
   - **実装詳細**:
@@ -280,10 +280,10 @@ Gate B: フロントエンド UI（Gate A 完了後）
     - スライダー下部に現在の日数を表示（例: 「過去 30 日間」「すべての期間」）
   - **依存**: なし
 
-- [ ] **Step 4 — Review B2**
+- [x] **Step 4 — Review B2**
   > **Review B2**:
 
-- [ ] **Step 5 — IMPL: page.tsx & AppSidebar に日付フィルター統合**
+- [x] **Step 5 — IMPL: page.tsx & AppSidebar に日付フィルター統合**
   - **対象**: `dashboard/app/page.tsx`, `dashboard/components/app-sidebar.tsx`, `dashboard/components/dashboard-layout.tsx`
   - **内容**: `filterDays` state を追加し、プロジェクトフィルター → 日付フィルターの順でフィルタリング。AppSidebar に DateFilter セクションを追加
   - **実装詳細**:
@@ -299,7 +299,7 @@ Gate B: フロントエンド UI（Gate A 完了後）
       - `dateFilterContent` props を `AppSidebar` に中継
   - **依存**: Todo B2（DateFilter コンポーネント）、Gate A（createdDate フィールド）
 
-- [ ] **Step 6 — Review B3**
+- [x] **Step 6 — Review B3**
   > **Review B3**:
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること

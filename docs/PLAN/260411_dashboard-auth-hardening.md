@@ -15,7 +15,7 @@
 >
 > これらは `/dev:spec-run` 実行時に Claude main session が先に実行する。
 
-- [ ] **P1**: **[手動]** `DASHBOARD_COOKIE_SECRET` を `dashboard/.env.local` に設定し、デプロイ先環境変数にも同じ値を登録する
+- [x] **P1**: **[手動]** `DASHBOARD_COOKIE_SECRET` を `dashboard/.env.local` に設定し、デプロイ先環境変数にも同じ値を登録する
 
 ---
 
@@ -203,7 +203,7 @@ Gate B: ログイン試行制限（Gate A 完了後）
 
 #### Todo A1: [TDD] cookie 署名鍵をログインパスワードから分離する
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/auth.ts`, `dashboard/__tests__/auth.test.ts`
   - **内容**: cookie 署名鍵を `DASHBOARD_COOKIE_SECRET` から導出し、`DASHBOARD_PASSWORD` はログイン照合専用にする
   - **実装詳細**:
@@ -217,14 +217,14 @@ Gate B: ログイン試行制限（Gate A 完了後）
   - **[TDD]**: auth helper は入出力が明確で Vitest で検証可能
   - **依存**: なし
 
-- [ ] **Step 2 — Review A1**
+- [x] **Step 2 — Review A1**
   > **Review A1**:
   > - 判定:
   > - 指摘:
 
 #### Todo A2: 環境変数定義と運用前提を更新する
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/.env.example`
   - **内容**: `DASHBOARD_COOKIE_SECRET` を追加し、既存 `DASHBOARD_PASSWORD` との役割分担を明記する
   - **実装詳細**:
@@ -235,7 +235,7 @@ Gate B: ログイン試行制限（Gate A 完了後）
   - **検証方法**: `cd dashboard && rg -n "DASHBOARD_COOKIE_SECRET|cookie 署名" .env.example`
   - **依存**: Todo A1
 
-- [ ] **Step 2 — Review A2**
+- [x] **Step 2 — Review A2**
   > **Review A2**:
   > - 判定:
   > - 指摘:
@@ -246,7 +246,7 @@ Gate B: ログイン試行制限（Gate A 完了後）
 
 #### Todo B1: [TDD] login rate limiter を追加する
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/lib/login-rate-limit.ts`, `dashboard/__tests__/login-rate-limit.test.ts`
   - **内容**: login 試行失敗回数を管理し、一定回数超過でブロックする純粋ロジックを追加する
   - **実装詳細**:
@@ -259,14 +259,14 @@ Gate B: ログイン試行制限（Gate A 完了後）
   - **[TDD]**: レート制限ロジックは純粋関数で明確に検証可能
   - **依存**: Gate A
 
-- [ ] **Step 2 — Review B1**
+- [x] **Step 2 — Review B1**
   > **Review B1**:
   > - 判定:
   > - 指摘:
 
 #### Todo B2: auth route と login UI にレート制限を統合する
 
-- [ ] **Step 1 — IMPL**
+- [x] **Step 1 — IMPL**
   - **対象**: `dashboard/app/api/auth/route.ts`, `dashboard/app/login/page.tsx`
   - **内容**: `/api/auth` にレート制限を適用し、UI で `429` を区別表示する
   - **実装詳細**:
@@ -283,7 +283,7 @@ Gate B: ログイン試行制限（Gate A 完了後）
     - 閾値超過後に `429` と `Retry-After` が返ることを確認する
   - **依存**: Todo B1
 
-- [ ] **Step 2 — Review B2**
+- [x] **Step 2 — Review B2**
   > **Review B2**:
   > - 判定:
   > - 指摘:
