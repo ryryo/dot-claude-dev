@@ -1,19 +1,31 @@
 # refresh-claude-web-cookie
 
-`sessionKeyLC` Cookie の有効性を確認し、期限切れなら Claude in Chrome でブラウザから
-再取得して **Vercel KV**（本番）と**ローカル env ファイル**の両方を即時更新するスキル。
+`sessionKey` Cookie（claude.ai の認証トークン）を Chrome プロファイルから抽出し、
+**Vercel KV**（本番）と**ローカル env ファイル**の両方を即時更新するスキル。
 再デプロイ不要でゼロダウンタイム更新が可能。
 
 ## トリガー
 
-`/refresh-claude-web-cookie` または「Cookie更新」「sessionKeyLC更新」「Cookie切れ」
+`/refresh-claude-web-cookie` または「Cookie更新」「sessionKey更新」「Cookie切れ」
 
 ## 前提条件
 
+### 必須ツール
+
+| ツール | 用途 | 取得方法 |
+|---|---|---|
+| `uvx` | Python パッケージ `browser-cookie3` を一時実行 | `brew install uv` |
+| Google Chrome | claude.ai にログイン済みであること | — |
+
+初回実行時、`browser-cookie3` が macOS Keychain にアクセスするため、
+Keychain パスワード入力プロンプトが出る可能性あり（許可すると以後は通る）。
+
+### 環境変数
+
 | 環境変数 | 説明 | 必須 |
 |---|---|---|
-| `VERCEL_KV_REST_API_URL` | Vercel KV の REST API エンドポイント | Vercel更新時のみ |
-| `VERCEL_KV_REST_API_TOKEN` | Vercel KV の認証トークン | Vercel更新時のみ |
+| `VERCEL_KV_REST_API_URL` | Vercel KV の REST API エンドポイント | Vercel 更新時のみ |
+| `VERCEL_KV_REST_API_TOKEN` | Vercel KV の認証トークン | Vercel 更新時のみ |
 | `CLAUDE_WEB_ENV_FILE` | ローカル env ファイルパス | ❌ デフォルト: `~/.claude-web-session.env` |
 
 Vercel KV のセットアップ: Vercel ダッシュボード → Storage → Create KV Database →
@@ -21,58 +33,60 @@ Vercel KV のセットアップ: Vercel ダッシュボード → Storage → Cr
 
 ## 実行フロー
 
-### Step 1: ブラウザセッションの確認（Claude in Chrome MCP）
+### Step 1: Chrome から sessionKey を自動抽出
 
-`tabs_context_mcp` でタブを取得し、既存の `claude.ai` タブがあれば再利用、なければ新規タブで開く。
+Claude.ai の認証 Cookie `sessionKey` は **HttpOnly** のため `document.cookie` から
+取得不可。代わりに Chrome のローカル Cookie DB (`~/Library/Application Support/
+Google/Chrome/Default/Cookies`) を `browser-cookie3` で読む（macOS Keychain 連携で
+自動復号）。
 
-ブラウザ内から現在のセッション有効性を確認:
-
-```javascript
-// 必須ヘッダーを付けてテスト（credentials: 'include' でブラウザの実Cookie を使用）
-fetch('https://claude.ai/v1/sessions', {
-  credentials: 'include',
-  headers: {
-    'anthropic-beta': 'managed-agents-2026-04-01',
-    'anthropic-version': '2023-06-01'
-  }
-}).then(r => window._sessionStatus = r.status)
+```bash
+COOKIE_VALUE=$(uvx --quiet --from browser-cookie3 python -c "
+import browser_cookie3
+cj = browser_cookie3.chrome(domain_name='claude.ai')
+for c in cj:
+    if c.name == 'sessionKey':
+        print(c.value)
+        break
+")
 ```
 
-**必須ヘッダー（実行テストで確認済み）:**
-- `anthropic-version: 2023-06-01` — ないと `"anthropic-version: header is required"` エラー
-- `anthropic-beta: ccr-byoc-2025-07-29` — Web UI が使う正しい値（`managed-agents-2026-04-01` では別スキーマになり不可）
+取得できない場合:
+- Chrome で claude.ai にログインしていない → ユーザーにログインを案内して終了
+- Keychain アクセス拒否 → 許可を依頼して再実行
+
+### Step 2: 有効性チェック（Claude in Chrome MCP）
+
+取得した Cookie がサーバーで有効か `GET /v1/sessions` で確認:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" https://claude.ai/v1/sessions \
+  -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/131.0.0.0" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: managed-agents-2026-04-01" \
+  -H "Cookie: sessionKey=${COOKIE_VALUE}"
+```
+
+> **注意**: 素の curl は Cloudflare にブロックされる (403) ことがあるため、実装側は
+> **Node.js native fetch** を使うこと。Node の `fetch` は Cloudflare を素通りできる
+> (実測 200 / 401 応答、curl は 403)。上の curl は UA を偽装している前提の確認用。
+
+- **200** → Step 3 へ
+- **401/403** → ユーザーに「claude.ai に再ログインしてから再実行してください」と伝えて終了
+
+**必須ヘッダー（実測確認済み）:**
+- `anthropic-version: 2023-06-01` — ないと `"header is required"` エラー
+- `anthropic-beta: ccr-byoc-2025-07-29` — POST /v1/sessions 用の正しい値
+  - GET の有効性確認のみ `managed-agents-2026-04-01` でも可
 - `anthropic-client-feature: ccr` — Web UI と同じ値
-- `x-organization-uuid: {org_uuid}` — 任意だが Web UI は常に付与
-
-※ 有効性確認（GET）は `managed-agents-2026-04-01` でも動くが、セッション作成（POST）は `ccr-byoc-2025-07-29` が必須
-
-- **200** → セッション有効。Step 2 へ（Cookie値を取得して保存）
-- **401/403/その他** → ユーザーに「claude.ai にログインしてから再実行してください」と伝えて終了
-
-### Step 2: sessionKeyLC の値を取得
-
-```javascript
-document.cookie
-  .split(';')
-  .map(c => c.trim())
-  .find(c => c.startsWith('sessionKeyLC='))
-  ?.split('=').slice(1).join('=')  // = を含む値に対応
-```
-
-取得できない場合（HttpOnly 等）: ユーザーに以下を案内して終了
-
-```
-ブラウザの DevTools → Application → Cookies → claude.ai → sessionKeyLC
-の値をコピーして教えてください
-```
+- `x-organization-uuid: {org_uuid}` — Web UI は常に付与
 
 ### Step 3: Vercel KV に保存
 
 `VERCEL_KV_REST_API_URL` が設定されている場合のみ実行:
 
 ```bash
-# Vercel KV REST API (Upstash 互換)
-curl -s -X POST "${VERCEL_KV_REST_API_URL}/set/sessionKeyLC" \
+curl -s -X POST "${VERCEL_KV_REST_API_URL}/set/sessionKey" \
   -H "Authorization: Bearer ${VERCEL_KV_REST_API_TOKEN}" \
   -H "Content-Type: application/json" \
   -d "[\"${COOKIE_VALUE}\"]"
@@ -81,7 +95,7 @@ curl -s -X POST "${VERCEL_KV_REST_API_URL}/set/sessionKeyLC" \
 保存確認:
 
 ```bash
-curl -s "${VERCEL_KV_REST_API_URL}/get/sessionKeyLC" \
+curl -s "${VERCEL_KV_REST_API_URL}/get/sessionKey" \
   -H "Authorization: Bearer ${VERCEL_KV_REST_API_TOKEN}"
 ```
 
@@ -91,25 +105,22 @@ curl -s "${VERCEL_KV_REST_API_URL}/get/sessionKeyLC" \
 
 ```bash
 ENV_FILE="${CLAUDE_WEB_ENV_FILE:-$HOME/.claude-web-session.env}"
-
-# ファイルが存在しない場合は作成
 touch "$ENV_FILE"
 
-# 既存行を置換、なければ追記
-if grep -q "^CLAUDE_AI_SESSION_KEY_LC=" "$ENV_FILE" 2>/dev/null; then
-  sed -i '' "s|^CLAUDE_AI_SESSION_KEY_LC=.*|CLAUDE_AI_SESSION_KEY_LC=${COOKIE_VALUE}|" "$ENV_FILE"
+if grep -q "^CLAUDE_AI_SESSION_KEY=" "$ENV_FILE" 2>/dev/null; then
+  sed -i '' "s|^CLAUDE_AI_SESSION_KEY=.*|CLAUDE_AI_SESSION_KEY=${COOKIE_VALUE}|" "$ENV_FILE"
 else
-  echo "CLAUDE_AI_SESSION_KEY_LC=${COOKIE_VALUE}" >> "$ENV_FILE"
+  echo "CLAUDE_AI_SESSION_KEY=${COOKIE_VALUE}" >> "$ENV_FILE"
 fi
 ```
 
 ### Step 5: 完了報告
 
-以下のサマリーを表示:
-
 ```
-✅ sessionKeyLC を更新しました
+✅ sessionKey を更新しました
 
+  取得元:             Chrome Cookie DB (browser-cookie3)
+  有効性確認:         ✅ HTTP 200
   Vercel KV 更新:     ✅ / ❌ (エラー内容)
   ローカル env 更新:   ✅ ${ENV_FILE}
 
@@ -123,16 +134,39 @@ fi
 import { kv } from '@vercel/kv'
 
 export async function POST(req: Request) {
-  // KV から動的に取得（毎リクエストで最新値を読む）
-  const sessionKeyLC = await kv.get<string>('sessionKeyLC')
-  if (!sessionKeyLC) {
-    return Response.json({ error: 'Cookie not configured. Run /refresh-claude-web-cookie' }, { status: 500 })
+  const sessionKey = await kv.get<string>('sessionKey')
+  if (!sessionKey) {
+    return Response.json(
+      { error: 'Cookie not configured. Run /refresh-claude-web-cookie' },
+      { status: 500 }
+    )
   }
 
-  // ... セッション作成リクエスト
+  const res = await fetch('https://claude.ai/v1/sessions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': `sessionKey=${sessionKey}`,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta': 'ccr-byoc-2025-07-29',
+      'anthropic-client-feature': 'ccr',
+      'x-organization-uuid': process.env.CLAUDE_ORG_UUID!,
+    },
+    body: JSON.stringify({ /* events, environment_id, session_context, ... */ }),
+  })
+
+  if (res.status === 401) {
+    return Response.json(
+      { error: 'sessionKey expired. Run /refresh-claude-web-cookie', cookieExpired: true },
+      { status: 401 }
+    )
+  }
+  // ...
 }
 ```
 
 ## 参考
 
-内部 API の詳細: `docs/REFERENCE/claude-code-web-internal-api.md`
+- 実測検証レポート: `docs/REFERENCE/claude-code-web-internal-api.md`
+- `sessionKey` vs `sessionKeyLC`: `sessionKey` が実際の認証トークン (`sk-ant-sid02-...`, HttpOnly)。
+  `sessionKeyLC` は単なる 13 桁タイムスタンプのコンパニオン値で認証には使えない
