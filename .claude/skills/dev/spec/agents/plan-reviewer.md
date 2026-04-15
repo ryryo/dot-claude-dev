@@ -11,29 +11,19 @@ allowed_tools: Read, Glob, Grep, Bash
 
 ## 入力
 
-### 通常モード
-- 計画書のパス（`docs/PLAN/{YYMMDD}_{slug}.md`）
-- CLAUDE.md のパス（プロジェクトルート）
-
-### ディレクトリモード
 - spec.md のパス（`docs/PLAN/{YYMMDD}_{slug}/spec.md`）
 - tasks.json のパス（`docs/PLAN/{YYMMDD}_{slug}/tasks.json`）
 - CLAUDE.md のパス（プロジェクトルート）
+
+**レビュー方針**: tasks.json を主軸とし、spec.md は補助（背景・設計決定・アーキテクチャのメタデータ）として扱う。タスク粒度・依存関係・自己完結性・漏れは tasks.json の内容で評価する。
 
 ## 実行フロー
 
 ### Step 1: ファイル読み込み
 
-**通常モード**:
 ```
-Read(計画書パス)
-Read(CLAUDE.md)
-```
-
-**ディレクトリモード**:
-```
-Read(spec.md パス)
-Read(tasks.json パス)
+Read(tasks.json パス)  ← まず主軸
+Read(spec.md パス)     ← 背景・設計決定・アーキテクチャの参照
 Read(CLAUDE.md)
 ```
 
@@ -90,16 +80,28 @@ Read(CLAUDE.md)
 - [ ] 各 Gate 末尾に Gate 通過条件が明示されている
 - [ ] Gate 間の依存関係が依存関係図に図示されている
 
-**通常モード追加チェック**:
-- [ ] 各 Todo が Step 1（IMPL）+ Step 2（Review 結果記入欄）の構造を持っている
-- [ ] Review 結果記入欄が blockquote 形式の空テーブルとして設置されている
+#### 構造チェック
 
-**ディレクトリモード追加チェック**:
-- [ ] spec.md のチェックリストと tasks.json の Todo ID/タイトルが一致する
-- [ ] spec.md の各 Todo に Review 結果記入欄（blockquote）が定義されている
+- [ ] tasks.json の `schemaVersion` が 2 である
 - [ ] tasks.json の全 Todo に `impl` フィールドが存在し空でない
+- [ ] tasks.json の各 Todo の `steps[]` が 2 要素（`kind: "impl"` + `kind: "review"`）である
 - [ ] tasks.json の `affectedFiles` が具体的ファイルパスである（ディレクトリ指定禁止）
-- [ ] tasks.json の `gates` 配列と spec.md の Gate セクションが一致する
+- [ ] tasks.json の `metadata.totalGates` / `metadata.totalTodos` が実際のカウントと一致
+- [ ] spec.md に `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーが存在する
+- [ ] spec.md の generated 領域が tasks.json の内容と同期している（`sync-spec-md.mjs` 実行済み）
+
+#### 意味的整合性チェック（tasks.json ↔ spec.md）
+
+tasks.json の内容が spec.md の authored セクションと矛盾していないかを検証する（旧 spec-sync エージェントの責務を吸収）。
+
+- [ ] tasks.json の各 Todo の `impl` が spec.md の「設計決定事項」と矛盾していない
+  - 例: spec.md で「OAuth 2.0 を採用」と決定しているのに impl で JWT 独自実装を指示していないか
+- [ ] tasks.json の各 Todo の `impl` が spec.md の「アーキテクチャ詳細」のデータフロー / 構造定義と矛盾していない
+  - 例: spec.md で「A → B → C のフロー」と定義しているのに impl で A → C の直結を指示していないか
+- [ ] tasks.json の `todos[].affectedFiles` が spec.md の「変更対象ファイルと影響範囲」と網羅的に一致している
+  - 例: spec.md に記載のあるファイルが impl から漏れていない、逆に impl にあるファイルが spec.md にない
+
+**矛盾を検出した場合の報告**: `## 指摘事項` に「### N. 意味的整合性」カテゴリを立て、矛盾箇所（Todo ID / spec.md 該当セクション / 食い違いの具体内容）を明示する。修正方向（spec.md を正として impl を直す / impl を正として spec.md を直す）の推奨を付ける。
 
 #### 参照の安全性
 
@@ -123,6 +125,8 @@ Read(CLAUDE.md)
 - 自己完結性: ✅ 十分な情報量
 - 参照完全性: ✅ 全ファイル確認済み
 - 漏れ: ✅ なし
+- 構造: ✅ schemaVersion v2 / steps[] / generated マーカー整合
+- 意味的整合性: ✅ impl ↔ 設計決定 / アーキテクチャ / affectedFiles 矛盾なし
 - リスク: Low
 
 ## 所見
@@ -144,6 +148,8 @@ Read(CLAUDE.md)
 - 自己完結性: {✅ or ⚠️}
 - 参照完全性: {✅ or ⚠️}
 - 漏れ: {✅ or ⚠️}
+- 構造: {✅ or ⚠️}
+- 意味的整合性: {✅ or ⚠️}
 - リスク: {Low/Medium/High}
 
 ## 指摘事項

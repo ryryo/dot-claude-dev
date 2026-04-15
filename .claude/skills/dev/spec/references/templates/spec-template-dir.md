@@ -4,9 +4,9 @@
 実装詳細は `tasks.json` に格納されるため、このファイルは概要・設計・チェックリストに特化する。
 
 **注意**: 「## タスクリスト」節は `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーで囲み、
-マーカー内部は sync-spec-md スクリプトが tasks.json から自動生成する。
-初回の `/dev:spec` 出力時はプレースホルダとしてマーカーと最低限の構造を書いておけば、
-PostToolUse hook が tasks.json の Write を検知して内容を埋める。
+マーカー内部は `sync-spec-md.mjs` スクリプトが tasks.json から自動生成する。
+`/dev:spec` の Step 6 では tasks.json を先に作成した後、spec.md の authored セクションを書き（generated 領域は**空のマーカーのみ**）、最後にスクリプトを明示実行して generated 領域を埋める。
+以後 tasks.json を Edit/Write すると PostToolUse hook が同スクリプトを自動発火し、spec.md の generated 領域が追従する。
 
 ---
 
