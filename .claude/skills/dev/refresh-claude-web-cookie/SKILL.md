@@ -28,10 +28,19 @@ Vercel KV のセットアップ: Vercel ダッシュボード → Storage → Cr
 ブラウザ内から現在のセッション有効性を確認:
 
 ```javascript
-// credentials: 'include' でブラウザの実Cookie を使ってテスト
-fetch('https://claude.ai/v1/sessions', {credentials: 'include'})
-  .then(r => window._sessionStatus = r.status)
+// 必須ヘッダーを付けてテスト（credentials: 'include' でブラウザの実Cookie を使用）
+fetch('https://claude.ai/v1/sessions', {
+  credentials: 'include',
+  headers: {
+    'anthropic-beta': 'managed-agents-2026-04-01',
+    'anthropic-version': '2023-06-01'
+  }
+}).then(r => window._sessionStatus = r.status)
 ```
+
+**必須ヘッダー（実行テストで確認済み）:**
+- `anthropic-beta: managed-agents-2026-04-01` — ないと `"this API is in beta"` エラー
+- `anthropic-version: 2023-06-01` — ないと `"anthropic-version: header is required"` エラー
 
 - **200** → セッション有効。Step 2 へ（Cookie値を取得して保存）
 - **401/403/その他** → ユーザーに「claude.ai にログインしてから再実行してください」と伝えて終了

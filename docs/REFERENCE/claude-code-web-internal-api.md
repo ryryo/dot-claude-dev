@@ -133,6 +133,17 @@ Content-Type: application/json
 
 ---
 
+## 必須ヘッダー
+
+`/v1/*` エンドポイントには Cookie に加えて以下のヘッダーが必須（実行テストで確認）:
+
+| ヘッダー | 値 | 欠落時のエラー |
+|---|---|---|
+| `anthropic-beta` | `managed-agents-2026-04-01` | `"this API is in beta: add managed-agents-2026-04-01..."` |
+| `anthropic-version` | `2023-06-01` | `"anthropic-version: header is required"` |
+
+---
+
 ## 認証
 
 ### Cookie ベース認証
