@@ -10,8 +10,8 @@
 
 > `/dev:spec-run` 実行時に Claude main session が先に実行する。詳細は `tasks.json` の `preflight` 配列を参照。
 
-- [ ] **P1**: ai-elements の PromptInput を shadcn registry 経由で導入
-- [ ] **P2**: Toast 通知用に shadcn sonner を導入
+- [x] **P1**: ai-elements の PromptInput を shadcn registry 経由で導入
+- [x] **P2**: Toast 通知用に shadcn sonner を導入
 - [ ] **P3**: **[手動]** claude.ai/code/routines で『汎用エージェント』ルーチンを作成し API トリガーを発行
 - [ ] **P4**: **[手動]** dashboard/.env.local と Vercel env に ANTHROPIC_ROUTINE_TRIGGER_ID / ANTHROPIC_ROUTINE_TOKEN を設定
 
