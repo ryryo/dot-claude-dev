@@ -10,7 +10,7 @@
   "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "completed": 16,
+    "completed": 18,
     "total": 20
   },
   "preflight": [
@@ -406,7 +406,11 @@
           "kind": "review",
           "title": "Step 2 — Review",
           "checked": false,
-          "review": null
+          "review": {
+            "result": "IN_PROGRESS",
+            "fixCount": 0,
+            "summary": "ユーザーがブラウザで手動検証する。Claude セッションは未着手。"
+          }
         }
       ]
     },
@@ -432,13 +436,17 @@
         {
           "kind": "impl",
           "title": "Step 1 — IMPL",
-          "checked": false
+          "checked": true
         },
         {
           "kind": "review",
           "title": "Step 2 — Review",
-          "checked": false,
-          "review": null
+          "checked": true,
+          "review": {
+            "result": "SKIPPED",
+            "fixCount": 0,
+            "summary": "probe endpoint は既コミット 32b54cf (Vercel KV 案削除) で除去済み、worktree にも未コミット履歴にも存在しないため削除作業は不要。"
+          }
         }
       ]
     }
