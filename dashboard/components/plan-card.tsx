@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, FileText, ListChecks } from "lucide-react"
+import { Check, ChevronDown, Copy, FileText, ListChecks } from "lucide-react"
 
 import { PlanDetail } from "@/components/plan-detail"
 import { PlanMarkdownModal } from "@/components/plan-markdown-modal"
@@ -18,6 +18,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { getPlanDirectoryPath } from "@/lib/plan-path"
 import type { PlanFile } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -32,6 +33,7 @@ interface PlanCardProps {
 export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: PlanCardProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [tasksOpen, setTasksOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [owner, repo] = plan.projectName.split('/')
   const slug = plan.filePath.split('/')[2] ?? ''
 
@@ -40,6 +42,27 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
       <Card className="relative gap-0 overflow-hidden py-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
         {/* アイコングループ: FileText + ChevronDown をまとめて絶対配置 */}
         <div className={cn("pointer-events-none absolute top-4 right-3 z-10 flex items-center gap-2", isNarrow && "hidden")}>
+          <button
+            type="button"
+            aria-label={`${plan.title} のパスをコピー`}
+            onClick={async (e) => {
+              e.stopPropagation()
+              try {
+                await navigator.clipboard.writeText(getPlanDirectoryPath(plan.filePath))
+                setCopied(true)
+                setTimeout(() => setCopied(false), 1500)
+              } catch (err) {
+                console.error('Failed to copy plan path:', err)
+              }
+            }}
+            className="text-muted-foreground hover:text-foreground pointer-events-auto cursor-pointer transition-colors"
+          >
+            {copied ? (
+              <Check className="size-4 shrink-0" />
+            ) : (
+              <Copy className="size-4 shrink-0" />
+            )}
+          </button>
           {plan.hasV2Tasks && (
             <button
               type="button"
