@@ -138,8 +138,8 @@ Gate B: UI コピー機能（Gate A 完了後）
 
 > パス変換の純粋関数を TDD で先に確立する。
 
-- [ ] **A1**: [TDD] getPlanDirectoryPath ユーティリティを実装する
-  > **Review A1**: _未記入_
+- [x] **A1**: [TDD] getPlanDirectoryPath ユーティリティを実装する
+  > **Review A1**: ✅ PASSED — 4ケース全PASS。純粋関数として正確に実装。ストーリー・API・リスク・セキュリティ全観点PASS
 
 **Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
@@ -147,10 +147,10 @@ Gate B: UI コピー機能（Gate A 完了後）
 
 > getPlanDirectoryPath を利用して 2 種類のコピーボタンを UI に組み込む。
 
-- [ ] **B1**: [SIMPLE] PlanCard に個別コピーボタンを追加する
-  > **Review B1**: _未記入_
-- [ ] **B2**: KanbanBoard のレビュー待ちカラムにまとめコピーボタンを追加する
-  > **Review B2**: _未記入_
+- [x] **B1**: [SIMPLE] PlanCard に個別コピーボタンを追加する
+  > **Review B1**: ✅ PASSED — 全6要件PASS。既存ボタンと同パターン。stopPropagation/aria-label/isNarrow対応すべて正確
+- [x] **B2**: KanbanBoard のレビュー待ちカラムにまとめコピーボタンを追加する
+  > **Review B2**: ✅ PASSED — 全要件PASS。ReviewColumnCopyButton・disabled状態・in-reviewのみ表示・groupByProject対応すべて正確
 
 **Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 
