@@ -7,9 +7,9 @@
     "createdDate": "2026-04-15",
     "specPath": "spec.md"
   },
-  "status": "in-progress",
-  "reviewChecked": false,
-  "progress": "20/20",
+  "status": "completed",
+  "reviewChecked": true,
+  "progress": {"completed": 20, "total": 20},
   "preflight": [
     {
       "id": "P1",
