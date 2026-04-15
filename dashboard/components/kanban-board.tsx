@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 
+import { Check, Copy } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import { PlanCard } from "@/components/plan-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { SizeBin } from "@/lib/plan-size"
 import { getPlanSize, getSizeBin } from "@/lib/plan-size"
+import { getPlanDirectoryPath } from "@/lib/plan-path"
 import type { PlanFile, PlanStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -216,9 +219,14 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
             >
               <CardHeader className="flex flex-row items-center justify-between gap-3 px-4 pt-4 pb-0">
                 <CardTitle className="text-base font-semibold">{column.label}</CardTitle>
-                <Badge variant="secondary" className="tabular-nums">
-                  {columnPlans.length}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {column.status === 'in-review' && (
+                    <ReviewColumnCopyButton plans={columnPlans} />
+                  )}
+                  <Badge variant="secondary" className="tabular-nums">
+                    {columnPlans.length}
+                  </Badge>
+                </div>
               </CardHeader>
 
               <CardContent className="flex flex-1 flex-col gap-3 px-4 pb-4">
@@ -248,5 +256,45 @@ function KanbanGrid({ plans, isMd, expandedId, setExpandedId }: KanbanGridProps)
         )
       })}
     </div>
+  )
+}
+
+function ReviewColumnCopyButton({ plans }: { plans: PlanFile[] }) {
+  const [copied, setCopied] = useState(false)
+  const disabled = plans.length === 0
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (disabled) return
+    const text = plans
+      .map((p) => getPlanDirectoryPath(p.filePath))
+      .join('\n')
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch (err) {
+      console.error('Failed to copy review paths:', err)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={`レビュー待ち${plans.length}件のパスをコピー`}
+      aria-disabled={disabled}
+      onClick={handleClick}
+      disabled={disabled}
+      className={cn(
+        "text-muted-foreground hover:text-foreground cursor-pointer transition-colors",
+        disabled && "cursor-not-allowed opacity-40 hover:text-muted-foreground"
+      )}
+    >
+      {copied ? (
+        <Check className="size-4 shrink-0" />
+      ) : (
+        <Copy className="size-4 shrink-0" />
+      )}
+    </button>
   )
 }
