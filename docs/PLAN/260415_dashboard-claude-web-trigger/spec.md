@@ -268,12 +268,12 @@ Gate D: 動作検証（Gate C 完了後）
 
 > 右下 FAB → Dialog → PromptInput → 起動・結果表示の UI 層を組み上げ、page.tsx に統合する。
 
-- [ ] **C1**: components/session-launcher-fab.tsx (右下固定 FAB ボタン)
-  > **Review C1**: _未記入_
-- [ ] **C2**: components/session-launcher-dialog.tsx (Dialog 中身: フォーム + 送信 + 結果表示)
-  > **Review C2**: _未記入_
-- [ ] **C3**: [SIMPLE] dashboard/app/page.tsx に SessionLauncherFab をマウント
-  > **Review C3**: _未記入_
+- [x] **C1**: components/session-launcher-fab.tsx (右下固定 FAB ボタン)
+  > **Review C1**: ✅ PASSED — fixed bottom-6 right-6 z-40 で右下 FAB を実現、candidateRepos 0 件で disabled、aria-label と title 完備。reviewer-correctness が全項目 PASS 判定。
+- [x] **C2**: components/session-launcher-dialog.tsx (Dialog 中身: フォーム + 送信 + 結果表示)
+  > **Review C2**: ✅ PASSED — POST /api/sessions/launch に repo/branch/prompt のみ送信、200→window.open + sonner success + Dialog 内 URL/Copy/ExternalLink、401 cookieExpired→専用メッセージ + duration:10000 toast、その他→toast.error + バナー、送信中 disable、close で state リセット。security: sessionKey クライアント漏洩なし。
+- [x] **C3**: [SIMPLE] dashboard/app/page.tsx に SessionLauncherFab をマウント
+  > **Review C3**: ✅ PASSED — import 追加、DashboardLayout の children 末尾に <SessionLauncherFab selectedRepos={selectedRepos} repos={reposData.repos} /> を配置。
 
 **Gate C 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
 

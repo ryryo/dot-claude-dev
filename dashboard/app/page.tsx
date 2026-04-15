@@ -10,6 +10,7 @@ import { GroupingToggle } from "@/components/grouping-toggle"
 import { KanbanBoard } from "@/components/kanban-board"
 import { PlanTable } from "@/components/plan-table"
 import { RepoSelector } from "@/components/repo-selector"
+import { SessionLauncherFab } from "@/components/session-launcher-fab"
 import { SizeHistogram } from "@/components/size-histogram"
 import { SkeletonDashboard } from "@/components/skeleton-dashboard"
 import { ViewSwitcher, type ViewType } from "@/components/view-switcher"
@@ -294,6 +295,7 @@ export default function Home() {
           />
         )}
       </div>
+      <SessionLauncherFab selectedRepos={selectedRepos} repos={reposData.repos} />
     </DashboardLayout>
   )
 }
