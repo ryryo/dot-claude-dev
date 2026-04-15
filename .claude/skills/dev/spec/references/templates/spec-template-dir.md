@@ -5,7 +5,7 @@
 
 **注意**: 「## タスクリスト」節は `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーで囲み、
 マーカー内部は `sync-spec-md.mjs` スクリプトが tasks.json から自動生成する。
-`/dev:spec` の Step 6 では tasks.json を先に作成した後、spec.md の authored セクションを書き（generated 領域は**空のマーカーのみ**）、最後にスクリプトを明示実行して generated 領域を埋める。
+`/dev:spec` の Step 6 では **(1) spec.md の authored セクション（背景・設計決定・アーキテクチャ）を書く** → **(2) その設計を参照して tasks.json を書く** → **(3) スクリプトで generated 領域を埋める** の 3 段で作成する。初回 Write 時は generated 領域を**空のマーカーのみ**にする。
 以後 tasks.json を Edit/Write すると PostToolUse hook が同スクリプトを自動発火し、spec.md の generated 領域が追従する。
 
 ---
