@@ -135,12 +135,16 @@ Content-Type: application/json
 
 ## 必須ヘッダー
 
-`/v1/*` エンドポイントには Cookie に加えて以下のヘッダーが必須（実行テストで確認）:
+`/v1/*` エンドポイントには Cookie に加えて以下のヘッダーが必須（JS バンドル解析 + 実行テストで確認）:
 
-| ヘッダー | 値 | 欠落時のエラー |
+| ヘッダー | 値 | 備考 |
 |---|---|---|
-| `anthropic-beta` | `managed-agents-2026-04-01` | `"this API is in beta: add managed-agents-2026-04-01..."` |
-| `anthropic-version` | `2023-06-01` | `"anthropic-version: header is required"` |
+| `anthropic-version` | `2023-06-01` | 欠落時: `"anthropic-version: header is required"` |
+| `anthropic-beta` | `ccr-byoc-2025-07-29` | Web UI の正しい値。`managed-agents-2026-04-01` は別スキーマ（POST 不可） |
+| `anthropic-client-feature` | `ccr` | Web UI が常に付与 |
+| `x-organization-uuid` | `{org_uuid}` | 任意だが Web UI は常に付与 |
+
+`ccr` は Claude Code Relay の略と思われる。`ccr-byoc-2025-07-29` で **POST /v1/sessions の 200 確認済み**（2026-04-15）。
 
 ---
 

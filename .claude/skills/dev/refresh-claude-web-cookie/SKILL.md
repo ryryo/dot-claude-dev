@@ -39,8 +39,12 @@ fetch('https://claude.ai/v1/sessions', {
 ```
 
 **必須ヘッダー（実行テストで確認済み）:**
-- `anthropic-beta: managed-agents-2026-04-01` — ないと `"this API is in beta"` エラー
 - `anthropic-version: 2023-06-01` — ないと `"anthropic-version: header is required"` エラー
+- `anthropic-beta: ccr-byoc-2025-07-29` — Web UI が使う正しい値（`managed-agents-2026-04-01` では別スキーマになり不可）
+- `anthropic-client-feature: ccr` — Web UI と同じ値
+- `x-organization-uuid: {org_uuid}` — 任意だが Web UI は常に付与
+
+※ 有効性確認（GET）は `managed-agents-2026-04-01` でも動くが、セッション作成（POST）は `ccr-byoc-2025-07-29` が必須
 
 - **200** → セッション有効。Step 2 へ（Cookie値を取得して保存）
 - **401/403/その他** → ユーザーに「claude.ai にログインしてから再実行してください」と伝えて終了
