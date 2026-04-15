@@ -281,8 +281,8 @@ Gate D: 動作検証（Gate C 完了後）
 
 > ブラウザでハッピーパスとエラーパスを通し、想定どおりに動くことを確認する。probe endpoint も撤去する。
 
-- [ ] **D1**: ブラウザでハッピーパス + エラーパスを手動検証
-  > **Review D1**: ⏳ IN_PROGRESS — ユーザーがブラウザで手動検証する。Claude セッションは未着手。
+- [x] **D1**: ブラウザでハッピーパス + エラーパスを手動検証
+  > **Review D1**: ✅ PASSED — 本番デプロイ後のブラウザで sessionLauncher 動作確認済み (FAB→Dialog→submit→セッション URL 表示→新規タブで claude.ai/code 起動)
 - [x] **D2**: [SIMPLE] probe endpoint を削除しデプロイ
   > **Review D2**: ⏭️ SKIPPED — probe endpoint は既コミット 32b54cf (Vercel KV 案削除) で除去済み、worktree にも未コミット履歴にも存在しないため削除作業は不要。
 

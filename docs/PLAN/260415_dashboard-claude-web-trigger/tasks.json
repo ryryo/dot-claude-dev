@@ -9,10 +9,7 @@
   },
   "status": "in-progress",
   "reviewChecked": false,
-  "progress": {
-    "completed": 18,
-    "total": 20
-  },
+  "progress": "20/20",
   "preflight": [
     {
       "id": "P1",
@@ -400,19 +397,25 @@
         {
           "kind": "impl",
           "title": "Step 1 — IMPL",
-          "checked": false
+          "checked": true
         },
         {
           "kind": "review",
           "title": "Step 2 — Review",
-          "checked": false,
+          "checked": true,
           "review": {
-            "result": "IN_PROGRESS",
+            "result": "PASSED",
             "fixCount": 0,
-            "summary": "ユーザーがブラウザで手動検証する。Claude セッションは未着手。"
+            "summary": "本番デプロイ後のブラウザで sessionLauncher 動作確認済み (FAB→Dialog→submit→セッション URL 表示→新規タブで claude.ai/code 起動)"
           }
         }
-      ]
+      ],
+      "status": "completed",
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "本番デプロイ後のブラウザで sessionLauncher 動作確認済み (FAB→Dialog→submit→セッション URL 表示→新規タブで claude.ai/code 起動)"
+      }
     },
     {
       "id": "D2",
