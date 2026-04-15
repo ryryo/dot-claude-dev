@@ -28,7 +28,7 @@
 | **dev:cleanup-branches** | 不要なローカル・リモートブランチとworktreeを一括削除。Triggers: ブランチ整理, 不要ブランチ削除                                                   |
 | **dev:git-reflect**      | Git履歴から作業セッションを自動検出し、ブロック単位で振り返りサマリーを生成。Triggers: 振り返り, git振り返り, 最近何やった                         |
 | **dev:design-e2e-qa**    | 実装済みサイトのデザイン品質を体系的にチェック。配置・余白・比率・レスポンシブの問題を検出し一覧化。修正は行わない。Triggers: デザインQA, デザインチェック, /design-e2e-qa |
-| **dev:refresh-claude-web-cookie** | claude.ai の sessionKeyLC Cookie を有効性確認し、期限切れなら Chrome から再取得して Vercel KV とローカル env を即時更新。Triggers: Cookie更新, sessionKeyLC更新, Cookie切れ |
+| **dev:refresh-claude-web-cookie** | claude.ai の sessionKey Cookie を Chrome から抽出し、有効性確認後に Vercel 環境変数（Production / Development）とローカル env を即時更新。Triggers: Cookie更新, sessionKey更新, Cookie切れ |
 
 ### メタスキル
 

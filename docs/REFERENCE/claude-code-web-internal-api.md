@@ -179,14 +179,16 @@ Cookie: sessionKey=<value>
 
 ## Vercel サーバーレス実装サンプル
 
-`sessionKey` Cookie を Vercel KV に保存し、Node.js serverless runtime の `fetch`
-で動的に読んでセッション作成する構成。Vercel の Node runtime は TLS フィンガー
-プリントが Cloudflare に通るため、永続サーバー不要で動く（実測: 2026-04-15）。
+`sessionKey` Cookie を Vercel 環境変数 `CLAUDE_SESSION_KEY` に保存し、Node.js
+serverless runtime の `fetch` で読み出してセッション作成する構成。Vercel の
+Node runtime は TLS フィンガープリントが Cloudflare に通るため、永続サーバー
+不要で動く（実測: 2026-04-15）。
+
+Cookie 更新は `/refresh-claude-web-cookie` スキルが `vercel env rm` → `vercel
+env add` を叩いて即時反映する（再デプロイ不要）。
 
 ```typescript
 // app/api/sessions/launch/route.ts
-import { kv } from '@vercel/kv'
-
 export const runtime = 'nodejs' // ★ Edge runtime ではなく Node.js runtime で
 
 const ORG_UUID = process.env.CLAUDE_ORG_UUID!
@@ -195,7 +197,7 @@ const ENV_ID   = process.env.CLAUDE_ENV_ID!
 export async function POST(req: Request) {
   const { repo, branch, prompt } = await req.json()
 
-  const sessionKey = await kv.get<string>('sessionKey')
+  const sessionKey = process.env.CLAUDE_SESSION_KEY
   if (!sessionKey) {
     return Response.json(
       { error: 'Cookie not set. Run /refresh-claude-web-cookie' },

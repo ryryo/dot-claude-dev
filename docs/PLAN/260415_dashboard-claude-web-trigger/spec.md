@@ -36,7 +36,7 @@ PLAN ダッシュボード画面右下に Floating Action Button (FAB) を配置
 | 1   | UI 配置 | Floating Action Button（右下固定 / Plus アイコン）→ クリックで Dialog 開閉 | ヘッダー / サイドバーの既存レイアウトに干渉せず、新機能だと一目で分かる。collapsed sidebar とも独立して常時アクセス可 |
 | 2   | リポジトリ選択 | サイドバーで既に選択中の `selectedRepos` を form に渡し、その中から 1 つだけ select | 既存のリポジトリ選択 UX を流用 → ユーザーが二度選ばずに済む。0 件選択時は FAB を disable |
 | 3   | ブランチ指定 | MVP はデフォルトブランチ固定。UI には `default_branch` を read-only で表示 | 内部 API は `refs/heads/{branch}` で任意ブランチを受け取れるが、UI スコープを絞る。任意 branch は次フェーズ |
-| 4   | 認証方式 | `sessionKey` Cookie を Vercel 環境変数 `CLAUDE_SESSION_KEY` に保存。route handler 内で `process.env` 経由で読む | Vercel KV を使う案も検討したが、単一キーの読み書きに対し KV 提供のオーバーヘッド（Marketplace 契約 / REST SDK）は過剰。env なら `vercel env add` 1 発で完結し、更新も `refresh-claude-web-cookie` スキルの `vercel env rm + add` で自動化可能 |
+| 4   | 認証方式 | `sessionKey` Cookie を Vercel 環境変数 `CLAUDE_SESSION_KEY` に保存。route handler 内で `process.env` 経由で読む | 単一キーの読み書きに外部ストレージ（Redis 等）は過剰。`vercel env add` 1 発で完結し、更新も `refresh-claude-web-cookie` スキルの `vercel env rm + add` で自動化可能 |
 | 5   | 起動成功時 | `window.open(sessionUrl, '_blank')` で新規タブを開く + Dialog 内に URL を残す | ポップアップブロック対策とユーザーが後から再アクセス可能にするための二重表示 |
 | 6   | 起動履歴 | 保持しない（Toast と Dialog のみ、閉じれば消える） | claude.ai/code 側にセッション一覧があるため二重保存しない |
 | 7   | UI ライブラリ | ai-elements の PromptInput を shadcn registry 経由でこのリポにコピー | shadcn/ui ベースとの統合が自然、追従コストはアップデート時の手動追加で許容 |
