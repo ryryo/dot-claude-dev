@@ -242,8 +242,8 @@ Step 3（FIX）も不要。そのまま Step 4（UPDATE）へ進む。
 `references/codex-review-instructions.md` の**統合版テンプレート**を使用。
 focus テキストを `.tmp/codex-review-focus.md` に書き出し、stdin で渡す。
 
-> **CLI 制約（v0.118.0）**: `--commit` と `[PROMPT]` は排他的引数で併用不可。
-> IMPL 直後の VERIFY では HEAD が対象コミットなので `[PROMPT]` 方式（`origin/main..HEAD` 自動検出）で十分。
+> **重要**: VERIFY は **native `codex review` CLI** を使う。`node "$CODEX_COMPANION" review` は使わない（companion v1.0.2 からフォーカステキスト廃止。フォーカス付きは `adversarial-review` に移行したが、VERIFY には native CLI を継続使用する）。
+> **CLI 制約**: `--commit` と `[PROMPT]` は排他的引数で併用不可。IMPL 直後の VERIFY では HEAD が対象コミットなので `[PROMPT]` 方式（`origin/main..HEAD` 自動検出）で十分。
 
 ```bash
 codex review - < .tmp/codex-review-focus.md

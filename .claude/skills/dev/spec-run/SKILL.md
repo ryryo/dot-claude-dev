@@ -35,7 +35,7 @@ AskUserQuestion で**2 つの質問を同時に**聞く（1 tool call）:
 **質問 1: 実行モード**
 
 - **Claudeモード** — Claude Code が全 Todo を直接実行
-- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は `codex review`（複雑さに応じてスキップ or 1回 or 3回並列）
+- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は native `codex review` CLI（複雑さに応じてスキップ or 1回 or 3回並列）
 
 **質問 2: worktree 使用**
 
