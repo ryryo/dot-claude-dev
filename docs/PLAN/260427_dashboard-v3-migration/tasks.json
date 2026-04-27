@@ -7,13 +7,13 @@
     "createdDate": "2026-04-27",
     "specPath": "spec.md"
   },
-  "status": "in-progress",
+  "status": "in-review",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 3,
+    "gatesPassed": 4,
     "gatesTotal": 4,
-    "currentGate": "D",
-    "currentGateAC": { "passed": 0, "total": 6 }
+    "currentGate": null,
+    "currentGateAC": { "passed": 0, "total": 0 }
   },
   "preflight": [],
   "gates": [
@@ -296,12 +296,12 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "D.AC1", "description": "`test -f dashboard/lib/plan-parser.ts` が exit 1 (= ファイルが存在しない)", "checked": false },
-        { "id": "D.AC2", "description": "`ls dashboard/__tests__/plan-parser*.test.ts 2>/dev/null | wc -l` が 0", "checked": false },
-        { "id": "D.AC3", "description": "`cd dashboard && bun run test` (vitest) が全 GREEN", "checked": false },
-        { "id": "D.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
-        { "id": "D.AC5", "description": "`cd dashboard && bun run build` が成功", "checked": false },
-        { "id": "D.AC6", "description": "ダッシュボードを起動 (`bun run dev`) し、v3 tasks.json を持つ PLAN のみが一覧に出る (v1/v2/markdown-only PLAN は表示されない / 手動)", "checked": false }
+        { "id": "D.AC1", "description": "`test -f dashboard/lib/plan-parser.ts` が exit 1 (= ファイルが存在しない)", "checked": true },
+        { "id": "D.AC2", "description": "`ls dashboard/__tests__/plan-parser*.test.ts 2>/dev/null | wc -l` が 0", "checked": true },
+        { "id": "D.AC3", "description": "`cd dashboard && bun run test` (vitest) が全 GREEN", "checked": true },
+        { "id": "D.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
+        { "id": "D.AC5", "description": "`cd dashboard && bun run build` が成功", "checked": true },
+        { "id": "D.AC6", "description": "ダッシュボードを起動 (`bun run dev`) し、v3 tasks.json を持つ PLAN のみが一覧に出る (v1/v2/markdown-only PLAN は表示されない / 手動)", "checked": true }
       ],
       "todos": [
         {
@@ -357,8 +357,12 @@
           "affectedFiles": []
         }
       ],
-      "review": null,
-      "passed": false
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "D1 (plan-parser.ts 削除 + github.ts フォールバック撤去) と D2 (plan-parser*.test.ts 3 ファイル削除) は Gate A のコンパイル要件のため前倒し済み。D3 tasks-route.test.ts は schemaVersion 1/2/3 + 不正値の 422/200 ケースを v3 only ルールで網羅 (9 件 GREEN)。D4 use-tasks-json.test.ts のモックは TasksJsonV3 シェイプ (5 件 GREEN)。D5: vitest 53/53 GREEN、lint 0 errors、bun run build 成功。"
+      },
+      "passed": true
     }
   ],
   "metadata": {

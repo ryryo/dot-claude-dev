@@ -415,12 +415,12 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - ❌ MUST NOT: skipped/todo にしてテストを通す (削除すべきテストは削除する)
 
 **Acceptance Criteria**:
-- [ ] **D.AC1**: `test -f dashboard/lib/plan-parser.ts` が exit 1 (= ファイルが存在しない)
-- [ ] **D.AC2**: `ls dashboard/__tests__/plan-parser*.test.ts 2>/dev/null | wc -l` が 0
-- [ ] **D.AC3**: `cd dashboard && bun run test` (vitest) が全 GREEN
-- [ ] **D.AC4**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **D.AC5**: `cd dashboard && bun run build` が成功
-- [ ] **D.AC6**: ダッシュボードを起動 (`bun run dev`) し、v3 tasks.json を持つ PLAN のみが一覧に出る (v1/v2/markdown-only PLAN は表示されない / 手動)
+- [x] **D.AC1**: `test -f dashboard/lib/plan-parser.ts` が exit 1 (= ファイルが存在しない)
+- [x] **D.AC2**: `ls dashboard/__tests__/plan-parser*.test.ts 2>/dev/null | wc -l` が 0
+- [x] **D.AC3**: `cd dashboard && bun run test` (vitest) が全 GREEN
+- [x] **D.AC4**: `cd dashboard && bun run lint` が 0 errors
+- [x] **D.AC5**: `cd dashboard && bun run build` が成功
+- [x] **D.AC6**: ダッシュボードを起動 (`bun run dev`) し、v3 tasks.json を持つ PLAN のみが一覧に出る (v1/v2/markdown-only PLAN は表示されない / 手動)
 
 **Todos** (5):
 - **D1**: lib/plan-parser.ts を削除しフォールバック呼び出しを撤去 — `dashboard/lib/plan-parser.ts`, `dashboard/lib/github.ts` ほか
@@ -429,7 +429,7 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - **D4**: [TDD] use-tasks-json.test.ts のモックを v3 シェイプに更新 — `dashboard/__tests__/use-tasks-json.test.ts`
 - **D5**: lint / vitest / build を全 GREEN にする
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — D1 (plan-parser.ts 削除 + github.ts フォールバック撤去) と D2 (plan-parser*.test.ts 3 ファイル削除) は Gate A のコンパイル要件のため前倒し済み。D3 tasks-route.test.ts は schemaVersion 1/2/3 + 不正値の 422/200 ケースを v3 only ルールで網羅 (9 件 GREEN)。D4 use-tasks-json.test.ts のモックは TasksJsonV3 シェイプ (5 件 GREEN)。D5: vitest 53/53 GREEN、lint 0 errors、bun run build 成功。
 
 <!-- generated:end -->
 
