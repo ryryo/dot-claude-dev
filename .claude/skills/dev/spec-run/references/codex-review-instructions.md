@@ -35,7 +35,7 @@ wait
 
 ## 複雑さの判断基準
 
-Claude が各 Todo の以下の要素を総合判断して決定する:
+Claude が各 Gate の変更内容を総合判断して決定する:
 
 | 判断要素 | シンプル寄り | 複雑寄り |
 |----------|------------|---------|
@@ -53,24 +53,32 @@ Claude が各 Todo の以下の要素を総合判断して決定する:
 1回の codex review で全観点をカバーする。
 
 ```
-以下の仕様に基づいて変更をレビューしてください。
+以下の Gate 契約に基づいて変更をレビューしてください。
 
 仕様概要: {仕様書の概要 — 1-2文}
-対象 Todo: {Todo の IMPL 内容 — 要約}
+
+Gate {Gate ID}:
+- Goal: {gate.goal.what} / {gate.goal.why}
+- Constraints (MUST): {gate.constraints.must を箇条書き}
+- Constraints (MUST NOT): {gate.constraints.mustNot を箇条書き}
+- Acceptance Criteria: {gate.acceptanceCriteria を `[AC.ID] description` 形式で}
 
 レビュー観点:
 1. 品質・設計: ベストプラクティス準拠、DRY/KISS/YAGNI、保守性・可読性
-2. 正確性・仕様適合: 仕様要件の充足、API/SDK準拠、エッジケース、セキュリティ
+2. 正確性・仕様適合: Gate 契約の充足（Goal/AC/Constraints）、API/SDK準拠、エッジケース、セキュリティ
 3. プロジェクト慣例: CLAUDE.md準拠、既存パターンとの一貫性、命名規則
 ```
 
 ### quality-focus（品質・設計）
 
 ```
-品質・設計の観点で変更をレビューしてください。
+品質・設計の観点で Gate {Gate ID} の変更をレビューしてください。
 
 仕様概要: {仕様書の概要 — 1-2文}
-対象 Todo: {Todo の IMPL 内容 — 要約}
+
+Gate 契約:
+- Goal: {gate.goal.what}
+- Acceptance Criteria: {gate.acceptanceCriteria を `[AC.ID] description` 形式で}
 
 重点確認項目:
 - 当該言語・FWの慣用的パターンに従っているか
@@ -84,15 +92,22 @@ Claude が各 Todo の以下の要素を総合判断して決定する:
 ### correctness-focus（正確性・仕様適合）
 
 ```
-正確性・仕様適合の観点で変更をレビューしてください。
+正確性・仕様適合の観点で Gate {Gate ID} の変更をレビューしてください。
 
 仕様概要: {仕様書の概要 — 1-2文}
-対象 Todo: {Todo の IMPL 内容 — 要約}
+
+Gate 契約:
+- Goal: {gate.goal.what} / {gate.goal.why}
+- Constraints (MUST): {gate.constraints.must を箇条書き}
+- Constraints (MUST NOT): {gate.constraints.mustNot を箇条書き}
+- Acceptance Criteria: {gate.acceptanceCriteria を `[AC.ID] description` 形式で}
+
 設計決定事項: {仕様書の設計決定事項 — あれば記載}
 残存リスク: {仕様書の残存リスク — あれば記載}
 
 重点確認項目:
-- 仕様書のユーザー要件を正しく実現しているか（過不足の両面）
+- Gate Goal が達成されているか / 全 AC が成立しているか
+- Constraints の MUST / MUST NOT が守られているか
 - 使用しているライブラリ・APIの公式仕様に従った使い方か
 - 非推奨APIや非標準的な使い方をしていないか
 - 設計決定事項・残存リスクに記載された前提を破る実装がないか
@@ -104,10 +119,13 @@ Claude が各 Todo の以下の要素を総合判断して決定する:
 ### conventions-focus（プロジェクト慣例）
 
 ```
-プロジェクト慣例の観点で変更をレビューしてください。
+プロジェクト慣例の観点で Gate {Gate ID} の変更をレビューしてください。
 
 仕様概要: {仕様書の概要 — 1-2文}
-対象 Todo: {Todo の IMPL 内容 — 要約}
+
+Gate 契約:
+- Goal: {gate.goal.what}
+- 影響ファイル: {gate.todos[].affectedFiles を集約}
 
 重点確認項目:
 - CLAUDE.mdに記載されたプロジェクトルール・制約に従っているか
@@ -124,7 +142,11 @@ Claude が各 Todo の以下の要素を総合判断して決定する:
 | 変数 | 取得元 | 注意事項 |
 |------|--------|----------|
 | `{仕様書の概要}` | 仕様書の「概要」セクション | 1-2文に要約 |
-| `{Todo の IMPL 内容}` | 仕様書の対象 Todo | 要約 |
+| `{Gate ID}` | `tasks.json.gates[].id` | そのまま |
+| `{gate.goal.what / why}` | `tasks.json.gates[].goal` | そのまま引用 |
+| `{gate.constraints.must / mustNot}` | `tasks.json.gates[].constraints` | 箇条書き |
+| `{gate.acceptanceCriteria}` | `tasks.json.gates[].acceptanceCriteria` | id + description |
+| `{gate.todos[].affectedFiles}` | `tasks.json.gates[].todos[].affectedFiles` | 重複排除して列挙 |
 | `{設計決定事項}` | 仕様書の設計決定事項セクション | あれば記載、なければ省略 |
 | `{残存リスク}` | 仕様書の残存リスクセクション | あれば記載、なければ省略 |
 

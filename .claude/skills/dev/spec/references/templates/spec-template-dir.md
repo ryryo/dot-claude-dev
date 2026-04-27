@@ -1,12 +1,12 @@
-# 仕様書テンプレート（ディレクトリ構造用）
+# 仕様書テンプレート（ディレクトリ構造用 / schema v3）
 
 `docs/PLAN/{YYMMDD}_{slug}/spec.md` は以下の構成で作成する。
-実装詳細は `tasks.json` に格納されるため、このファイルは概要・設計・チェックリストに特化する。
 
-**注意**: 「## タスクリスト」節は `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーで囲み、
-マーカー内部は `sync-spec-md.mjs` スクリプトが tasks.json から自動生成する。
-`/dev:spec` の Step 6 では **(1) spec.md の authored セクション（背景・設計決定・アーキテクチャ）を書く** → **(2) その設計を参照して tasks.json を書く** → **(3) スクリプトで generated 領域を埋める** の 3 段で作成する。初回 Write 時は generated 領域を**空のマーカーのみ**にする。
-以後 tasks.json を Edit/Write すると PostToolUse hook が同スクリプトを自動発火し、spec.md の generated 領域が追従する。
+**v3 設計思想**: 「どう作るか」の詳細手順は仕様書に書かない。代わりに **Gate ごとの Goal / Constraints / Acceptance Criteria** を契約として明示し、実装エージェントが自律的に判断できるようにする。
+
+`tasks.json` は契約の構造化データ、`spec.md` は背景・設計判断・契約の人間可読サマリ。**実装手順（impl）は両方とも持たない**。
+
+**generated 領域**: 「## タスクリスト」節は `<!-- generated:begin -->` ... `<!-- generated:end -->` マーカーで囲み、内部は `sync-spec-md.mjs` が tasks.json から自動生成する。`/dev:spec` の Step 6 では **(1) authored セクション（背景・設計決定・アーキテクチャ）** → **(2) tasks.json の Gate 契約と Todo** → **(3) スクリプトで generated 領域を埋める** の 3 段で作成する。
 
 ---
 
@@ -19,7 +19,7 @@
 
 この仕様書の実行には `/dev:spec-run` スキルを使用すること。
 
-**Gate 0 通過条件**: `/dev:spec-run` の実行プロトコルに従い、実行モード（従来 / Codex）を選択済みであること。
+**Gate 0 通過条件**: `/dev:spec-run` の実行プロトコルに従い、実行モード（Claude / Codex）を選択済みであること。
 
 ## Preflight（環境セットアップ）
 
@@ -30,7 +30,7 @@
 >
 > 該当がなければこのセクション全体を省略してよい。
 > これらは `/dev:spec-run` 実行時に Claude main session が先に実行する。
-> 詳細（コマンド / manual フラグ / reason）は `tasks.json` の `preflight` 配列を参照。
+> 詳細（コマンド / manual フラグ / reason / ac）は `tasks.json` の `preflight` 配列を参照。
 
 - [ ] **P1**: {タイトル}
 - [ ] **P2**: **[手動]** {タイトル}
@@ -43,11 +43,11 @@
 
 ## 背景
 
-[なぜこの変更が必要か、設計判断の理由]
+[なぜこの変更が必要か / 解決したい課題 / 機会]
 
 ## 設計決定事項
 
-[確定した意思決定を表形式で列挙]
+[確定した意思決定を表形式で列挙。Gate 契約の must / mustNot の根拠になる]
 
 | #   | トピック | 決定 | 根拠 |
 | --- | -------- | ---- | ---- |
@@ -55,7 +55,7 @@
 
 ## アーキテクチャ詳細
 
-[データフロー図、構造定義、仕様値など実装に必要な詳細]
+[データフロー図 / 構造定義 / 仕様値などを記載。実装手順ではなく **「実装後の最終形」** を描く]
 [ASCII 図、JSON スキーマ、型定義などを含める]
 
 ## 変更対象ファイルと影響範囲
@@ -103,22 +103,27 @@
 
 ### Gate A: {フェーズ名}
 
-> {Gate description — あれば}
+> {Gate summary — あれば}
 
-- [ ] **A1**: {タイトル}
-  > **Review A1**: _未記入_
+**Goal**: {what} — {why}
 
-- [ ] **A2**: {タイトル}
-  > **Review A2**: _未記入_
+**Constraints**:
+- ✅ MUST: ...
+- ❌ MUST NOT: ...
 
-**Gate A 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+**Acceptance Criteria**:
+- [ ] **A.AC1**: ...
+- [ ] **A.AC2**: ...
+
+**Todos** ({n}):
+- **A1**: {タイトル} — `path/to/file.ts` ほか
+- **A2**: {タイトル} — `path/to/file.ts`
+
+**Review**: _未記入_
 
 ### Gate B: {フェーズ名}
 
-- [ ] **B1**: {タイトル}
-  > **Review B1**: _未記入_
-
-**Gate B 通過条件**: 全 Review 結果記入欄が埋まり、総合判定が PASS であること
+...
 
 <!-- generated:end -->
 
@@ -134,7 +139,9 @@
 
 ---
 
-## [TDD] ラベルの判定
+## ラベルの判定
+
+### `[TDD]` ラベル
 
 入出力が明確に定義でき、アサーションで検証可能な Todo に `[TDD]` ラベルを付与する。
 `tasks.json` の `tdd: true` フィールドと対応する。
@@ -145,4 +152,12 @@
 | 計算・変換 | calculateTotal, formatDate, parseJson |
 | ビジネスロジック | checkPermission, applyRules |
 
-ラベルなしの Todo は `dev:spec-run` で Claude が直接実装する。
+### `[SIMPLE]` ラベル
+
+数行追加・import 追加・定数追加・既知パターンの 1 箇所適用などの軽微な変更で完結する Todo に付与する。
+
+- Codex モードでは Codex 委任をスキップし Claude main session が直接実装、VERIFY も SKIPPED
+- Claude モードでは無視
+- `tasks.json` 側の別フィールドは作らず、title 先頭に `[SIMPLE]` を付ける
+
+`[SIMPLE]` と `[TDD]` は通常排他的（必要なら両方付与可）。

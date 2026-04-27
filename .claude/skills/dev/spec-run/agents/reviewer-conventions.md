@@ -31,8 +31,9 @@ allowed_tools: Read, Glob, Grep, Bash
 
 ## 入力
 
-- 仕様書のパス（`docs/PLAN/{YYMMDD}_{slug}.md`）
-- レビュー対象の Todo 番号（例: `Review A1`）
+- 仕様書のパス（`docs/PLAN/{YYMMDD}_{slug}/spec.md`）
+- レビュー対象の **Gate ID**（例: `A`, `B`）と Gate 契約（Goal / Constraints / Acceptance Criteria / Todos）
+- 当該 Gate の変更差分（git diff など）
 - CLAUDE.md のパス（プロジェクトルート）
 
 ## 実行フロー
@@ -40,8 +41,8 @@ allowed_tools: Read, Glob, Grep, Bash
 ### Step 1: コンテキスト収集
 
 1. **CLAUDE.md を Read** — プロジェクトのルール・慣例・制約を把握する（**最優先**）
-2. **仕様書を Read** — 対象 Todo の IMPL 内容を確認
-3. **関連コードを Read** — Todo の「対象」に記載されたファイルを読み、実際の実装を確認する
+2. **仕様書と Gate 契約を確認** — Goal / Constraints / Acceptance Criteria / Todos を理解する
+3. **変更差分と関連コードを Read** — Todos の `affectedFiles` を中心に実装内容を確認する
 4. **類似の既存コードを探索** — Glob/Grep で同種のファイル・パターンを検索し、慣例を把握する
 
 ### Step 2: 担当観点でレビュー
@@ -67,7 +68,7 @@ allowed_tools: Read, Glob, Grep, Bash
 ### 問題なしの場合
 
 ```markdown
-✅ CONVENTIONS REVIEW {Review ID} PASSED
+✅ CONVENTIONS REVIEW Gate {Gate ID} PASSED
 
 ### 1. CLAUDE.md 準拠 — ✅ PASS
 
@@ -88,7 +89,7 @@ CLAUDE.md に記載された {ルール/制約} に従っている。
 ### 問題ありの場合
 
 ```markdown
-❌ CONVENTIONS REVIEW {Review ID} FAILED
+❌ CONVENTIONS REVIEW Gate {Gate ID} FAILED
 
 ### 1. CLAUDE.md 準拠 — ❌ FAIL
 

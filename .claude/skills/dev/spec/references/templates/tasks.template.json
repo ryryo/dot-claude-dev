@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "spec": {
     "slug": "",
     "title": "",
@@ -9,42 +9,54 @@
   },
   "status": "not-started",
   "reviewChecked": false,
-  "progress": { "completed": 0, "total": 0 },
+  "progress": {
+    "gatesPassed": 0,
+    "gatesTotal": 0,
+    "currentGate": null,
+    "currentGateAC": { "passed": 0, "total": 0 }
+  },
   "preflight": [
     {
       "id": "P1",
       "title": "",
       "command": "",
       "manual": false,
-      "reason": ""
+      "reason": "",
+      "ac": "",
+      "checked": false
     }
   ],
   "gates": [
     {
       "id": "",
       "title": "",
-      "description": "",
+      "summary": "",
       "dependencies": [],
-      "passCondition": "全 Review 結果記入欄が埋まり、総合判定が PASS であること"
-    }
-  ],
-  "todos": [
-    {
-      "id": "",
-      "gate": "",
-      "title": "",
-      "description": "",
-      "tdd": false,
-      "dependencies": [],
-      "affectedFiles": [
-        { "path": "", "operation": "", "summary": "" }
+      "goal": {
+        "what": "",
+        "why": ""
+      },
+      "constraints": {
+        "must": [],
+        "mustNot": []
+      },
+      "acceptanceCriteria": [
+        { "id": "", "description": "", "checked": false }
       ],
-      "impl": "",
-      "relatedIssues": [],
-      "steps": [
-        { "kind": "impl", "title": "Step 1 — IMPL", "checked": false },
-        { "kind": "review", "title": "Step 2 — Review", "checked": false, "review": null }
-      ]
+      "todos": [
+        {
+          "id": "",
+          "gate": "",
+          "title": "",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": "", "operation": "", "summary": "" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
     }
   ],
   "metadata": {

@@ -11,11 +11,12 @@ allowed_tools: Read, Glob, Grep, Bash
 
 ## 担当観点
 
-### 観点 1: ストーリー適合性
+### 観点 1: Gate 契約適合性
 
-- 仕様書の「概要」「背景」に記述されたユーザー要件・ストーリーを、この Todo の実装が正しく実現しているか
-- 実装がストーリーの意図から逸脱していないか（過不足の両面）
-- ユーザーの課題を本質的に解決するアプローチになっているか
+- Gate の **Goal**（what / why）が実装で達成されているか
+- 全 **Acceptance Criteria** が成立しているか（実コードで検証可能か）
+- **Constraints**（must / mustNot）が守られているか
+- 仕様書の「概要」「背景」に記述されたユーザー要件と整合しているか
 
 ### 観点 2: API・SDK 準拠
 
@@ -37,8 +38,9 @@ allowed_tools: Read, Glob, Grep, Bash
 
 ## 入力
 
-- 仕様書のパス（`docs/PLAN/{YYMMDD}_{slug}.md`）
-- レビュー対象の Todo 番号（例: `Review A1`）
+- 仕様書のパス（`docs/PLAN/{YYMMDD}_{slug}/spec.md`）
+- レビュー対象の **Gate ID**（例: `A`, `B`）と Gate 契約（Goal / Constraints / Acceptance Criteria / Todos）
+- 当該 Gate の変更差分（git diff など）
 - CLAUDE.md のパス（プロジェクトルート）
 
 ## 実行フロー
@@ -46,8 +48,8 @@ allowed_tools: Read, Glob, Grep, Bash
 ### Step 1: コンテキスト収集
 
 1. **仕様書を Read** — 概要・背景・設計決定事項・残存リスクを把握する
-2. **対象 Todo を特定** — 指定された Review セクションに対応する Todo の IMPL 内容を確認
-3. **関連コードを Read** — Todo の「対象」に記載されたファイルを読み、実際の実装を確認する
+2. **Gate 契約を確認** — 渡された Goal / Constraints / Acceptance Criteria / Todos を理解する
+3. **変更差分と関連コードを Read** — Todos の `affectedFiles` を中心に実装内容を確認する
 4. **CLAUDE.md を Read**（存在する場合）
 
 ### Step 2: 担当観点でレビュー
@@ -75,12 +77,12 @@ allowed_tools: Read, Glob, Grep, Bash
 ### 問題なしの場合
 
 ```markdown
-✅ CORRECTNESS REVIEW {Review ID} PASSED
+✅ CORRECTNESS REVIEW Gate {Gate ID} PASSED
 
-### 1. ストーリー適合性 — ✅ PASS
+### 1. Gate 契約適合性 — ✅ PASS
 
-仕様書の Todo N で要求された {要件} を確認した。
-{ファイルパス} の実装では {具体的な確認内容} が正しく実装されている。
+Gate {Gate ID} の Goal（{goal.what}）に対し、{ファイルパス} の実装で全 AC が成立していることを確認した。
+{具体的にどの AC をどう検証したか}。Constraints の MUST NOT 違反なし。
 
 ### 2. API・SDK 準拠 — ✅ PASS
 
@@ -100,9 +102,9 @@ allowed_tools: Read, Glob, Grep, Bash
 ### 問題ありの場合
 
 ```markdown
-❌ CORRECTNESS REVIEW {Review ID} FAILED
+❌ CORRECTNESS REVIEW Gate {Gate ID} FAILED
 
-### 1. ストーリー適合性 — ✅ PASS
+### 1. Gate 契約適合性 — ✅ PASS
 
 {詳細な根拠}
 

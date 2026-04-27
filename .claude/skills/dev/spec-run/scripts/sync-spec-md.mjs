@@ -8,7 +8,7 @@ const BEGIN_MARKER = '<!-- generated:begin -->';
 const END_MARKER = '<!-- generated:end -->';
 
 /**
- * tasks.json (v2) から spec.md の generated 領域の文字列を生成する pure 関数
+ * tasks.json (v3) から spec.md の generated 領域の文字列を生成する pure 関数
  * @param {any} tasksJson
  * @returns {string}
  */
@@ -31,21 +31,66 @@ export function generateTaskListSection(tasksJson) {
   for (const gate of tasksJson.gates ?? []) {
     lines.push(`### Gate ${gate.id}: ${gate.title}`);
     lines.push('');
-    if (gate.description && gate.description.trim() !== '') {
-      lines.push(`> ${gate.description}`);
+    if (gate.summary && gate.summary.trim() !== '') {
+      lines.push(`> ${gate.summary}`);
       lines.push('');
     }
-    const gateTodos = (tasksJson.todos ?? []).filter((t) => t.gate === gate.id);
-    for (const todo of gateTodos) {
-      const allChecked = (todo.steps ?? []).every((s) => s.checked === true);
-      const box = allChecked ? 'x' : ' ';
-      lines.push(`- [${box}] **${todo.id}**: ${todo.title}`);
-      const reviewStep = (todo.steps ?? []).find((s) => s.kind === 'review');
-      const reviewLine = formatReviewLine(todo.id, reviewStep?.review ?? null);
-      lines.push(`  ${reviewLine}`);
+
+    // Goal
+    const what = gate.goal?.what ?? '';
+    const why = gate.goal?.why ?? '';
+    if (what || why) {
+      const whySuffix = why ? ` — ${why}` : '';
+      lines.push(`**Goal**: ${what}${whySuffix}`);
+      lines.push('');
     }
-    lines.push('');
-    lines.push(`**Gate ${gate.id} 通過条件**: ${gate.passCondition}`);
+
+    // Constraints
+    const must = gate.constraints?.must ?? [];
+    const mustNot = gate.constraints?.mustNot ?? [];
+    if (must.length > 0 || mustNot.length > 0) {
+      lines.push('**Constraints**:');
+      for (const item of must) {
+        lines.push(`- ✅ MUST: ${item}`);
+      }
+      for (const item of mustNot) {
+        lines.push(`- ❌ MUST NOT: ${item}`);
+      }
+      lines.push('');
+    }
+
+    // Acceptance Criteria
+    const ac = gate.acceptanceCriteria ?? [];
+    if (ac.length > 0) {
+      lines.push('**Acceptance Criteria**:');
+      for (const item of ac) {
+        const box = item.checked ? 'x' : ' ';
+        lines.push(`- [${box}] **${item.id}**: ${item.description}`);
+      }
+      lines.push('');
+    }
+
+    // Todos
+    const todos = gate.todos ?? [];
+    if (todos.length > 0) {
+      lines.push(`**Todos** (${todos.length}):`);
+      for (const todo of todos) {
+        const files = (todo.affectedFiles ?? []).map((f) => `\`${f.path}\``);
+        let filesSuffix = '';
+        if (files.length === 1) {
+          filesSuffix = ` — ${files[0]}`;
+        } else if (files.length === 2) {
+          filesSuffix = ` — ${files.join(', ')}`;
+        } else if (files.length > 2) {
+          filesSuffix = ` — ${files.slice(0, 2).join(', ')} ほか`;
+        }
+        lines.push(`- **${todo.id}**: ${todo.title}${filesSuffix}`);
+      }
+      lines.push('');
+    }
+
+    // Review
+    lines.push(`**Review**: ${formatReviewLine(gate.review ?? null)}`);
     lines.push('');
   }
 
@@ -59,23 +104,22 @@ export function generateTaskListSection(tasksJson) {
 }
 
 /**
- * @param {string} todoId
  * @param {any} review
  * @returns {string}
  */
-function formatReviewLine(todoId, review) {
+function formatReviewLine(review) {
   if (!review) {
-    return `> **Review ${todoId}**: _未記入_`;
+    return '_未記入_';
   }
   const { result, fixCount, summary } = review;
   const fixStr = fixCount > 0 ? ` (FIX ${fixCount}回)` : '';
   const summaryStr = summary ? ` — ${summary}` : '';
   switch (result) {
-    case 'PASSED':      return `> **Review ${todoId}**: ✅ PASSED${fixStr}${summaryStr}`;
-    case 'FAILED':      return `> **Review ${todoId}**: ❌ FAILED${summaryStr}`;
-    case 'SKIPPED':     return `> **Review ${todoId}**: ⏭️ SKIPPED${summaryStr}`;
-    case 'IN_PROGRESS': return `> **Review ${todoId}**: ⏳ IN_PROGRESS${summaryStr}`;
-    default:            return `> **Review ${todoId}**: ${result}${summaryStr}`;
+    case 'PASSED':      return `✅ PASSED${fixStr}${summaryStr}`;
+    case 'FAILED':      return `❌ FAILED${summaryStr}`;
+    case 'SKIPPED':     return `⏭️ SKIPPED${summaryStr}`;
+    case 'IN_PROGRESS': return `⏳ IN_PROGRESS${summaryStr}`;
+    default:            return `${result}${summaryStr}`;
   }
 }
 
@@ -121,7 +165,7 @@ function main() {
     process.exit(0);
   }
 
-  if (typeof tasksJson?.schemaVersion !== 'number' || tasksJson.schemaVersion < 2) {
+  if (typeof tasksJson?.schemaVersion !== 'number' || tasksJson.schemaVersion < 3) {
     process.exit(0);
   }
 

@@ -1,6 +1,6 @@
 ---
 name: dev:spec-run
-description: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VERIFY の2層で Todo を実行。Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
+description: 仕様書（docs/PLAN/{YYMMDD}_{slug}/）の実行プロトコル。Gate 単位で契約（Goal/Constraints/AC）を実装エージェントに渡し、AC ベースで完了を判定する。Trigger: 仕様書を実行, /dev:spec-run, 計画書の実行
 ---
 
 ## 起動フロー
@@ -9,121 +9,120 @@ description: 仕様書（docs/PLAN/*.md）の実行プロトコル。IMPL → VE
 
 対象が会話の文脈や Gate 0 から明確な場合はステップ 2 へ進む。それ以外は:
 
-1. `docs/PLAN/*.md` と `docs/PLAN/*/spec.md` を Glob で検索し、更新日順でソートする
+1. `docs/PLAN/*/spec.md` を Glob で検索し、更新日順でソートする
 2. 上位 5 件を AskUserQuestion で提示する（最新を推奨マーク付き）
 3. ユーザーが選択した仕様書を対象とする
 
-### ステップ 2: 入力形式判定
+### ステップ 2: schemaVersion 検証
 
-仕様書の形式を以下の 3 種類で判定する:
+`tasks.json` を Read し、`schemaVersion === 3` を確認する。
 
-1. `tasks.json` が存在する場合、先頭 1 行を読んで `schemaVersion` を確認
-   - `schemaVersion >= 2` → **v2 ディレクトリモード**（sync-spec-md により spec.md は自動管理される。spec-run は tasks.json のみ更新）
-   - `schemaVersion` が未定義 or < 2 → **v1 ディレクトリモード**（従来どおり spec.md のチェックボックスと tasks.json の両方を更新）
-2. `tasks.json` が存在しない場合 → **シングルモード**（単一 MD をそのまま処理、既存 PLAN の互換パス）
+- `schemaVersion === 3` → 続行
+- それ以外 / `tasks.json` 不在 → エラー報告して中断（v1/v2/シングルモードは v3 化以降は非対応）
 
 ### ステップ 3: 実行準備
 
-- **v2 ディレクトリモード**: spec.md の「参照すべきファイル」と tasks.json を並列 Read し、全体構造（gates, todo IDs, descriptions, steps, progress）を把握。各 Todo の `impl` はこの時点では読まない
-- **v1 ディレクトリモード**: 現状どおり spec.md + tasks.json を並列 Read。steps[] がないため Step 状態は spec.md のチェックボックスから推論
-- **シングルモード**: Gate 0 通過条件（参照すべきファイルの読み込み等）を実行
+spec.md の「参照すべきファイル」と tasks.json を並列 Read し、以下を把握する:
+
+- `gates[]` 全体（id, title, summary, dependencies, goal, constraints, acceptanceCriteria, todos, review, passed）
+- `preflight[]`
+- `progress` / `status` / `reviewChecked`
+
+実装エージェント側にも同じ tasks.json を渡せるよう、Gate 単位での切り出し方を確認しておく。
 
 ### ステップ 4: 実行モード + worktree 選択
 
-AskUserQuestion で**2 つの質問を同時に**聞く（1 tool call）:
+AskUserQuestion で **2 つの質問を同時に** 聞く（1 tool call）:
 
 **質問 1: 実行モード**
 
-- **Claudeモード** — Claude Code が全 Todo を直接実行
-- **Codex モード** — デフォルトで全タスクを Codex プラグイン（`task --write`）に委任（例外のみ Claude が保持）。VERIFY は native `codex review` CLI（複雑さに応じてスキップ or 1回 or 3回並列）
+- **Claudeモード** — Claude Code が各 Gate を直接実装する
+- **Codex モード** — デフォルトで各 Gate を Codex プラグイン（`task --write`）に委任する。VERIFY は native `codex review` CLI（複雑さに応じてスキップ or 1回 or 3回並列）
 
 **質問 2: worktree 使用**
 
-- **使わない（Recommended）** — 現 cwd（通常 base ブランチ）で直接作業する（現行動作）
+- **使わない（Recommended）** — 現 cwd で直接作業する
 - **使う** — `feature/{slug}` の worktree 内で作業し、全 Gate 通過後にローカル `--no-ff` マージ + cleanup を自動実行
 
-「使わない」を選択した場合は Step 5 へ直行。
-
-#### worktree を「使う」を選択した場合のみ:
-
-`references/worktree-setup.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させてから Step 5 へ進む。
+「使う」を選択した場合は `references/worktree-setup.md` を **今すぐ Read** し、記載された手順を完了させてからステップ 5 へ進む。
 
 ### ステップ 5: 実行プロトコルの読み込みと実行
 
-選択したモードの参照ファイルを Read し、その手順に従って Todo を実行する。
-Preflight フェーズを含む場合は、必ずPreflightの内容はClaudeのメインセッションで実行する。
+選択したモードの参照ファイルを Read し、その手順に従って実行する。
+
+- **Claudeモード** → `references/execution.md`
+- **Codex モード** → `references/codex-execution.md`
+
+Preflight フェーズは必ず Claude main session で実行する（sandbox 制約のため）。
 
 ---
 
 ## Gate 通過条件
 
-Gate 内の全 Todo について:
+各 Gate について:
 
-1. **IMPL が完了**していること
-2. **VERIFY 結果記入欄にレビュー結果が記入済み**であること（空欄は不可）
-3. **全 VERIFY の総合判定が PASS** であること
+1. **全 Acceptance Criteria が `checked: true`** であること
+2. **`gates[].review.result === "PASSED"`**（または SKIPPED 適用条件を満たす）であること
+3. 上記が満たされたら `gates[].passed = true` を書き込み、`progress` / `status` を再計算する
 
-### 結果の記録
+## 結果の記録
 
-**Preflight 完了時**:
+### Preflight 完了時
 
-```markdown
-- [x] **P1**: パッケージインストール — `pnpm install`
-- [x] **P2**: **[手動]** `.env.local` に `API_KEY` を設定
+`tasks.json` の `preflight[].checked = true` を書き込む。spec.md の Preflight チェックリストは PostToolUse hook により自動更新される。
+
+### Gate 完了時
+
+`tasks.json` のみ更新。spec.md は PostToolUse hook で自動再生成される。hook が未発火の環境では明示的に実行する:
+
+```bash
+node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>
 ```
 
-**v2 ディレクトリモード**: `tasks.json` のみ更新。spec.md は PostToolUse hook（`.claude/settings.json` に登録済み）で自動再生成される。hook が未発火の環境では `node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>` を明示的に実行して同期する
+更新内容の例:
 
 ```json
 {
-  "todos": [
+  "gates": [
     {
-      "id": "A1",
-      "steps": [
-        { "kind": "impl",   "checked": true },
-        { "kind": "review", "checked": true, "review": { "result": "PASSED", "fixCount": 0, "summary": "OK" } }
-      ]
+      "id": "A",
+      "acceptanceCriteria": [
+        { "id": "A.AC1", "description": "...", "checked": true },
+        { "id": "A.AC2", "description": "...", "checked": true }
+      ],
+      "review": { "result": "PASSED", "fixCount": 0, "summary": "OK" },
+      "passed": true
     }
   ],
-  "status": "in-progress",
-  "progress": { "completed": 2, "total": 16 }
+  "progress": {
+    "gatesPassed": 1,
+    "gatesTotal": 3,
+    "currentGate": "B",
+    "currentGateAC": { "passed": 0, "total": 4 }
+  },
+  "status": "in-progress"
 }
 ```
 
-**重要**: `status` と `progress` も同時に再計算して書き込む（下の算出ルール参照）。
-
-**v1 ディレクトリモード**: 現状のまま spec.md のチェックボックスと Review blockquote を更新（PostToolUse hook は v1 tasks.json に対しては no-op でスキップ）
-
-```markdown
-- [x] **Todo A1**: カラーコントラスト修正
-  > **Review A1**: ✅ PASSED
-- [x] **Todo A2**: フォーカスインジケーター
-  > **Review A2**: ✅ PASSED (FIX 1回)
-  >
-  > - stdin の null チェックを追加
-```
-
-**シングルモード**: 仕様書の該当 Todo のチェックボックスと Review 記入欄を更新
-
-#### status / progress の算出ルール（v2 のみ）
+### status / progress の算出ルール
 
 ```
-total     = sum of all todos[].steps[].length
-completed = count of all steps where checked == true
-progress  = { completed, total }
+gatesTotal     = gates.length
+gatesPassed    = gates.filter(g => g.passed === true).length
+currentGate    = 最初の passed=false の Gate.id（全 passed なら null）
+currentGateAC  = currentGate の AC のうち checked の数 / 総数
 
 status:
-  - completed == 0                               → "not-started"
-  - 0 < completed < total                        → "in-progress"
-  - completed == total && reviewChecked == false → "in-review"
-  - completed == total && reviewChecked == true  → "completed"
+  - gatesTotal == 0                                 → "not-started"
+  - gatesPassed == 0 && currentGateAC.passed == 0   → "not-started"
+  - gatesPassed < gatesTotal                        → "in-progress"
+  - gatesPassed == gatesTotal && !reviewChecked     → "in-review"
+  - gatesPassed == gatesTotal && reviewChecked      → "completed"
 ```
 
 ## 全 Gate 通過後の完了処理
 
-全 Gate 通過を確認し、仕様書の実行完了を宣言する。
-
-未コミットの変更がある場合はコミットする。
+全 Gate の `passed === true` を確認し、実行完了を宣言する。未コミットの変更があればコミットする。
 
 **Codex モードの場合**: 一時プロンプトファイルを削除する。
 
@@ -131,60 +130,55 @@ status:
 rm -f .tmp/codex-*.md
 ```
 
-### worktree 運用の確認（Step 4 で worktree を選択した場合のみ）
+### worktree 運用の確認（ステップ 4 で worktree を選択した場合のみ）
 
-Step 4 で worktree を使っていない場合はスキップし、そのまま「人間レビュー確認フロー」へ進む。
+worktree を使っていない場合はスキップし「人間レビュー確認フロー」へ進む。
 
-AskUserQuestion で**マージと人間レビューの順序**を聞く:
+AskUserQuestion でマージと人間レビューの順序を聞く:
 
-- **先にマージ（Recommended）** — 人間レビューを後回しにして、すぐに worktree をマージ + cleanup する。レビューで問題が見つかった場合は base ブランチで fix-forward 対応
-- **レビュー後にマージ** — 人間レビューで OK を得てから worktree をマージ + cleanup する（NG なら worktree に留まって修正ループ）
+- **先にマージ（Recommended）** — 人間レビューを後回しにして worktree を即マージ + cleanup
+- **レビュー後にマージ** — レビュー OK 後に worktree をマージ + cleanup
 
 #### 「先にマージ」を選択した場合
 
-1. `references/worktree-teardown.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させる（マージ + cleanup）
+1. `references/worktree-teardown.md` を **今すぐ Read** し、記載された手順（マージ + cleanup）を完了させる
 2. その後「人間レビュー確認フロー」に進む
-3. レビューが NG になった場合は、base ブランチ上で修正コミットを追加して fix-forward 対応する（worktree は既に cleanup 済み）
+3. レビュー NG の場合は base ブランチで fix-forward 対応する
 
 #### 「レビュー後にマージ」を選択した場合
 
 1. 「人間レビュー確認フロー」を実行する
-2. レビュー OK になったら `references/worktree-teardown.md` を **今すぐ Read ツールで読み込み**、記載された手順を完了させる
-3. レビュー NG の場合は worktree を残したまま修正ループに入る（OK になるまでマージしない）
+2. OK になったら `references/worktree-teardown.md` を Read し手順を完了させる
+3. NG の場合は worktree を残したまま修正ループに入る
 
 ### 人間レビュー確認フロー
 
-仕様書に `## レビューステータス` セクションが存在し、未チェックの `- [ ] **レビュー完了**` 行がある場合、以下を実行する。
+spec.md に `## レビューステータス` セクションが存在し、未チェックの `- [ ] **レビュー完了**` 行がある場合のみ実行する。
 
-**v2 モード**: `## レビューステータス` セクションは generated 領域の外（人間編集領域）なので、従来どおり spec.md のチェックボックスを `[x]` に更新。同時に `tasks.json` のトップレベル `reviewChecked` を `true` に更新し、`status` を再計算する。
-
-**v1 / シングルモード**: 従来どおり spec.md のチェックボックスのみ更新。
+`## レビューステータス` セクションは generated 領域の外（人間編集領域）。spec.md のチェックボックスを `[x]` に更新し、同時に `tasks.json` の `reviewChecked: true` を書き込み `status: "completed"` に再計算する。
 
 1. AskUserQuestion でブラウザ動作確認を促す（実装内容に応じた確認ポイントを添える）
-2. ユーザーが「OK / 確認済み」を選択した場合:
-   - 仕様書の `- [ ] **レビュー完了**` を `- [x] **レビュー完了**` に更新する
-   - （v2 のみ）tasks.json の `reviewChecked: true` + `status: "completed"` に更新する
-   - 変更をコミットする
-3. ユーザーが「NG / 修正が必要」を選択した場合:
-   - worktree が未 cleanup（「レビュー後にマージ」を選んでいる）ならその中で修正ループ
-   - worktree が cleanup 済み（「先にマージ」を選んでいる）なら base ブランチで fix-forward
+2. **OK / 確認済み**: spec.md と tasks.json を更新し、変更をコミット
+3. **NG / 修正が必要**:
+   - worktree が未 cleanup（「レビュー後にマージ」）→ worktree 内で修正ループ
+   - worktree が cleanup 済み（「先にマージ」）→ base ブランチで fix-forward
 
-`## レビューステータス` セクションが存在しない場合はスキップ。
+セクションが存在しない場合はスキップ。
 
 ## 参照
 
 ### Claudeモード
 
-- `references/execution.md` — 実行プロトコル
+- `references/execution.md` — Gate 実行プロトコル
 - `roles/implementer.md` — 汎用実装ロール定義
 - `roles/tdd-developer.md` — TDD 実装ロール定義
 
 ### Codex モード
 
-- `references/codex-execution.md` — Codex 実行プロトコル
-- `roles/codex-developer.md` — Codex 汎用実装プロンプトテンプレート（XML ブロック構造）
-- `roles/codex-tdd-developer.md` — Codex TDD 実装プロンプトテンプレート（XML ブロック構造）
-- `references/codex-review-instructions.md` — codex review 用 focus テンプレート（統合版 + 3観点版）
+- `references/codex-execution.md` — Codex Gate 実行プロトコル
+- `roles/codex-developer.md` — Codex 汎用実装プロンプトテンプレート
+- `roles/codex-tdd-developer.md` — Codex TDD 実装プロンプトテンプレート
+- `references/codex-review-instructions.md` — codex review 用 focus テンプレート
 
 ### 共通
 

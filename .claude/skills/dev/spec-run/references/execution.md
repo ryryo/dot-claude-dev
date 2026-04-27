@@ -1,169 +1,172 @@
-# 実行プロトコル（Claudeモード）
+# 実行プロトコル（Claudeモード, v3）
 
-各 Todo を順番に実行する。ステップを飛ばしてはならない。
+各 Gate を順番に実行する。**Gate 単位で契約（Goal/Constraints/AC）を実装エージェントに渡し、AC が成立したことをもって完了を判定する。**
 
 ## 実行ステップ
 
 ```
-Step 0 — CONTEXT      仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）
-Preflight フェーズ     Preflight セクション該当時のみ、Claude main session が順次実行（スキップ条件あり）
-Step 1 — IMPL         仕様書の Todo に従って実装する
-Step 2 — VERIFY       複雑さに応じてレビュワー 1体 or 3体を起動してレビューする
+Step 0 — CONTEXT      仕様書の「参照すべきファイル」を全て Read（最初の Gate 着手前に1回だけ）
+Preflight フェーズ     Preflight 該当時のみ、Claude main session が順次実行
+Step 1 — IMPL         Gate 契約を実装エージェントに渡して実装させる
+Step 2 — VERIFY       全 AC を検証し、複雑さに応じてレビュワーを起動する
 Step 3 — FIX          FAIL がある場合のみ修正（最大3ラウンド）。全 PASS なら不要
-Step 4 — UPDATE       モードに応じて tasks.json または spec.md を更新する
+Step 4 — UPDATE       tasks.json を更新（gate.passed / acceptanceCriteria / review / progress / status）
 ```
 
 ## Step 0 — CONTEXT
 
-### シングルモード
-
-仕様書の「参照すべきファイル」を全て Read する（最初の Todo 着手前に1回だけ）。
-
-### ディレクトリモード（v1 / v2 共通）
+最初の Gate 着手前に 1 回だけ実行する。
 
 1. spec.md の「参照すべきファイル」を全て Read する
-2. tasks.json を Read して全体構造（`gates`, Todo の `id`/`gate`/`title`/`dependencies`）を把握する
-3. 各 Todo の `impl` フィールドは**この時点では読まない**（部分読み込みで後述）
-
-**v2 モードでの差分**: tasks.json の `steps[]` / `status` / `progress` フィールドも把握する。これらは Step 4 UPDATE で更新する対象になる。
+2. tasks.json を Read して以下を把握する:
+   - 全 `gates[]`（id / title / dependencies / goal / constraints / acceptanceCriteria / todos）
+   - `preflight[]`
+   - `progress` / `status`
 
 ## Preflight フェーズ（該当時のみ）
 
-仕様書に `## Preflight` セクション（通常モード）または `tasks.json` の `preflight` 配列（ディレクトリモード）が存在し、項目が 1 件以上ある場合のみ実行する。該当が無ければ何もせず Step 1 へ進む。
+`tasks.json.preflight[]` が 1 件以上あるときのみ実行する。
 
-### 実行手順
-
-1. Preflight 項目を記載順に処理する（依存関係はないため順序通り）
-2. 各項目を判定する:
-   - `manual: false`（自動実行可能）→ Bash ツールで `command` を実行
-   - `manual: true`（ユーザー手動操作必須）→ AskUserQuestion で操作内容と完了確認を提示し、完了報告を待つ
-3. 実行成功 → 仕様書の該当チェックボックスを `[x]` に更新する
-4. 全 Preflight 完了後、Step 1 へ進む
+1. 各項目を記載順に処理する
+2. 判定:
+   - `manual: false` → Bash で `command` を実行
+   - `manual: true` → AskUserQuestion で操作内容と完了確認を提示し、完了報告を待つ
+3. 完了確認: 各 Preflight の `ac` が成立しているか検証する（記述されたコマンド出力等を確認）
+4. 成立 → tasks.json の `preflight[].checked = true` を Edit で書き込む
+5. 全 Preflight 完了後、Step 1 へ進む
 
 ### Preflight 失敗時
 
-Claude main session での実行が失敗した場合:
-
-1. sandbox 起因ではないため diagnose スクリプトは不要
-2. エラー内容をユーザーに直接報告する
-3. AskUserQuestion で以下を選択させる:
-   - 1. 手動で対応後リトライ
-   - 2. この Preflight 項目をスキップして残りの Gate 実行を継続（リスク警告付き）
-   - 3. 作業中断
-
-### 注意
-
-- Preflight は Gate/Todo とは独立して実行する（Gate 冒頭ではなく spec-run 起動直後に1回だけ）
-- **Preflight セクションが無い場合は完全にスキップ**（既存仕様書との後方互換のため警告なし）
-- Codex モードとClaudeモードで Preflight フェーズの動作は完全に同一
+1. エラー内容をユーザーに直接報告する
+2. AskUserQuestion で 3 択を提示:
+   - 手動で対応後リトライ
+   - この項目をスキップして残りの Gate 実行を継続（リスク警告付き）
+   - 作業中断
 
 ## Step 1 — IMPL
 
-### シングルモード
+各 Gate について以下を実行する。
 
-仕様書の Todo IMPL 内容に従って実装する。
+### 1-1. Gate 契約の組み立て
 
-### ディレクトリモード
+tasks.json から現在の Gate のフィールドを抽出する:
 
-tasks.json から**現在の Todo の `impl` フィールドだけ**を取得して実装する。
-他の Todo の impl は読まない（コンテキストウィンドウ節約）。
+- `goal.what` / `goal.why`
+- `constraints.must` / `constraints.mustNot`
+- `acceptanceCriteria[]`
+- `todos[]`（id / title / affectedFiles / dependencies / tdd）
 
-```
-取得例: tasks.json の todos 配列から id == "A1" の要素を抽出し、impl フィールドを使用
-```
+### 1-2. ロール選択と委任
 
-### 共通
+Gate 内に `tdd: true` の Todo が含まれるかで分岐:
 
-- **[TDD] ラベルあり / `tdd: true`**: テストを先に書き、失敗を確認してから実装する（RED→GREEN→REFACTOR）。詳細は `roles/tdd-developer.md` を参照
-- **ラベルなし**: 仕様に忠実に実装する。詳細は `roles/implementer.md` を参照
+- **含む** → `roles/tdd-developer.md` のロール定義で実装エージェントを起動
+- **含まない** → `roles/implementer.md` のロール定義で実装エージェントを起動
 
-実装完了後、変更をコミットする。
+実装エージェントには以下を渡す:
+
+- Gate 契約（Goal / Constraints / AC / Todo リスト）
+- spec.md の「設計決定事項」「アーキテクチャ詳細」サマリ
+- 参照すべきファイルの内容
+
+### 1-3. 実装と AC 進捗書き込み
+
+実装エージェントは以下を行う:
+
+1. AC ごとに「成立する状態」を作る（手順は自律的に判断）
+2. AC が成立するたびに tasks.json の該当 AC `checked: true` を Edit で書き込む
+3. 全 AC 成立後、変更をコミット
+4. main session に Gate 完了を報告
+
+main session は実装エージェントの完了報告を受け取り、Step 2 へ進む。
 
 ## Step 2 — VERIFY
 
-### 複雑さ判断
+### Gate Review の複雑さ判断
 
-Claude が Todo の内容を以下の観点で総合判断し、レビューモードを決定する:
+Claude が Gate の内容を以下の観点で総合判断し、レビューモードを決定する:
 
 | 判断要素 | SKIP（レビュー不要） | シンプル寄り | 複雑寄り |
-|----------|---------------------|------------|---------|
-| 変更内容 | ドキュメント・設定・コメントのみ | コード変更あり（軽微） | コード変更あり（重要） |
-| 変更ファイル数 | — | 1-2ファイル | 3ファイル以上 |
+|----------|---------------------|--------------|----------|
+| 変更内容 | docs / config / コメントのみ | コード変更あり（軽微） | コード変更あり（重要） |
+| 変更ファイル数 | — | 1-2 ファイル | 3 ファイル以上 |
 | 影響範囲 | — | 局所的 | 複数モジュール横断 |
-| リスク | なし（実行パスに影響しない） | 低（設定、ユーティリティ） | 高（認証、データ処理、API） |
-| ロジック複雑度 | ロジック変更なし | 単純な追加・変更 | 条件分岐・状態管理・非同期処理 |
+| リスク | なし | 低（設定、ユーティリティ） | 高（認証、データ処理、API） |
+| ロジック複雑度 | なし | 単純な追加・変更 | 条件分岐 / 状態管理 / 非同期 |
 
 **判断に迷ったら複雑モードを選択する。**
 
 ### SKIP — レビュー不要
 
-変更がドキュメント（`.md`）、コメント、設定ファイルのみでロジックを含まない場合、VERIFY をスキップして自動 PASS とする。
+変更がドキュメント / コメント / 設定のみでロジックを含まない場合、VERIFY をスキップして自動 PASS。
 
-記録形式: `> **Review XX**: ⏭️ SKIPPED (docs only)`
+`gates[].review = { result: "SKIPPED", fixCount: 0, summary: "docs only" }` を書き込む。
 
-Step 3（FIX）も不要。そのまま Step 4（UPDATE）へ進む。
+Step 3（FIX）も不要。Step 4（UPDATE）へ進む。
 
-### シンプルモード — レビュワー 1体
+### シンプルモード — レビュワー 1 体
 
 `agents/reviewer-correctness.md` を Agent（sonnet）で起動する。
-正確性・仕様適合の観点で全体をカバーする。
 
-### 複雑モード — レビュワー 3体並列
+### 複雑モード — レビュワー 3 体並列
 
-以下の3ファイルを Read し、それぞれ Agent（sonnet）で **並列** 起動する:
+以下の 3 ファイルを Read し、Agent（sonnet）で **並列** 起動する:
 
 1. `agents/reviewer-quality.md` — 品質・設計
 2. `agents/reviewer-correctness.md` — 正確性・仕様適合
 3. `agents/reviewer-conventions.md` — プロジェクト慣例
 
-各エージェントには仕様書パス + 対象 Review ID を渡す。
+各エージェントには **Gate ID + Gate 契約 + 変更差分** を渡す。
+
+### AC 検証
+
+レビュー結果と並行して、各 AC の検証手段（コマンド / テスト / HTTP など）を実行し、`gates[].acceptanceCriteria[].checked` が全て `true` になっていることを確認する。実装エージェントが書き漏れた AC があれば main session が補完する。
 
 ### 結果の統合
 
-- すべて PASS → 全体 PASS
-- 1体でも FAIL → 全体 FAIL → Step 3（FIX）へ
-- FIX 後の再 VERIFY も同じモード（シンプル/複雑）で実行する
+- すべて PASS + 全 AC checked → 全体 PASS
+- 1 体でも FAIL or 未 checked AC あり → 全体 FAIL → Step 3（FIX）へ
+- FIX 後の再 VERIFY も同じモード（シンプル / 複雑）で実行する
+
+## Step 3 — FIX
+
+FAIL の場合のみ。最大 3 ラウンド。
+
+実装エージェント（または main session）が指摘内容を反映して修正し、再度 VERIFY を実行する。
 
 ## Step 4 — UPDATE
 
-### v2 ディレクトリモード
-
 **tasks.json のみを Edit して更新する。spec.md は直接編集しない**（PostToolUse hook が sync-spec-md を起動して spec.md を自動再生成する）。
 
-更新対象フィールド:
+### 更新対象フィールド
 
-1. **該当 Todo の `steps[]`**:
-   - `steps[0].checked` (impl step): `true`
-   - `steps[1].checked` (review step): `true`
-   - `steps[1].review`: `{ "result": "PASSED"|"FAILED"|..., "fixCount": n, "summary": "..." }`
+1. **該当 Gate の `acceptanceCriteria[].checked`**: 全 AC を `true` に
+2. **該当 Gate の `review`**: `{ result: "PASSED"|"FAILED"|"SKIPPED", fixCount: n, summary: "..." }`
+3. **該当 Gate の `passed`**: 全 AC checked + `review.result` が PASSED または SKIPPED なら `true`
+4. **トップレベル `progress`** を再計算:
+   - `gatesTotal = gates.length`
+   - `gatesPassed = gates.filter(g => g.passed).length`
+   - `currentGate` = 最初の `passed=false` の Gate.id（全 passed なら null）
+   - `currentGateAC` = currentGate の AC checked 数 / 総数
+5. **トップレベル `status`** を再計算:
+   - `gatesPassed == 0 && currentGateAC.passed == 0` → `"not-started"`
+   - `gatesPassed < gatesTotal` → `"in-progress"`
+   - `gatesPassed == gatesTotal && !reviewChecked` → `"in-review"`
+   - `gatesPassed == gatesTotal && reviewChecked` → `"completed"`
 
-2. **トップレベル `status` と `progress`**（再計算）:
-   - `total = sum of all todos[].steps[].length`（固定値、todos 数 × 2）
-   - `completed = count of all steps where checked == true`
-   - `status`: `completed == 0` → `not-started`、`0 < completed < total` → `in-progress`、`completed == total && !reviewChecked` → `in-review`、`completed == total && reviewChecked` → `completed`
+Edit 後、PostToolUse hook が sync-spec-md.mjs を起動し、spec.md の generated 領域が再生成される。
 
-Edit 後、PostToolUse hook が自動的に sync-spec-md.mjs を起動し、spec.md の generated 領域が tasks.json の新しい状態に合わせて再生成される。spec.md を直接開いて確認する必要はない（必要なら hook 実行後に Read で確認可能）。
+**hook 未発火時のフォールバック**: Edit 後に Read で spec.md を確認し、generated 領域が更新されていなければ明示実行:
 
-**hook 未発火時のフォールバック**: Edit 完了後に Read で spec.md を確認し、generated 領域が更新されていなければ、Bash で明示的に `node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>` を実行する。hook が Claude Code 以外の環境（opencode 等）で動作しない場合に備えた措置。
-
-### v1 ディレクトリモード
-
-spec.md のチェックボックスを `[x]` に更新し、Review 結果を blockquote に記入する:
-
-```markdown
-- [x] **Todo A1**: カラーコントラスト修正
-  > **Review A1**: ✅ PASSED
+```bash
+node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>
 ```
-
-### シングルモード
-
-各 Todo の全 Step 完了後、仕様書のチェックボックスを `[x]` に更新する。記録形式は SKILL.md「結果の記録」を参照。
 
 ---
 
 ## worktree モード（オプション）
 
-SKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プロトコルは **worktree 内の cwd** で実行される。差分は以下の通り。
+SKILL.md のステップ 4 で worktree 使用を選択した場合、本プロトコルは **worktree 内の cwd** で実行される。
 
 ### 前提
 
@@ -175,15 +178,14 @@ SKILL.md の Step 4 で worktree 使用を選択した場合、本 execution プ
 
 | Step | 差分 |
 |------|------|
-| Step 0 CONTEXT | 仕様書の「参照すべきファイル」は worktree 内のパスで Read する。worktree は master から派生なので同じファイルが存在する |
-| Preflight フェーズ | worktree 内で実行（`node_modules` / `.env` は worktree 側に配置される）。master 側には影響しない |
-| Step 1 IMPL | worktree 内のファイルを直接編集。コミットも worktree 内（`git commit` は自動的に feature/{slug} ブランチに対して行われる） |
-| Step 2 VERIFY | レビュワー Agent は worktree 内の差分に対してレビューする。Agent の cwd は継承される |
+| Step 0 CONTEXT | 仕様書を worktree 内のパスで Read（worktree は base から派生なので同じ構造） |
+| Preflight | worktree 内で実行（`node_modules` / `.env` は worktree 側に配置） |
+| Step 1 IMPL | worktree 内のファイルを編集、worktree 内でコミット（自動的に feature/{slug} ブランチ） |
+| Step 2 VERIFY | レビュワー Agent は worktree の差分に対してレビュー（cwd 継承） |
 | Step 3 FIX | worktree 内で修正、再コミット |
-| Step 4 UPDATE | v2: **worktree 内の tasks.json** を更新 → hook が worktree 内の spec.md を再生成 / v1/single: worktree 内の spec.md のチェックボックスを更新。master 側は完了処理の merge 後に反映 |
+| Step 4 UPDATE | worktree 内の tasks.json を更新 → hook が worktree 内の spec.md を再生成 |
 
 ### 注意
 
-- master 側の spec.md を直接編集してはならない（cwd が worktree の前提が崩れる）
-- Codex モードで worktree を使う場合は `references/codex-execution.md` の該当セクションを参照
-- worktree セットアップ手順は `references/worktree-setup.md`、完了時の merge / cleanup は `references/worktree-teardown.md` を参照
+- base 側の spec.md / tasks.json を直接編集してはならない
+- worktree のセットアップ手順は `references/worktree-setup.md`、完了時の merge / cleanup は `references/worktree-teardown.md` を参照
