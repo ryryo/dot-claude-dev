@@ -398,14 +398,14 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - [x] **D.AC2**: `node .claude/skills/dev/spec/scripts/migrate-progress.mjs --dry-run` を実行すると、対象 v3 ファイル一覧と削除予定キーが標準出力に出る（書き込みは発生しない）
 - [x] **D.AC3**: 実行モード適用後、`for f in $(find docs/PLAN -name tasks.json); do grep -l '"schemaVersion": 3' "$f"; done | xargs jq 'has("progress") or has("metadata")'` が全 false
 - [x] **D.AC4**: 実行モードでは各 v3 tasks.json 更新後に sync-spec-md.mjs が exit=0 で子プロセス起動される。spec.md の generated 領域には progress/metadata 由来の情報を含まないため diff は出ない（migration の影響範囲外）。同期処理が走ったこと自体を sync exit=0 で確認
-- [ ] **D.AC5**: dashboard を再起動後、移行後 v3 PLAN（progress フィールドなし）が引き続き正常表示される（手動）
+- [x] **D.AC5**: dashboard を再起動後、移行後 v3 PLAN（progress フィールドなし）が引き続き正常表示される（手動）
 - [x] **D.AC6**: `grep -nE '"progress"|"metadata"' .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs` が 0 ヒット（事前確認、または該当 Gate での修正完了）
 
 **Todos** (2):
 - **D1**: [TDD] `migrate-progress.mjs` 本体（--dry-run 対応）と vitest テスト 3 ケース — `.claude/skills/dev/spec/scripts/migrate-progress.mjs`, `.claude/skills/dev/spec/scripts/__tests__/migrate-progress.test.mjs`
 - **D2**: 全 v3 tasks.json に migration を適用 + spec.md 再同期確認 + sync-spec-md.mjs の事前確認 — `docs/PLAN/260427_dashboard-v3-migration/tasks.json`, `docs/PLAN/260427_v3-progress-single-source/tasks.json` ほか
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — migrate-progress.mjs 作成・全 v3 PLAN（2 件）に適用完了。node:test 3 ケース GREEN、--dry-run / 実行モード両対応、sync-spec-md 子プロセス連携 exit=0。手動確認: Vercel デプロイ後ブラウザで移行後 v3 PLAN が引き続き正常表示（Gate 3/5 / 4/4、チェック項目 5/6 / 6/6）
 
 ### Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤去
 
@@ -432,11 +432,11 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - [x] **E.AC3**: `cd dashboard && bun run build` が成功（型エラー 0）
 - [x] **E.AC4**: `cd dashboard && bun run lint` が 0 errors
 - [x] **E.AC5**: `cd dashboard && bunx vitest run` が全テスト GREEN（11 ファイル / 61 件 PASS）
-- [ ] **E.AC6**: dashboard を起動して既存 v3 PLAN（progress 残存 / 削除済み 両方）が正常に表示される（手動）
+- [x] **E.AC6**: dashboard を起動して既存 v3 PLAN（progress 残存 / 削除済み 両方）が正常に表示される（手動）
 
 **Todos** (1):
 - **E1**: [SIMPLE] types.ts から `TasksJsonV3Progress` / `TasksJsonV3Metadata` interface を削除し、`TasksJsonV3` から該当プロパティを除去（残存参照は E.AC1/AC2 の grep で検証） — `dashboard/lib/types.ts`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — TasksJsonV3Progress / TasksJsonV3Metadata interface を types.ts から削除し、TasksJsonV3 から該当プロパティを除去。残存参照（tasks-detail-sheet.tsx）も gates derive に修正。build / lint / vitest 全 GREEN（11 ファイル / 61 件 PASS）。手動確認: Vercel デプロイ後ブラウザで両 v3 PLAN が gates derive で正常表示、sidebar 集計も従来通り
 
 <!-- generated:end -->

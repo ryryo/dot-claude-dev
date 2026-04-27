@@ -7,7 +7,7 @@
     "createdDate": "2026-04-27",
     "specPath": "spec.md"
   },
-  "status": "in-progress",
+  "status": "in-review",
   "reviewChecked": false,
   "preflight": [],
   "gates": [
@@ -420,7 +420,7 @@
         {
           "id": "D.AC5",
           "description": "dashboard を再起動後、移行後 v3 PLAN（progress フィールドなし）が引き続き正常表示される（手動）",
-          "checked": false
+          "checked": true
         },
         {
           "id": "D.AC6",
@@ -475,8 +475,12 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "migrate-progress.mjs 作成・全 v3 PLAN（2 件）に適用完了。node:test 3 ケース GREEN、--dry-run / 実行モード両対応、sync-spec-md 子プロセス連携 exit=0。手動確認: Vercel デプロイ後ブラウザで移行後 v3 PLAN が引き続き正常表示（Gate 3/5 / 4/4、チェック項目 5/6 / 6/6）"
+      },
+      "passed": true
     },
     {
       "id": "E",
@@ -535,7 +539,7 @@
         {
           "id": "E.AC6",
           "description": "dashboard を起動して既存 v3 PLAN（progress 残存 / 削除済み 両方）が正常に表示される（手動）",
-          "checked": false
+          "checked": true
         }
       ],
       "todos": [
@@ -554,8 +558,12 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "TasksJsonV3Progress / TasksJsonV3Metadata interface を types.ts から削除し、TasksJsonV3 から該当プロパティを除去。残存参照（tasks-detail-sheet.tsx）も gates derive に修正。build / lint / vitest 全 GREEN（11 ファイル / 61 件 PASS）。手動確認: Vercel デプロイ後ブラウザで両 v3 PLAN が gates derive で正常表示、sidebar 集計も従来通り"
+      },
+      "passed": true
     }
   ]
 }
