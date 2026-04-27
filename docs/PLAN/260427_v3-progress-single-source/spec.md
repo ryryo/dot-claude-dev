@@ -286,17 +286,17 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - ❌ MUST NOT: isV3TasksJson の検証を変更する（`schemaVersion === 3` のみで十分）
 
 **Acceptance Criteria**:
-- [ ] **A.AC1**: `cd dashboard && bunx vitest run __tests__/plan-json-loader.test.ts` が GREEN で、computeProgress の 4 ケース（gates 空 / 全未通過 / 一部通過 / 全完了）すべてのテストが含まれる
-- [ ] **A.AC2**: `grep -nE 'convertProgress|tasksJson\.progress' dashboard/lib/plan-json-loader.ts` が 0 ヒット
-- [ ] **A.AC3**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **A.AC4**: `cd dashboard && bun run build` が成功（型エラー 0）
-- [ ] **A.AC5**: dashboard 起動後、`docs/PLAN/260427_dashboard-v3-migration/` の PLAN カードに「AC 5/5」（または該当 Gate の最終 AC 充足数）が表示される（手動）
+- [x] **A.AC1**: `cd dashboard && bunx vitest run __tests__/plan-json-loader.test.ts` が GREEN で、computeProgress の 4 ケース（gates 空 / 全未通過 / 一部通過 / 全完了）すべてのテストが含まれる
+- [x] **A.AC2**: `grep -nE 'convertProgress|tasksJson\.progress' dashboard/lib/plan-json-loader.ts` が 0 ヒット
+- [x] **A.AC3**: `cd dashboard && bun run lint` が 0 errors
+- [x] **A.AC4**: `cd dashboard && bun run build` が成功（型エラー 0）
+- [x] **A.AC5**: dashboard 起動後、`docs/PLAN/260427_dashboard-v3-migration/` の PLAN カードに「AC 5/5」（または該当 Gate の最終 AC 充足数）が表示される（手動）
 
 **Todos** (2):
 - **A1**: [TDD] `computeProgress(gates)` 純粋関数を実装し、4 状態のケースで vitest テストを書く — `dashboard/lib/plan-json-loader.ts`, `dashboard/__tests__/plan-json-loader.test.ts`
 - **A2**: [SIMPLE] `convertProgress` を削除し `loadPlanFromTasksJson` 内の呼び出しを `computeProgress(gates)` に置換 — `dashboard/lib/plan-json-loader.ts`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — computeProgress 純粋関数導入により Single Source of Truth 化。reviewer-correctness PASS。手動確認で完了プランの AC 6/6 表示を確認
 
 ### Gate B: UI 全完了表示 + sidebar 集計を進行中プランのみに限定
 

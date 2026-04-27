@@ -7,13 +7,13 @@
     "createdDate": "2026-04-27",
     "specPath": "spec.md"
   },
-  "status": "not-started",
+  "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 0,
+    "gatesPassed": 1,
     "gatesTotal": 5,
-    "currentGate": "A",
-    "currentGateAC": { "passed": 0, "total": 5 }
+    "currentGate": "B",
+    "currentGateAC": { "passed": 0, "total": 6 }
   },
   "preflight": [],
   "gates": [
@@ -49,7 +49,7 @@
         { "id": "A.AC2", "description": "`grep -nE 'convertProgress|tasksJson\\.progress' dashboard/lib/plan-json-loader.ts` が 0 ヒット", "checked": true },
         { "id": "A.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
         { "id": "A.AC4", "description": "`cd dashboard && bun run build` が成功（型エラー 0）", "checked": true },
-        { "id": "A.AC5", "description": "dashboard 起動後、`docs/PLAN/260427_dashboard-v3-migration/` の PLAN カードに「AC 5/5」（または該当 Gate の最終 AC 充足数）が表示される（手動）", "checked": false }
+        { "id": "A.AC5", "description": "dashboard 起動後、`docs/PLAN/260427_dashboard-v3-migration/` の PLAN カードに「AC 5/5」（または該当 Gate の最終 AC 充足数）が表示される（手動）", "checked": true }
       ],
       "todos": [
         {
@@ -74,8 +74,8 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": { "result": "PASSED", "fixCount": 0, "summary": "computeProgress 純粋関数導入により Single Source of Truth 化。reviewer-correctness PASS。手動確認で完了プランの AC 6/6 表示を確認" },
+      "passed": true
     },
     {
       "id": "B",
