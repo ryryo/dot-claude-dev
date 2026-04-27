@@ -106,13 +106,6 @@ export interface TasksJsonV3Spec {
   specPath: string;
 }
 
-export interface TasksJsonV3Progress {
-  gatesPassed: number;
-  gatesTotal: number;
-  currentGate: string | null;
-  currentGateAC: { passed: number; total: number };
-}
-
 export interface TasksJsonV3Preflight {
   id: string;
   title: string;
@@ -163,19 +156,11 @@ export interface TasksJsonV3Gate {
   passed: boolean;
 }
 
-export interface TasksJsonV3Metadata {
-  createdAt: string;
-  totalGates: number;
-  totalTodos: number;
-}
-
 export interface TasksJsonV3 {
   schemaVersion: 3;
   spec: TasksJsonV3Spec;
   status: PlanStatus;
   reviewChecked: boolean;
-  progress: TasksJsonV3Progress;
   preflight: TasksJsonV3Preflight[];
   gates: TasksJsonV3Gate[];
-  metadata: TasksJsonV3Metadata;
 }

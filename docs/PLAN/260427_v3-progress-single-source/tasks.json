@@ -510,27 +510,27 @@
         {
           "id": "E.AC1",
           "description": "`grep -nE 'TasksJsonV3Progress|TasksJsonV3Metadata' dashboard/ -r` が 0 ヒット",
-          "checked": false
+          "checked": true
         },
         {
           "id": "E.AC2",
-          "description": "`grep -nE 'tasksJson\\.progress|tasksJson\\.metadata' dashboard/ -r` が 0 ヒット",
-          "checked": false
+          "description": "`grep -nE 'tasksJson\\.progress|tasksJson\\.metadata' dashboard/ -r` が 0 ヒット（追加で `tasks.progress` / `tasks.metadata` も 0 ヒットを確認、tasks-detail-sheet.tsx を gates derive に修正）",
+          "checked": true
         },
         {
           "id": "E.AC3",
           "description": "`cd dashboard && bun run build` が成功（型エラー 0）",
-          "checked": false
+          "checked": true
         },
         {
           "id": "E.AC4",
           "description": "`cd dashboard && bun run lint` が 0 errors",
-          "checked": false
+          "checked": true
         },
         {
           "id": "E.AC5",
-          "description": "`cd dashboard && bunx vitest run` が全テスト GREEN",
-          "checked": false
+          "description": "`cd dashboard && bunx vitest run` が全テスト GREEN（11 ファイル / 61 件 PASS）",
+          "checked": true
         },
         {
           "id": "E.AC6",

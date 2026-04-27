@@ -80,6 +80,9 @@ export function TasksDetailSheet({
 }
 
 function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV3 }) {
+  // gates[] を Single Source of Truth として Gate 進捗を都度算出
+  const gatesTotal = tasks.gates.length
+  const gatesPassed = tasks.gates.filter((g) => g.passed).length
   return (
     <>
       <section className="space-y-2">
@@ -90,7 +93,7 @@ function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV3 }) {
             <span className="text-muted-foreground text-xs">{tasks.spec.createdDate}</span>
           )}
           <span className="text-muted-foreground text-xs tabular-nums">
-            Gate {tasks.progress.gatesPassed}/{tasks.progress.gatesTotal}
+            Gate {gatesPassed}/{gatesTotal}
           </span>
         </div>
         {tasks.spec.summary && <p className="text-muted-foreground text-sm">{tasks.spec.summary}</p>}

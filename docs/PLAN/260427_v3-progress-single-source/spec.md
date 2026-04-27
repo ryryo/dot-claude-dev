@@ -427,11 +427,11 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - ❌ MUST NOT: loader を再修正する（Gate A の責務）
 
 **Acceptance Criteria**:
-- [ ] **E.AC1**: `grep -nE 'TasksJsonV3Progress|TasksJsonV3Metadata' dashboard/ -r` が 0 ヒット
-- [ ] **E.AC2**: `grep -nE 'tasksJson\.progress|tasksJson\.metadata' dashboard/ -r` が 0 ヒット
-- [ ] **E.AC3**: `cd dashboard && bun run build` が成功（型エラー 0）
-- [ ] **E.AC4**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **E.AC5**: `cd dashboard && bunx vitest run` が全テスト GREEN
+- [x] **E.AC1**: `grep -nE 'TasksJsonV3Progress|TasksJsonV3Metadata' dashboard/ -r` が 0 ヒット
+- [x] **E.AC2**: `grep -nE 'tasksJson\.progress|tasksJson\.metadata' dashboard/ -r` が 0 ヒット（追加で `tasks.progress` / `tasks.metadata` も 0 ヒットを確認、tasks-detail-sheet.tsx を gates derive に修正）
+- [x] **E.AC3**: `cd dashboard && bun run build` が成功（型エラー 0）
+- [x] **E.AC4**: `cd dashboard && bun run lint` が 0 errors
+- [x] **E.AC5**: `cd dashboard && bunx vitest run` が全テスト GREEN（11 ファイル / 61 件 PASS）
 - [ ] **E.AC6**: dashboard を起動して既存 v3 PLAN（progress 残存 / 削除済み 両方）が正常に表示される（手動）
 
 **Todos** (1):
