@@ -319,10 +319,10 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - ❌ MUST NOT: `SidebarStats` 型に percent (`overallProgress` / `acProgress`) フィールドを含める
 
 **Acceptance Criteria**:
-- [ ] **B.AC1**: `cd dashboard && bunx vitest run __tests__/page-stats.test.ts` が GREEN で、全 in-progress / 全 completed / 混在 / 空 の 4 ケースすべてのテストが含まれる
-- [ ] **B.AC2**: `grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている
-- [ ] **B.AC3**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **B.AC4**: `cd dashboard && bun run build` が成功
+- [x] **B.AC1**: `cd dashboard && bunx vitest run __tests__/page-stats.test.ts` が GREEN で、全 in-progress / 全 completed / 混在 / 空 の 4 ケースすべてのテストが含まれる
+- [x] **B.AC2**: `grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている
+- [x] **B.AC3**: `cd dashboard && bun run lint` が 0 errors
+- [x] **B.AC4**: `cd dashboard && bun run build` が成功
 - [ ] **B.AC5**: dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）
 - [ ] **B.AC6**: dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）
 
