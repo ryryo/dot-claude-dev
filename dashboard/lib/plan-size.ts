@@ -8,11 +8,11 @@ export interface PlanSize {
 
 /**
  * Plan の全体規模を返す。完了状態は考慮しない。
- * total = gates.length + todos.length
+ * total = gates.length + 全 Gate に属する Todo の合計
  */
 export function getPlanSize(plan: PlanFile): PlanSize {
   const gateCount = plan.gates.length;
-  const todoCount = plan.todos.length;
+  const todoCount = plan.gates.reduce((sum, gate) => sum + gate.todos.length, 0);
   return {
     gateCount,
     todoCount,

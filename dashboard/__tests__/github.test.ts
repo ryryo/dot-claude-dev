@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchFileContent, fetchPlanFiles, fetchUserRepos } from '../lib/github';
-import type { GitHubContent, GitHubRepo } from '../lib/types';
+import type { GitHubContent, GitHubRepo, TasksJsonV3 } from '../lib/types';
 
 describe('github', () => {
   const originalToken = process.env.GITHUB_TOKEN;
@@ -41,7 +41,7 @@ describe('github', () => {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
         }),
-        next: { revalidate: 300 },
+        next: expect.objectContaining({ revalidate: 300 }),
       })
     );
   });
@@ -60,7 +60,7 @@ describe('github', () => {
     );
   });
 
-  it('ファイルモードとディレクトリモードの両方を処理する', async () => {
+  it('v3 tasks.json を持つディレクトリエントリのみを返す（.md ファイルエントリは無視）', async () => {
     process.env.GITHUB_TOKEN = 'test-token';
 
     const contents: GitHubContent[] = [
@@ -68,42 +68,34 @@ describe('github', () => {
       { name: '250101_alpha.md', path: 'docs/PLAN/250101_alpha.md', type: 'file', sha: '1' },
     ];
 
+    const tasksJson: TasksJsonV3 = makeV3Sample('feature-beta', 'Beta Spec');
+
     vi.mocked(fetch)
       .mockResolvedValueOnce(createJsonResponse(contents))
-      // file entry: 250101_alpha.md
+      // dir entry: tasks.json
       .mockResolvedValueOnce(
         createJsonResponse({
-          content: Buffer.from('# Alpha Plan\n\n- [ ] **Todo A**: body\n', 'utf-8').toString('base64'),
+          content: Buffer.from(JSON.stringify(tasksJson), 'utf-8').toString('base64'),
           encoding: 'base64',
         })
-      )
-      // dir entry: tasks.json → 404 (v1 fallback)
-      .mockResolvedValueOnce(
-        createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
       )
       // dir entry: spec.md
       .mockResolvedValueOnce(
         createJsonResponse({
-          content: Buffer.from('# Beta Spec\n\n- [x] **Todo B**: body\n', 'utf-8').toString('base64'),
+          content: Buffer.from('# Beta Spec\n', 'utf-8').toString('base64'),
           encoding: 'base64',
         })
       );
 
     const result = await fetchPlanFiles('octocat', 'hello-world');
 
-    expect(result).toHaveLength(2);
-    expect(result.map((plan) => plan.filePath)).toEqual([
-      'docs/PLAN/250101_alpha.md',
-      'docs/PLAN/feature-beta/spec.md',
-    ]);
-    expect(result.map((plan) => plan.title)).toEqual(['Alpha Plan', 'Beta Spec']);
-    expect(result.map((plan) => plan.projectName)).toEqual([
-      'octocat/hello-world',
-      'octocat/hello-world',
-    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].filePath).toBe('docs/PLAN/feature-beta/spec.md');
+    expect(result[0].title).toBe('Beta Spec');
+    expect(result[0].projectName).toBe('octocat/hello-world');
   });
 
-  it('ディレクトリモードの spec.md が 404 ならスキップする', async () => {
+  it('ディレクトリエントリの tasks.json が 404 ならスキップする', async () => {
     process.env.GITHUB_TOKEN = 'test-token';
 
     const contents: GitHubContent[] = [
@@ -115,16 +107,12 @@ describe('github', () => {
       // tasks.json → 404
       .mockResolvedValueOnce(
         createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
-      )
-      // spec.md → 404
-      .mockResolvedValueOnce(
-        createJsonResponse({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' })
       );
 
     await expect(fetchPlanFiles('octocat', 'hello-world')).resolves.toEqual([]);
   });
 
-  it('ディレクトリモードの tasks.json/spec.md が 404 以外なら再 throw する', async () => {
+  it('ディレクトリエントリの tasks.json が 404 以外なら再 throw する', async () => {
     process.env.GITHUB_TOKEN = 'test-token';
 
     const contents: GitHubContent[] = [
@@ -133,7 +121,7 @@ describe('github', () => {
 
     vi.mocked(fetch)
       .mockResolvedValueOnce(createJsonResponse(contents))
-      // tasks.json → 500 (non-404 error is rethrown)
+      // tasks.json → 500
       .mockResolvedValueOnce(
         createJsonResponse(
           { message: 'Internal Server Error' },
@@ -166,7 +154,7 @@ describe('github', () => {
     await expect(fetchUserRepos()).resolves.toEqual(repos);
     expect(fetch).toHaveBeenCalledWith(
       'https://api.github.com/user/repos?per_page=100&sort=updated&type=all',
-      expect.objectContaining({ next: { revalidate: 300 } })
+      expect.objectContaining({ next: expect.objectContaining({ revalidate: 300 }) })
     );
   });
 });
@@ -178,4 +166,45 @@ function createJsonResponse(body: unknown, init: ResponseInit = {}): Response {
     headers: { 'Content-Type': 'application/json' },
     ...init,
   });
+}
+
+function makeV3Sample(slug: string, title: string): TasksJsonV3 {
+  return {
+    schemaVersion: 3,
+    spec: {
+      slug,
+      title,
+      summary: '',
+      createdDate: '2026-04-14',
+      specPath: `docs/PLAN/${slug}/spec.md`,
+    },
+    status: 'in-progress',
+    reviewChecked: false,
+    progress: {
+      gatesPassed: 0,
+      gatesTotal: 1,
+      currentGate: 'A',
+      currentGateAC: { passed: 0, total: 1 },
+    },
+    preflight: [],
+    gates: [
+      {
+        id: 'A',
+        title: 'Gate A',
+        summary: '',
+        dependencies: [],
+        goal: { what: '', why: '' },
+        constraints: { must: [], mustNot: [] },
+        acceptanceCriteria: [{ id: 'A.AC1', description: 'tested', checked: false }],
+        todos: [],
+        review: null,
+        passed: false,
+      },
+    ],
+    metadata: {
+      createdAt: '2026-04-14T00:00:00Z',
+      totalGates: 1,
+      totalTodos: 0,
+    },
+  };
 }

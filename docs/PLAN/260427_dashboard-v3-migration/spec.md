@@ -317,11 +317,11 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - ❌ MUST NOT: 後続 Gate を待たずに UI コンポーネント (plan-card / plan-detail / tasks-detail-todo 等) を編集する
 
 **Acceptance Criteria**:
-- [ ] **A.AC1**: `grep -r "TasksJsonV2" dashboard/` のヒット数が 0
-- [ ] **A.AC2**: `vitest run dashboard/__tests__/tasks-route.test.ts` が GREEN で、schemaVersion 1/2 入力に対し 422 を返すケースを含む
-- [ ] **A.AC3**: `vitest run dashboard/__tests__/plan-json-loader.test.ts` が GREEN で、v3 fixture 入力に対し PlanFile.gates[0] に goal/constraints/acceptanceCriteria/review/passed が含まれることを検証している
-- [ ] **A.AC4**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **A.AC5**: `grep -r "hasV2Tasks" dashboard/` のヒット数が 0
+- [x] **A.AC1**: `grep -r "TasksJsonV2" dashboard/` のヒット数が 0
+- [x] **A.AC2**: `vitest run dashboard/__tests__/tasks-route.test.ts` が GREEN で、schemaVersion 1/2 入力に対し 422 を返すケースを含む
+- [x] **A.AC3**: `vitest run dashboard/__tests__/plan-json-loader.test.ts` が GREEN で、v3 fixture 入力に対し PlanFile.gates[0] に goal/constraints/acceptanceCriteria/review/passed が含まれることを検証している
+- [x] **A.AC4**: `cd dashboard && bun run lint` が 0 errors
+- [x] **A.AC5**: `grep -r "hasV2Tasks" dashboard/` のヒット数が 0
 
 **Todos** (5):
 - **A1**: TasksJsonV3* 型を追加し TasksJsonV2* を削除 — `dashboard/lib/types.ts`
@@ -330,7 +330,7 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - **A4**: github.ts の loader を v3 名前空間にリネーム — `dashboard/lib/github.ts`
 - **A5**: [TDD] plan-json-loader を v3 → 新 PlanFile 変換に書き換え — `dashboard/lib/plan-json-loader.ts`, `dashboard/__tests__/plan-json-loader.test.ts`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — v3 型・API ガード・loader の刷新を完了。grep TasksJsonV2 / hasV2Tasks 0 hits、tasks-route.test.ts 9件、plan-json-loader.test.ts 7件 GREEN、lint 0 errors。Gate A スコープ堅持のため UI は最小コンパイル fix のみ
 
 ### Gate B: リスト・カードの v3 進捗表示化
 

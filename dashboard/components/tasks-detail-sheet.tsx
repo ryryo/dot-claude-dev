@@ -79,7 +79,7 @@ export function TasksDetailSheet({
   )
 }
 
-function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV2 }) {
+function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV3 }) {
   return (
     <>
       <section className="space-y-2">
@@ -90,7 +90,7 @@ function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV2 }) {
             <span className="text-muted-foreground text-xs">{tasks.spec.createdDate}</span>
           )}
           <span className="text-muted-foreground text-xs tabular-nums">
-            {tasks.progress.completed}/{tasks.progress.total}
+            Gate {tasks.progress.gatesPassed}/{tasks.progress.gatesTotal}
           </span>
         </div>
         {tasks.spec.summary && <p className="text-muted-foreground text-sm">{tasks.spec.summary}</p>}
@@ -124,41 +124,35 @@ function SuccessView({ tasks }: { tasks: import("@/lib/types").TasksJsonV2 }) {
           defaultValue={tasks.gates.map((g) => g.id)}
           className="w-full"
         >
-          {tasks.gates.map((gate) => {
-            const todos = tasks.todos.filter((t) => t.gate === gate.id)
-
-            return (
-              <AccordionItem key={gate.id} value={gate.id}>
-                <AccordionTrigger className="text-left">
-                  <div className="flex items-center gap-2">
-                    <Badge>{gate.id}</Badge>
-                    <span className="font-medium">{gate.title}</span>
-                    <span className="text-muted-foreground text-xs">({todos.length} todos)</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="space-y-3">
-                  {gate.description && (
-                    <p className="text-muted-foreground text-xs">{gate.description}</p>
-                  )}
-                  {gate.dependencies.length > 0 && (
-                    <p className="text-xs">
-                      <span className="text-muted-foreground">依存: </span>
-                      {gate.dependencies.join(", ")}
-                    </p>
-                  )}
+          {tasks.gates.map((gate) => (
+            <AccordionItem key={gate.id} value={gate.id}>
+              <AccordionTrigger className="text-left">
+                <div className="flex items-center gap-2">
+                  <Badge>{gate.id}</Badge>
+                  <span className="font-medium">{gate.title}</span>
+                  <span className="text-muted-foreground text-xs">
+                    ({gate.todos.length} todos)
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3">
+                {gate.summary && (
+                  <p className="text-muted-foreground text-xs">{gate.summary}</p>
+                )}
+                {gate.dependencies.length > 0 && (
                   <p className="text-xs">
-                    <span className="text-muted-foreground">通過条件: </span>
-                    {gate.passCondition}
+                    <span className="text-muted-foreground">依存: </span>
+                    {gate.dependencies.join(", ")}
                   </p>
-                  <Accordion multiple className="w-full">
-                    {todos.map((todo) => (
-                      <TasksDetailTodo key={todo.id} todo={todo} />
-                    ))}
-                  </Accordion>
-                </AccordionContent>
-              </AccordionItem>
-            )
-          })}
+                )}
+                <Accordion multiple className="w-full">
+                  {gate.todos.map((todo) => (
+                    <TasksDetailTodo key={todo.id} todo={todo} />
+                  ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
         </Accordion>
       </section>
     </>

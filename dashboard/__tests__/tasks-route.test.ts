@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GET } from '../app/api/plans/tasks/route';
 import { fetchFileContent } from '../lib/github';
-import type { TasksJsonV2 } from '../lib/types';
+import type { TasksJsonV3 } from '../lib/types';
 
 vi.mock('@/lib/github', () => ({
   fetchFileContent: vi.fn(),
 }));
 
-describe('GET /api/plans/tasks', () => {
+describe('GET /api/plans/tasks (v3 only)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -54,7 +54,6 @@ describe('GET /api/plans/tasks', () => {
       new Request('http://localhost/api/plans/tasks?owner=octocat&repo=.github&slug=feature'),
     );
 
-    // fetchFileContent が呼ばれていること（バリデーションで弾かれていないこと）
     expect(fetchFileContent).toHaveBeenCalledWith('octocat', '.github', 'docs/PLAN/feature/tasks.json');
     expect(response.status).toBe(404);
   });
@@ -99,13 +98,28 @@ describe('GET /api/plans/tasks', () => {
 
     expect(response.status).toBe(422);
     await expect(response.json()).resolves.toEqual({
-      error: 'tasks.json is not v2 (schemaVersion >= 2 required)',
+      error: 'tasks.json is not v3 (schemaVersion === 3 required)',
     });
   });
 
-  it('schemaVersion=2 のとき tasks.json を返す', async () => {
-    const tasksJson: TasksJsonV2 = {
-      schemaVersion: 2,
+  it('schemaVersion=2 のとき 422 を返す', async () => {
+    vi.mocked(fetchFileContent).mockResolvedValueOnce(
+      JSON.stringify({ schemaVersion: 2, status: 'in-progress' }),
+    );
+
+    const response = await GET(
+      new Request('http://localhost/api/plans/tasks?owner=octocat&repo=hello-world&slug=feature'),
+    );
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({
+      error: 'tasks.json is not v3 (schemaVersion === 3 required)',
+    });
+  });
+
+  it('schemaVersion=3 のとき tasks.json を返す', async () => {
+    const tasksJson: TasksJsonV3 = {
+      schemaVersion: 3,
       spec: {
         slug: 'feature',
         title: 'Feature Spec',
@@ -116,37 +130,33 @@ describe('GET /api/plans/tasks', () => {
       status: 'in-progress',
       reviewChecked: false,
       progress: {
-        completed: 1,
-        total: 2,
+        gatesPassed: 0,
+        gatesTotal: 1,
+        currentGate: 'A',
+        currentGateAC: { passed: 0, total: 1 },
       },
       preflight: [],
       gates: [
         {
-          id: 'G1',
-          title: 'Gate 1',
-          description: 'desc',
+          id: 'A',
+          title: 'Gate A',
+          summary: '',
           dependencies: [],
-          passCondition: 'done',
-        },
-      ],
-      todos: [
-        {
-          id: 'T1',
-          gate: 'G1',
-          title: 'Task 1',
-          description: 'desc',
-          tdd: false,
-          dependencies: [],
-          affectedFiles: [],
-          impl: 'impl',
-          relatedIssues: [],
-          steps: [
+          goal: { what: 'do something', why: 'because' },
+          constraints: { must: [], mustNot: [] },
+          acceptanceCriteria: [{ id: 'A.AC1', description: 'tested', checked: false }],
+          todos: [
             {
-              kind: 'impl',
-              title: 'Implement',
-              checked: true,
+              id: 'A1',
+              gate: 'A',
+              title: 'Task 1',
+              tdd: false,
+              dependencies: [],
+              affectedFiles: [],
             },
           ],
+          review: null,
+          passed: false,
         },
       ],
       metadata: {

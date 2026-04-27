@@ -1,6 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { getPlanSize, getSizeBin, getSizeHistogram } from '../lib/plan-size';
-import type { PlanFile } from '../lib/types';
+import type { Gate, PlanFile, Todo } from '../lib/types';
+
+function makeTodo(id: string, gate: string): Todo {
+  return {
+    id,
+    gate,
+    title: id,
+    tdd: false,
+    dependencies: [],
+    affectedFiles: [],
+  };
+}
+
+function makeGate(id: string, todos: Todo[]): Gate {
+  return {
+    id,
+    title: id,
+    summary: '',
+    dependencies: [],
+    goal: { what: '', why: '' },
+    constraints: { must: [], mustNot: [] },
+    acceptanceCriteria: [],
+    todos,
+    review: null,
+    passed: false,
+  };
+}
 
 function makePlan(overrides: Partial<PlanFile> = {}): PlanFile {
   return {
@@ -12,11 +38,14 @@ function makePlan(overrides: Partial<PlanFile> = {}): PlanFile {
     reviewChecked: false,
     status: 'not-started',
     gates: [],
-    todos: [],
-    progress: { total: 0, completed: 0, percentage: 0 },
+    progress: {
+      gatesPassed: 0,
+      gatesTotal: 0,
+      currentGate: null,
+      currentGateAC: { passed: 0, total: 0 },
+    },
     summary: '',
     rawMarkdown: '',
-    hasV2Tasks: false,
     ...overrides,
   };
 }
@@ -29,13 +58,8 @@ describe('getPlanSize', () => {
   it('Gate と Todo の合計を返す', () => {
     const plan = makePlan({
       gates: [
-        { id: 'A', title: 'a', todos: [] },
-        { id: 'B', title: 'b', todos: [] },
-      ],
-      todos: [
-        { title: 't1', steps: [] },
-        { title: 't2', steps: [] },
-        { title: 't3', steps: [] },
+        makeGate('A', [makeTodo('A1', 'A'), makeTodo('A2', 'A')]),
+        makeGate('B', [makeTodo('B1', 'B')]),
       ],
     });
     expect(getPlanSize(plan)).toEqual({ gateCount: 2, todoCount: 3, total: 5 });
@@ -43,10 +67,8 @@ describe('getPlanSize', () => {
 
   it('完了状態に関わらず全 Todo を数える', () => {
     const plan = makePlan({
-      gates: [{ id: 'A', title: 'a', todos: [] }],
-      todos: [
-        { title: 't1', steps: [{ title: 's', checked: true, kind: 'impl', description: '', hasReview: false, reviewFilled: false, reviewResult: null, reviewFixCount: null }] },
-        { title: 't2', steps: [{ title: 's', checked: false, kind: 'impl', description: '', hasReview: false, reviewFilled: false, reviewResult: null, reviewFixCount: null }] },
+      gates: [
+        { ...makeGate('A', [makeTodo('A1', 'A'), makeTodo('A2', 'A')]), passed: true },
       ],
     });
     expect(getPlanSize(plan).total).toBe(3);
@@ -73,17 +95,19 @@ describe('getSizeHistogram', () => {
   });
 
   it('複数 Plan を正しく集計', () => {
-    const small = makePlan({ todos: [{ title: 't', steps: [] }] }); // total=1 → S
+    const small = makePlan({
+      gates: [makeGate('A', [makeTodo('A1', 'A')])],
+    }); // total=2 → S
     const mid = makePlan({
       gates: [
-        { id: 'A', title: 'a', todos: [] },
-        { id: 'B', title: 'b', todos: [] },
+        makeGate('A', [makeTodo('A1', 'A'), makeTodo('A2', 'A')]),
+        makeGate('B', [makeTodo('B1', 'B'), makeTodo('B2', 'B')]),
       ],
-      todos: Array.from({ length: 4 }, () => ({ title: 't', steps: [] })),
     }); // total=6 → M
     const big = makePlan({
-      gates: Array.from({ length: 4 }, (_, i) => ({ id: `G${i}`, title: 'g', todos: [] })),
-      todos: Array.from({ length: 12 }, () => ({ title: 't', steps: [] })),
+      gates: Array.from({ length: 4 }, (_, i) =>
+        makeGate(`G${i}`, Array.from({ length: 3 }, (_, j) => makeTodo(`G${i}-${j}`, `G${i}`))),
+      ),
     }); // total=16 → XL
     expect(getSizeHistogram([small, mid, big])).toEqual({ S: 1, M: 1, L: 0, XL: 1 });
   });

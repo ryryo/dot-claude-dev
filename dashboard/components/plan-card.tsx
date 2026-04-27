@@ -63,19 +63,17 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
               <Copy className="size-4 shrink-0" />
             )}
           </button>
-          {plan.hasV2Tasks && (
-            <button
-              type="button"
-              aria-label={`${plan.title} のタスク詳細を開く`}
-              onClick={(e) => {
-                e.stopPropagation()
-                setTasksOpen(true)
-              }}
-              className="text-muted-foreground hover:text-foreground pointer-events-auto cursor-pointer transition-colors"
-            >
-              <ListChecks className="size-4 shrink-0" />
-            </button>
-          )}
+          <button
+            type="button"
+            aria-label={`${plan.title} のタスク詳細を開く`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setTasksOpen(true)
+            }}
+            className="text-muted-foreground hover:text-foreground pointer-events-auto cursor-pointer transition-colors"
+          >
+            <ListChecks className="size-4 shrink-0" />
+          </button>
           <button
             type="button"
             aria-label={`${plan.title} の全文を読む`}
@@ -116,16 +114,20 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="text-muted-foreground">進捗</span>
+                  <span className="text-muted-foreground">Gate</span>
                   <span className="font-medium tabular-nums">
-                    {plan.progress.completed}/{plan.progress.total}
+                    {plan.progress.gatesPassed}/{plan.progress.gatesTotal}
                   </span>
                 </div>
 
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
                   <div
                     className="bg-primary h-full rounded-full transition-[width]"
-                    style={{ width: `${plan.progress.percentage}%` }}
+                    style={{
+                      width: `${plan.progress.gatesTotal === 0
+                        ? 0
+                        : Math.round((plan.progress.gatesPassed / plan.progress.gatesTotal) * 100)}%`,
+                    }}
                   />
                 </div>
 
@@ -153,7 +155,7 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
         title={plan.title}
         markdown={plan.rawMarkdown}
       />
-      {plan.hasV2Tasks && owner && repo && slug && (
+      {owner && repo && slug && (
         <TasksDetailSheet
           open={tasksOpen}
           onOpenChange={setTasksOpen}

@@ -1,15 +1,14 @@
 "use client"
 
-import { Check, ChevronDown, Circle } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Separator } from "@/components/ui/separator"
-import type { PlanFile, Step } from "@/lib/types"
+import type { PlanFile } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 interface PlanDetailProps {
@@ -17,8 +16,6 @@ interface PlanDetailProps {
 }
 
 export function PlanDetail({ plan }: PlanDetailProps) {
-  const totalSteps = plan.gates.flatMap((gate) => gate.todos.flatMap((todo) => todo.steps)).length
-
   return (
     <div className="space-y-3">
       {plan.summary ? (
@@ -27,7 +24,7 @@ export function PlanDetail({ plan }: PlanDetailProps) {
           <Separator />
         </>
       ) : null}
-      {totalSteps === 0 ? (
+      {plan.gates.length === 0 ? (
         <div className="text-muted-foreground rounded-xl border border-dashed px-4 py-6 text-sm">
           Gate 情報がありません。
         </div>
@@ -55,45 +52,9 @@ export function PlanDetail({ plan }: PlanDetailProps) {
 
               <CollapsibleContent className="px-4 pb-4">
                 <Separator className="mb-3" />
-                <div className="space-y-2">
-                  {gate.todos.map((todo, todoIndex) => {
-                    const completedSteps = todo.steps.filter((step) => step.checked).length
-                    return (
-                      <div
-                        key={`${plan.filePath}-gate-${gateIndex}-todo-${todoIndex}`}
-                        className="rounded-lg border bg-background/40"
-                      >
-                        <Collapsible defaultOpen>
-                          <CollapsibleTrigger
-                            className="group flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left"
-                            aria-label={`${todo.title} を開閉`}
-                          >
-                            <div className="flex min-w-0 items-center gap-2">
-                              <span className="text-sm font-medium whitespace-normal">{todo.title}</span>
-                              <span className="text-muted-foreground text-xs tabular-nums">
-                                ({completedSteps}/{todo.steps.length} 完了)
-                              </span>
-                            </div>
-                            <ChevronDown
-                              className={cn(
-                                "text-muted-foreground size-4 shrink-0 transition-transform",
-                                "group-data-[panel-open]:rotate-180"
-                              )}
-                            />
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="space-y-1.5 px-3 pb-3">
-                            {todo.steps.map((step, stepIndex) => (
-                              <StepRow
-                                key={`${plan.filePath}-gate-${gateIndex}-todo-${todoIndex}-step-${stepIndex}`}
-                                step={step}
-                              />
-                            ))}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    )
-                  })}
-                </div>
+                <p className="text-muted-foreground text-sm">
+                  Todo: {gate.todos.length} 件 / AC: {gate.acceptanceCriteria.length} 件
+                </p>
               </CollapsibleContent>
             </Collapsible>
 
@@ -101,32 +62,6 @@ export function PlanDetail({ plan }: PlanDetailProps) {
           </div>
         ))
       )}
-    </div>
-  )
-}
-
-function StepRow({ step }: { step: Step }) {
-  return (
-    <div className="flex items-start justify-between gap-3 rounded-md bg-muted/30 px-3 py-2">
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex items-center gap-2">
-          {step.checked ? (
-            <Check className="text-primary size-4 shrink-0" />
-          ) : (
-            <Circle className="text-muted-foreground size-4 shrink-0" />
-          )}
-          <span className="text-sm font-medium whitespace-normal">{step.title}</span>
-        </div>
-        {step.description ? (
-          <p className="text-muted-foreground line-clamp-2 pl-6 text-xs">{step.description}</p>
-        ) : null}
-      </div>
-      {step.kind === "review" && step.hasReview && step.reviewFilled ? (
-        <Badge variant="secondary" className="shrink-0">
-          {step.reviewResult ?? "Review済"}
-          {step.reviewFixCount && step.reviewFixCount > 0 ? ` · FIX ${step.reviewFixCount}回` : ""}
-        </Badge>
-      ) : null}
     </div>
   )
 }

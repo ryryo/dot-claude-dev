@@ -144,12 +144,15 @@ export default function Home() {
     )
   }, [filteredPlans])
 
-  const totalTodos = filteredPlans.reduce((sum, plan) => sum + plan.progress.total, 0)
-  const completedTodos = filteredPlans.reduce(
-    (sum, plan) => sum + plan.progress.completed,
+  const totalGates = filteredPlans.reduce(
+    (sum, plan) => sum + plan.progress.gatesTotal,
     0
   )
-  const overallProgress = totalTodos === 0 ? 0 : Math.round((completedTodos / totalTodos) * 100)
+  const passedGates = filteredPlans.reduce(
+    (sum, plan) => sum + plan.progress.gatesPassed,
+    0
+  )
+  const overallProgress = totalGates === 0 ? 0 : Math.round((passedGates / totalGates) * 100)
   const selectedProjectCount = selectedRepos.length
 
   if (reposLoading) {
@@ -202,11 +205,11 @@ export default function Home() {
 
       <div className="rounded-lg bg-muted/50 p-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Todo 進捗</p>
+          <p className="text-xs text-muted-foreground">Gate 進捗</p>
           <span className="text-xs font-medium tabular-nums">{overallProgress}%</span>
         </div>
         <p className="mt-1 text-sm font-medium tabular-nums">
-          {completedTodos}/{totalTodos} 件
+          {passedGates}/{totalGates} 件
         </p>
       </div>
 

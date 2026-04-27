@@ -1,35 +1,26 @@
 import path from 'node:path';
 import type {
+  AcceptanceCriteria,
+  AffectedFile,
   Gate,
+  GateReview,
   PlanFile,
-  ReviewResult,
-  Step,
-  TasksJsonV2,
-  TasksJsonV2Step,
+  PlanProgress,
+  TasksJsonV3,
+  TasksJsonV3Gate,
+  TasksJsonV3Todo,
   Todo,
 } from './types';
 
 export function loadPlanFromTasksJson(
-  tasksJson: TasksJsonV2,
+  tasksJson: TasksJsonV3,
   filePath: string,
   projectName: string,
-  rawMarkdown: string
+  rawMarkdown: string,
 ): PlanFile {
   const fileName = path.basename(filePath);
 
-  const gates: Gate[] = tasksJson.gates.map((g) => ({
-    id: g.id,
-    title: g.title,
-    todos: tasksJson.todos
-      .filter((t) => t.gate === g.id)
-      .map((t) => convertTodo(t)),
-  }));
-
-  const todos: Todo[] = tasksJson.todos.map((t) => convertTodo(t));
-
-  const total = tasksJson.progress.total;
-  const completed = tasksJson.progress.completed;
-  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const gates: Gate[] = tasksJson.gates.map((g) => convertGate(g));
 
   return {
     filePath,
@@ -40,38 +31,64 @@ export function loadPlanFromTasksJson(
     reviewChecked: tasksJson.reviewChecked,
     status: tasksJson.status,
     gates,
-    todos,
-    progress: { total, completed, percentage },
+    progress: convertProgress(tasksJson.progress),
     summary: tasksJson.spec.summary,
     rawMarkdown,
-    hasV2Tasks: true,
   };
 }
 
-function convertTodo(t: TasksJsonV2['todos'][number]): Todo {
+function convertGate(g: TasksJsonV3Gate): Gate {
   return {
-    title: t.title,
-    steps: t.steps.map((s) => convertStep(s, t.description)),
+    id: g.id,
+    title: g.title,
+    summary: g.summary,
+    dependencies: g.dependencies,
+    goal: { what: g.goal.what, why: g.goal.why },
+    constraints: {
+      must: [...g.constraints.must],
+      mustNot: [...g.constraints.mustNot],
+    },
+    acceptanceCriteria: g.acceptanceCriteria.map(
+      (ac): AcceptanceCriteria => ({
+        id: ac.id,
+        description: ac.description,
+        checked: ac.checked,
+      }),
+    ),
+    todos: g.todos.map((t) => convertTodo(t)),
+    review: g.review
+      ? ({
+          result: g.review.result,
+          fixCount: g.review.fixCount,
+          summary: g.review.summary,
+        } satisfies GateReview)
+      : null,
+    passed: g.passed,
   };
 }
 
-function convertStep(s: TasksJsonV2Step, todoDescription: string): Step {
-  const base: Step = {
-    title: s.title,
-    checked: s.checked,
-    kind: s.kind,
-    description: todoDescription,
-    hasReview: s.kind === 'review',
-    reviewFilled: false,
-    reviewResult: null,
-    reviewFixCount: null,
+function convertTodo(t: TasksJsonV3Todo): Todo {
+  return {
+    id: t.id,
+    gate: t.gate,
+    title: t.title,
+    tdd: t.tdd,
+    dependencies: [...t.dependencies],
+    affectedFiles: t.affectedFiles.map(
+      (f): AffectedFile => ({
+        path: f.path,
+        operation: f.operation,
+        summary: f.summary,
+      }),
+    ),
   };
+}
 
-  if (s.kind === 'review' && s.review) {
-    base.reviewFilled = true;
-    base.reviewResult = s.review.result as ReviewResult;
-    base.reviewFixCount = s.review.fixCount;
-  }
-
-  return base;
+function convertProgress(p: TasksJsonV3['progress']): PlanProgress {
+  return {
+    gatesPassed: p.gatesPassed,
+    gatesTotal: p.gatesTotal,
+    currentGate: p.currentGate ?? null,
+    currentGateAC: { passed: p.currentGateAC.passed, total: p.currentGateAC.total },
+  };
 }

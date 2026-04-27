@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

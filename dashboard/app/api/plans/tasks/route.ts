@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { fetchFileContent } from '@/lib/github';
-import type { TasksJsonV2 } from '@/lib/types';
+import type { TasksJsonV3 } from '@/lib/types';
 
 // GitHub owner names: must start with alphanumeric, may contain hyphens/dots/underscores
 const OWNER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -54,14 +54,13 @@ export async function GET(request: Request) {
   if (
     typeof parsed !== 'object' ||
     parsed === null ||
-    typeof (parsed as { schemaVersion?: unknown }).schemaVersion !== 'number' ||
-    (parsed as { schemaVersion: number }).schemaVersion < 2
+    (parsed as { schemaVersion?: unknown }).schemaVersion !== 3
   ) {
     return NextResponse.json(
-      { error: 'tasks.json is not v2 (schemaVersion >= 2 required)' },
+      { error: 'tasks.json is not v3 (schemaVersion === 3 required)' },
       { status: 422 },
     );
   }
 
-  return NextResponse.json(parsed as TasksJsonV2);
+  return NextResponse.json(parsed as TasksJsonV3);
 }

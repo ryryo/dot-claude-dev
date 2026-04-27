@@ -132,7 +132,10 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
     },
     {
       id: 'progress',
-      accessorFn: (row) => row.progress.percentage,
+      accessorFn: (row) =>
+        row.progress.gatesTotal === 0
+          ? 0
+          : Math.round((row.progress.gatesPassed / row.progress.gatesTotal) * 100),
       header: '進捗',
       cell: (info) => {
         const p = info.getValue<number>()
@@ -160,19 +163,17 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
       header: () => null,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {row.original.hasV2Tasks && (
-            <button
-              type="button"
-              aria-label={`${row.original.title} のタスク詳細を開く`}
-              onClick={(e) => {
-                e.stopPropagation()
-                setTasksPlan(row.original)
-              }}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ListChecks className="size-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            aria-label={`${row.original.title} のタスク詳細を開く`}
+            onClick={(e) => {
+              e.stopPropagation()
+              setTasksPlan(row.original)
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ListChecks className="size-4" />
+          </button>
           <button
             type="button"
             aria-label={`${row.original.title} の全文を読む`}
@@ -337,7 +338,7 @@ function PlanGateRows({ plan }: { plan: PlanFile }) {
       <tbody>
         {plan.gates.map((g) => {
           const total = g.todos.length
-          const done = g.todos.filter((t) => t.steps.every((s) => s.checked)).length
+          const done = g.passed ? total : 0
           return (
             <tr key={g.id} className="border-t border-border/60">
               <td className="py-1 font-mono">{g.id}</td>

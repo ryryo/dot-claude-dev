@@ -1,27 +1,53 @@
 export type PlanStatus = 'not-started' | 'in-progress' | 'in-review' | 'completed';
-export type StepKind = 'impl' | 'review';
 export type ReviewResult = 'PASSED' | 'FAILED' | 'SKIPPED' | 'IN_PROGRESS';
 
-export interface Step {
-  title: string;
-  checked: boolean;
-  kind: StepKind;
+// ===== 正規化 PlanFile (v3 ベース) =====
+
+export interface AcceptanceCriteria {
+  id: string;
   description: string;
-  hasReview: boolean;
-  reviewFilled: boolean;
-  reviewResult: ReviewResult | null;
-  reviewFixCount: number | null;
+  checked: boolean;
+}
+
+export interface AffectedFile {
+  path: string;
+  operation: 'create' | 'modify' | 'delete' | string;
+  summary: string;
 }
 
 export interface Todo {
+  id: string;
+  gate: string;
   title: string;
-  steps: Step[];
+  tdd: boolean;
+  dependencies: string[];
+  affectedFiles: AffectedFile[];
+}
+
+export interface GateReview {
+  result: ReviewResult;
+  fixCount: number;
+  summary: string;
 }
 
 export interface Gate {
   id: string;
   title: string;
+  summary: string;
+  dependencies: string[];
+  goal: { what: string; why: string };
+  constraints: { must: string[]; mustNot: string[] };
+  acceptanceCriteria: AcceptanceCriteria[];
   todos: Todo[];
+  review: GateReview | null;
+  passed: boolean;
+}
+
+export interface PlanProgress {
+  gatesPassed: number;
+  gatesTotal: number;
+  currentGate: string | null;
+  currentGateAC: { passed: number; total: number };
 }
 
 export interface PlanFile {
@@ -33,15 +59,9 @@ export interface PlanFile {
   reviewChecked: boolean;
   status: PlanStatus;
   gates: Gate[];
-  todos: Todo[];
-  progress: {
-    total: number;
-    completed: number;
-    percentage: number;
-  };
+  progress: PlanProgress;
   summary: string;
   rawMarkdown: string;
-  hasV2Tasks: boolean;
 }
 
 export interface ProjectConfig {
@@ -76,83 +96,86 @@ export interface ProjectsConfig {
   projects: ProjectConfig[];
 }
 
-// ===== tasks.json schema v2 =====
+// ===== tasks.json schema v3 =====
 
-export interface TasksJsonV2Spec {
+export interface TasksJsonV3Spec {
   slug: string;
   title: string;
   summary: string;
-  createdDate: string; // YYYY-MM-DD
-  specPath: string; // 通常 'spec.md'
+  createdDate: string;
+  specPath: string;
 }
 
-export interface TasksJsonV2Progress {
-  completed: number;
-  total: number;
+export interface TasksJsonV3Progress {
+  gatesPassed: number;
+  gatesTotal: number;
+  currentGate: string | null;
+  currentGateAC: { passed: number; total: number };
 }
 
-export interface TasksJsonV2Preflight {
+export interface TasksJsonV3Preflight {
   id: string;
   title: string;
   command: string;
   manual: boolean;
   reason: string;
+  ac: string;
+  checked: boolean;
 }
 
-export interface TasksJsonV2Gate {
+export interface TasksJsonV3AcceptanceCriteria {
   id: string;
-  title: string;
   description: string;
-  dependencies: string[];
-  passCondition: string;
+  checked: boolean;
 }
 
-export interface TasksJsonV2AffectedFile {
+export interface TasksJsonV3AffectedFile {
   path: string;
-  operation: string; // create | modify | delete 等
+  operation: string;
   summary: string;
 }
 
-export interface TasksJsonV2Review {
+export interface TasksJsonV3Todo {
+  id: string;
+  gate: string;
+  title: string;
+  tdd: boolean;
+  dependencies: string[];
+  affectedFiles: TasksJsonV3AffectedFile[];
+}
+
+export interface TasksJsonV3Review {
   result: ReviewResult;
   fixCount: number;
   summary: string;
 }
 
-export interface TasksJsonV2Step {
-  kind: StepKind;
-  title: string;
-  checked: boolean;
-  review?: TasksJsonV2Review | null;
-}
-
-export interface TasksJsonV2Todo {
+export interface TasksJsonV3Gate {
   id: string;
-  gate: string;
   title: string;
-  description: string;
-  tdd: boolean;
+  summary: string;
   dependencies: string[];
-  affectedFiles: TasksJsonV2AffectedFile[];
-  impl: string;
-  relatedIssues: string[];
-  steps: TasksJsonV2Step[];
+  goal: { what: string; why: string };
+  constraints: { must: string[]; mustNot: string[] };
+  acceptanceCriteria: TasksJsonV3AcceptanceCriteria[];
+  todos: TasksJsonV3Todo[];
+  review: TasksJsonV3Review | null;
+  passed: boolean;
 }
 
-export interface TasksJsonV2Metadata {
+export interface TasksJsonV3Metadata {
   createdAt: string;
   totalGates: number;
   totalTodos: number;
 }
 
-export interface TasksJsonV2 {
-  schemaVersion: 2;
-  spec: TasksJsonV2Spec;
+export interface TasksJsonV3 {
+  schemaVersion: 3;
+  spec: TasksJsonV3Spec;
   status: PlanStatus;
   reviewChecked: boolean;
-  progress: TasksJsonV2Progress;
-  preflight: TasksJsonV2Preflight[];
-  gates: TasksJsonV2Gate[];
-  todos: TasksJsonV2Todo[];
-  metadata: TasksJsonV2Metadata;
+  progress: TasksJsonV3Progress;
+  preflight: TasksJsonV3Preflight[];
+  gates: TasksJsonV3Gate[];
+  metadata: TasksJsonV3Metadata;
 }

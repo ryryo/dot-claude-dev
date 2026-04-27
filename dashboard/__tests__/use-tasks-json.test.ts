@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
-import type { TasksJsonV2 } from '../lib/types';
+import type { TasksJsonV3 } from '../lib/types';
 
-function makeSample(slug = 'demo'): TasksJsonV2 {
+function makeSample(slug = 'demo'): TasksJsonV3 {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     spec: {
       slug,
       title: 'デモ仕様',
@@ -15,13 +15,30 @@ function makeSample(slug = 'demo'): TasksJsonV2 {
     },
     status: 'in-progress',
     reviewChecked: false,
-    progress: { completed: 1, total: 2 },
+    progress: {
+      gatesPassed: 0,
+      gatesTotal: 1,
+      currentGate: 'A',
+      currentGateAC: { passed: 0, total: 1 },
+    },
     preflight: [],
-    gates: [],
-    todos: [],
+    gates: [
+      {
+        id: 'A',
+        title: 'Gate A',
+        summary: '',
+        dependencies: [],
+        goal: { what: 'do something', why: 'because' },
+        constraints: { must: [], mustNot: [] },
+        acceptanceCriteria: [{ id: 'A.AC1', description: 'tested', checked: false }],
+        todos: [],
+        review: null,
+        passed: false,
+      },
+    ],
     metadata: {
       createdAt: '2026-04-14T00:00:00Z',
-      totalGates: 0,
+      totalGates: 1,
       totalTodos: 0,
     },
   };
@@ -33,7 +50,7 @@ type MockFetchResponse = {
   json: () => Promise<unknown>;
 };
 
-function okResponse(data: TasksJsonV2): MockFetchResponse {
+function okResponse(data: TasksJsonV3): MockFetchResponse {
   return {
     ok: true,
     status: 200,
@@ -193,13 +210,18 @@ describe('useTasksJson', () => {
     const firstSample = makeSample('plan-a');
     const reloadedSample = {
       ...makeSample('plan-a'),
-      progress: { completed: 2, total: 2 },
+      progress: {
+        gatesPassed: 1,
+        gatesTotal: 1,
+        currentGate: null,
+        currentGateAC: { passed: 1, total: 1 },
+      },
       metadata: {
         createdAt: '2026-04-14T00:00:00Z',
         totalGates: 1,
         totalTodos: 1,
       },
-    } satisfies TasksJsonV2;
+    } satisfies TasksJsonV3;
     const reloadDeferred = createDeferred<MockFetchResponse>();
 
     vi.mocked(global.fetch)

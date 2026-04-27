@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { TasksJsonV2 } from './types';
+import type { TasksJsonV3 } from './types';
 
 export type UseTasksJsonState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'success'; data: TasksJsonV2 }
+  | { status: 'success'; data: TasksJsonV3 }
   | { status: 'error'; message: string };
 
 export interface UseTasksJsonArgs {
@@ -17,7 +17,7 @@ export interface UseTasksJsonArgs {
   enabled: boolean;
 }
 
-const cache = new Map<string, TasksJsonV2>();
+const cache = new Map<string, TasksJsonV3>();
 
 function cacheKey(args: { owner: string; repo: string; slug: string }) {
   return `${args.owner}/${args.repo}#${args.slug}`;
@@ -52,7 +52,7 @@ export function useTasksJson(
         throw new Error(body.error ?? `HTTP ${res.status}`);
       }
 
-      const data = (await res.json()) as TasksJsonV2;
+      const data = (await res.json()) as TasksJsonV3;
       if (ticket !== tickRef.current) return;
 
       cache.set(key, data);

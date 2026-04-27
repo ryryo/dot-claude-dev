@@ -1,6 +1,5 @@
 import { loadPlanFromTasksJson } from './plan-json-loader';
-import { parsePlanFile } from './plan-parser';
-import type { GitHubContent, GitHubRepo, PlanFile, TasksJsonV2 } from './types';
+import type { GitHubContent, GitHubRepo, PlanFile, TasksJsonV3 } from './types';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_REVALIDATE_SECONDS = 300;
@@ -61,35 +60,14 @@ export async function fetchPlanFiles(owner: string, repo: string): Promise<PlanF
 
   const plans = await Promise.all(
     sorted.map(async (entry) => {
-      if (entry.type === 'file' && entry.name.endsWith('.md')) {
-        const content = await fetchFileContent(owner, repo, entry.path);
-        return parsePlanFile(content, entry.path, projectName);
+      if (entry.type !== 'dir') {
+        return null;
       }
 
-      if (entry.type === 'dir') {
-        const tasksJsonPath = `${entry.path}/tasks.json`;
-        const specPath = `${entry.path}/spec.md`;
+      const tasksJsonPath = `${entry.path}/tasks.json`;
+      const specPath = `${entry.path}/spec.md`;
 
-        // 1. tasks.json を試す（v2 対応）
-        const v2Plan = await tryLoadV2(owner, repo, tasksJsonPath, specPath, projectName);
-        if (v2Plan) {
-          return v2Plan;
-        }
-
-        // 2. レガシー spec.md パス
-        try {
-          const content = await fetchFileContent(owner, repo, specPath);
-          return parsePlanFile(content, specPath, projectName);
-        } catch (error) {
-          if (isFileNotFoundError(error)) {
-            return null;
-          }
-
-          throw error;
-        }
-      }
-
-      return null;
+      return tryLoadV3(owner, repo, tasksJsonPath, specPath, projectName);
     })
   );
 
@@ -143,15 +121,15 @@ export async function fetchFileContent(owner: string, repo: string, path: string
 }
 
 /**
- * tasks.json を試行し、schemaVersion >= 2 なら PlanFile を返す。
- * v1 または 404 の場合は null を返してフォールバック。
+ * tasks.json を試行し、schemaVersion === 3 なら PlanFile を返す。
+ * v1/v2 または 404 の場合は null を返してフォールバック。
  */
-async function tryLoadV2(
+async function tryLoadV3(
   owner: string,
   repo: string,
   tasksJsonPath: string,
   specPath: string,
-  projectName: string
+  projectName: string,
 ): Promise<PlanFile | null> {
   let rawContent: string;
   try {
@@ -170,7 +148,7 @@ async function tryLoadV2(
     return null;
   }
 
-  if (!isV2TasksJson(parsed)) {
+  if (!isV3TasksJson(parsed)) {
     return null;
   }
 
@@ -184,8 +162,8 @@ async function tryLoadV2(
   return loadPlanFromTasksJson(parsed, specPath, projectName, specContent);
 }
 
-function isV2TasksJson(value: unknown): value is TasksJsonV2 {
+function isV3TasksJson(value: unknown): value is TasksJsonV3 {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
-  return typeof v.schemaVersion === 'number' && v.schemaVersion >= 2;
+  return v.schemaVersion === 3;
 }

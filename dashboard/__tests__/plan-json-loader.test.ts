@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { loadPlanFromTasksJson } from '../lib/plan-json-loader';
-import type { TasksJsonV2 } from '../lib/types';
+import type { TasksJsonV3 } from '../lib/types';
 
-function makeSample(): TasksJsonV2 {
+function makeSample(): TasksJsonV3 {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     spec: {
       slug: 'demo',
       title: 'デモ仕様書',
@@ -14,61 +14,69 @@ function makeSample(): TasksJsonV2 {
     },
     status: 'in-progress',
     reviewChecked: false,
-    progress: { completed: 2, total: 4 },
+    progress: {
+      gatesPassed: 1,
+      gatesTotal: 2,
+      currentGate: 'B',
+      currentGateAC: { passed: 1, total: 3 },
+    },
     preflight: [],
     gates: [
       {
         id: 'A',
         title: 'データ層',
-        description: 'スキーマ整備',
+        summary: 'スキーマ整備',
         dependencies: [],
-        passCondition: '全 Review PASS',
+        goal: { what: 'items を CRUD できる', why: '後続 API の前提' },
+        constraints: { must: ['drizzle-orm を使う'], mustNot: ['既存テーブルを変更しない'] },
+        acceptanceCriteria: [
+          { id: 'A.AC1', description: 'type-check 0 errors', checked: true },
+          { id: 'A.AC2', description: 'unit test GREEN', checked: true },
+        ],
+        todos: [
+          {
+            id: 'A1',
+            gate: 'A',
+            title: '[TDD] items スキーマ',
+            tdd: true,
+            dependencies: [],
+            affectedFiles: [{ path: 'db/schema/items.ts', operation: 'create', summary: 'items テーブル' }],
+          },
+        ],
+        review: { result: 'PASSED', fixCount: 0, summary: 'OK' },
+        passed: true,
       },
       {
         id: 'B',
         title: 'API 層',
-        description: '',
+        summary: 'POST /api',
         dependencies: ['A'],
-        passCondition: '全 Review PASS',
+        goal: { what: 'API ハンドラ', why: 'クライアント連携' },
+        constraints: { must: [], mustNot: [] },
+        acceptanceCriteria: [
+          { id: 'B.AC1', description: 'POST 200 を返す', checked: true },
+          { id: 'B.AC2', description: 'バリデーション動作', checked: false },
+          { id: 'B.AC3', description: 'E2E test', checked: false },
+        ],
+        todos: [
+          {
+            id: 'B1',
+            gate: 'B',
+            title: 'POST /api ハンドラ',
+            tdd: false,
+            dependencies: ['A1'],
+            affectedFiles: [{ path: 'app/api/items/route.ts', operation: 'create', summary: 'POST ハンドラ' }],
+          },
+        ],
+        review: null,
+        passed: false,
       },
     ],
-    todos: [
-      {
-        id: 'A1',
-        gate: 'A',
-        title: '[TDD] スキーマ定義',
-        description: 'items テーブルを作成',
-        tdd: true,
-        dependencies: [],
-        affectedFiles: [],
-        impl: '...',
-        relatedIssues: [],
-        steps: [
-          { kind: 'impl', title: 'Step 1 — IMPL', checked: true },
-          { kind: 'review', title: 'Step 2 — Review', checked: true, review: { result: 'PASSED', fixCount: 0, summary: 'OK' } },
-        ],
-      },
-      {
-        id: 'B1',
-        gate: 'B',
-        title: 'POST /api',
-        description: 'ハンドラ実装',
-        tdd: false,
-        dependencies: ['A1'],
-        affectedFiles: [],
-        impl: '...',
-        relatedIssues: [],
-        steps: [
-          { kind: 'impl', title: 'Step 1 — IMPL', checked: false },
-          { kind: 'review', title: 'Step 2 — Review', checked: false, review: null },
-        ],
-      },
-    ],
-    metadata: { createdAt: '', totalGates: 2, totalTodos: 2 },
+    metadata: { createdAt: '2026-04-27T00:00:00Z', totalGates: 2, totalTodos: 2 },
   };
 }
 
-describe('loadPlanFromTasksJson', () => {
+describe('loadPlanFromTasksJson (v3)', () => {
   it('spec メタデータを PlanFile にマッピングする', () => {
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.title).toBe('デモ仕様書');
@@ -85,84 +93,55 @@ describe('loadPlanFromTasksJson', () => {
     expect(plan.reviewChecked).toBe(false);
   });
 
-  it('progress を percentage 付きで計算する', () => {
+  it('progress を v3 シェイプ (gatesPassed/gatesTotal/currentGate/currentGateAC) で展開する', () => {
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    expect(plan.progress).toEqual({ completed: 2, total: 4, percentage: 50 });
+    expect(plan.progress).toEqual({
+      gatesPassed: 1,
+      gatesTotal: 2,
+      currentGate: 'B',
+      currentGateAC: { passed: 1, total: 3 },
+    });
   });
 
-  it('Gate ごとに Todo を紐付ける', () => {
+  it('Gate ごとに goal/constraints/acceptanceCriteria/review/passed/todos を保持する', () => {
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
     expect(plan.gates).toHaveLength(2);
-    expect(plan.gates[0].id).toBe('A');
-    expect(plan.gates[0].todos).toHaveLength(1);
-    expect(plan.gates[0].todos[0].title).toBe('[TDD] スキーマ定義');
-    expect(plan.gates[1].todos[0].title).toBe('POST /api');
+
+    const a = plan.gates[0];
+    expect(a.id).toBe('A');
+    expect(a.goal).toEqual({ what: 'items を CRUD できる', why: '後続 API の前提' });
+    expect(a.constraints.must).toEqual(['drizzle-orm を使う']);
+    expect(a.constraints.mustNot).toEqual(['既存テーブルを変更しない']);
+    expect(a.acceptanceCriteria).toHaveLength(2);
+    expect(a.acceptanceCriteria[0]).toEqual({ id: 'A.AC1', description: 'type-check 0 errors', checked: true });
+    expect(a.review).toEqual({ result: 'PASSED', fixCount: 0, summary: 'OK' });
+    expect(a.passed).toBe(true);
+    expect(a.todos).toHaveLength(1);
+    expect(a.todos[0].title).toBe('[TDD] items スキーマ');
   });
 
-  it('各 Todo に impl step と review step を生成する', () => {
+  it('review が null の Gate はそのまま null を保持する', () => {
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    const todoA = plan.gates[0].todos[0];
-    expect(todoA.steps).toHaveLength(2);
-    expect(todoA.steps[0].kind).toBe('impl');
-    expect(todoA.steps[0].checked).toBe(true);
-    expect(todoA.steps[1].kind).toBe('review');
-    expect(todoA.steps[1].checked).toBe(true);
-    expect(todoA.steps[1].hasReview).toBe(true);
-    expect(todoA.steps[1].reviewFilled).toBe(true);
-    expect(todoA.steps[1].reviewResult).toBe('PASSED');
-    expect(todoA.steps[1].reviewFixCount).toBe(0);
+    expect(plan.gates[1].review).toBeNull();
+    expect(plan.gates[1].passed).toBe(false);
   });
 
-  it('Review 未記入のとき reviewFilled: false', () => {
+  it('Todo は軽量シェイプ (id/gate/title/tdd/dependencies/affectedFiles) を保持する', () => {
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    const todoB = plan.gates[1].todos[0];
-    expect(todoB.steps[1].hasReview).toBe(true);
-    expect(todoB.steps[1].reviewFilled).toBe(false);
-    expect(todoB.steps[1].reviewResult).toBeNull();
-  });
-
-  it('description は Todo レベルの description を Step に展開', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    const todoA = plan.gates[0].todos[0];
-    expect(todoA.steps[0].description).toBe('items テーブルを作成');
-  });
-
-  it('todos (flat list) も Gate と同じ順序で取得できる', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    expect(plan.todos).toHaveLength(2);
-    expect(plan.todos[0].title).toBe('[TDD] スキーマ定義');
-    expect(plan.todos[1].title).toBe('POST /api');
-  });
-
-  it('completed 状態の場合 percentage: 100', () => {
-    const data = makeSample();
-    data.status = 'completed';
-    data.progress = { completed: 4, total: 4 };
-    data.todos[1].steps[0].checked = true;
-    data.todos[1].steps[1].checked = true;
-    data.todos[1].steps[1].review = { result: 'PASSED', fixCount: 1, summary: '修正後 OK' };
-    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    expect(plan.progress.percentage).toBe(100);
-    expect(plan.status).toBe('completed');
-  });
-
-  it('total 0 のとき percentage: 0', () => {
-    const data = makeSample();
-    data.progress = { completed: 0, total: 0 };
-    data.todos = [];
-    data.gates = [];
-    const plan = loadPlanFromTasksJson(data, 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    expect(plan.progress.percentage).toBe(0);
+    const todo = plan.gates[0].todos[0];
+    expect(todo).toEqual({
+      id: 'A1',
+      gate: 'A',
+      title: '[TDD] items スキーマ',
+      tdd: true,
+      dependencies: [],
+      affectedFiles: [{ path: 'db/schema/items.ts', operation: 'create', summary: 'items テーブル' }],
+    });
   });
 
   it('rawMarkdown に渡した spec.md 内容がそのまま格納される', () => {
     const specContent = '# Demo Spec\n\nThis is the spec.';
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', specContent);
     expect(plan.rawMarkdown).toBe(specContent);
-  });
-
-  it('v2 tasks 由来の PlanFile として hasV2Tasks: true を返す', () => {
-    const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', '');
-    expect(plan.hasV2Tasks).toBe(true);
   });
 });

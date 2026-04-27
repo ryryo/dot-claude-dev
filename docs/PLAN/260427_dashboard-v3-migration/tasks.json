@@ -7,12 +7,12 @@
     "createdDate": "2026-04-27",
     "specPath": "spec.md"
   },
-  "status": "not-started",
+  "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 0,
+    "gatesPassed": 1,
     "gatesTotal": 4,
-    "currentGate": "A",
+    "currentGate": "B",
     "currentGateAC": { "passed": 0, "total": 5 }
   },
   "preflight": [],
@@ -44,11 +44,11 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "A.AC1", "description": "`grep -r \"TasksJsonV2\" dashboard/` のヒット数が 0", "checked": false },
-        { "id": "A.AC2", "description": "`vitest run dashboard/__tests__/tasks-route.test.ts` が GREEN で、schemaVersion 1/2 入力に対し 422 を返すケースを含む", "checked": false },
-        { "id": "A.AC3", "description": "`vitest run dashboard/__tests__/plan-json-loader.test.ts` が GREEN で、v3 fixture 入力に対し PlanFile.gates[0] に goal/constraints/acceptanceCriteria/review/passed が含まれることを検証している", "checked": false },
-        { "id": "A.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
-        { "id": "A.AC5", "description": "`grep -r \"hasV2Tasks\" dashboard/` のヒット数が 0", "checked": false }
+        { "id": "A.AC1", "description": "`grep -r \"TasksJsonV2\" dashboard/` のヒット数が 0", "checked": true },
+        { "id": "A.AC2", "description": "`vitest run dashboard/__tests__/tasks-route.test.ts` が GREEN で、schemaVersion 1/2 入力に対し 422 を返すケースを含む", "checked": true },
+        { "id": "A.AC3", "description": "`vitest run dashboard/__tests__/plan-json-loader.test.ts` が GREEN で、v3 fixture 入力に対し PlanFile.gates[0] に goal/constraints/acceptanceCriteria/review/passed が含まれることを検証している", "checked": true },
+        { "id": "A.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
+        { "id": "A.AC5", "description": "`grep -r \"hasV2Tasks\" dashboard/` のヒット数が 0", "checked": true }
       ],
       "todos": [
         {
@@ -103,8 +103,12 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "v3 型・API ガード・loader の刷新を完了。grep TasksJsonV2 / hasV2Tasks 0 hits、tasks-route.test.ts 9件、plan-json-loader.test.ts 7件 GREEN、lint 0 errors。Gate A スコープ堅持のため UI は最小コンパイル fix のみ"
+      },
+      "passed": true
     },
     {
       "id": "B",
