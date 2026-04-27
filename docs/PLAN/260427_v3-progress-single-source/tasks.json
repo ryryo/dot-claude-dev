@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 3,
+  "spec": {
+    "slug": "v3-progress-single-source",
+    "title": "tasks.json `progress` / `metadata` を gates 由来の derive 値に一本化する",
+    "summary": "tasks.json schemaVersion 3 の `progress` / `metadata` ブロックを廃止し、dashboard ローダー側で gates[] から動的計算するように再設計する。同時に sidebar の集計対象を `status === in-progress` のプランのみに限定する。",
+    "createdDate": "2026-04-27",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": {
+    "gatesPassed": 0,
+    "gatesTotal": 5,
+    "currentGate": "A",
+    "currentGateAC": { "passed": 0, "total": 5 }
+  },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "dashboard loader を gates[] から derive 化する",
+      "summary": "plan-json-loader が tasks.json の `progress` を読まず、`gates[]` から `computeProgress` で都度計算するようにする",
+      "dependencies": [],
+      "goal": {
+        "what": "`dashboard/lib/plan-json-loader.ts` に純粋関数 `computeProgress(gates: Gate[]): PlanProgress` を実装し、`convertProgress(tasksJson.progress)` 呼び出しを置換する。空 / 全完了 / 一部完了 / 全未通過の 4 状態すべてで一貫した結果を返す",
+        "why": "`progress` を tasks.json と二重管理する denormalized state を排除し、`gates[]` を Single Source of Truth として確立する。これにより全完了プランで起きていた 'AC 0/0' 表示バグが構造的に消え、今後 LLM agent が同期を間違えても dashboard 側に影響が出なくなる"
+      },
+      "constraints": {
+        "must": [
+          "`computeProgress(gates)` を `dashboard/lib/plan-json-loader.ts` 内の純粋関数として実装する（副作用なし、入力 gates のみに依存）",
+          "gates が空配列のとき `{ gatesPassed: 0, gatesTotal: 0, currentGate: null, currentGateAC: { passed: 0, total: 0 } }` を返す",
+          "全 Gate `passed === true` のとき `currentGate: null` かつ `currentGateAC` は最後の Gate の `acceptanceCriteria` の checked/total（5/5 表示要件）",
+          "全 Gate `passed === false` のとき `currentGate` は最初の Gate の id、`currentGateAC` は最初の Gate の AC",
+          "一部 passed のとき `currentGate` は最初の `passed === false` の Gate.id、`currentGateAC` はその Gate の AC",
+          "`loadPlanFromTasksJson` から `convertProgress(tasksJson.progress)` 呼び出しを削除し `computeProgress(gates)` に置換する",
+          "tasks.json 側の `progress` フィールドを参照しない（読まない）",
+          "vitest テスト `dashboard/__tests__/plan-json-loader.test.ts` に computeProgress の 4 ケース（empty / 全未通過 / 一部通過 / 全通過）を追加する"
+        ],
+        "mustNot": [
+          "`tasksJson.progress` を if 分岐で読む (どんな fallback も含めて)",
+          "`dashboard/lib/types.ts` から `TasksJsonV3Progress` / `TasksJsonV3Metadata` 型をこの Gate で削除する（Gate E の責務）",
+          "`dashboard/lib/types.ts` の `PlanProgress` 型を変更する（UI 側 contract 互換性維持）",
+          "isV3TasksJson の検証を変更する（`schemaVersion === 3` のみで十分）"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "A.AC1", "description": "`cd dashboard && bunx vitest run __tests__/plan-json-loader.test.ts` が GREEN で、computeProgress の 4 ケース（gates 空 / 全未通過 / 一部通過 / 全完了）すべてのテストが含まれる", "checked": false },
+        { "id": "A.AC2", "description": "`grep -nE 'convertProgress|tasksJson\\.progress' dashboard/lib/plan-json-loader.ts` が 0 ヒット", "checked": false },
+        { "id": "A.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "A.AC4", "description": "`cd dashboard && bun run build` が成功（型エラー 0）", "checked": false },
+        { "id": "A.AC5", "description": "dashboard 起動後、`docs/PLAN/260427_dashboard-v3-migration/` の PLAN カードに「AC 5/5」（または該当 Gate の最終 AC 充足数）が表示される（手動）", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "A1",
+          "gate": "A",
+          "title": "[TDD] `computeProgress(gates)` 純粋関数を実装し、4 状態のケースで vitest テストを書く",
+          "tdd": true,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": "dashboard/lib/plan-json-loader.ts", "operation": "modify", "summary": "computeProgress 純粋関数の追加" },
+            { "path": "dashboard/__tests__/plan-json-loader.test.ts", "operation": "modify", "summary": "computeProgress の 4 ケーステスト追加" }
+          ]
+        },
+        {
+          "id": "A2",
+          "gate": "A",
+          "title": "[SIMPLE] `convertProgress` を削除し `loadPlanFromTasksJson` 内の呼び出しを `computeProgress(gates)` に置換",
+          "tdd": false,
+          "dependencies": ["A1"],
+          "affectedFiles": [
+            { "path": "dashboard/lib/plan-json-loader.ts", "operation": "modify", "summary": "convertProgress 削除と呼び出し置換" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "B",
+      "title": "UI 全完了表示 + sidebar 集計を進行中プランのみに限定",
+      "summary": "plan-card / plan-table の 5/5 表示を loader 経由で自動化し、sidebar の現 Gate AC 進捗を `status === in-progress` プランのみで集計するロジックを純粋関数に抽出する",
+      "dependencies": ["A"],
+      "goal": {
+        "what": "`dashboard/lib/page-stats.ts` に `computeSidebarStats(plans)` を新設し、`app/page.tsx` の sidebar 集計を置換する。in-progress プランのみを対象とする集計ロジックを vitest で検証する",
+        "why": "全完了 / 未着手プランの 0 値が混ざると分子分母の意味が薄れるため、sidebar の「現 Gate AC 進捗」を「進行中作業の負荷」を測る指標として再定義する。集計ロジックを純粋関数として抽出することで vitest で機械検証可能にする"
+      },
+      "constraints": {
+        "must": [
+          "`dashboard/lib/page-stats.ts` を新規作成し `computeSidebarStats(plans: PlanFile[]): SidebarStats` を export する",
+          "SidebarStats 型は `{ totalGates, passedGates, totalCurrentAc, passedCurrentAc, inProgressCount }` を含む",
+          "`totalCurrentAc` / `passedCurrentAc` は `plan.status === 'in-progress'` のプランのみを集計対象とする",
+          "`totalGates` / `passedGates` は全プランを集計対象とする（Gate 進捗は overall を見せたい）",
+          "`app/page.tsx` の既存 sidebar 集計コード（`totalCurrentAc` / `passedCurrentAc` / `acProgress` 計算）を `computeSidebarStats` 呼び出しに置換する",
+          "sidebar の表示ラベルを「現 Gate AC 進捗（進行中 N 件）」のように in-progress 件数を併記する",
+          "`dashboard/__tests__/page-stats.test.ts` を新規作成し、(1) 全プラン in-progress / (2) 全プラン completed / (3) 混在 / (4) 空配列 の 4 ケースを vitest で検証する",
+          "percent 計算 (`overallProgress` / `acProgress`) は呼び出し側 (`app/page.tsx`) で `computeSidebarStats` の戻り値から derive する。`SidebarStats` 型は raw な分子分母 (`totalGates` / `passedGates` / `totalCurrentAc` / `passedCurrentAc` / `inProgressCount`) のみを返す"
+        ],
+        "mustNot": [
+          "`currentGateAC.total === 0 のとき非表示` のような数値ハックを残す",
+          "sidebar 集計を `app/page.tsx` 内に inline で書き戻す（純粋関数として抽出する）",
+          "`plan-card.tsx` / `plan-table.tsx` の AC 表示ロジックを変更する（loader 由来で自動的に正しい値が届く）",
+          "`SidebarStats` 型に percent (`overallProgress` / `acProgress`) フィールドを含める"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "B.AC1", "description": "`cd dashboard && bunx vitest run __tests__/page-stats.test.ts` が GREEN で、全 in-progress / 全 completed / 混在 / 空 の 4 ケースすべてのテストが含まれる", "checked": false },
+        { "id": "B.AC2", "description": "`grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている", "checked": false },
+        { "id": "B.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "B.AC4", "description": "`cd dashboard && bun run build` が成功", "checked": false },
+        { "id": "B.AC5", "description": "dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）", "checked": false },
+        { "id": "B.AC6", "description": "dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "B1",
+          "gate": "B",
+          "title": "[TDD] `computeSidebarStats(plans)` 純粋関数を `dashboard/lib/page-stats.ts` に新設し vitest で 4 ケース検証",
+          "tdd": true,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": "dashboard/lib/page-stats.ts", "operation": "create", "summary": "computeSidebarStats 純粋関数" },
+            { "path": "dashboard/__tests__/page-stats.test.ts", "operation": "create", "summary": "4 ケースの vitest" }
+          ]
+        },
+        {
+          "id": "B2",
+          "gate": "B",
+          "title": "`app/page.tsx` の sidebar 集計を `computeSidebarStats` 呼び出しに置換 + 表示ラベル調整",
+          "tdd": false,
+          "dependencies": ["B1"],
+          "affectedFiles": [
+            { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "sidebar 集計を純粋関数呼び出しに置換、in-progress 件数ラベル追加" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "C",
+      "title": "skill / template / schema から `progress` と `metadata` を撤去する",
+      "summary": "/dev:spec / /dev:spec-run skill が `progress` / `metadata` を生成・更新しないように template / schema doc / SKILL.md / plan-reviewer agent を改訂する",
+      "dependencies": ["A"],
+      "goal": {
+        "what": "新規 /dev:spec が `progress` / `metadata` を含まない tasks.json を生成し、/dev:spec-run が `progress` を更新しないようにする。schema doc にも「dashboard で動的計算」を明記する",
+        "why": "二度と denormalized state を書き込ませないため。LLM agent の責務を最小化し、検証チェックを grep 系で機械化する"
+      },
+      "constraints": {
+        "must": [
+          "`.claude/skills/dev/spec/references/templates/tasks.template.json` から `progress` ブロックと `metadata` ブロックを完全削除する",
+          "`.claude/skills/dev/spec/references/templates/tasks-schema-v3.md` の「progress オブジェクト（ハイブリッド）」セクションと「metadata オブジェクト」セクションを削除し、代わりに「`progress` / `metadata` は dashboard で動的計算（tasks.json には保持しない）」を簡潔に記述する",
+          "tasks-schema-v3.md の「更新責任者表」から `progress` / `metadata` 行を削除（status は維持）",
+          "tasks-schema-v3.md のサンプル完全版 JSON から `progress` / `metadata` を削除",
+          "`.claude/skills/dev/spec/SKILL.md` の Step 6（117 行目近辺）から `progress: { gatesPassed: 0, ... }` 初期化指示を削除",
+          "`.claude/skills/dev/spec/SKILL.md` の Step 6（120 行目近辺）から `metadata.createdAt` / `metadata.totalGates` / `metadata.totalTodos` 初期化指示を削除",
+          "`.claude/skills/dev/spec/SKILL.md` の完了条件から `metadata` / `progress` 関連項目を削除（あれば）",
+          "`.claude/skills/dev/spec/agents/plan-reviewer.md` の Step 5 構造チェックから `progress` 形式チェック（77 行目）と `metadata.totalGates` / `metadata.totalTodos` 一致チェック（80 行目）の両方を削除する",
+          "`.claude/skills/dev/spec-run/SKILL.md` の Gate 通過条件・結果記録セクション（29 / 66 / 84-105 / 107-121 行目近辺）から `progress` 更新責務の記述を削除する。`status` の更新責務は維持する",
+          "`.claude/skills/dev/spec-run/SKILL.md` の `## status / progress の算出ルール` セクション（107-121 行目近辺）を `## status の算出ルール` に改名し、progress 計算行（`gatesTotal = ...` / `gatesPassed = ...` / `currentGate = ...` / `currentGateAC = ...`）のみ削除する。status の状態遷移条件（`gatesTotal == 0 → not-started` 等）は現行のまま維持する"
+        ],
+        "mustNot": [
+          "「metadata は廃止予定」のような中途半端な記述を残す（完全撤去）",
+          "`status` フィールドの更新責務を消す（`status` は人間ハンドオフ用に残る）",
+          "`reviewChecked` 関連の記述を消す",
+          "v1 / v2 への参照を増やす"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "C.AC1", "description": "`jq 'has(\"progress\") or has(\"metadata\")' .claude/skills/dev/spec/references/templates/tasks.template.json` が `false`", "checked": false },
+        { "id": "C.AC2", "description": "`grep -nE 'TasksJsonV3Metadata|metadata\\.createdAt|metadata\\.totalGates|metadata\\.totalTodos' .claude/skills/dev/spec/ .claude/skills/dev/spec-run/ -r` が 0 ヒット", "checked": false },
+        { "id": "C.AC3", "description": "`grep -nE '## progress|## metadata|progress オブジェクト|metadata オブジェクト' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` が 0 ヒット", "checked": false },
+        { "id": "C.AC4", "description": "`grep -n 'dashboard で動的計算' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` がヒット（新セクションが追加されている）", "checked": false },
+        { "id": "C.AC5", "description": "`grep -nE 'progress.*再計算|progress.*更新' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット", "checked": false },
+        { "id": "C.AC6", "description": "`.claude/skills/dev/spec/SKILL.md` の完了条件 `[ ] tasks.json の schemaVersion が 3 である` が残っており、`progress` / `metadata` 関連の完了条件は存在しないこと（grep で確認）", "checked": false },
+        { "id": "C.AC7", "description": "`grep -nE 'metadata\\.totalGates|metadata\\.totalTodos' .claude/skills/dev/spec/agents/plan-reviewer.md` が 0 ヒット", "checked": false },
+        { "id": "C.AC8", "description": "`grep -nE 'gatesTotal|gatesPassed|currentGateAC' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット（status 状態遷移の状態名のみ残る）", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "C1",
+          "gate": "C",
+          "title": "[SIMPLE] tasks.template.json から `progress` / `metadata` ブロックを削除",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": ".claude/skills/dev/spec/references/templates/tasks.template.json", "operation": "modify", "summary": "progress / metadata ブロック削除" }
+          ]
+        },
+        {
+          "id": "C2",
+          "gate": "C",
+          "title": "tasks-schema-v3.md の `progress` / `metadata` セクションを削除し、動的計算注記に置換",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": ".claude/skills/dev/spec/references/templates/tasks-schema-v3.md", "operation": "modify", "summary": "progress / metadata セクション削除 + 動的計算注記 + 更新責任者表更新 + サンプル JSON 修正" }
+          ]
+        },
+        {
+          "id": "C3",
+          "gate": "C",
+          "title": "[SIMPLE] dev:spec/SKILL.md Step 6 から `progress` / `metadata` 初期化指示を削除",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": ".claude/skills/dev/spec/SKILL.md", "operation": "modify", "summary": "Step 6 の progress / metadata 初期化指示削除" }
+          ]
+        },
+        {
+          "id": "C4",
+          "gate": "C",
+          "title": "[SIMPLE] plan-reviewer.md から `progress` 検証チェック削除",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": ".claude/skills/dev/spec/agents/plan-reviewer.md", "operation": "modify", "summary": "progress 検証チェック削除" }
+          ]
+        },
+        {
+          "id": "C5",
+          "gate": "C",
+          "title": "dev:spec-run/SKILL.md から `progress` 更新責務を削除（`status` は維持）",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": ".claude/skills/dev/spec-run/SKILL.md", "operation": "modify", "summary": "Gate 通過条件・結果記録セクションから progress 関連削除" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "D",
+      "title": "既存 v3 tasks.json から `progress` / `metadata` を一括削除する migration script",
+      "summary": "Node.js スクリプトを作成し、`docs/PLAN/*/tasks.json` のうち `schemaVersion === 3` のファイルから `progress` / `metadata` キーを削除する（dry-run 対応、spec.md 再生成込み）",
+      "dependencies": ["A", "C"],
+      "goal": {
+        "what": "`.claude/skills/dev/spec/scripts/migrate-progress.mjs` を作成し、--dry-run / 実行モード切替で v3 tasks.json から `progress` / `metadata` を削除する。実行後 `sync-spec-md.mjs` を呼び出して spec.md を再生成する",
+        "why": "既存 v3 tasks.json に書かれた値が今後の混乱の元になるため一度クリーンアップする。スクリプトを idempotent にして将来の v3 ファイル増加にも対応できるようにする"
+      },
+      "constraints": {
+        "must": [
+          "`.claude/skills/dev/spec/scripts/migrate-progress.mjs` を Node.js (ESM) で作成",
+          "コマンドライン引数: `[--dry-run] [<glob>]`。glob 省略時は `docs/PLAN/*/tasks.json` をデフォルト",
+          "対象ファイルごとに JSON.parse → `schemaVersion === 3` のみ処理（それ以外はスキップしてログ）",
+          "`progress` / `metadata` キーを削除した結果を JSON.stringify (indent 2) で書き戻す",
+          "`--dry-run` モードでは書き込まず、変更予定ファイル一覧と diff サマリのみ出力",
+          "実行モードでは各ファイル更新後に `node .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs <tasks.json-path>` を子プロセスで呼び出し spec.md を再生成",
+          "`.claude/skills/dev/spec/scripts/__tests__/migrate-progress.test.mjs` を vitest で作成し、(1) v3 ファイル → progress/metadata 削除、(2) v2 ファイル → スキップ、(3) progress/metadata なし v3 ファイル → 変更なし（idempotent）の 3 ケースを in-memory で検証",
+          "実行モードで全 v3 PLAN（現時点 2 件: 260427_dashboard-v3-migration / 260427_v3-progress-single-source）に適用する",
+          "`sync-spec-md.mjs` を Read して `progress` / `metadata` を参照していないことを事前確認する。参照があれば同 Gate で除去する"
+        ],
+        "mustNot": [
+          "`schemaVersion < 3` のファイルに対してキー削除を実行する",
+          "`gates` / `spec` / `status` / `reviewChecked` / `preflight` / `schemaVersion` を変更する",
+          "バックアップなし破壊的書き込み（dry-run でない実行は git diff で差分が見える状態で行う前提）"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "D.AC1", "description": "`bunx vitest run .claude/skills/dev/spec/scripts/__tests__/migrate-progress.test.mjs` が GREEN で、3 ケース（v3 削除 / v2 スキップ / idempotent）すべてのテストが含まれる", "checked": false },
+        { "id": "D.AC2", "description": "`node .claude/skills/dev/spec/scripts/migrate-progress.mjs --dry-run` を実行すると、対象 v3 ファイル一覧と削除予定キーが標準出力に出る（書き込みは発生しない）", "checked": false },
+        { "id": "D.AC3", "description": "実行モード適用後、`for f in $(find docs/PLAN -name tasks.json); do grep -l '\"schemaVersion\": 3' \"$f\"; done | xargs jq 'has(\"progress\") or has(\"metadata\")'` が全 false", "checked": false },
+        { "id": "D.AC4", "description": "実行後 `git status docs/PLAN/*/spec.md` で spec.md の generated 領域も同期更新されていることが確認できる（少なくとも対象ファイルの mtime が更新されている、または diff が出る）", "checked": false },
+        { "id": "D.AC5", "description": "dashboard を再起動後、移行後 v3 PLAN（progress フィールドなし）が引き続き正常表示される（手動）", "checked": false },
+        { "id": "D.AC6", "description": "`grep -nE '\"progress\"|\"metadata\"' .claude/skills/dev/spec-run/scripts/sync-spec-md.mjs` が 0 ヒット（事前確認、または該当 Gate での修正完了）", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "D1",
+          "gate": "D",
+          "title": "[TDD] `migrate-progress.mjs` 本体（--dry-run 対応）と vitest テスト 3 ケース",
+          "tdd": true,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": ".claude/skills/dev/spec/scripts/migrate-progress.mjs", "operation": "create", "summary": "Node.js ESM migration script" },
+            { "path": ".claude/skills/dev/spec/scripts/__tests__/migrate-progress.test.mjs", "operation": "create", "summary": "vitest 3 ケース（in-memory）" }
+          ]
+        },
+        {
+          "id": "D2",
+          "gate": "D",
+          "title": "全 v3 tasks.json に migration を適用 + spec.md 再同期確認 + sync-spec-md.mjs の事前確認",
+          "tdd": false,
+          "dependencies": ["D1"],
+          "affectedFiles": [
+            { "path": "docs/PLAN/260427_dashboard-v3-migration/tasks.json", "operation": "modify", "summary": "progress / metadata 削除（migration script で）" },
+            { "path": "docs/PLAN/260427_v3-progress-single-source/tasks.json", "operation": "modify", "summary": "同上（自身も対象）" },
+            { "path": ".claude/skills/dev/spec-run/scripts/sync-spec-md.mjs", "operation": "modify", "summary": "事前確認のみ。`progress`/`metadata` 参照があれば削除（現時点では 0 ヒット見込み、D.AC6 で検証）" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "E",
+      "title": "dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤去",
+      "summary": "`dashboard/lib/types.ts` から denormalized state 型を削除し、`TasksJsonV3` interface から `progress` / `metadata` プロパティを除去する",
+      "dependencies": ["A"],
+      "goal": {
+        "what": "`TasksJsonV3Progress` / `TasksJsonV3Metadata` interface を削除し、`TasksJsonV3` interface から該当プロパティを除去する。残存参照を grep で 0 にする",
+        "why": "型レベルでも denormalized state を表現しないことで、将来の誤用を防ぐ。loader が gates derive しているため UI には影響しない"
+      },
+      "constraints": {
+        "must": [
+          "`dashboard/lib/types.ts` から `TasksJsonV3Progress` interface を削除",
+          "`dashboard/lib/types.ts` から `TasksJsonV3Metadata` interface を削除",
+          "`dashboard/lib/types.ts` の `TasksJsonV3` interface から `progress` / `metadata` プロパティを削除",
+          "`dashboard/` 配下の `TasksJsonV3Progress` / `TasksJsonV3Metadata` / `tasksJson.progress` / `tasksJson.metadata` 参照を grep で 0 になるまで除去する",
+          "`PlanProgress` 型は維持する（loader が computeProgress 結果を保持する内部型）",
+          "`cd dashboard && bun run build` が 0 errors",
+          "`cd dashboard && bun run lint` が 0 errors",
+          "`cd dashboard && bunx vitest run` が全 GREEN"
+        ],
+        "mustNot": [
+          "`PlanProgress` 型を変更する",
+          "互換用の deprecated alias 型（`type TasksJsonV3Metadata = unknown` 等）を残す",
+          "loader を再修正する（Gate A の責務）"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "E.AC1", "description": "`grep -nE 'TasksJsonV3Progress|TasksJsonV3Metadata' dashboard/ -r` が 0 ヒット", "checked": false },
+        { "id": "E.AC2", "description": "`grep -nE 'tasksJson\\.progress|tasksJson\\.metadata' dashboard/ -r` が 0 ヒット", "checked": false },
+        { "id": "E.AC3", "description": "`cd dashboard && bun run build` が成功（型エラー 0）", "checked": false },
+        { "id": "E.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "E.AC5", "description": "`cd dashboard && bunx vitest run` が全テスト GREEN", "checked": false },
+        { "id": "E.AC6", "description": "dashboard を起動して既存 v3 PLAN（progress 残存 / 削除済み 両方）が正常に表示される（手動）", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "E1",
+          "gate": "E",
+          "title": "[SIMPLE] types.ts から `TasksJsonV3Progress` / `TasksJsonV3Metadata` interface を削除し、`TasksJsonV3` から該当プロパティを除去（残存参照は E.AC1/AC2 の grep で検証）",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": "dashboard/lib/types.ts", "operation": "modify", "summary": "denormalized 型 2 つ削除 + TasksJsonV3 プロパティ削除（残存参照は AC grep で検証）" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-27T00:00:00Z",
+    "totalGates": 5,
+    "totalTodos": 12
+  }
+}
