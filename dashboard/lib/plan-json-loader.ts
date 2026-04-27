@@ -31,7 +31,7 @@ export function loadPlanFromTasksJson(
     reviewChecked: tasksJson.reviewChecked,
     status: tasksJson.status,
     gates,
-    progress: convertProgress(tasksJson.progress),
+    progress: computeProgress(gates),
     summary: tasksJson.spec.summary,
     rawMarkdown,
   };
@@ -84,11 +84,28 @@ function convertTodo(t: TasksJsonV3Todo): Todo {
   };
 }
 
-function convertProgress(p: TasksJsonV3['progress']): PlanProgress {
+export function computeProgress(gates: Gate[]): PlanProgress {
+  const gatesTotal = gates.length;
+  const gatesPassed = gates.filter((g) => g.passed).length;
+
+  if (gatesTotal === 0) {
+    return { gatesPassed: 0, gatesTotal: 0, currentGate: null, currentGateAC: { passed: 0, total: 0 } };
+  }
+
+  const allPassed = gatesPassed === gatesTotal;
+  const referenceGate = allPassed
+    ? gates[gates.length - 1]
+    : gates.find((g) => !g.passed)!;
+
+  const currentGate = allPassed ? null : referenceGate.id;
+  const acPassed = referenceGate.acceptanceCriteria.filter((ac) => ac.checked).length;
+  const acTotal = referenceGate.acceptanceCriteria.length;
+
   return {
-    gatesPassed: p.gatesPassed,
-    gatesTotal: p.gatesTotal,
-    currentGate: p.currentGate ?? null,
-    currentGateAC: { passed: p.currentGateAC.passed, total: p.currentGateAC.total },
+    gatesPassed,
+    gatesTotal,
+    currentGate,
+    currentGateAC: { passed: acPassed, total: acTotal },
   };
 }
+

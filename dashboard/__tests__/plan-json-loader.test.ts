@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadPlanFromTasksJson } from '../lib/plan-json-loader';
-import type { TasksJsonV3 } from '../lib/types';
+import { computeProgress, loadPlanFromTasksJson } from '../lib/plan-json-loader';
+import type { Gate, TasksJsonV3 } from '../lib/types';
 
 function makeSample(): TasksJsonV3 {
   return {
@@ -143,5 +143,66 @@ describe('loadPlanFromTasksJson (v3)', () => {
     const specContent = '# Demo Spec\n\nThis is the spec.';
     const plan = loadPlanFromTasksJson(makeSample(), 'docs/PLAN/demo/spec.md', 'owner/repo', specContent);
     expect(plan.rawMarkdown).toBe(specContent);
+  });
+});
+
+function makeGate(id: string, passed: boolean, acChecked: number, acTotal: number): Gate {
+  const acceptanceCriteria = Array.from({ length: acTotal }, (_, i) => ({
+    id: `${id}.AC${i + 1}`,
+    description: `AC ${i + 1}`,
+    checked: i < acChecked,
+  }));
+  return {
+    id,
+    title: `Gate ${id}`,
+    summary: '',
+    dependencies: [],
+    goal: { what: '', why: '' },
+    constraints: { must: [], mustNot: [] },
+    acceptanceCriteria,
+    todos: [],
+    review: null,
+    passed,
+  };
+}
+
+describe('computeProgress', () => {
+  it('gates が空のとき zero 値を返す', () => {
+    expect(computeProgress([])).toEqual({
+      gatesPassed: 0,
+      gatesTotal: 0,
+      currentGate: null,
+      currentGateAC: { passed: 0, total: 0 },
+    });
+  });
+
+  it('全 Gate が passed === false のとき最初の Gate を currentGate にする', () => {
+    const gates = [makeGate('A', false, 1, 3), makeGate('B', false, 0, 2)];
+    expect(computeProgress(gates)).toEqual({
+      gatesPassed: 0,
+      gatesTotal: 2,
+      currentGate: 'A',
+      currentGateAC: { passed: 1, total: 3 },
+    });
+  });
+
+  it('一部 passed のとき最初の passed === false の Gate を currentGate にする', () => {
+    const gates = [makeGate('A', true, 2, 2), makeGate('B', false, 1, 3)];
+    expect(computeProgress(gates)).toEqual({
+      gatesPassed: 1,
+      gatesTotal: 2,
+      currentGate: 'B',
+      currentGateAC: { passed: 1, total: 3 },
+    });
+  });
+
+  it('全 Gate が passed === true のとき currentGate: null で最後の Gate の AC を返す', () => {
+    const gates = [makeGate('A', true, 2, 2), makeGate('B', true, 5, 5)];
+    expect(computeProgress(gates)).toEqual({
+      gatesPassed: 2,
+      gatesTotal: 2,
+      currentGate: null,
+      currentGateAC: { passed: 5, total: 5 },
+    });
   });
 });

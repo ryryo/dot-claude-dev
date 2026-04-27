@@ -45,10 +45,10 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "A.AC1", "description": "`cd dashboard && bunx vitest run __tests__/plan-json-loader.test.ts` が GREEN で、computeProgress の 4 ケース（gates 空 / 全未通過 / 一部通過 / 全完了）すべてのテストが含まれる", "checked": false },
-        { "id": "A.AC2", "description": "`grep -nE 'convertProgress|tasksJson\\.progress' dashboard/lib/plan-json-loader.ts` が 0 ヒット", "checked": false },
-        { "id": "A.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
-        { "id": "A.AC4", "description": "`cd dashboard && bun run build` が成功（型エラー 0）", "checked": false },
+        { "id": "A.AC1", "description": "`cd dashboard && bunx vitest run __tests__/plan-json-loader.test.ts` が GREEN で、computeProgress の 4 ケース（gates 空 / 全未通過 / 一部通過 / 全完了）すべてのテストが含まれる", "checked": true },
+        { "id": "A.AC2", "description": "`grep -nE 'convertProgress|tasksJson\\.progress' dashboard/lib/plan-json-loader.ts` が 0 ヒット", "checked": true },
+        { "id": "A.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
+        { "id": "A.AC4", "description": "`cd dashboard && bun run build` が成功（型エラー 0）", "checked": true },
         { "id": "A.AC5", "description": "dashboard 起動後、`docs/PLAN/260427_dashboard-v3-migration/` の PLAN カードに「AC 5/5」（または該当 Gate の最終 AC 充足数）が表示される（手動）", "checked": false }
       ],
       "todos": [
