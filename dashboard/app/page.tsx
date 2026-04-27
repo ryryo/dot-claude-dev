@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { SizeBin } from "@/lib/plan-size"
+import { computeSidebarStats } from "@/lib/page-stats"
 import type { GitHubRepo, PlanFile, PlanStatus, RepoError } from "@/lib/types"
 import { clearTasksJsonCache } from "@/lib/use-tasks-json"
 
@@ -144,25 +145,9 @@ export default function Home() {
     )
   }, [filteredPlans])
 
-  const totalGates = filteredPlans.reduce(
-    (sum, plan) => sum + plan.progress.gatesTotal,
-    0
-  )
-  const passedGates = filteredPlans.reduce(
-    (sum, plan) => sum + plan.progress.gatesPassed,
-    0
-  )
-  const overallProgress = totalGates === 0 ? 0 : Math.round((passedGates / totalGates) * 100)
-  const totalCurrentAc = filteredPlans.reduce(
-    (sum, plan) => sum + plan.progress.currentGateAC.total,
-    0
-  )
-  const passedCurrentAc = filteredPlans.reduce(
-    (sum, plan) => sum + plan.progress.currentGateAC.passed,
-    0
-  )
-  const acProgress =
-    totalCurrentAc === 0 ? 0 : Math.round((passedCurrentAc / totalCurrentAc) * 100)
+  const stats = computeSidebarStats(filteredPlans)
+  const overallProgress = stats.totalGates === 0 ? 0 : Math.round((stats.passedGates / stats.totalGates) * 100)
+  const acProgress = stats.totalCurrentAc === 0 ? 0 : Math.round((stats.passedCurrentAc / stats.totalCurrentAc) * 100)
   const selectedProjectCount = selectedRepos.length
 
   if (reposLoading) {
@@ -220,17 +205,17 @@ export default function Home() {
             <span className="text-xs font-medium tabular-nums">{overallProgress}%</span>
           </div>
           <p className="mt-1 text-sm font-medium tabular-nums">
-            {passedGates}/{totalGates} 件
+            {stats.passedGates}/{stats.totalGates} 件
           </p>
         </div>
 
         <div className="rounded-lg bg-muted/50 p-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">現 Gate AC 進捗</p>
+            <p className="text-xs text-muted-foreground">現 Gate AC 進捗（進行中 {stats.inProgressCount} 件）</p>
             <span className="text-xs font-medium tabular-nums">{acProgress}%</span>
           </div>
           <p className="mt-1 text-sm font-medium tabular-nums">
-            {passedCurrentAc}/{totalCurrentAc} 件
+            {stats.passedCurrentAc}/{stats.totalCurrentAc} 件
           </p>
         </div>
       </div>

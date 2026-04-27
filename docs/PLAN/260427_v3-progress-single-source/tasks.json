@@ -13,7 +13,7 @@
     "gatesPassed": 1,
     "gatesTotal": 5,
     "currentGate": "B",
-    "currentGateAC": { "passed": 0, "total": 6 }
+    "currentGateAC": { "passed": 4, "total": 6 }
   },
   "preflight": [],
   "gates": [
@@ -105,10 +105,10 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "B.AC1", "description": "`cd dashboard && bunx vitest run __tests__/page-stats.test.ts` が GREEN で、全 in-progress / 全 completed / 混在 / 空 の 4 ケースすべてのテストが含まれる", "checked": false },
-        { "id": "B.AC2", "description": "`grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている", "checked": false },
-        { "id": "B.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
-        { "id": "B.AC4", "description": "`cd dashboard && bun run build` が成功", "checked": false },
+        { "id": "B.AC1", "description": "`cd dashboard && bunx vitest run __tests__/page-stats.test.ts` が GREEN で、全 in-progress / 全 completed / 混在 / 空 の 4 ケースすべてのテストが含まれる", "checked": true },
+        { "id": "B.AC2", "description": "`grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている", "checked": true },
+        { "id": "B.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
+        { "id": "B.AC4", "description": "`cd dashboard && bun run build` が成功", "checked": true },
         { "id": "B.AC5", "description": "dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）", "checked": false },
         { "id": "B.AC6", "description": "dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）", "checked": false }
       ],
