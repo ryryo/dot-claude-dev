@@ -323,14 +323,14 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - [x] **B.AC2**: `grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている
 - [x] **B.AC3**: `cd dashboard && bun run lint` が 0 errors
 - [x] **B.AC4**: `cd dashboard && bun run build` が成功
-- [ ] **B.AC5**: dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）
-- [ ] **B.AC6**: dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）
+- [x] **B.AC5**: dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）
+- [x] **B.AC6**: dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）
 
 **Todos** (2):
 - **B1**: [TDD] `computeSidebarStats(plans)` 純粋関数を `dashboard/lib/page-stats.ts` に新設し vitest で 4 ケース検証 — `dashboard/lib/page-stats.ts`, `dashboard/__tests__/page-stats.test.ts`
 - **B2**: `app/page.tsx` の sidebar 集計を `computeSidebarStats` 呼び出しに置換 + 表示ラベル調整 — `dashboard/app/page.tsx`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — computeSidebarStats 純粋関数を抽出し vitest 4 ケース GREEN。app/page.tsx の inline reduce を置換。手動確認: in-review プラン Gate 4/4 / チェック項目 6/6, sidebar 「進行中 1 件 4/6」で in-progress AC 総数 (B.AC6) と一致
 
 ### Gate C: skill / template / schema から `progress` と `metadata` を撤去する
 

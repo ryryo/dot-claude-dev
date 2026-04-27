@@ -10,10 +10,10 @@
   "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 1,
+    "gatesPassed": 2,
     "gatesTotal": 5,
-    "currentGate": "B",
-    "currentGateAC": { "passed": 4, "total": 6 }
+    "currentGate": "C",
+    "currentGateAC": { "passed": 0, "total": 8 }
   },
   "preflight": [],
   "gates": [
@@ -109,8 +109,8 @@
         { "id": "B.AC2", "description": "`grep -n 'computeSidebarStats' dashboard/app/page.tsx` がヒットし、旧 inline 集計（`totalCurrentAc` / `passedCurrentAc` の reduce）が削除されている", "checked": true },
         { "id": "B.AC3", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
         { "id": "B.AC4", "description": "`cd dashboard && bun run build` が成功", "checked": true },
-        { "id": "B.AC5", "description": "dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）", "checked": false },
-        { "id": "B.AC6", "description": "dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）", "checked": false }
+        { "id": "B.AC5", "description": "dashboard 起動後、in-review プラン（260427_dashboard-v3-migration）のカードに「AC 5/5」が表示されている（手動）", "checked": true },
+        { "id": "B.AC6", "description": "dashboard 起動後、sidebar の「現 Gate AC 進捗」の分母が in-progress プランの AC 総数に一致し、in-progress 件数のラベルが併記されている（手動）", "checked": true }
       ],
       "todos": [
         {
@@ -135,8 +135,8 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": { "result": "PASSED", "fixCount": 0, "summary": "computeSidebarStats 純粋関数を抽出し vitest 4 ケース GREEN。app/page.tsx の inline reduce を置換。手動確認: in-review プラン Gate 4/4 / チェック項目 6/6, sidebar 「進行中 1 件 4/6」で in-progress AC 総数 (B.AC6) と一致" },
+      "passed": true
     },
     {
       "id": "C",
