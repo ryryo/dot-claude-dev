@@ -147,16 +147,16 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
         return (
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="w-12 text-right text-[11px] tabular-nums text-muted-foreground">
-                G {gatesPassed}/{gatesTotal}
+              <span className="w-24 text-right text-[11px] tabular-nums text-muted-foreground">
+                Gate {gatesPassed}/{gatesTotal}
               </span>
               <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
                 <div className="h-full bg-primary" style={{ width: `${gatePct}%` }} />
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-12 text-right text-[11px] tabular-nums text-muted-foreground">
-                AC {currentGateAC.passed}/{currentGateAC.total}
+              <span className="w-24 text-right text-[11px] tabular-nums text-muted-foreground">
+                チェック項目 {currentGateAC.passed}/{currentGateAC.total}
               </span>
               <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
                 <div className="h-full bg-primary/70" style={{ width: `${acPct}%` }} />

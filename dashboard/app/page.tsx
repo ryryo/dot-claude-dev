@@ -211,7 +211,7 @@ export default function Home() {
 
         <div className="rounded-lg bg-muted/50 p-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">現 Gate AC 進捗（進行中 {stats.inProgressCount} 件）</p>
+            <p className="text-xs text-muted-foreground">現 Gate チェック項目 進捗（進行中 {stats.inProgressCount} 件）</p>
             <span className="text-xs font-medium tabular-nums">{acProgress}%</span>
           </div>
           <p className="mt-1 text-sm font-medium tabular-nums">

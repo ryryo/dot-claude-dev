@@ -196,7 +196,7 @@ function ReviewSection({ gate }: { gate: Gate }) {
       <section className="space-y-1.5">
         <h4 className="text-xs font-semibold uppercase text-muted-foreground">Review</h4>
         <p className="text-sm text-muted-foreground">
-          {isReadyForReview ? "AC を全て満たしています。レビュー待ち。" : "未レビュー (AC 未充足)"}
+          {isReadyForReview ? "チェック項目を全て満たしています。レビュー待ち。" : "未レビュー (チェック項目 未充足)"}
         </p>
       </section>
     )

@@ -133,7 +133,7 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
 
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="text-muted-foreground">
-                    {plan.progress.currentGate ? `現 Gate ${plan.progress.currentGate} · AC` : 'AC'}
+                    {plan.progress.currentGate ? `現 Gate ${plan.progress.currentGate} · チェック項目` : 'チェック項目'}
                   </span>
                   <span className="font-medium tabular-nums">
                     {plan.progress.currentGateAC.passed}/{plan.progress.currentGateAC.total}
