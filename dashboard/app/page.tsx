@@ -153,6 +153,16 @@ export default function Home() {
     0
   )
   const overallProgress = totalGates === 0 ? 0 : Math.round((passedGates / totalGates) * 100)
+  const totalCurrentAc = filteredPlans.reduce(
+    (sum, plan) => sum + plan.progress.currentGateAC.total,
+    0
+  )
+  const passedCurrentAc = filteredPlans.reduce(
+    (sum, plan) => sum + plan.progress.currentGateAC.passed,
+    0
+  )
+  const acProgress =
+    totalCurrentAc === 0 ? 0 : Math.round((passedCurrentAc / totalCurrentAc) * 100)
   const selectedProjectCount = selectedRepos.length
 
   if (reposLoading) {
@@ -203,14 +213,26 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="rounded-lg bg-muted/50 p-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Gate 進捗</p>
-          <span className="text-xs font-medium tabular-nums">{overallProgress}%</span>
+      <div className="space-y-2">
+        <div className="rounded-lg bg-muted/50 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Gate 進捗</p>
+            <span className="text-xs font-medium tabular-nums">{overallProgress}%</span>
+          </div>
+          <p className="mt-1 text-sm font-medium tabular-nums">
+            {passedGates}/{totalGates} 件
+          </p>
         </div>
-        <p className="mt-1 text-sm font-medium tabular-nums">
-          {passedGates}/{totalGates} 件
-        </p>
+
+        <div className="rounded-lg bg-muted/50 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">現 Gate AC 進捗</p>
+            <span className="text-xs font-medium tabular-nums">{acProgress}%</span>
+          </div>
+          <p className="mt-1 text-sm font-medium tabular-nums">
+            {passedCurrentAc}/{totalCurrentAc} 件
+          </p>
+        </div>
       </div>
 
       <div className="space-y-1">

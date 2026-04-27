@@ -131,6 +131,26 @@ export function PlanCard({ plan, expanded, onToggle, isNarrow, narrowFadeBg }: P
                   />
                 </div>
 
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="text-muted-foreground">
+                    {plan.progress.currentGate ? `現 Gate ${plan.progress.currentGate} · AC` : 'AC'}
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {plan.progress.currentGateAC.passed}/{plan.progress.currentGateAC.total}
+                  </span>
+                </div>
+
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="bg-primary/70 h-full rounded-full transition-[width]"
+                    style={{
+                      width: `${plan.progress.currentGateAC.total === 0
+                        ? 0
+                        : Math.round((plan.progress.currentGateAC.passed / plan.progress.currentGateAC.total) * 100)}%`,
+                    }}
+                  />
+                </div>
+
                 <p className="text-muted-foreground text-xs break-all">{plan.fileName}</p>
               </div>
             </div>

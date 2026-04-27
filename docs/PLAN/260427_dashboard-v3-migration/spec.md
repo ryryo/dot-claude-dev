@@ -348,11 +348,11 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - ❌ MUST NOT: v2 シェイプ用の表示分岐を残す
 
 **Acceptance Criteria**:
-- [ ] **B.AC1**: `grep -rn "hasV2Tasks\|progress\.completed\|progress\.total" dashboard/components dashboard/app` のヒット数が 0
-- [ ] **B.AC2**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **B.AC3**: `cd dashboard && npm run dev` 後にダッシュボードを開くと、PLAN カードに 'Gate 2/5 · AC 3/4' のような二段進捗が表示される (手動)
-- [ ] **B.AC4**: PLAN テーブルビュー (`/?view=table`) でも同等の Gate/AC 二段表示が出る (手動)
-- [ ] **B.AC5**: サイズヒストグラムが gatesTotal の値で集計され表示される (手動)
+- [x] **B.AC1**: `grep -rn "hasV2Tasks\|progress\.completed\|progress\.total" dashboard/components dashboard/app` のヒット数が 0
+- [x] **B.AC2**: `cd dashboard && bun run lint` が 0 errors
+- [x] **B.AC3**: `cd dashboard && npm run dev` 後にダッシュボードを開くと、PLAN カードに 'Gate 2/5 · AC 3/4' のような二段進捗が表示される (手動)
+- [x] **B.AC4**: PLAN テーブルビュー (`/?view=table`) でも同等の Gate/AC 二段表示が出る (手動)
+- [x] **B.AC5**: サイズヒストグラムが gatesTotal の値で集計され表示される (手動)
 
 **Todos** (4):
 - **B1**: plan-card.tsx の進捗表示を Gate ベース二段に変更 — `dashboard/components/plan-card.tsx`
@@ -360,7 +360,7 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - **B3**: app/page.tsx の集計ロジックを v3 PlanFile に対応 — `dashboard/app/page.tsx`
 - **B4**: [SIMPLE] size-histogram.tsx を gatesTotal ベースに変更 — `dashboard/components/size-histogram.tsx`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — plan-card / plan-table を二段進捗 (Gate + 現Gate AC) に刷新、app/page.tsx の集計に AC 進捗追加。size-histogram は plan-size.ts 経由で gates ベース集計を継承。grep hasV2Tasks/progress.completed/progress.total 0 hits、lint 0 errors、vitest 53/53 GREEN、サイドバーで「Gate 進捗」「現 Gate AC 進捗」並列表示をブラウザ確認。
 
 ### Gate C: 詳細パネルを Gate 契約 UI に刷新
 

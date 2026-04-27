@@ -10,10 +10,10 @@
   "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 1,
+    "gatesPassed": 2,
     "gatesTotal": 4,
-    "currentGate": "B",
-    "currentGateAC": { "passed": 0, "total": 5 }
+    "currentGate": "C",
+    "currentGateAC": { "passed": 0, "total": 6 }
   },
   "preflight": [],
   "gates": [
@@ -133,11 +133,11 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "B.AC1", "description": "`grep -rn \"hasV2Tasks\\|progress\\.completed\\|progress\\.total\" dashboard/components dashboard/app` のヒット数が 0", "checked": false },
-        { "id": "B.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
-        { "id": "B.AC3", "description": "`cd dashboard && npm run dev` 後にダッシュボードを開くと、PLAN カードに 'Gate 2/5 · AC 3/4' のような二段進捗が表示される (手動)", "checked": false },
-        { "id": "B.AC4", "description": "PLAN テーブルビュー (`/?view=table`) でも同等の Gate/AC 二段表示が出る (手動)", "checked": false },
-        { "id": "B.AC5", "description": "サイズヒストグラムが gatesTotal の値で集計され表示される (手動)", "checked": false }
+        { "id": "B.AC1", "description": "`grep -rn \"hasV2Tasks\\|progress\\.completed\\|progress\\.total\" dashboard/components dashboard/app` のヒット数が 0", "checked": true },
+        { "id": "B.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
+        { "id": "B.AC3", "description": "`cd dashboard && npm run dev` 後にダッシュボードを開くと、PLAN カードに 'Gate 2/5 · AC 3/4' のような二段進捗が表示される (手動)", "checked": true },
+        { "id": "B.AC4", "description": "PLAN テーブルビュー (`/?view=table`) でも同等の Gate/AC 二段表示が出る (手動)", "checked": true },
+        { "id": "B.AC5", "description": "サイズヒストグラムが gatesTotal の値で集計され表示される (手動)", "checked": true }
       ],
       "todos": [
         {
@@ -181,8 +181,12 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "plan-card / plan-table を二段進捗 (Gate + 現Gate AC) に刷新、app/page.tsx の集計に AC 進捗追加。size-histogram は plan-size.ts 経由で gates ベース集計を継承。grep hasV2Tasks/progress.completed/progress.total 0 hits、lint 0 errors、vitest 53/53 GREEN、サイドバーで「Gate 進捗」「現 Gate AC 進捗」並列表示をブラウザ確認。"
+      },
+      "passed": true
     },
     {
       "id": "C",

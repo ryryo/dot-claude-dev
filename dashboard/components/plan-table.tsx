@@ -137,13 +137,30 @@ export function PlanTable({ plans, sizeBinFilter, groupByProject }: PlanTablePro
           ? 0
           : Math.round((row.progress.gatesPassed / row.progress.gatesTotal) * 100),
       header: '進捗',
-      cell: (info) => {
-        const p = info.getValue<number>()
+      cell: ({ row }) => {
+        const { gatesPassed, gatesTotal, currentGateAC } = row.original.progress
+        const gatePct = gatesTotal === 0 ? 0 : Math.round((gatesPassed / gatesTotal) * 100)
+        const acPct =
+          currentGateAC.total === 0
+            ? 0
+            : Math.round((currentGateAC.passed / currentGateAC.total) * 100)
         return (
-          <div className="flex items-center gap-2">
-            <span className="w-9 text-right tabular-nums text-muted-foreground">{p}%</span>
-            <div className="h-2 w-16 overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary" style={{ width: `${p}%` }} />
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="w-12 text-right text-[11px] tabular-nums text-muted-foreground">
+                G {gatesPassed}/{gatesTotal}
+              </span>
+              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                <div className="h-full bg-primary" style={{ width: `${gatePct}%` }} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-12 text-right text-[11px] tabular-nums text-muted-foreground">
+                AC {currentGateAC.passed}/{currentGateAC.total}
+              </span>
+              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                <div className="h-full bg-primary/70" style={{ width: `${acPct}%` }} />
+              </div>
             </div>
           </div>
         )
