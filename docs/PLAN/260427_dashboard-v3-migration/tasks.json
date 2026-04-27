@@ -195,6 +195,7 @@
           "plan-detail.tsx で MUST / MUST NOT が箇条書きで表示される",
           "plan-detail.tsx で AC が checkbox 形式 (id + description + checked 状態) で表示される",
           "plan-detail.tsx で Gate.review (PASSED/FAILED/SKIPPED + summary + fixCount) が表示される",
+          "plan-detail.tsx で gate.review が null の場合、AC 充足度に応じて「未レビュー」(AC.passed < AC.total) または「レビュー待ち」(AC.passed === AC.total) のプレースホルダバッジを表示する",
           "tasks-detail-todo.tsx は軽量 Todo 表示 (依存・affectedFiles・TDD バッジ) のみで構成する",
           "tasks-detail-sheet.tsx の進捗表示を v3 progress 形に揃える",
           "kanban-board.tsx の status バケット計算が v3 PlanFile (gatesPassed/gatesTotal/reviewChecked) で正しく動く"
@@ -211,7 +212,8 @@
         { "id": "C.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
         { "id": "C.AC3", "description": "PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)", "checked": false },
         { "id": "C.AC4", "description": "Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)", "checked": false },
-        { "id": "C.AC5", "description": "kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)", "checked": false }
+        { "id": "C.AC5", "description": "kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)", "checked": false },
+        { "id": "C.AC6", "description": "review === null の Gate のうち AC 未充足のものには「未レビュー」バッジ、AC 全充足のものには「レビュー待ち」バッジが描画される。review !== null の Gate には result + summary が描画される (手動)", "checked": false }
       ],
       "todos": [
         {
@@ -221,7 +223,7 @@
           "tdd": false,
           "dependencies": ["A2"],
           "affectedFiles": [
-            { "path": "dashboard/components/plan-detail.tsx", "operation": "modify", "summary": "Gate 単位で Goal.what/why、MUST/MUST NOT 箇条書き、AC チェックリスト、Gate.review を描画。Todo は軽量サマリのみ" }
+            { "path": "dashboard/components/plan-detail.tsx", "operation": "modify", "summary": "Gate 単位で Goal.what/why、MUST/MUST NOT 箇条書き、AC チェックリスト、Gate.review を描画。Todo は軽量サマリのみ。review === null は AC 充足度で「未レビュー」/「レビュー待ち」バッジに分岐" }
           ]
         },
         {

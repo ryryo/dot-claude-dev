@@ -37,8 +37,16 @@
 | 6   | Step 概念 | UI / 型から Step を完全撤去 (`StepKind` / `Step.review*` 含む) | v3 には Step 階層がない。残すと型と実態がずれる |
 | 7   | テストデータ | v2 fixture は全削除、v3 fixture に総入れ替え | 二重メンテを避け、v3 シェイプを単一の真実とする |
 | 8   | API ガード | `app/api/plans/tasks/route.ts` は `schemaVersion === 3` のみ 200、それ以外は 422 | v2 シェイプを 422 にして UI 経路を完全に閉じる |
-| 9   | レビュー表示 | Gate-level review (`PASSED/FAILED/SKIPPED` + summary + fixCount) を Gate ヘッダに表示 | v3 では review が Gate 単位。Step ごとのバッジを Gate バッジに統合する |
+| 9   | レビュー表示 | Gate-level review を 3 状態で表示 (下表) | v3 では review が Gate 単位。`review: null` は仕様上の「未実施」状態なので空白ではなく状態バッジを出して "次に何をすべきか" を可視化する |
 | 10  | リネーム規則 | `tryLoadV2` → `tryLoadV3`、`isV2TasksJson` → `isV3TasksJson`、`hasV2Tasks` → 撤去 | 名前と実態を一致させる。Boolean フラグは v3 only になれば不要 |
+
+### Gate-level review の 3 状態 (決定 #9 詳細)
+
+| 状態 | 判定式 | バッジ表示 |
+| ---- | ------ | ---------- |
+| 未レビュー | `review === null && AC.passed < AC.total` | グレーバッジ「未レビュー」+ 補足「Gate 完了後にレビューが入ります」 |
+| レビュー待ち | `review === null && AC.passed === AC.total` | 黄色バッジ「レビュー待ち」 |
+| レビュー済 | `review !== null` | result に応じた色バッジ (PASSED 緑 / FAILED 赤 / SKIPPED グレー) + summary + fixCount |
 
 ## アーキテクチャ詳細
 
@@ -365,6 +373,7 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - ✅ MUST: plan-detail.tsx で MUST / MUST NOT が箇条書きで表示される
 - ✅ MUST: plan-detail.tsx で AC が checkbox 形式 (id + description + checked 状態) で表示される
 - ✅ MUST: plan-detail.tsx で Gate.review (PASSED/FAILED/SKIPPED + summary + fixCount) が表示される
+- ✅ MUST: plan-detail.tsx で gate.review が null の場合、AC 充足度に応じて「未レビュー」(AC.passed < AC.total) または「レビュー待ち」(AC.passed === AC.total) のプレースホルダバッジを表示する
 - ✅ MUST: tasks-detail-todo.tsx は軽量 Todo 表示 (依存・affectedFiles・TDD バッジ) のみで構成する
 - ✅ MUST: tasks-detail-sheet.tsx の進捗表示を v3 progress 形に揃える
 - ✅ MUST: kanban-board.tsx の status バケット計算が v3 PlanFile (gatesPassed/gatesTotal/reviewChecked) で正しく動く
@@ -379,6 +388,7 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - [ ] **C.AC3**: PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)
 - [ ] **C.AC4**: Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)
 - [ ] **C.AC5**: kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)
+- [ ] **C.AC6**: review === null の Gate のうち AC 未充足のものには「未レビュー」バッジ、AC 全充足のものには「レビュー待ち」バッジが描画される。review !== null の Gate には result + summary が描画される (手動)
 
 **Todos** (4):
 - **C1**: plan-detail.tsx を Gate 契約 UI に書き換え — `dashboard/components/plan-detail.tsx`
@@ -434,4 +444,4 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 | 既存環境に v1/v2 PLAN が大量に残っており、移行後にダッシュボードから消える | 旧 PLAN 履歴が見えなくなる | v3 移行は不可逆として明示。必要なら旧 PLAN は GitHub 上で直接閲覧する運用を案内 |
 | markdown フォールバック撤去後、tasks.json があっても schemaVersion が 3 未満の PLAN は API 422 で見えなくなる | 移行直後に一覧が一時的にスカスカになる可能性 | 既存 v2 PLAN を v3 へアップグレードする手順は範囲外。今回はあくまで「v3 のみ表示」を目的とする |
 | Gate 契約 UI 描画に伴い、Gate / Goal / Constraints の文字量が多い PLAN ではカード詳細の縦スクロールが伸びる | UX 上の長文化 | 詳細パネル側 (Gate C) で AccordionItem や折り畳みを活用してコンパクトに表示する |
-| Gate-level review が未記入 (review: null) の Gate は UI 表示が空白になる | レビュー前の Gate で表示崩れ | "未記入" のプレースホルダ UI を C1 で実装する |
+| Gate-level review が未記入 (review: null) の Gate は UI 表示が空白になる | レビュー前の Gate で表示崩れ | C1 で 3 状態バッジ (未レビュー / レビュー待ち / レビュー済) を実装。判定は AC 充足度との組み合わせ。詳細は設計決定 #9 の表参照 |
