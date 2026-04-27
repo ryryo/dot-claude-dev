@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 3,
+  "spec": {
+    "slug": "dashboard-v3-migration",
+    "title": "dashboard を tasks.json schemaVersion 3 専用に移行",
+    "summary": "ダッシュボードが受理する PLAN を v3 tasks.json のみに絞り、v1/v2 と markdown-only PLAN を完全に非表示にする。型・API・loader・UI・テストを Gate 契約 (Goal/Constraints/AC) ベースの正規化形に刷新する。",
+    "createdDate": "2026-04-27",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "progress": {
+    "gatesPassed": 0,
+    "gatesTotal": 4,
+    "currentGate": "A",
+    "currentGateAC": { "passed": 0, "total": 5 }
+  },
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "型・API・loader を v3 化",
+      "summary": "TasksJsonV3* 型を追加し v2 系を一掃。API ガードを schemaVersion === 3 に絞り、plan-json-loader を新 PlanFile 形に書き換える。",
+      "dependencies": [],
+      "goal": {
+        "what": "v3 tasks.json のみが API を通過し、新しい正規化 PlanFile (Gate 契約付き) として UI 層に届く土台を整える。",
+        "why": "後続 Gate (UI 刷新 / 進捗表示 / テスト) の前提は『型・API・loader が v3 のみ扱う』こと。最初に流入経路を絞ることで、UI 側で v2 シェイプを意識する必要がなくなる。"
+      },
+      "constraints": {
+        "must": [
+          "dashboard/lib/types.ts に TasksJsonV3 / TasksJsonV3Spec / TasksJsonV3Progress / TasksJsonV3Preflight / TasksJsonV3Gate / TasksJsonV3Todo / TasksJsonV3AcceptanceCriteria / TasksJsonV3Review 型を定義する",
+          "schemaVersion 3 のみ受理する API ガードに変更する (app/api/plans/tasks/route.ts)",
+          "lib/github.ts の isV2TasksJson / tryLoadV2 を isV3TasksJson / tryLoadV3 にリネームし schemaVersion === 3 のみ通す",
+          "plan-json-loader が v3 入力から新 PlanFile (gates[].goal/constraints/acceptanceCriteria/review/passed を保持) を生成する",
+          "PlanFile.progress を { gatesPassed, gatesTotal, currentGate, currentGateAC: { passed, total } } 形に変更する",
+          "Step / StepKind / hasReview / reviewFilled / reviewResult / reviewFixCount 等の旧 Step 概念を PlanFile から撤去する",
+          "hasV2Tasks フラグを PlanFile から完全に削除する"
+        ],
+        "mustNot": [
+          "TasksJsonV2 / TasksJsonV2Spec / TasksJsonV2Step / TasksJsonV2Todo / TasksJsonV2Gate 等の v2 型を残す",
+          "schemaVersion < 3 を受理する分岐を残す",
+          "v2 シェイプへの暗黙的な変換シムを追加する",
+          "後続 Gate を待たずに UI コンポーネント (plan-card / plan-detail / tasks-detail-todo 等) を編集する"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "A.AC1", "description": "`grep -r \"TasksJsonV2\" dashboard/` のヒット数が 0", "checked": false },
+        { "id": "A.AC2", "description": "`vitest run dashboard/__tests__/tasks-route.test.ts` が GREEN で、schemaVersion 1/2 入力に対し 422 を返すケースを含む", "checked": false },
+        { "id": "A.AC3", "description": "`vitest run dashboard/__tests__/plan-json-loader.test.ts` が GREEN で、v3 fixture 入力に対し PlanFile.gates[0] に goal/constraints/acceptanceCriteria/review/passed が含まれることを検証している", "checked": false },
+        { "id": "A.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "A.AC5", "description": "`grep -r \"hasV2Tasks\" dashboard/` のヒット数が 0", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "A1",
+          "gate": "A",
+          "title": "TasksJsonV3* 型を追加し TasksJsonV2* を削除",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            { "path": "dashboard/lib/types.ts", "operation": "modify", "summary": "v2 系 interface を全削除し v3 系 (Spec / Progress / Preflight / Gate / Todo / AcceptanceCriteria / Review) を追加" }
+          ]
+        },
+        {
+          "id": "A2",
+          "gate": "A",
+          "title": "正規化 PlanFile を Gate 契約ベースに刷新",
+          "tdd": false,
+          "dependencies": ["A1"],
+          "affectedFiles": [
+            { "path": "dashboard/lib/types.ts", "operation": "modify", "summary": "Step / StepKind / hasV2Tasks を削除し、Gate に goal/constraints/acceptanceCriteria/review/passed を持たせ、progress を gatesPassed/gatesTotal/currentGate/currentGateAC 形に変更" }
+          ]
+        },
+        {
+          "id": "A3",
+          "gate": "A",
+          "title": "[SIMPLE] API ガードを schemaVersion === 3 に変更",
+          "tdd": false,
+          "dependencies": ["A1"],
+          "affectedFiles": [
+            { "path": "dashboard/app/api/plans/tasks/route.ts", "operation": "modify", "summary": "schemaVersion < 2 のチェックを === 3 に変更し、エラーメッセージも更新" }
+          ]
+        },
+        {
+          "id": "A4",
+          "gate": "A",
+          "title": "github.ts の loader を v3 名前空間にリネーム",
+          "tdd": false,
+          "dependencies": ["A1", "A2"],
+          "affectedFiles": [
+            { "path": "dashboard/lib/github.ts", "operation": "modify", "summary": "isV2TasksJson → isV3TasksJson、tryLoadV2 → tryLoadV3 にリネームし schemaVersion === 3 のみ通す" }
+          ]
+        },
+        {
+          "id": "A5",
+          "gate": "A",
+          "title": "[TDD] plan-json-loader を v3 → 新 PlanFile 変換に書き換え",
+          "tdd": true,
+          "dependencies": ["A1", "A2"],
+          "affectedFiles": [
+            { "path": "dashboard/lib/plan-json-loader.ts", "operation": "modify", "summary": "TasksJsonV3 を入力として新 PlanFile を生成。convertStep / hasV2Tasks 関連を完全削除" },
+            { "path": "dashboard/__tests__/plan-json-loader.test.ts", "operation": "modify", "summary": "v3 fixture に総入れ替え。gates[].goal/constraints/AC/review/passed の伝播と progress 形を検証" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "B",
+      "title": "リスト・カードの v3 進捗表示化",
+      "summary": "PLAN リスト系コンポーネント (plan-card / plan-table / size-histogram) と app/page.tsx の集計を、新しい progress 形 (Gate X/Y + 現 Gate AC m/n) に対応させる。",
+      "dependencies": ["A"],
+      "goal": {
+        "what": "ユーザーが PLAN 一覧で『Gate 進捗 + 現 Gate AC 進捗』を一目で把握できる UI に変更する。",
+        "why": "v2 まで単一の completed/total しか持たなかった進捗指標が v3 で 2 段になったため、UI が片方しか見ないと『あと 1 Gate なのに表示は 50%』のような誤解が生じる。"
+      },
+      "constraints": {
+        "must": [
+          "plan-card.tsx / plan-table.tsx の進捗表示を gatesPassed/gatesTotal + currentGateAC.passed/total の二段に変更する",
+          "app/page.tsx の集計ロジックが新しい PlanFile 型を扱えるようにする",
+          "size-histogram.tsx の bin が gatesTotal ベースで描画される",
+          "hasV2Tasks に依存していた条件分岐を撤去する (UI からこのフラグへの参照をゼロにする)"
+        ],
+        "mustNot": [
+          "progress.completed / progress.total への参照を新コードに残す",
+          "Gate 詳細パネル (plan-detail / tasks-detail-todo) の刷新を Gate B のスコープに混ぜる",
+          "v2 シェイプ用の表示分岐を残す"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "B.AC1", "description": "`grep -rn \"hasV2Tasks\\|progress\\.completed\\|progress\\.total\" dashboard/components dashboard/app` のヒット数が 0", "checked": false },
+        { "id": "B.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "B.AC3", "description": "`cd dashboard && npm run dev` 後にダッシュボードを開くと、PLAN カードに 'Gate 2/5 · AC 3/4' のような二段進捗が表示される (手動)", "checked": false },
+        { "id": "B.AC4", "description": "PLAN テーブルビュー (`/?view=table`) でも同等の Gate/AC 二段表示が出る (手動)", "checked": false },
+        { "id": "B.AC5", "description": "サイズヒストグラムが gatesTotal の値で集計され表示される (手動)", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "B1",
+          "gate": "B",
+          "title": "plan-card.tsx の進捗表示を Gate ベース二段に変更",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/plan-card.tsx", "operation": "modify", "summary": "progress.completed/total ベースのバー/テキストを gatesPassed/gatesTotal + currentGateAC に置換、hasV2Tasks 条件分岐を撤去" }
+          ]
+        },
+        {
+          "id": "B2",
+          "gate": "B",
+          "title": "plan-table.tsx の進捗列を Gate ベース二段に変更",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/plan-table.tsx", "operation": "modify", "summary": "進捗列のセル描画を v3 形に変更、hasV2Tasks 条件分岐を撤去" }
+          ]
+        },
+        {
+          "id": "B3",
+          "gate": "B",
+          "title": "app/page.tsx の集計ロジックを v3 PlanFile に対応",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/app/page.tsx", "operation": "modify", "summary": "totals の集計を gatesTotal/gatesPassed ベースに変更し、PlanFile 新型を直接扱う" }
+          ]
+        },
+        {
+          "id": "B4",
+          "gate": "B",
+          "title": "[SIMPLE] size-histogram.tsx を gatesTotal ベースに変更",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/size-histogram.tsx", "operation": "modify", "summary": "bin の対象を progress.total から gatesTotal に変更" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "C",
+      "title": "詳細パネルを Gate 契約 UI に刷新",
+      "summary": "plan-detail / tasks-detail-todo / tasks-detail-sheet を Gate ごとの Goal/Constraints/AC/Review 表示と軽量 Todo 表示に作り変える。kanban の status 集計も v3 に揃える。",
+      "dependencies": ["A"],
+      "goal": {
+        "what": "Gate 詳細を開いたときに、Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Gate-level review が見え、Todo は影響ファイル・依存・TDD バッジだけの軽量表示になる UI を提供する。",
+        "why": "v3 の中核は『Gate 契約』なので、ユーザーが進捗確認・レビュー判断・委任のいずれを行うときも Gate ビューが基点になる必要がある。"
+      },
+      "constraints": {
+        "must": [
+          "plan-detail.tsx で各 Gate に Goal.what / Goal.why が表示される",
+          "plan-detail.tsx で MUST / MUST NOT が箇条書きで表示される",
+          "plan-detail.tsx で AC が checkbox 形式 (id + description + checked 状態) で表示される",
+          "plan-detail.tsx で Gate.review (PASSED/FAILED/SKIPPED + summary + fixCount) が表示される",
+          "tasks-detail-todo.tsx は軽量 Todo 表示 (依存・affectedFiles・TDD バッジ) のみで構成する",
+          "tasks-detail-sheet.tsx の進捗表示を v3 progress 形に揃える",
+          "kanban-board.tsx の status バケット計算が v3 PlanFile (gatesPassed/gatesTotal/reviewChecked) で正しく動く"
+        ],
+        "mustNot": [
+          "step.review / step.kind / step.reviewResult / step.reviewFixCount への参照を残す",
+          "todo.steps[] / todo.impl の表示ロジックを残す",
+          "Markdown / react-markdown を Todo 詳細で使う (impl 撤廃に伴い不要)",
+          "Gate B のスコープに含まれるリスト系コンポーネントを変更する"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "C.AC1", "description": "`grep -rn \"step\\.review\\|step\\.kind\\|todo\\.steps\\|todo\\.impl\" dashboard/components` のヒット数が 0", "checked": false },
+        { "id": "C.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "C.AC3", "description": "PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)", "checked": false },
+        { "id": "C.AC4", "description": "Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)", "checked": false },
+        { "id": "C.AC5", "description": "kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "C1",
+          "gate": "C",
+          "title": "plan-detail.tsx を Gate 契約 UI に書き換え",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/plan-detail.tsx", "operation": "modify", "summary": "Gate 単位で Goal.what/why、MUST/MUST NOT 箇条書き、AC チェックリスト、Gate.review を描画。Todo は軽量サマリのみ" }
+          ]
+        },
+        {
+          "id": "C2",
+          "gate": "C",
+          "title": "tasks-detail-todo.tsx を軽量 Todo 表示に書き換え",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/tasks-detail-todo.tsx", "operation": "modify", "summary": "Todo の依存・affectedFiles・TDD バッジのみ表示。step リスト / impl Markdown 表示を削除" }
+          ]
+        },
+        {
+          "id": "C3",
+          "gate": "C",
+          "title": "[SIMPLE] tasks-detail-sheet.tsx の進捗を v3 形に",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/tasks-detail-sheet.tsx", "operation": "modify", "summary": "tasks.progress の参照を v3 形 (gatesPassed/gatesTotal/currentGateAC) に置換" }
+          ]
+        },
+        {
+          "id": "C4",
+          "gate": "C",
+          "title": "kanban-board.tsx の status 集計を v3 ルールに対応",
+          "tdd": false,
+          "dependencies": ["A2"],
+          "affectedFiles": [
+            { "path": "dashboard/components/kanban-board.tsx", "operation": "modify", "summary": "PlanFile.status と progress を v3 形で扱い、列ごとの集計が正しく動くようにする" }
+          ]
+        }
+      ],
+      "review": null,
+      "passed": false
+    },
+    {
+      "id": "D",
+      "title": "markdown フォールバック撤去とテスト総入れ替え",
+      "summary": "lib/plan-parser.ts と関連テスト 3 ファイルを削除し、残テストを v3 シェイプに更新。最終的に lint/build/vitest が GREEN になることを確認する。",
+      "dependencies": ["A", "B", "C"],
+      "goal": {
+        "what": "v1/v2 markdown PLAN の表示経路を絶ち、テストスイートが v3 シェイプを保証する状態にする。",
+        "why": "Gate A〜C で UI/API/loader を v3 化しても、markdown フォールバックが残っていると v1/v2 PLAN が裏口経由で UI に届く可能性がある。テスト側も v2 fixture が残ると CI で偽陰性 / 偽陽性が発生する。"
+      },
+      "constraints": {
+        "must": [
+          "dashboard/lib/plan-parser.ts を削除する",
+          "dashboard/__tests__/plan-parser.test.ts / plan-parser-hierarchy.test.ts / plan-parser-summary.test.ts を削除する",
+          "dashboard/__tests__/tasks-route.test.ts を schemaVersion === 3 only の検証に更新する",
+          "dashboard/__tests__/use-tasks-json.test.ts のモックを v3 シェイプに更新する",
+          "lib/github.ts と app/api/plans/route.ts から markdown フォールバック呼び出しを撤去する (fetch 失敗 = その PLAN は除外)"
+        ],
+        "mustNot": [
+          "markdown フォールバックの間接的な復活経路を残す",
+          "v2 fixture をテストデータとして残す",
+          "skipped/todo にしてテストを通す (削除すべきテストは削除する)"
+        ]
+      },
+      "acceptanceCriteria": [
+        { "id": "D.AC1", "description": "`test -f dashboard/lib/plan-parser.ts` が exit 1 (= ファイルが存在しない)", "checked": false },
+        { "id": "D.AC2", "description": "`ls dashboard/__tests__/plan-parser*.test.ts 2>/dev/null | wc -l` が 0", "checked": false },
+        { "id": "D.AC3", "description": "`cd dashboard && bun run test` (vitest) が全 GREEN", "checked": false },
+        { "id": "D.AC4", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
+        { "id": "D.AC5", "description": "`cd dashboard && bun run build` が成功", "checked": false },
+        { "id": "D.AC6", "description": "ダッシュボードを起動 (`bun run dev`) し、v3 tasks.json を持つ PLAN のみが一覧に出る (v1/v2/markdown-only PLAN は表示されない / 手動)", "checked": false }
+      ],
+      "todos": [
+        {
+          "id": "D1",
+          "gate": "D",
+          "title": "lib/plan-parser.ts を削除しフォールバック呼び出しを撤去",
+          "tdd": false,
+          "dependencies": ["A4"],
+          "affectedFiles": [
+            { "path": "dashboard/lib/plan-parser.ts", "operation": "delete", "summary": "ファイル丸ごと削除" },
+            { "path": "dashboard/lib/github.ts", "operation": "modify", "summary": "parsePlanFile 呼び出しを撤去し、tryLoadV3 が null のときはその PLAN をリストから除外" },
+            { "path": "dashboard/app/api/plans/route.ts", "operation": "modify", "summary": "markdown フォールバックパスを削除" }
+          ]
+        },
+        {
+          "id": "D2",
+          "gate": "D",
+          "title": "[SIMPLE] plan-parser*.test.ts (3 ファイル) を削除",
+          "tdd": false,
+          "dependencies": ["D1"],
+          "affectedFiles": [
+            { "path": "dashboard/__tests__/plan-parser.test.ts", "operation": "delete", "summary": "削除" },
+            { "path": "dashboard/__tests__/plan-parser-hierarchy.test.ts", "operation": "delete", "summary": "削除" },
+            { "path": "dashboard/__tests__/plan-parser-summary.test.ts", "operation": "delete", "summary": "削除" }
+          ]
+        },
+        {
+          "id": "D3",
+          "gate": "D",
+          "title": "[TDD] tasks-route.test.ts を schemaVersion === 3 only に書き換え",
+          "tdd": true,
+          "dependencies": ["A3"],
+          "affectedFiles": [
+            { "path": "dashboard/__tests__/tasks-route.test.ts", "operation": "modify", "summary": "schemaVersion 1/2/3 + 不正値の入力それぞれに対する 422/200 期待値を v3 only ルールで再定義" }
+          ]
+        },
+        {
+          "id": "D4",
+          "gate": "D",
+          "title": "[TDD] use-tasks-json.test.ts のモックを v3 シェイプに更新",
+          "tdd": true,
+          "dependencies": ["A1"],
+          "affectedFiles": [
+            { "path": "dashboard/__tests__/use-tasks-json.test.ts", "operation": "modify", "summary": "TasksJsonV2 モックを TasksJsonV3 シェイプに書き換え" }
+          ]
+        },
+        {
+          "id": "D5",
+          "gate": "D",
+          "title": "lint / vitest / build を全 GREEN にする",
+          "tdd": false,
+          "dependencies": ["D1", "D2", "D3", "D4"],
+          "affectedFiles": []
+        }
+      ],
+      "review": null,
+      "passed": false
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-04-27T03:39:46Z",
+    "totalGates": 4,
+    "totalTodos": 18
+  }
+}
