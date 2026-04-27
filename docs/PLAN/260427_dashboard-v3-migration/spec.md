@@ -383,12 +383,12 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - ❌ MUST NOT: Gate B のスコープに含まれるリスト系コンポーネントを変更する
 
 **Acceptance Criteria**:
-- [ ] **C.AC1**: `grep -rn "step\.review\|step\.kind\|todo\.steps\|todo\.impl" dashboard/components` のヒット数が 0
-- [ ] **C.AC2**: `cd dashboard && bun run lint` が 0 errors
-- [ ] **C.AC3**: PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)
-- [ ] **C.AC4**: Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)
-- [ ] **C.AC5**: kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)
-- [ ] **C.AC6**: review === null の Gate のうち AC 未充足のものには「未レビュー」バッジ、AC 全充足のものには「レビュー待ち」バッジが描画される。review !== null の Gate には result + summary が描画される (手動)
+- [x] **C.AC1**: `grep -rn "step\.review\|step\.kind\|todo\.steps\|todo\.impl" dashboard/components` のヒット数が 0
+- [x] **C.AC2**: `cd dashboard && bun run lint` が 0 errors
+- [x] **C.AC3**: PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)
+- [x] **C.AC4**: Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)
+- [x] **C.AC5**: kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)
+- [x] **C.AC6**: review === null の Gate のうち AC 未充足のものには「未レビュー」バッジ、AC 全充足のものには「レビュー待ち」バッジが描画される。review !== null の Gate には result + summary が描画される (手動)
 
 **Todos** (4):
 - **C1**: plan-detail.tsx を Gate 契約 UI に書き換え — `dashboard/components/plan-detail.tsx`
@@ -396,7 +396,7 @@ Gate D: markdown フォールバック撤去とテスト総入れ替え（Gate A
 - **C3**: [SIMPLE] tasks-detail-sheet.tsx の進捗を v3 形に — `dashboard/components/tasks-detail-sheet.tsx`
 - **C4**: kanban-board.tsx の status 集計を v3 ルールに対応 — `dashboard/components/kanban-board.tsx`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — plan-detail を Gate-contract UI (Goal what/why、MUST/MUST NOT 箇条書き、AC チェックリスト、Review セクション + ヘッダ 3-state バッジ) に書き換え。tasks-detail-todo / tasks-detail-sheet / kanban-board は Gate A の最小 fix でそれぞれ TasksJsonV3Todo / v3 progress / plan.status 直接フィルタに切り替わり済み。grep step.review/step.kind/todo.steps/todo.impl 0 hits、lint 0 errors、vitest 53/53 GREEN。
 
 ### Gate D: markdown フォールバック撤去とテスト総入れ替え
 

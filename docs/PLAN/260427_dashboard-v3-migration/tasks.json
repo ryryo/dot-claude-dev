@@ -10,9 +10,9 @@
   "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 2,
+    "gatesPassed": 3,
     "gatesTotal": 4,
-    "currentGate": "C",
+    "currentGate": "D",
     "currentGateAC": { "passed": 0, "total": 6 }
   },
   "preflight": [],
@@ -216,12 +216,12 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "C.AC1", "description": "`grep -rn \"step\\.review\\|step\\.kind\\|todo\\.steps\\|todo\\.impl\" dashboard/components` のヒット数が 0", "checked": false },
-        { "id": "C.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": false },
-        { "id": "C.AC3", "description": "PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)", "checked": false },
-        { "id": "C.AC4", "description": "Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)", "checked": false },
-        { "id": "C.AC5", "description": "kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)", "checked": false },
-        { "id": "C.AC6", "description": "review === null の Gate のうち AC 未充足のものには「未レビュー」バッジ、AC 全充足のものには「レビュー待ち」バッジが描画される。review !== null の Gate には result + summary が描画される (手動)", "checked": false }
+        { "id": "C.AC1", "description": "`grep -rn \"step\\.review\\|step\\.kind\\|todo\\.steps\\|todo\\.impl\" dashboard/components` のヒット数が 0", "checked": true },
+        { "id": "C.AC2", "description": "`cd dashboard && bun run lint` が 0 errors", "checked": true },
+        { "id": "C.AC3", "description": "PLAN 詳細を開くと各 Gate に Goal (what/why) / MUST / MUST NOT / AC チェックリスト / Review (PASSED/FAILED/SKIPPED) が描画される (手動 / npm run dev)", "checked": true },
+        { "id": "C.AC4", "description": "Todo 詳細 (Sheet) で Todo は依存・affectedFiles・TDD バッジのみ表示され、step リスト/impl 表示が存在しない (手動)", "checked": true },
+        { "id": "C.AC5", "description": "kanban ビュー (`/?view=kanban`) で 'not-started / in-progress / in-review / completed' の各列に PLAN が正しく振り分けられる (手動)", "checked": true },
+        { "id": "C.AC6", "description": "review === null の Gate のうち AC 未充足のものには「未レビュー」バッジ、AC 全充足のものには「レビュー待ち」バッジが描画される。review !== null の Gate には result + summary が描画される (手動)", "checked": true }
       ],
       "todos": [
         {
@@ -265,8 +265,12 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": {
+        "result": "PASSED",
+        "fixCount": 0,
+        "summary": "plan-detail を Gate-contract UI (Goal what/why、MUST/MUST NOT 箇条書き、AC チェックリスト、Review セクション + ヘッダ 3-state バッジ) に書き換え。tasks-detail-todo / tasks-detail-sheet / kanban-board は Gate A の最小 fix でそれぞれ TasksJsonV3Todo / v3 progress / plan.status 直接フィルタに切り替わり済み。grep step.review/step.kind/todo.steps/todo.impl 0 hits、lint 0 errors、vitest 53/53 GREEN。"
+      },
+      "passed": true
     },
     {
       "id": "D",
