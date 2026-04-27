@@ -9,12 +9,6 @@
   },
   "status": "not-started",
   "reviewChecked": false,
-  "progress": {
-    "gatesPassed": 0,
-    "gatesTotal": 0,
-    "currentGate": null,
-    "currentGateAC": { "passed": 0, "total": 0 }
-  },
   "preflight": [
     {
       "id": "P1",
@@ -58,10 +52,5 @@
       "review": null,
       "passed": false
     }
-  ],
-  "metadata": {
-    "createdAt": "",
-    "totalGates": 0,
-    "totalTodos": 0
-  }
+  ]
 }

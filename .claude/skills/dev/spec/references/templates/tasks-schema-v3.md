@@ -19,10 +19,10 @@ v3 schema は **「Claude を有能なエンジニアとして委任する」** 
 | `spec` | `Spec` | 仕様書のメタデータ |
 | `status` | `PlanStatus` | 仕様書全体の進捗ステータス |
 | `reviewChecked` | `boolean` | 人間レビュー完了フラグ |
-| `progress` | `Progress` | 進捗の数値（ハイブリッド: Gate 単位 + 現在 Gate AC） |
 | `preflight` | `Preflight[]` | 事前セットアップ項目 |
 | `gates` | `Gate[]` | Gate 一覧（todos[] は各 Gate に内包される） |
-| `metadata` | `Metadata` | 作成日時・カウント情報 |
+
+> **`progress` / `metadata` は tasks.json に保持しない。** dashboard 側のローダー (`dashboard/lib/plan-json-loader.ts` の `computeProgress(gates)`) が `gates[]` から動的計算する。`status` のみ `/dev:spec-run` が更新する。
 
 ## spec オブジェクト
 
@@ -34,40 +34,18 @@ v3 schema は **「Claude を有能なエンジニアとして委任する」** 
 | `createdDate` | `string` | 作成日（YYYY-MM-DD） |
 | `specPath` | `string` | spec.md のパス（通常 `"spec.md"`） |
 
-## progress オブジェクト（ハイブリッド）
+## status の算出ルール
 
-```ts
-type Progress = {
-  gatesPassed: number;       // 全 Gate のうち passed=true の数
-  gatesTotal: number;        // 全 Gate の数
-  currentGate: string | null;       // 現在実行中の Gate ID（全完了 or 未着手なら null）
-  currentGateAC: {
-    passed: number;          // currentGate の AC のうち checked=true の数
-    total: number;           // currentGate の AC 総数
-  };
-};
-```
-
-### 算出ルール
+`/dev:spec-run` が `gates[].acceptanceCriteria[].checked` / `gates[].passed` を更新する際、同一 Edit で `status` も再計算する（`progress` は tasks.json に保持しないため計算不要）。
 
 ```
-gatesTotal     = gates.length
-gatesPassed    = gates.filter(g => g.passed === true).length
-currentGate    = 最初の passed=false の Gate.id（全 passed なら null）
-currentGateAC  = {
-  passed: currentGate.acceptanceCriteria.filter(ac => ac.checked).length,
-  total:  currentGate.acceptanceCriteria.length
-}
-
 status:
-  - gatesTotal == 0                                 → "not-started"
-  - gatesPassed == 0 && currentGateAC.passed == 0   → "not-started"
-  - gatesPassed < gatesTotal                        → "in-progress"
-  - gatesPassed == gatesTotal && !reviewChecked     → "in-review"
-  - gatesPassed == gatesTotal && reviewChecked      → "completed"
+  - gates.length == 0                                                                  → "not-started"
+  - gates.filter(g => g.passed).length == 0 && 全ての AC が checked: false             → "not-started"
+  - 0 < gates.filter(g => g.passed).length < gates.length                              → "in-progress"
+  - gates.filter(g => g.passed).length == gates.length && !reviewChecked               → "in-review"
+  - gates.filter(g => g.passed).length == gates.length && reviewChecked                → "completed"
 ```
-
-**更新責任**: `/dev:spec-run` が `gates[].acceptanceCriteria[].checked` / `gates[].passed` を更新する際、同一 Edit で `progress` と `status` も再計算する。
 
 ## preflight[] オブジェクト
 
@@ -162,14 +140,6 @@ status:
 | `fixCount` | `number` | FIX ラウンド数 |
 | `summary` | `string` | レビュー概要 |
 
-## metadata オブジェクト
-
-| フィールド | 型 | 説明 |
-|---|---|---|
-| `createdAt` | `string` | ISO 8601 タイムスタンプ |
-| `totalGates` | `number` | Gate 総数 |
-| `totalTodos` | `number` | 全 Gate を通した Todo 総数 |
-
 ## 更新責任者表
 
 | フィールド | 更新責任者 | タイミング |
@@ -181,7 +151,7 @@ status:
 | `gates[].review` | `/dev:spec-run` | Gate レビュー完了時 |
 | `gates[].passed` | `/dev:spec-run` | 全 AC checked + review PASSED で `true` に |
 | `preflight[].checked` | `/dev:spec-run` | Preflight 実行成功時 |
-| `status` / `progress` | `/dev:spec-run` | 上記いずれかの更新と同一 Edit で再計算 |
+| `status` | `/dev:spec-run` | 上記いずれかの更新と同一 Edit で再計算 |
 | `reviewChecked` | `/dev:spec-run` | 人間レビュー完了時 |
 
 ## サンプル完全版 JSON
@@ -200,12 +170,6 @@ status:
   },
   "status": "in-progress",
   "reviewChecked": false,
-  "progress": {
-    "gatesPassed": 0,
-    "gatesTotal": 1,
-    "currentGate": "A",
-    "currentGateAC": { "passed": 1, "total": 3 }
-  },
   "preflight": [],
   "gates": [
     {
@@ -259,11 +223,6 @@ status:
       "review": null,
       "passed": false
     }
-  ],
-  "metadata": {
-    "createdAt": "2026-04-27T00:00:00Z",
-    "totalGates": 1,
-    "totalTodos": 2
-  }
+  ]
 }
 ```

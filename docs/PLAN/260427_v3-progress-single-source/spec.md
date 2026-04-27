@@ -355,14 +355,14 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - ❌ MUST NOT: v1 / v2 への参照を増やす
 
 **Acceptance Criteria**:
-- [ ] **C.AC1**: `jq 'has("progress") or has("metadata")' .claude/skills/dev/spec/references/templates/tasks.template.json` が `false`
-- [ ] **C.AC2**: `grep -nE 'TasksJsonV3Metadata|metadata\.createdAt|metadata\.totalGates|metadata\.totalTodos' .claude/skills/dev/spec/ .claude/skills/dev/spec-run/ -r` が 0 ヒット
-- [ ] **C.AC3**: `grep -nE '## progress|## metadata|progress オブジェクト|metadata オブジェクト' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` が 0 ヒット
-- [ ] **C.AC4**: `grep -n 'dashboard で動的計算' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` がヒット（新セクションが追加されている）
-- [ ] **C.AC5**: `grep -nE 'progress.*再計算|progress.*更新' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット
-- [ ] **C.AC6**: `.claude/skills/dev/spec/SKILL.md` の完了条件 `[ ] tasks.json の schemaVersion が 3 である` が残っており、`progress` / `metadata` 関連の完了条件は存在しないこと（grep で確認）
-- [ ] **C.AC7**: `grep -nE 'metadata\.totalGates|metadata\.totalTodos' .claude/skills/dev/spec/agents/plan-reviewer.md` が 0 ヒット
-- [ ] **C.AC8**: `grep -nE 'gatesTotal|gatesPassed|currentGateAC' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット（status 状態遷移の状態名のみ残る）
+- [x] **C.AC1**: `jq 'has("progress") or has("metadata")' .claude/skills/dev/spec/references/templates/tasks.template.json` が `false`
+- [x] **C.AC2**: `grep -nE 'TasksJsonV3Metadata|metadata\.createdAt|metadata\.totalGates|metadata\.totalTodos' .claude/skills/dev/spec/ .claude/skills/dev/spec-run/ -r` が 0 ヒット
+- [x] **C.AC3**: `grep -nE '## progress|## metadata|progress オブジェクト|metadata オブジェクト' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` が 0 ヒット
+- [x] **C.AC4**: `grep -n 'dashboard で動的計算' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` がヒット（新セクションが追加されている）
+- [x] **C.AC5**: `grep -nE 'progress.*再計算|progress.*更新' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット
+- [x] **C.AC6**: `.claude/skills/dev/spec/SKILL.md` の完了条件 `[ ] tasks.json の schemaVersion が 3 である` が残っており、`progress` / `metadata` 関連の完了条件は存在しないこと（grep で確認）
+- [x] **C.AC7**: `grep -nE 'metadata\.totalGates|metadata\.totalTodos' .claude/skills/dev/spec/agents/plan-reviewer.md` が 0 ヒット
+- [x] **C.AC8**: `grep -nE 'gatesTotal|gatesPassed|currentGateAC' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット（status 状態遷移の状態名のみ残る）
 
 **Todos** (5):
 - **C1**: [SIMPLE] tasks.template.json から `progress` / `metadata` ブロックを削除 — `.claude/skills/dev/spec/references/templates/tasks.template.json`
@@ -371,7 +371,7 @@ Gate E: dashboard 型から `TasksJsonV3Progress` / `TasksJsonV3Metadata` を撤
 - **C4**: [SIMPLE] plan-reviewer.md から `progress` 検証チェック削除 — `.claude/skills/dev/spec/agents/plan-reviewer.md`
 - **C5**: dev:spec-run/SKILL.md から `progress` 更新責務を削除（`status` は維持） — `.claude/skills/dev/spec-run/SKILL.md`
 
-**Review**: _未記入_
+**Review**: ✅ PASSED — tasks.template.json / tasks-schema-v3.md / spec/SKILL.md / plan-reviewer.md / spec-run/SKILL.md から progress / metadata の生成・更新指示を完全撤去。AC1-AC8 の grep / jq 検証すべてパス
 
 ### Gate D: 既存 v3 tasks.json から `progress` / `metadata` を一括削除する migration script
 

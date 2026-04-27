@@ -10,10 +10,10 @@
   "status": "in-progress",
   "reviewChecked": false,
   "progress": {
-    "gatesPassed": 2,
+    "gatesPassed": 3,
     "gatesTotal": 5,
-    "currentGate": "C",
-    "currentGateAC": { "passed": 0, "total": 8 }
+    "currentGate": "D",
+    "currentGateAC": { "passed": 0, "total": 6 }
   },
   "preflight": [],
   "gates": [
@@ -168,14 +168,14 @@
         ]
       },
       "acceptanceCriteria": [
-        { "id": "C.AC1", "description": "`jq 'has(\"progress\") or has(\"metadata\")' .claude/skills/dev/spec/references/templates/tasks.template.json` が `false`", "checked": false },
-        { "id": "C.AC2", "description": "`grep -nE 'TasksJsonV3Metadata|metadata\\.createdAt|metadata\\.totalGates|metadata\\.totalTodos' .claude/skills/dev/spec/ .claude/skills/dev/spec-run/ -r` が 0 ヒット", "checked": false },
-        { "id": "C.AC3", "description": "`grep -nE '## progress|## metadata|progress オブジェクト|metadata オブジェクト' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` が 0 ヒット", "checked": false },
-        { "id": "C.AC4", "description": "`grep -n 'dashboard で動的計算' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` がヒット（新セクションが追加されている）", "checked": false },
-        { "id": "C.AC5", "description": "`grep -nE 'progress.*再計算|progress.*更新' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット", "checked": false },
-        { "id": "C.AC6", "description": "`.claude/skills/dev/spec/SKILL.md` の完了条件 `[ ] tasks.json の schemaVersion が 3 である` が残っており、`progress` / `metadata` 関連の完了条件は存在しないこと（grep で確認）", "checked": false },
-        { "id": "C.AC7", "description": "`grep -nE 'metadata\\.totalGates|metadata\\.totalTodos' .claude/skills/dev/spec/agents/plan-reviewer.md` が 0 ヒット", "checked": false },
-        { "id": "C.AC8", "description": "`grep -nE 'gatesTotal|gatesPassed|currentGateAC' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット（status 状態遷移の状態名のみ残る）", "checked": false }
+        { "id": "C.AC1", "description": "`jq 'has(\"progress\") or has(\"metadata\")' .claude/skills/dev/spec/references/templates/tasks.template.json` が `false`", "checked": true },
+        { "id": "C.AC2", "description": "`grep -nE 'TasksJsonV3Metadata|metadata\\.createdAt|metadata\\.totalGates|metadata\\.totalTodos' .claude/skills/dev/spec/ .claude/skills/dev/spec-run/ -r` が 0 ヒット", "checked": true },
+        { "id": "C.AC3", "description": "`grep -nE '## progress|## metadata|progress オブジェクト|metadata オブジェクト' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` が 0 ヒット", "checked": true },
+        { "id": "C.AC4", "description": "`grep -n 'dashboard で動的計算' .claude/skills/dev/spec/references/templates/tasks-schema-v3.md` がヒット（新セクションが追加されている）", "checked": true },
+        { "id": "C.AC5", "description": "`grep -nE 'progress.*再計算|progress.*更新' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット", "checked": true },
+        { "id": "C.AC6", "description": "`.claude/skills/dev/spec/SKILL.md` の完了条件 `[ ] tasks.json の schemaVersion が 3 である` が残っており、`progress` / `metadata` 関連の完了条件は存在しないこと（grep で確認）", "checked": true },
+        { "id": "C.AC7", "description": "`grep -nE 'metadata\\.totalGates|metadata\\.totalTodos' .claude/skills/dev/spec/agents/plan-reviewer.md` が 0 ヒット", "checked": true },
+        { "id": "C.AC8", "description": "`grep -nE 'gatesTotal|gatesPassed|currentGateAC' .claude/skills/dev/spec-run/SKILL.md` が 0 ヒット（status 状態遷移の状態名のみ残る）", "checked": true }
       ],
       "todos": [
         {
@@ -229,8 +229,8 @@
           ]
         }
       ],
-      "review": null,
-      "passed": false
+      "review": { "result": "PASSED", "fixCount": 0, "summary": "tasks.template.json / tasks-schema-v3.md / spec/SKILL.md / plan-reviewer.md / spec-run/SKILL.md から progress / metadata の生成・更新指示を完全撤去。AC1-AC8 の grep / jq 検証すべてパス" },
+      "passed": true
     },
     {
       "id": "D",

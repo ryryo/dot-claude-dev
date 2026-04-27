@@ -74,10 +74,9 @@ spec.md の「参照すべきファイル」セクションに記載された全
 
 - [ ] `schemaVersion === 3`
 - [ ] `spec` に `slug` / `title` / `summary` / `createdDate` / `specPath` が揃っている
-- [ ] `progress` が `{ gatesPassed, gatesTotal, currentGate, currentGateAC: { passed, total } }` の形式
 - [ ] `gates[]` の各要素が `id` / `title` / `summary` / `dependencies` / `goal` / `constraints` / `acceptanceCriteria` / `todos` / `review` / `passed` を持つ
 - [ ] 各 Todo が軽量フィールド（`id` / `gate` / `title` / `tdd` / `dependencies` / `affectedFiles`）のみ。**`impl` / `description` / `relatedIssues` / `steps[]` を持たない**
-- [ ] `metadata.totalGates` / `metadata.totalTodos` が実際のカウントと一致
+- [ ] `progress` / `metadata` フィールドが **存在しない**（dashboard で動的計算するため tasks.json には保持しない）
 
 #### spec.md の構造
 
