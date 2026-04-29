@@ -43,7 +43,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
-`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.agents/{commands/dev, skills/dev}` の両ツリーにシンボリックリンクを作成する。
+`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{commands/dev, skills/dev}` の両ツリーにシンボリックリンクを作成する。
 
 実行後、リンクが正しく作成されたか再確認:
 
@@ -84,7 +84,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 | 項目 | 状態 |
 |------|------|
 | .claude シンボリックリンク（rules/skills/commands/hooks） | ✓ |
-| .agents シンボリックリンク（commands/skills） | ✓ |
+| .codex シンボリックリンク（commands/skills） | ✓ |
 | scripts/setup-claude-remote.sh | ✓ |
 | scripts/setup-local.sh | ✓ |
 | .gitignore 更新 | ✓ |

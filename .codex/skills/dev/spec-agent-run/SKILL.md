@@ -1,6 +1,13 @@
 ---
-name: spec-agent-run
-description: Execute docs/PLAN/{YYMMDD}_{slug}/ schema v3 specs gate by gate, with optional git worktree isolation, AC-based verification, tasks.json state updates, and spec.md synchronization. Trigger: spec-run, 仕様書を実行, 計画書の実行, docs/PLAN の実装
+name: dev:spec-agent-run
+description: |
+  docs/PLAN/{YYMMDD}_{slug}/ の schema v3 仕様書を Gate 単位で実行します。
+  必要に応じて git worktree 分離、Acceptance Criteria に基づく検証、
+  tasks.json の状態更新、spec.md の同期まで行います。
+
+  Trigger:
+  spec-run, 仕様書を実行, 計画書の実行, docs/PLAN の実装
+user-invocable: true
 ---
 
 # spec-agent-run
@@ -59,7 +66,7 @@ worktree を使う場合、以後の読み書き、検証、コミットは work
 - `manual: true`: ユーザーに作業完了を確認し、`ac` を確認する。
 - 成立した項目だけ `checked: true` にする。
 
-Preflight 更新後は `tasks.json` を保存し、すぐ `node .agents/skills/dev/spec-agent-run/scripts/sync-spec-md.mjs <tasks-json-path>` を実行する。
+Preflight 更新後は `tasks.json` を保存し、すぐ `node .codex/skills/dev/spec-agent-run/scripts/sync-spec-md.mjs <tasks-json-path>` を実行する。
 
 ### Gate Implementation
 
@@ -107,7 +114,7 @@ passed == gates.length && reviewChecked                               -> complet
 更新後に必ず同期する:
 
 ```bash
-node .agents/skills/dev/spec-agent-run/scripts/sync-spec-md.mjs docs/PLAN/{YYMMDD}_{slug}/tasks.json
+node .codex/skills/dev/spec-agent-run/scripts/sync-spec-md.mjs docs/PLAN/{YYMMDD}_{slug}/tasks.json
 ```
 
 ## Completion

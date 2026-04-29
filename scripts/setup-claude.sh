@@ -97,20 +97,20 @@ if [ -d "$SHARED_DIR/.claude/commands/dev" ]; then
   echo "✓ Linked commands/dev"
 fi
 
-# Agent runtime 用ディレクトリを準備
-mkdir -p .agents/commands
-mkdir -p .agents/skills
+# Codex CLI 用ディレクトリを準備
+mkdir -p .codex/commands
+mkdir -p .codex/skills
 
-# .agents/commands/dev
-if [ -d "$SHARED_DIR/.agents/commands/dev" ]; then
-  ln -sfn "$SHARED_DIR/.agents/commands/dev" .agents/commands/dev
-  echo "✓ Linked .agents/commands/dev"
+# .codex/commands/dev
+if [ -d "$SHARED_DIR/.codex/commands/dev" ]; then
+  ln -sfn "$SHARED_DIR/.codex/commands/dev" .codex/commands/dev
+  echo "✓ Linked .codex/commands/dev"
 fi
 
-# .agents/skills/dev
-if [ -d "$SHARED_DIR/.agents/skills/dev" ]; then
-  ln -sfn "$SHARED_DIR/.agents/skills/dev" .agents/skills/dev
-  echo "✓ Linked .agents/skills/dev"
+# .codex/skills/dev
+if [ -d "$SHARED_DIR/.codex/skills/dev" ]; then
+  ln -sfn "$SHARED_DIR/.codex/skills/dev" .codex/skills/dev
+  echo "✓ Linked .codex/skills/dev"
 fi
 
 echo ""
@@ -130,9 +130,9 @@ echo ".claude/skills/dev"
 echo ".claude/commands/dev"
 echo ".claude/hooks/dev"
 echo ""
-echo "# Agent runtime - shared configuration (symlinks only)"
-echo ".agents/commands/dev"
-echo ".agents/skills/dev"
+echo "# Codex CLI - shared configuration (symlinks only)"
+echo ".codex/commands/dev"
+echo ".codex/skills/dev"
 echo ""
 echo "# Claude Code - local settings only"
 echo ".claude/settings.local.json"

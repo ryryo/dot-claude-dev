@@ -17,9 +17,9 @@ CLAUDE_ENTRIES=(
   ".claude/hooks/dev"
 )
 
-AGENTS_ENTRIES=(
-  ".agents/commands/dev"
-  ".agents/skills/dev"
+CODEX_ENTRIES=(
+  ".codex/commands/dev"
+  ".codex/skills/dev"
 )
 
 LOCAL_ENTRIES=(
@@ -39,7 +39,7 @@ check_entry() {
 }
 
 for ENTRY in "${CLAUDE_ENTRIES[@]}"; do check_entry "$ENTRY"; done
-for ENTRY in "${AGENTS_ENTRIES[@]}"; do check_entry "$ENTRY"; done
+for ENTRY in "${CODEX_ENTRIES[@]}"; do check_entry "$ENTRY"; done
 for ENTRY in "${LOCAL_ENTRIES[@]}"; do check_entry "$ENTRY"; done
 
 if [ "$ADDED" -eq 0 ]; then
@@ -68,7 +68,7 @@ append_block() {
 
 {
   append_block "# Claude Code - shared configuration (symlinks)" "${CLAUDE_ENTRIES[@]}"
-  append_block "# Agent runtime - shared configuration (symlinks)" "${AGENTS_ENTRIES[@]}"
+  append_block "# Codex CLI - shared configuration (symlinks)" "${CODEX_ENTRIES[@]}"
   append_block "# Claude Code - local settings" "${LOCAL_ENTRIES[@]}"
 } >> "$GITIGNORE"
 

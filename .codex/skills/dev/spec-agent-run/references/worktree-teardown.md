@@ -40,7 +40,7 @@ If conflicts occur, resolve only obvious non-semantic conflicts automatically. A
 After a successful merge:
 
 ```bash
-bash .agents/skills/dev/spec-agent-run/scripts/cleanup-worktree.sh {slug}
+bash .codex/skills/dev/spec-agent-run/scripts/cleanup-worktree.sh {slug}
 ```
 
 If cleanup fails because the branch is not merged or the worktree is dirty, stop and report the exact stderr. Do not force-remove automatically.

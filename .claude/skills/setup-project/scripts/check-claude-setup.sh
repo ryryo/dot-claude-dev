@@ -18,16 +18,16 @@ LINK_NAMES=(
   ".claude/skills/dev"
   ".claude/commands/dev"
   ".claude/hooks/dev"
-  ".agents/commands/dev"
-  ".agents/skills/dev"
+  ".codex/commands/dev"
+  ".codex/skills/dev"
 )
 LINK_TARGETS=(
   "$SHARED/.claude/rules/workflow"
   "$SHARED/.claude/skills/dev"
   "$SHARED/.claude/commands/dev"
   "$SHARED/.claude/hooks/dev"
-  "$SHARED/.agents/commands/dev"
-  "$SHARED/.agents/skills/dev"
+  "$SHARED/.codex/commands/dev"
+  "$SHARED/.codex/skills/dev"
 )
 
 ALL_OK=true

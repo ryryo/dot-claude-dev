@@ -72,7 +72,7 @@ your-project/.claude/
 $spec-agent-run
 ```
 
-Codexでは `.agents/skills/dev/spec-agent-run/` を使います。Gate単位で実装し、worktree使用は開始時に選択できます。
+Codexでは `.codex/skills/dev/spec-agent-run/` を使います。Gate単位で実装し、worktree使用は開始時に選択できます。
 
 `tasks.json` 更新後は skill 内の `sync-spec-md.mjs` で `spec.md` の generated 領域を同期します。
 
@@ -169,7 +169,7 @@ Codexでは `.agents/skills/dev/spec-agent-run/` を使います。Gate単位で
     ├── workflow/             # TDD/TASKワークフロールール
     └── languages/            # 言語別コーディングルール
 
-.agents/
+.codex/
 └── skills/
     └── dev/
         ├── spec-agent-run/    # Codex用 仕様書実行スキル
