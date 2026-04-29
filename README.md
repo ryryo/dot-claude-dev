@@ -8,6 +8,7 @@ Claude Codeのための仕様書駆動開発ワークフロー。スキル・コ
 
 1. **仕様書を作成** - `/dev:spec` で要件深掘り→タスク分解→自己完結した実装仕様書を生成
 2. **仕様書を実行** - `/dev:spec-run` でGateごとにIMPL + VERIFYを実行（従来 or Codexモード）
+3. **Codexで仕様書を実行** - `$spec-agent-run` で `docs/PLAN/*` の schema v3 仕様書をCodexセッション内で直接実行
 
 ## インストール
 
@@ -65,6 +66,16 @@ your-project/.claude/
 | **従来モード**  | Claude Code が全Todoを直接実行                        |
 | **Codexモード** | 全タスクをCodexプラグインに委任、VERIFYはcodex review |
 
+### 3. Codexで仕様書を実行
+
+```text
+$spec-agent-run
+```
+
+Codexでは `.agents/skills/spec-agent-run/` を使います。Gate単位で実装し、worktree使用は開始時に選択できます。
+
+`tasks.json` 更新後は skill 内の `sync-spec-md.mjs` で `spec.md` の generated 領域を同期します。
+
 ## ワークフロー図
 
 ```
@@ -79,6 +90,9 @@ your-project/.claude/
 │     ├── [従来]  Claude が全Todoを直接実行                    │
 │     └── [Codex] Codex委任 → codex review                   │
 │                                                             │
+│  3. $spec-agent-run                                         │
+│     └── Codex が schema v3 Gate を直接実装 → 明示 sync       │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -92,6 +106,12 @@ your-project/.claude/
 | `/dev:spec-run` | 仕様書を実行。従来モードまたはCodexモードを選択                      |
 | `/dev:clarify`  | 不明点を繰り返し明確化して詳細な仕様書を作成                         |
 | `/dev:ideation` | アイデアをJTBD分析→競合調査→SLC仕様書に構造化                        |
+
+### Codexスキル
+
+| スキル          | 説明                                                                 |
+| --------------- | -------------------------------------------------------------------- |
+| `$spec-agent-run` | `docs/PLAN/*` の schema v3 仕様書をCodexでGate単位に直接実行       |
 
 ### ユーティリティ
 
@@ -148,6 +168,10 @@ your-project/.claude/
 └── rules/
     ├── workflow/             # TDD/TASKワークフロールール
     └── languages/            # 言語別コーディングルール
+
+.agents/
+└── skills/
+    └── spec-agent-run/        # Codex用 仕様書実行スキル
 ```
 
 ## 主要コンセプト
