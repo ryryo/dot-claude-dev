@@ -59,7 +59,7 @@ worktree を使う場合、以後の読み書き、検証、コミットは work
 - `manual: true`: ユーザーに作業完了を確認し、`ac` を確認する。
 - 成立した項目だけ `checked: true` にする。
 
-Preflight 更新後は `tasks.json` を保存し、すぐ `node .agents/skills/spec-agent-run/scripts/sync-spec-md.mjs <tasks-json-path>` を実行する。
+Preflight 更新後は `tasks.json` を保存し、すぐ `node .agents/skills/dev/spec-agent-run/scripts/sync-spec-md.mjs <tasks-json-path>` を実行する。
 
 ### Gate Implementation
 
@@ -107,7 +107,7 @@ passed == gates.length && reviewChecked                               -> complet
 更新後に必ず同期する:
 
 ```bash
-node .agents/skills/spec-agent-run/scripts/sync-spec-md.mjs docs/PLAN/{YYMMDD}_{slug}/tasks.json
+node .agents/skills/dev/spec-agent-run/scripts/sync-spec-md.mjs docs/PLAN/{YYMMDD}_{slug}/tasks.json
 ```
 
 ## Completion

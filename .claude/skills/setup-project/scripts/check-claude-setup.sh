@@ -20,8 +20,6 @@ LINK_NAMES=(
   ".claude/hooks/dev"
   ".agents/commands/dev"
   ".agents/skills/dev"
-  ".agents/skills/spec-agent-run"
-  ".agents/skills/shadcn"
 )
 LINK_TARGETS=(
   "$SHARED/.claude/rules/workflow"
@@ -30,8 +28,6 @@ LINK_TARGETS=(
   "$SHARED/.claude/hooks/dev"
   "$SHARED/.agents/commands/dev"
   "$SHARED/.agents/skills/dev"
-  "$SHARED/.agents/skills/spec-agent-run"
-  "$SHARED/.agents/skills/shadcn"
 )
 
 ALL_OK=true

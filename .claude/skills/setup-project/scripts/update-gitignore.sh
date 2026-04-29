@@ -20,8 +20,6 @@ CLAUDE_ENTRIES=(
 AGENTS_ENTRIES=(
   ".agents/commands/dev"
   ".agents/skills/dev"
-  ".agents/skills/spec-agent-run"
-  ".agents/skills/shadcn"
 )
 
 LOCAL_ENTRIES=(

@@ -29,7 +29,7 @@ docs/PLAN/260411_dashboard-table-view/tasks.json -> 260411_dashboard-table-view
 Run:
 
 ```bash
-bash .agents/skills/spec-agent-run/scripts/setup-worktree.sh {slug}
+bash .agents/skills/dev/spec-agent-run/scripts/setup-worktree.sh {slug}
 ```
 
 The script prints the absolute worktree path to stdout. Remember it as `WORKTREE_PATH` and run future commands in that directory.
