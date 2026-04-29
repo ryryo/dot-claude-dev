@@ -18,7 +18,6 @@ LINK_NAMES=(
   ".claude/skills/dev"
   ".claude/commands/dev"
   ".claude/hooks/dev"
-  ".codex/commands/dev"
   ".codex/skills/dev"
 )
 LINK_TARGETS=(
@@ -26,7 +25,6 @@ LINK_TARGETS=(
   "$SHARED/.claude/skills/dev"
   "$SHARED/.claude/commands/dev"
   "$SHARED/.claude/hooks/dev"
-  "$SHARED/.codex/commands/dev"
   "$SHARED/.codex/skills/dev"
 )
 

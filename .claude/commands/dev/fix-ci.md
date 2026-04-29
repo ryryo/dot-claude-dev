@@ -1,6 +1,4 @@
 ---
-description: "現在のPRのCI失敗を自動で診断・修正する"
-version: "1.0.1"
 allowed-tools:
   - Bash
   - Read
@@ -102,6 +100,7 @@ gh pr view --json statusCheckRollup --jq ‘.statusCheckRollup[]’
 ### ステップ5：原因を説明して修正を提案する（編集の前に）
 
 変更を加える前に：
+
 1. 根本原因をわかりやすい言葉で説明する。
 2. 意図する修正とその有効性の理由を説明する。
 3. リスク（動作変更、依存関係のバージョンアップ）を指摘し、スコープを最小限に保つ。

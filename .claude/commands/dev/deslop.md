@@ -1,5 +1,4 @@
 ---
-name: dev:deslop
 description: "Remove AI-generated code slop from code changes in the current branch"
 version: "1.0.0"
 allowed-tools:

@@ -98,14 +98,7 @@ if [ -d "$SHARED_DIR/.claude/commands/dev" ]; then
 fi
 
 # Codex CLI 用ディレクトリを準備
-mkdir -p .codex/commands
 mkdir -p .codex/skills
-
-# .codex/commands/dev
-if [ -d "$SHARED_DIR/.codex/commands/dev" ]; then
-  ln -sfn "$SHARED_DIR/.codex/commands/dev" .codex/commands/dev
-  echo "✓ Linked .codex/commands/dev"
-fi
 
 # .codex/skills/dev
 if [ -d "$SHARED_DIR/.codex/skills/dev" ]; then
@@ -131,7 +124,6 @@ echo ".claude/commands/dev"
 echo ".claude/hooks/dev"
 echo ""
 echo "# Codex CLI - shared configuration (symlinks only)"
-echo ".codex/commands/dev"
 echo ".codex/skills/dev"
 echo ""
 echo "# Claude Code - local settings only"
