@@ -14,13 +14,13 @@ allowed-tools:
 
 # AIコードの不備を解消する
 
-Check the diff against main, and remove all AI generated slop introduced in this branch.
-You will launch the sub-agent to proceed this process
+mainとのdiffを確認し、このブランチで追加されたAI生成コードの不備をすべて除去する。
+サブエージェントを起動してこの処理を進める。
 
-This includes:
+対象となる不備：
 
-- Extra comments that a human wouldn't add or is inconsistent with the rest of the file
-- Extra defensive checks or try/catch blocks that are abnormal for that area of the codebase (especially if called by trusted / validated codepaths)
-- Any other style that is inconsistent with the file
+- 人間なら書かないコメント、またはファイル内の他の箇所と一貫性のないコメント
+- そのコードベースの該当箇所では通常ありえない過剰な防御チェックやtry/catchブロック（信頼済み・検証済みのコードパスから呼ばれる場合は特に）
+- ファイルのスタイルと一致しないその他の記述
 
-Report at the end with only a 1-3 sentence summary of what you changed
+最後に変更内容を1〜3文で簡潔にまとめて報告する
