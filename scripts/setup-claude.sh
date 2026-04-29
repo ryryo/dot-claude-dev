@@ -97,6 +97,34 @@ if [ -d "$SHARED_DIR/.claude/commands/dev" ]; then
   echo "✓ Linked commands/dev"
 fi
 
+# Agent runtime 用ディレクトリを準備
+mkdir -p .agents/commands
+mkdir -p .agents/skills
+
+# .agents/commands/dev
+if [ -d "$SHARED_DIR/.agents/commands/dev" ]; then
+  ln -sfn "$SHARED_DIR/.agents/commands/dev" .agents/commands/dev
+  echo "✓ Linked .agents/commands/dev"
+fi
+
+# .agents/skills/dev
+if [ -d "$SHARED_DIR/.agents/skills/dev" ]; then
+  ln -sfn "$SHARED_DIR/.agents/skills/dev" .agents/skills/dev
+  echo "✓ Linked .agents/skills/dev"
+fi
+
+# .agents/skills/spec-agent-run
+if [ -d "$SHARED_DIR/.agents/skills/spec-agent-run" ]; then
+  ln -sfn "$SHARED_DIR/.agents/skills/spec-agent-run" .agents/skills/spec-agent-run
+  echo "✓ Linked .agents/skills/spec-agent-run"
+fi
+
+# .agents/skills/shadcn
+if [ -d "$SHARED_DIR/.agents/skills/shadcn" ]; then
+  ln -sfn "$SHARED_DIR/.agents/skills/shadcn" .agents/skills/shadcn
+  echo "✓ Linked .agents/skills/shadcn"
+fi
+
 echo ""
 echo "✓ Claude configuration linked successfully"
 echo ""
@@ -113,6 +141,12 @@ echo ".claude/rules/workflow"
 echo ".claude/skills/dev"
 echo ".claude/commands/dev"
 echo ".claude/hooks/dev"
+echo ""
+echo "# Agent runtime - shared configuration (symlinks only)"
+echo ".agents/commands/dev"
+echo ".agents/skills/dev"
+echo ".agents/skills/spec-agent-run"
+echo ".agents/skills/shadcn"
 echo ""
 echo "# Claude Code - local settings only"
 echo ".claude/settings.local.json"

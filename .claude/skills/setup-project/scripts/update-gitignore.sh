@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/update-gitignore.sh
-# プロジェクトの .gitignore に Claude Code シンボリックリンク除外エントリを追加する
+# プロジェクトの .gitignore に Claude Code / Agent runtime シンボリックリンク除外エントリを追加する
 #
 # 使い方:
 #   bash update-gitignore.sh /path/to/project
@@ -10,31 +10,39 @@
 PROJECT="${1:?Usage: $0 /path/to/project}"
 GITIGNORE="$PROJECT/.gitignore"
 
-ENTRIES=(
-  "# Claude Code - shared configuration (symlinks)"
+CLAUDE_ENTRIES=(
   ".claude/rules/workflow"
   ".claude/skills/dev"
   ".claude/commands/dev"
   ".claude/hooks/dev"
-  ""
-  "# Claude Code - local settings"
+)
+
+AGENTS_ENTRIES=(
+  ".agents/commands/dev"
+  ".agents/skills/dev"
+  ".agents/skills/spec-agent-run"
+  ".agents/skills/shadcn"
+)
+
+LOCAL_ENTRIES=(
   ".claude/settings.local.json"
 )
 
 ADDED=0
 
-for ENTRY in "${ENTRIES[@]}"; do
-  # コメント行・空行は重複チェックせず末尾に追加（ただし既にブロックごと存在する場合はスキップ）
-  if [[ "$ENTRY" == "#"* ]] || [[ -z "$ENTRY" ]]; then
-    continue
-  fi
+check_entry() {
+  local ENTRY="$1"
   if grep -qxF "$ENTRY" "$GITIGNORE" 2>/dev/null; then
     echo "  skip: $ENTRY (既存)"
   else
     echo "  add:  $ENTRY"
     ADDED=$((ADDED + 1))
   fi
-done
+}
+
+for ENTRY in "${CLAUDE_ENTRIES[@]}"; do check_entry "$ENTRY"; done
+for ENTRY in "${AGENTS_ENTRIES[@]}"; do check_entry "$ENTRY"; done
+for ENTRY in "${LOCAL_ENTRIES[@]}"; do check_entry "$ENTRY"; done
 
 if [ "$ADDED" -eq 0 ]; then
   echo "✓ .gitignore は既に最新です"
@@ -42,15 +50,28 @@ if [ "$ADDED" -eq 0 ]; then
 fi
 
 # 不足エントリをまとめて追記
-{
-  echo ""
-  echo "# Claude Code - shared configuration (symlinks)"
-  for ENTRY in "${ENTRIES[@]:1:4}"; do
-    grep -qxF "$ENTRY" "$GITIGNORE" 2>/dev/null || echo "$ENTRY"
+append_block() {
+  local HEADER="$1"
+  shift
+  local MISSING=()
+  for ENTRY in "$@"; do
+    if ! grep -qxF "$ENTRY" "$GITIGNORE" 2>/dev/null; then
+      MISSING+=("$ENTRY")
+    fi
   done
-  echo ""
-  echo "# Claude Code - local settings"
-  grep -qxF ".claude/settings.local.json" "$GITIGNORE" 2>/dev/null || echo ".claude/settings.local.json"
+  if [ "${#MISSING[@]}" -gt 0 ]; then
+    echo ""
+    echo "$HEADER"
+    for ENTRY in "${MISSING[@]}"; do
+      echo "$ENTRY"
+    done
+  fi
+}
+
+{
+  append_block "# Claude Code - shared configuration (symlinks)" "${CLAUDE_ENTRIES[@]}"
+  append_block "# Agent runtime - shared configuration (symlinks)" "${AGENTS_ENTRIES[@]}"
+  append_block "# Claude Code - local settings" "${LOCAL_ENTRIES[@]}"
 } >> "$GITIGNORE"
 
 echo "✓ .gitignore を更新しました（$ADDED 件追加）"
