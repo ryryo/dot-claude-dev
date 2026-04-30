@@ -105,8 +105,10 @@ AC とレビューを検証する。
 
 - docs/config/comment only や `[SIMPLE]` 専用 Gate は `review.result = "SKIPPED"` でよい
 - 通常のコード変更は Codex のコードレビュー機能を使う
-- 未コミット差分をレビューする場合は `codex review --uncommitted` を使う
-- コミット済み差分をレビューする場合は `codex review --commit <sha>`、または対象範囲に応じた `codex review` の標準入力プロンプト方式を使う
+- Gate 実行中のレビューは、該当 Gate の Goal / Constraints / Acceptance Criteria / 対象ファイル / 対象 diff を絞って `codex review` の標準入力プロンプト方式で依頼する
+- `codex review --uncommitted` は、複数 Gate をまとめてレビューする最終確認や、変更範囲がその Gate だけに限定されていることが明らかな場合に限って使う
+- コミット済み差分をレビューする場合は `codex review --commit <sha>` を使う。ただし Gate 契約に照らす必要がある場合は、コミット SHA に加えて対象 Gate 仕様を標準入力で明示する
+- レビュープロンプトには最低限、対象 Gate id、仕様ファイルパス、対象ファイル、判定してほしい観点、除外したい無関係差分を含める
 - `codex review` の結果に P1 / blocker があれば FAIL。P2 は内容を精査して PASS / FAIL を判断する。コメントなし、または P3 のみなら PASS としてよい
 - `codex review` が利用できない環境では、diff を読み、仕様適合、破壊的変更、テスト不足、既存パターン違反を自己レビューする。その場合は `review.summary` に `codex review unavailable` と代替レビューであることを明記する
 
