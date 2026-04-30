@@ -14,14 +14,12 @@ SHARED="${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}"
 
 # bash 3.2 互換: 連想配列を使わず並列配列で管理
 LINK_NAMES=(
-  ".claude/rules/workflow"
   ".claude/skills/dev"
   ".claude/commands/dev"
   ".claude/hooks/dev"
   ".codex/skills/dev"
 )
 LINK_TARGETS=(
-  "$SHARED/.claude/rules/workflow"
   "$SHARED/.claude/skills/dev"
   "$SHARED/.claude/commands/dev"
   "$SHARED/.claude/hooks/dev"
