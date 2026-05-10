@@ -11,13 +11,13 @@ PROJECT="${1:?Usage: $0 /path/to/project}"
 GITIGNORE="$PROJECT/.gitignore"
 
 CLAUDE_ENTRIES=(
+  ".claude/rules/workflow"
   ".claude/skills/dev"
   ".claude/commands/dev"
   ".claude/hooks/dev"
 )
 
 CODEX_ENTRIES=(
-  ".codex/commands/dev"
   ".codex/skills/dev"
 )
 

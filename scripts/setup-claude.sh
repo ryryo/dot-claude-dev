@@ -67,6 +67,12 @@ mkdir -p .claude/rules
 mkdir -p .claude/skills
 mkdir -p .claude/commands
 
+# 共通ルールをリンク
+if [ -d "$SHARED_DIR/.claude/rules/workflow" ]; then
+  ln -sfn "$SHARED_DIR/.claude/rules/workflow" .claude/rules/workflow
+  echo "✓ Linked rules/workflow"
+fi
+
 # 共通スキルをリンク
 if [ -d "$SHARED_DIR/.claude/skills/dev" ]; then
   ln -sfn "$SHARED_DIR/.claude/skills/dev" .claude/skills/dev
@@ -106,6 +112,7 @@ echo "⚠️  IMPORTANT: Add the following to your .gitignore"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "# Claude Code - shared configuration (symlinks only)"
+echo ".claude/rules/workflow"
 echo ".claude/skills/dev"
 echo ".claude/commands/dev"
 echo ".claude/hooks/dev"
