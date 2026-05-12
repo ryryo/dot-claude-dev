@@ -1,0 +1,4 @@
+interface:
+  display_name: "並列エージェント指示書"
+  short_description: "低複雑度タスクを並列委任用プロンプトに分解するスキル"
+  default_prompt: "$parallel-agent-brief を使って、低複雑度の独立タスクを他エージェントへ渡せるコピペ用指示書にしてください。"
