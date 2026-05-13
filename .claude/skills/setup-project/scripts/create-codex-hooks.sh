@@ -16,6 +16,8 @@ CONFIG="$CODEX_DIR/config.toml"
 HOOKS="$CODEX_DIR/hooks.json"
 HOOK_COMMAND='bash "$(git rev-parse --show-toplevel)/.codex/hooks/dev/commit-check.sh"'
 HOOK_COMMAND_JSON='bash \"$(git rev-parse --show-toplevel)/.codex/hooks/dev/commit-check.sh\"'
+HOOK_TIMEOUT=120
+HOOK_STATUS_MESSAGE="Sync PLAN tasks and check uncommitted changes"
 
 mkdir -p "$CODEX_DIR"
 
@@ -88,8 +90,8 @@ ensure_hooks_json() {
           {
             "type": "command",
             "command": "$HOOK_COMMAND_JSON",
-            "timeout": 30,
-            "statusMessage": "Checking uncommitted changes"
+            "timeout": $HOOK_TIMEOUT,
+            "statusMessage": "$HOOK_STATUS_MESSAGE"
           }
         ]
       }
@@ -101,18 +103,44 @@ EOF
     return
   fi
 
-  echo "⚠️  $HOOKS は既に存在します（上書きしません）"
-
   if command -v jq >/dev/null 2>&1; then
     if jq -e --arg cmd "$HOOK_COMMAND" '
       .hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $cmd)
     ' "$HOOKS" >/dev/null 2>&1; then
       echo "✓ Codex Stop hook の commit-check は登録済みです"
+      TMP=$(mktemp)
+      jq \
+        --arg cmd "$HOOK_COMMAND" \
+        --arg msg "$HOOK_STATUS_MESSAGE" \
+        --argjson timeout "$HOOK_TIMEOUT" \
+        '
+          (.hooks.Stop[]?.hooks[]? | select(.type == "command" and .command == $cmd)) |=
+            (.timeout = $timeout | .statusMessage = $msg)
+        ' "$HOOKS" > "$TMP"
+      mv "$TMP" "$HOOKS"
+      echo "✓ Codex Stop hook の timeout/statusMessage を更新しました"
     else
-      echo "   Codex Stop hook に commit-check が未登録の可能性があります。手動で確認してください。"
+      TMP=$(mktemp)
+      jq \
+        --arg cmd "$HOOK_COMMAND" \
+        --arg msg "$HOOK_STATUS_MESSAGE" \
+        --argjson timeout "$HOOK_TIMEOUT" \
+        '
+          .hooks = (.hooks // {}) |
+          .hooks.Stop = ((.hooks.Stop // []) + [{
+            "hooks": [{
+              "type": "command",
+              "command": $cmd,
+              "timeout": $timeout,
+              "statusMessage": $msg
+            }]
+          }])
+        ' "$HOOKS" > "$TMP"
+      mv "$TMP" "$HOOKS"
+      echo "✓ Codex Stop hook に commit-check を追加しました"
     fi
   else
-    echo "   jq が見つからないため、Codex Stop hook の登録状態は未確認です。"
+    echo "⚠️  $HOOKS は既に存在します。jq が見つからないため、Codex Stop hook の登録状態は未確認です。"
   fi
 }
 

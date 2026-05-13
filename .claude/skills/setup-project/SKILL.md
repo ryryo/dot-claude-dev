@@ -58,6 +58,8 @@ cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/
 
 `setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{skills/dev, hooks/dev}` にシンボリックリンクを作成し、`.gitignore` と Codex hooks 設定も差分反映する。
 
+`.codex/hooks/dev` が正しくリンクされている既存プロジェクトでは、共有側の `commit-check.sh` と補助スクリプト更新がそのまま反映される。
+
 実行後、リンクが正しく作成されたか再確認:
 
 ```bash
@@ -91,7 +93,9 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 
 `setup-claude.sh` 内でも実行される。ここでは再確認として idempotent に実行する。
 
-既存の `.codex/hooks.json` がある場合はスクリプトが上書きせず、手動確認が必要な旨を出力する。
+この設定により Codex Stop hook で `.codex/hooks/dev/commit-check.sh` が実行される。`commit-check.sh` はコミット促し判定の前に、未コミットの `docs/PLAN/*/tasks.json` を検出して `.codex/skills/dev/spec-codex-run/scripts/sync.sh` を呼ぶ。
+
+既存の `.codex/hooks.json` がある場合も、`jq` が使える環境では Stop hook の登録・timeout/statusMessage 更新を差分適用する。`jq` がない場合は手動確認が必要な旨を出力する。
 
 ## Step 6: settings.json の作成
 

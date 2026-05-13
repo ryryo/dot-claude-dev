@@ -9,13 +9,20 @@ if [ "$ACTIVE" = "true" ]; then
   exit 0
 fi
 
+HOOK_DIR=$(cd "$(dirname "$0")" && pwd)
+SYNC_PLAN_TASKS="$HOOK_DIR/sync-plan-tasks.sh"
+
+if [ -x "$SYNC_PLAN_TASKS" ]; then
+  "$SYNC_PLAN_TASKS"
+fi
+
 # 変更行数を取得（追加+削除）
 LINES=$(git diff --numstat 2>/dev/null | awk '{s+=$1+$2} END {print s+0}')
 STAGED=$(git diff --cached --numstat 2>/dev/null | awk '{s+=$1+$2} END {print s+0}')
 UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1+0}')
 TOTAL=$((LINES + STAGED + UNTRACKED))
 
-if [ "$TOTAL" -ge 500 ]; then
+if [ "$TOTAL" -ge 300 ]; then
   echo "未コミットの変更があります（${TOTAL}行）。/dev:simple-add でコミットしてください。" >&2
   exit 2
 fi
