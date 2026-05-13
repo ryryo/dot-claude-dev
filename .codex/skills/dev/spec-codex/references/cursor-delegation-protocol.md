@@ -2,42 +2,38 @@
 
 Cursor Agent へ委任する場合は、期待成果物、編集範囲、禁止事項、検証、報告形式を明示した詳細な作業契約を渡す。
 
-## Availability Check
+## 委任の判断
 
-`spec-codex-run` 実行時に、Cursor Agent を使うかを都度判断する。
+`tasks.json` の `preDelegation[]` に項目がある場合に委任候補となる。使用するかは実行開始時にユーザーへ確認する。
 
-1. ユーザーが明示的に不使用を選んだ場合は使わない。
-2. 次を実行して利用可否を確認する。
-   ```bash
-   cursor-agent about
-   cursor-agent models
-   cursor-agent -p --mode ask --output-format text --workspace <workspace> "Respond with exactly: ok"
-   ```
-3. 未ログイン、契約なし、モデルなし、最小実行失敗の場合は Codex 単独にフォールバックする。
-4. 利用する場合の基本形:
-   ```bash
-   cursor-agent -p --mode ask --output-format text --workspace <workspace> --model <model> "<prompt>"
-   ```
-5. 調査だけなら `--mode ask` または `--mode plan` を使う。編集を委任する場合は write scope と禁止事項を明示する。
+委任しない場合は Codex 単独で該当作業を実行する。
 
-## Suitable Tasks
+実行コマンドの基本形:
 
-- 純粋関数、validator、formatter、schema、単体テスト。
-- 小さな adapter や helper。
-- 局所的な docs 調査。
-- write scope が明確で、他 Gate や共通 state に干渉しない作業。
-- 検証コマンドが明確な作業。
+```bash
+cursor-agent -p --mode ask --output-format text --workspace <workspace> --model <model> "<prompt>"
+```
 
-## Do Not Delegate
+調査・読み取りのみなら `--mode ask`、編集を伴う場合は write scope と禁止事項を明示する。
 
-- `docs/PLAN` の状態更新。
-- `tasks.json` 更新。
-- `spec.md` generated 領域同期。
-- Gate PASS 判定。
-- 最終統合、commit、push。
-- routing、共通 state、export pipeline、実ブラウザ最終検証など高結合な作業。
+## 委任できる作業
 
-## Prompt Requirements
+次の条件を**全て満たす**作業のみ `preDelegation[]` に切り出す。
+
+- 他の Gate の完了を待たずに**今すぐ先行実行できる**（依存する状態・ファイルが未生成でも作業できる）
+- write scope が単一または少数のファイルに限定されており、他 Gate・共通 state と干渉しない
+- 検証コマンドが明確で、結果の正誤を機械的に判定できる
+
+具体例: 純粋関数・validator・formatter・schema・単体テスト・小さな adapter
+
+## 委任してはいけない作業
+
+- `docs/PLAN` 更新・`tasks.json` 更新・`spec.md` generated 領域同期
+- Gate PASS 判定・最終統合・commit / push
+- routing・共通 state・export pipeline など複数 Gate にまたがる高結合な作業
+- 実ブラウザ最終検証
+
+## 指示書に必ず含める項目
 
 Cursor 向けプロンプトには必ず含める。
 
@@ -52,21 +48,8 @@ Cursor 向けプロンプトには必ず含める。
 
 実装結論を過剰に誘導しない。期待する結果、制約、検証条件を渡し、具体的な局所実装は担当エージェントに任せる。
 
-## tasks.json Hints
+## tasks.json の preDelegation フィールド
 
-Todo に optional `delegation` を付けてよい。
+先行実行させたい作業は Todo から切り出して `preDelegation[]` に記載する。フィールド定義は [tasks-schema-v3-codex.md](templates/tasks-schema-v3-codex.md) の `PreDelegation` セクションを参照。
 
-```json
-{
-  "delegation": {
-    "eligible": true,
-    "agent": "cursor-agent",
-    "mode": "ask",
-    "writeScope": ["src/validators/email.ts", "src/validators/email.test.ts"],
-    "verification": ["pnpm test src/validators/email.test.ts"],
-    "promptProfile": "detailed-worker"
-  }
-}
-```
-
-このフィールドは dashboard 互換のため optional とし、存在しなくても `spec-codex-run` は通常 v3 として実行する。
+`preDelegation[]` が空または省略されていても `spec-codex-run` は通常 v3 として実行する。

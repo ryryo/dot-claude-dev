@@ -17,7 +17,7 @@
 - `spec.slug`, `spec.title`, `spec.summary`, `spec.createdDate`, `spec.specPath` が揃っている。
 - `status`, `reviewChecked`, `preflight`, `gates` が存在する。
 - `progress` / `metadata` は作成しない。
-- Codex 追加情報は `extensions`、`gates[].kind`、`gates[].parallelizable`、`todos[].delegation` の optional 拡張だけに入っている。
+- Codex 追加情報は `extensions`、`gates[].kind`、`preDelegation[]` の optional 拡張だけに入っている。
 
 ### 2. Gate Contract
 
@@ -47,8 +47,6 @@
 - Gate dependencies は存在する Gate ID だけを参照している。
 - Gate dependencies に循環がない。
 - 未 passed dependency がある Gate を `passed: true` にする計画になっていない。
-- `parallelizable: true` の Gate / Todo は write scope と状態所有が独立している。
-
 ### 5. Preflight
 
 - Preflight は network 必須、workspace 外書き込み、対話ログイン/OAuth のみ。
@@ -82,8 +80,8 @@
 
 - Cursor Agent は毎回「使う / 使わない」を選べる設計になっている。
 - `extensions.codex.delegationPolicy.cursorAgent` は `ask-each-run` を基本にしている。
-- `todos[].delegation` がある場合、`eligible`, `agent`, `mode`, `writeScope`, `verification`, `promptProfile` が明確。
-- Cursor Agent に渡す作業は局所的で、write scope が明確。
+- `preDelegation[]` がある場合、各項目に `id`, `title`, `agent`, `model`, `writeScope`, `verification`, `prompt`, `relatedGate`, `relatedTodo`, `done` が揃っている。
+- `preDelegation[]` に入れた作業は `dependencies[]` に関わらず今すぐ先行実行できる作業のみ。
 - Cursor Agent に `docs/PLAN` 更新、`tasks.json` 更新、`spec.md` 同期、Gate PASS 判定、最終統合、commit/push を渡していない。
 - Cursor 向け委任プロンプトは [delegation-brief-template.md](delegation-brief-template.md) の項目を満たせる情報を持っている。
 

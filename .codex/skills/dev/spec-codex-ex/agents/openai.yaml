@@ -1,4 +1,0 @@
-interface:
-  display_name: "spec-codex"
-  short_description: "Codex Plan Modeでschema v3仕様書を作成するスキル"
-  default_prompt: "$spec-codex を使って、実装対象を調査し docs/PLAN の schema v3 仕様書を作成してください。"

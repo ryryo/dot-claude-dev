@@ -89,11 +89,12 @@ bash .codex/skills/dev/spec-codex/scripts/init-plan.sh {YYMMDD}_{slug}
 ### Step 7: Todo と委任ヒントを設計する
 
 1. [tasks-schema-v3-codex.md](references/templates/tasks-schema-v3-codex.md) の `Todo` セクションを Read し、軽量フィールドの定義を確認する
-2. Cursor Agent に委任できる Todo の判断基準は [cursor-delegation-protocol.md](references/cursor-delegation-protocol.md) を Read して確認する
-3. `tasks.json` の `gates[].todos[]` を編集して各 Gate の Todo を設計し、委任候補に `delegation` ヒントを付ける
+2. 各 Gate の Todo を設計し `tasks.json` の `gates[].todos[]` を編集する
+3. [cursor-delegation-protocol.md](references/cursor-delegation-protocol.md) を Read し、先行実行できる作業の判断基準を確認する
+4. 先行実行できる Todo を特定したら、`tasks.json` のトップレベル `preDelegation[]` に切り出す。各項目に `writeScope` / `verification` / `prompt`（詳細指示書）/ `relatedGate` / `relatedTodo` を設定する
 
-成果物: `docs/PLAN/{YYMMDD}_{slug}/tasks.json` の `gates[].todos[]`
-完了: 各 Todo が軽量フィールドのみを持ち、委任候補に `delegation` ヒントが付いている
+成果物: `docs/PLAN/{YYMMDD}_{slug}/tasks.json` の `gates[].todos[]` と `preDelegation[]`
+完了: 各 Todo が軽量フィールドのみを持ち、先行実行できる作業が `preDelegation[]` に切り出されている
 
 ### Step 8: Preflight を抽出する
 
@@ -109,7 +110,7 @@ bash .codex/skills/dev/spec-codex/scripts/init-plan.sh {YYMMDD}_{slug}
 1. sync を実行して `spec.md` の generated 領域を `tasks.json` と一致させる
 
 ```bash
-node .codex/skills/dev/spec-codex-run/scripts/sync-spec-md.mjs docs/PLAN/{YYMMDD}_{slug}/tasks.json
+bash .codex/skills/dev/spec-codex-run/scripts/sync.sh {YYMMDD}_{slug}
 ```
 
 2. [plan-reviewer.md](references/plan-reviewer.md) を Read し、全チェック項目に基づいて自己レビューする

@@ -10,13 +10,26 @@
   "status": "not-started",
   "reviewChecked": false,
   "preflight": [],
+  "preDelegation": [
+    {
+      "id": "D1",
+      "title": "",
+      "agent": "cursor-agent",
+      "model": "composer-2-fast",
+      "writeScope": [],
+      "verification": [],
+      "prompt": "",
+      "relatedGate": "",
+      "relatedTodo": "",
+      "done": false
+    }
+  ],
   "gates": [
     {
       "id": "A",
       "title": "",
       "summary": "",
       "kind": "implementation",
-      "parallelizable": false,
       "dependencies": [],
       "goal": {
         "what": "",
@@ -46,15 +59,15 @@
               "operation": "modify",
               "summary": ""
             }
-          ],
-          "delegation": {
-            "eligible": false,
-            "agent": "",
-            "mode": "",
-            "writeScope": [],
-            "verification": [],
-            "promptProfile": ""
-          }
+          ]
+        },
+        {
+          "id": "A2",
+          "gate": "A",
+          "title": "",
+          "tdd": false,
+          "dependencies": ["A1"],
+          "affectedFiles": []
         }
       ],
       "review": null,
