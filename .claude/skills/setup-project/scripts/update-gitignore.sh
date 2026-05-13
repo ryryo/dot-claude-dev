@@ -20,6 +20,8 @@ CLAUDE_ENTRIES=(
 CODEX_ENTRIES=(
   ".codex/skills/dev"
   ".codex/hooks/dev"
+  ".codex/config.toml"
+  ".codex/hooks.json"
 )
 
 LOCAL_ENTRIES=(
