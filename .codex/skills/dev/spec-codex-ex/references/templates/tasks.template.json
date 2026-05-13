@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 3,
+  "spec": {
+    "slug": "",
+    "title": "",
+    "summary": "",
+    "createdDate": "",
+    "specPath": "spec.md"
+  },
+  "status": "not-started",
+  "reviewChecked": false,
+  "preflight": [],
+  "gates": [
+    {
+      "id": "A",
+      "title": "",
+      "summary": "",
+      "kind": "implementation",
+      "parallelizable": false,
+      "dependencies": [],
+      "goal": {
+        "what": "",
+        "why": ""
+      },
+      "constraints": {
+        "must": [],
+        "mustNot": []
+      },
+      "acceptanceCriteria": [
+        {
+          "id": "A.AC1",
+          "description": "",
+          "checked": false
+        }
+      ],
+      "todos": [
+        {
+          "id": "A1",
+          "gate": "A",
+          "title": "",
+          "tdd": false,
+          "dependencies": [],
+          "affectedFiles": [
+            {
+              "path": "",
+              "operation": "modify",
+              "summary": ""
+            }
+          ],
+          "delegation": {
+            "eligible": false,
+            "agent": "",
+            "mode": "",
+            "writeScope": [],
+            "verification": [],
+            "promptProfile": ""
+          }
+        }
+      ],
+      "review": null,
+      "passed": false
+    }
+  ],
+  "extensions": {
+    "codex": {
+      "diagramPlan": [],
+      "delegationPolicy": {
+        "stateOwner": "main-codex",
+        "cursorAgent": "ask-each-run",
+        "defaultCursorModel": "composer-2-fast"
+      }
+    }
+  }
+}

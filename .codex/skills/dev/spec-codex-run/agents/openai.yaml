@@ -1,0 +1,4 @@
+interface:
+  display_name: "spec-codex-run"
+  short_description: "schema v3仕様書をCodexでGate単位に実行するスキル"
+  default_prompt: "$spec-codex-run を使って、対象 docs/PLAN の tasks.json を正としてGate単位に実装してください。"

@@ -19,18 +19,38 @@ export function generateTaskListSection(tasksJson) {
   lines.push('')
   lines.push('### 依存関係図')
   lines.push('')
-  lines.push('```')
-  for (const gate of tasksJson.gates ?? []) {
-    const deps = (gate.dependencies ?? []).join(', ')
-    const suffix = deps ? `（Gate ${deps} 完了後）` : ''
-    lines.push(`Gate ${gate.id}: ${gate.title}${suffix}`)
+  const gates = tasksJson.gates ?? []
+  if (gates.length === 0) {
+    lines.push('_Gate なし_')
+  } else {
+    lines.push('```mermaid')
+    lines.push('flowchart TD')
+    for (const gate of gates) {
+      const nodeId = mermaidNodeId(gate.id)
+      const kind = gate.kind ? `\\n${gate.kind}` : ''
+      lines.push(`  ${nodeId}["Gate ${escapeMermaidLabel(gate.id)}: ${escapeMermaidLabel(gate.title)}${kind}"]`)
+    }
+    for (const gate of gates) {
+      const deps = gate.dependencies ?? []
+      if (deps.length === 0) continue
+      for (const dep of deps) {
+        lines.push(`  ${mermaidNodeId(dep)} --> ${mermaidNodeId(gate.id)}`)
+      }
+    }
+    lines.push('```')
   }
-  lines.push('```')
   lines.push('')
 
-  for (const gate of tasksJson.gates ?? []) {
+  for (const gate of gates) {
     lines.push(`### Gate ${gate.id}: ${gate.title}`)
     lines.push('')
+    const metadata = []
+    if (gate.kind) metadata.push(`kind: \`${gate.kind}\``)
+    if (typeof gate.parallelizable === 'boolean') metadata.push(`parallelizable: \`${gate.parallelizable}\``)
+    if (metadata.length > 0) {
+      lines.push(`_${metadata.join(' / ')}_`)
+      lines.push('')
+    }
     if (gate.summary && gate.summary.trim() !== '') {
       lines.push(`> ${gate.summary}`)
       lines.push('')
@@ -80,7 +100,10 @@ export function generateTaskListSection(tasksJson) {
         } else if (files.length > 2) {
           filesSuffix = ` — ${files.slice(0, 2).join(', ')} ほか`
         }
-        lines.push(`- **${todo.id}**: ${todo.title}${filesSuffix}`)
+        const delegation = todo.delegation?.eligible
+          ? ` / delegation: \`${todo.delegation.agent ?? 'agent'}\``
+          : ''
+        lines.push(`- **${todo.id}**: ${todo.title}${filesSuffix}${delegation}`)
       }
       lines.push('')
     }
@@ -95,6 +118,22 @@ export function generateTaskListSection(tasksJson) {
   lines.push('')
 
   return lines.join('\n')
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function mermaidNodeId(value) {
+  return `G_${String(value).replace(/[^A-Za-z0-9_]/g, '_')}`
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function escapeMermaidLabel(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
 /**
@@ -183,6 +222,7 @@ function main() {
 
 const isDirectRun = import.meta.main ?? (
   process.argv[1] &&
+  existsSync(process.argv[1]) &&
   import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href
 )
 if (isDirectRun) {

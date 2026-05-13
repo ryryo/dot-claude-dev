@@ -1,5 +1,5 @@
 #!/bin/bash
-# spec-agent-run worktree cleanup
+# spec-codex-run worktree cleanup
 # Usage: cleanup-worktree.sh <slug>
 
 set -euo pipefail

@@ -30,7 +30,7 @@ Use only when worktree mode was selected and the user is ready to merge.
    ```bash
    git checkout {base}
    git pull --ff-only 2>/dev/null || echo "pull skipped"
-   git merge --no-ff feature/{slug} -m "Merge feature/{slug} via spec-agent-run"
+   git merge --no-ff feature/{slug} -m "Merge feature/{slug} via spec-codex-run"
    ```
 
 If conflicts occur, resolve only obvious non-semantic conflicts automatically. Ask the user before choosing sides for code logic, config, `.env`, package metadata, or non-obvious conflicts.
@@ -40,7 +40,7 @@ If conflicts occur, resolve only obvious non-semantic conflicts automatically. A
 After a successful merge:
 
 ```bash
-bash .codex/skills/dev/spec-agent-run/scripts/cleanup-worktree.sh {slug}
+bash .codex/skills/dev/spec-codex-run/scripts/cleanup-worktree.sh {slug}
 ```
 
 If cleanup fails because the branch is not merged or the worktree is dirty, stop and report the exact stderr. Do not force-remove automatically.

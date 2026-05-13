@@ -1,5 +1,5 @@
 #!/bin/bash
-# spec-agent-run worktree setup
+# spec-codex-run worktree setup
 # Usage: setup-worktree.sh <slug>
 
 set -euo pipefail

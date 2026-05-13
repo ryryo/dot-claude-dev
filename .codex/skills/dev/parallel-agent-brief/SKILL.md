@@ -2,7 +2,7 @@
 name: parallel-agent-brief
 description: |
   低〜中複雑度で独立性の高い実装・調査・テスト作業を、複数の外部エージェントへ並列委任するためのコピペ可能な指示書に分解する。
-  docs/PLAN の Gate/Todo、spec-agent-run、参照実装、既存コードを読み、衝突しにくい担当範囲・禁止事項・検証条件を含む依頼文を作る。
+  docs/PLAN の Gate/Todo、spec-codex-run、参照実装、既存コードを読み、衝突しにくい担当範囲・禁止事項・検証条件を含む依頼文を作る。
   Trigger: 並列エージェント指示書, 他エージェントに投げる, 低複雑度タスクを分担, コピペ用プロンプト, parallel agent brief, delegate simple tasks
 ---
 
@@ -24,7 +24,7 @@ description: |
 作業前に、ユーザーが指定したスキル、計画ファイル、参照実装、対象ディレクトリが実在するか確認する。
 
 - `find`、`rg --files`、`ls -l`、`realpath` を使い、symlink も確認する。
-- `.codex/skills/dev/spec-agent-run/SKILL.md` や `.claude/skills/dev/spec-run/SKILL.md` など、同名・類似スキルが複数ある場合は、実在パスを出力に明記する。
+- `.codex/skills/dev/spec-codex-run/SKILL.md` や `.claude/skills/dev/spec-run/SKILL.md` など、同名・類似スキルが複数ある場合は、実在パスを出力に明記する。
 - `docs/PLAN/{YYMMDD}_{slug}/tasks.json` がある場合は `tasks.json` を正とし、`spec.md` は補助または生成物として扱う。
 - 参照実装がある場合は、委任タスクごとに読むべき参照パスを明示する。
 
@@ -63,7 +63,7 @@ description: |
 `docs/PLAN` がある場合は、各プロンプトに次を入れる。
 
 ```text
-まず /absolute/path/to/.codex/skills/dev/spec-agent-run/SKILL.md を読んでください。
+まず /absolute/path/to/.codex/skills/dev/spec-codex-run/SKILL.md を読んでください。
 次に /absolute/path/to/docs/PLAN/{YYMMDD}_{slug}/tasks.json を読み、対象 Gate/Todo/AC だけを契約として扱ってください。
 tasks.json が正です。spec.md は補助または生成物です。
 並行作業前提なので docs/PLAN/{YYMMDD}_{slug}/tasks.json と spec.md は編集しないでください。
@@ -99,7 +99,7 @@ tasks.json が正です。spec.md は補助または生成物です。
 作業場所: <absolute workspace path>
 
 まず次を読んでください:
-- <absolute path to relevant skill, e.g. .codex/skills/dev/spec-agent-run/SKILL.md>
+- <absolute path to relevant skill, e.g. .codex/skills/dev/spec-codex-run/SKILL.md>
 - <absolute path to docs/PLAN/.../tasks.json>
 - 必要に応じて <absolute path to docs/PLAN/.../spec.md>
 
