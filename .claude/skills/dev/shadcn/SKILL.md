@@ -2,22 +2,22 @@
 name: dev:shadcn
 description: Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn/ui, component registries, presets, --preset codes, or any project with a components.json file. Also triggers for "shadcn init", "create an app with --preset", or "switch to --preset".
 user-invocable: false
-allowed-tools: Bash(.claude/skills/shadcn/scripts/shadcn.sh *)
+allowed-tools: Bash(.claude/skills/dev/shadcn/scripts/shadcn.sh *)
 ---
 
 # shadcn/ui
 
 A framework for building ui, components and design systems. Components are added as source code to the user's project via the CLI.
 
-> **IMPORTANT:** Run all CLI commands via the wrapper script: `.claude/skills/shadcn/scripts/shadcn.sh` (handles PATH resolution for nodenv/anyenv). Examples below use `npx shadcn@latest` for readability, but **always execute via the wrapper script**.
+> **IMPORTANT:** Run all CLI commands via the wrapper script: `.claude/skills/dev/shadcn/scripts/shadcn.sh` (handles PATH resolution for nodenv/anyenv). Examples below use `npx shadcn@latest` for readability, but **always execute via the wrapper script**.
 
 ## Current Project Context
 
 ```json
-!`.claude/skills/shadcn/scripts/shadcn.sh info --json`
+!`.claude/skills/dev/shadcn/scripts/shadcn.sh info --json`
 ```
 
-The JSON above contains the project config and installed components. Use `.claude/skills/shadcn/scripts/shadcn.sh docs <component>` to get documentation and example URLs for any component.
+The JSON above contains the project config and installed components. Use `.claude/skills/dev/shadcn/scripts/shadcn.sh docs <component>` to get documentation and example URLs for any component.
 
 ## Principles
 

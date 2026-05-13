@@ -19,6 +19,7 @@ LINK_NAMES=(
   ".claude/commands/dev"
   ".claude/hooks/dev"
   ".codex/skills/dev"
+  ".codex/hooks/dev"
 )
 LINK_TARGETS=(
   "$SHARED/.claude/rules/workflow"
@@ -26,6 +27,7 @@ LINK_TARGETS=(
   "$SHARED/.claude/commands/dev"
   "$SHARED/.claude/hooks/dev"
   "$SHARED/.codex/skills/dev"
+  "$SHARED/.codex/hooks/dev"
 )
 
 ALL_OK=true
@@ -55,7 +57,7 @@ for i in "${!LINK_NAMES[@]}"; do
         if [ "$SHOWED_HINT" != "true" ]; then
           echo ""
           echo "  ⚠️  リンク先の dot-claude-dev が想定と異なります。"
-          ACTUAL_BASE=$(echo "$ACTUAL" | sed -E 's|/.claude/.*||')
+          ACTUAL_BASE=$(echo "$ACTUAL" | sed -E 's|/(\.claude|\.codex)/.*||')
           echo "      実際の配置: $ACTUAL_BASE"
           echo "      想定の配置: $SHARED"
           echo ""

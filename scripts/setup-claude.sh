@@ -34,6 +34,15 @@ if [ -z "$SHARED_DIR" ]; then
   exit 1
 fi
 
+PROJECT_DIR="$(pwd -P)"
+SHARED_DIR="$(cd "$SHARED_DIR" && pwd -P)"
+
+if [ "$PROJECT_DIR" = "$SHARED_DIR" ]; then
+  echo "Error: setup-claude.sh must be run from a target project, not from the dot-claude-dev shared repo."
+  echo "Shared directory: $SHARED_DIR"
+  exit 1
+fi
+
 # デフォルトパスと異なる場合 OR 探索で見つけた場合、CLAUDE_SHARED_DIR を shell config に自動永続化
 DEFAULT_DIR="$HOME/dot-claude-dev"
 should_persist=false
@@ -94,11 +103,18 @@ fi
 
 # Codex CLI 用ディレクトリを準備
 mkdir -p .codex/skills
+mkdir -p .codex/hooks
 
 # .codex/skills/dev
 if [ -d "$SHARED_DIR/.codex/skills/dev" ]; then
   ln -sfn "$SHARED_DIR/.codex/skills/dev" .codex/skills/dev
   echo "✓ Linked .codex/skills/dev"
+fi
+
+# .codex/hooks/dev
+if [ -d "$SHARED_DIR/.codex/hooks/dev" ]; then
+  ln -sfn "$SHARED_DIR/.codex/hooks/dev" .codex/hooks/dev
+  echo "✓ Linked .codex/hooks/dev"
 fi
 
 echo ""
@@ -119,6 +135,7 @@ echo ".claude/hooks/dev"
 echo ""
 echo "# Codex CLI - shared configuration (symlinks only)"
 echo ".codex/skills/dev"
+echo ".codex/hooks/dev"
 echo ""
 echo "# Claude Code - local settings only"
 echo ".claude/settings.local.json"

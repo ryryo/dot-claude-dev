@@ -19,6 +19,7 @@ CLAUDE_ENTRIES=(
 
 CODEX_ENTRIES=(
   ".codex/skills/dev"
+  ".codex/hooks/dev"
 )
 
 LOCAL_ENTRIES=(

@@ -43,7 +43,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
-`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/skills/dev` にシンボリックリンクを作成する。
+`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{skills/dev, hooks/dev}` にシンボリックリンクを作成する。
 
 実行後、リンクが正しく作成されたか再確認:
 
@@ -68,7 +68,15 @@ cp "$TEMPLATE_DIR/setup-local.sh" "{PROJECT_PATH}/scripts/"
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/update-gitignore.sh" "{PROJECT_PATH}"
 ```
 
-## Step 5: settings.json の作成
+## Step 5: Codex hooks 設定の作成
+
+```bash
+bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/create-codex-hooks.sh" "{PROJECT_PATH}"
+```
+
+既存の `.codex/hooks.json` がある場合はスクリプトが上書きせず、手動確認が必要な旨を出力する。
+
+## Step 6: settings.json の作成
 
 ```bash
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/create-settings-json.sh" "{PROJECT_PATH}"
@@ -76,7 +84,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 
 既存の `settings.json` がある場合はスクリプトがスキップし、手動確認が必要な旨を出力する。
 
-## Step 6: 結果サマリー表示
+## Step 7: 結果サマリー表示
 
 ```
 ## セットアップ完了: {PROJECT_PATH}
@@ -84,9 +92,10 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 | 項目 | 状態 |
 |------|------|
 | .claude シンボリックリンク（rules/skills/commands/hooks） | ✓ |
-| .codex シンボリックリンク（skills） | ✓ |
+| .codex シンボリックリンク（skills/hooks） | ✓ |
 | scripts/setup-claude-remote.sh | ✓ |
 | scripts/setup-local.sh | ✓ |
 | .gitignore 更新 | ✓ |
 | .claude/settings.json | ✓ 新規作成 / ⚠️ 既存（要確認） |
+| .codex/config.toml / hooks.json | ✓ 新規作成・更新 / ⚠️ 既存（要確認） |
 ```
