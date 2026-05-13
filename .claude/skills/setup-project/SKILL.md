@@ -34,16 +34,29 @@ ls "{PROJECT_PATH}"
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/check-claude-setup.sh" "{PROJECT_PATH}"
 ```
 
-- **終了コード 0（全リンク正常）** → セットアップ済みである旨を伝え、再実行するか AskUserQuestion で確認
-- **終了コード 1（未リンク・別パスあり）** → Step 2 へ進む
+出力の `セットアップ種別` を見て、以降の見出しを選ぶ。
 
-## Step 2: setup-claude.sh 実行
+- **新規** → 「新規セットアップ」へ進む。
+- **更新（既存セットアップ正常・再適用可能）** → 「既存セットアップ更新」へ進む。
+- **更新/修復（不足または別パスあり）** → 「既存セットアップ更新」へ進む。再リンクで修復する。
+
+## 新規セットアップ
+
+初回セットアップでは Step 2 から Step 7 まで順に実行する。
+
+## 既存セットアップ更新
+
+既存プロジェクトの更新では Step 2 を必ず実行する。`setup-claude.sh` は idempotent なので、既存リンクを維持しつつ不足分だけ反映する。
+
+Step 3 以降は必要に応じて確認として実行する。ただし `scripts/setup-claude-remote.sh` / `scripts/setup-local.sh` を上書きしたくない場合は Step 3 をスキップする。
+
+## Step 2: setup-claude.sh 実行（新規・更新共通）
 
 ```bash
 cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
-`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{skills/dev, hooks/dev}` にシンボリックリンクを作成する。
+`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{skills/dev, hooks/dev}` にシンボリックリンクを作成し、`.gitignore` と Codex hooks 設定も差分反映する。
 
 実行後、リンクが正しく作成されたか再確認:
 
@@ -62,17 +75,21 @@ cp "$TEMPLATE_DIR/setup-claude-remote.sh" "{PROJECT_PATH}/scripts/"
 cp "$TEMPLATE_DIR/setup-local.sh" "{PROJECT_PATH}/scripts/"
 ```
 
-## Step 4: .gitignore の更新
+## Step 4: .gitignore の確認
 
 ```bash
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/update-gitignore.sh" "{PROJECT_PATH}"
 ```
 
-## Step 5: Codex hooks 設定の作成
+`setup-claude.sh` 内でも実行される。ここでは再確認として idempotent に実行する。
+
+## Step 5: Codex hooks 設定の確認
 
 ```bash
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/create-codex-hooks.sh" "{PROJECT_PATH}"
 ```
+
+`setup-claude.sh` 内でも実行される。ここでは再確認として idempotent に実行する。
 
 既存の `.codex/hooks.json` がある場合はスクリプトが上書きせず、手動確認が必要な旨を出力する。
 

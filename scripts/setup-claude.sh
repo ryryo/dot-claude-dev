@@ -117,6 +117,18 @@ if [ -d "$SHARED_DIR/.codex/hooks/dev" ]; then
   echo "✓ Linked .codex/hooks/dev"
 fi
 
+# setup-claude.sh の再実行だけで既存プロジェクトへ差分反映できるようにする
+UPDATE_GITIGNORE="$SHARED_DIR/.claude/skills/setup-project/scripts/update-gitignore.sh"
+CREATE_CODEX_HOOKS="$SHARED_DIR/.claude/skills/setup-project/scripts/create-codex-hooks.sh"
+
+if [ -f "$UPDATE_GITIGNORE" ]; then
+  bash "$UPDATE_GITIGNORE" "$PROJECT_DIR"
+fi
+
+if [ -f "$CREATE_CODEX_HOOKS" ]; then
+  bash "$CREATE_CODEX_HOOKS" "$PROJECT_DIR"
+fi
+
 echo ""
 echo "✓ Claude configuration linked successfully"
 echo ""
@@ -136,6 +148,10 @@ echo ""
 echo "# Codex CLI - shared configuration (symlinks only)"
 echo ".codex/skills/dev"
 echo ".codex/hooks/dev"
+echo ""
+echo "# Codex CLI - project hooks"
+echo ".codex/config.toml"
+echo ".codex/hooks.json"
 echo ""
 echo "# Claude Code - local settings only"
 echo ".claude/settings.local.json"

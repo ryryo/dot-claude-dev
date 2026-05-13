@@ -32,6 +32,7 @@ LINK_TARGETS=(
 
 ALL_OK=true
 SHOWED_HINT=false
+EXISTING_COUNT=0
 
 echo "## Claude セットアップ確認: $PROJECT"
 echo "共有ディレクトリ: $SHARED"
@@ -43,6 +44,10 @@ for i in "${!LINK_NAMES[@]}"; do
   LINK="${LINK_NAMES[$i]}"
   TARGET="${LINK_TARGETS[$i]}"
   ACTUAL=$(readlink "$PROJECT/$LINK" 2>/dev/null)
+
+  if [ -e "$PROJECT/$LINK" ] || [ -L "$PROJECT/$LINK" ]; then
+    EXISTING_COUNT=$((EXISTING_COUNT + 1))
+  fi
 
   if [ -z "$ACTUAL" ]; then
     printf "%-35s %-10s %s\n" "$LINK" "未リンク" "-"
@@ -74,9 +79,15 @@ done
 
 echo ""
 if $ALL_OK; then
+  echo "セットアップ種別: 更新（既存セットアップ正常・再適用可能）"
   echo "✓ 全リンク正常"
   exit 0
 else
+  if [ "$EXISTING_COUNT" -eq 0 ]; then
+    echo "セットアップ種別: 新規"
+  else
+    echo "セットアップ種別: 更新/修復（不足または別パスあり）"
+  fi
   echo "⚠️  未設定または別パスのリンクがあります"
   exit 1
 fi
