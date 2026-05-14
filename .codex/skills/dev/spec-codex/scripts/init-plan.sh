@@ -3,7 +3,12 @@
 # Example: bash .codex/skills/dev/spec-codex/scripts/init-plan.sh 260513_user-auth
 set -euo pipefail
 
-PLAN_ID="${1:?Usage: init-plan.sh {YYMMDD}_{slug}}"
+if [ $# -lt 1 ]; then
+  echo "Usage: init-plan.sh {YYMMDD}_{slug}" >&2
+  exit 1
+fi
+
+PLAN_ID="$1"
 PLAN_DIR="docs/PLAN/${PLAN_ID}"
 SKILL_DIR=".codex/skills/dev/spec-codex"
 

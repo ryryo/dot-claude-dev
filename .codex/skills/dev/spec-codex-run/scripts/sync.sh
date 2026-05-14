@@ -3,7 +3,12 @@
 # Example: bash .codex/skills/dev/spec-codex-run/scripts/sync.sh 260513_user-auth
 set -euo pipefail
 
-PLAN_ID="${1:?Usage: sync.sh {YYMMDD}_{slug}}"
+if [ $# -lt 1 ]; then
+  echo "Usage: sync.sh {YYMMDD}_{slug}" >&2
+  exit 1
+fi
+
+PLAN_ID="$1"
 TASKS_JSON="docs/PLAN/${PLAN_ID}/tasks.json"
 
 if [ ! -f "$TASKS_JSON" ]; then
