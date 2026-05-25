@@ -26,7 +26,8 @@ Codex App の Worktree モードをプロジェクトごとに運用できる形
 
 ## 基本方針
 
-- 調査は `agents/repository-discovery.md` の Task へ切り出す。メインセッションは調査結果を査読し、生成方針と編集を担う。
+- 調査は `agents/repository-discovery.md` の Task へ切り出す。このスキルでは 1 つのサブエージェントにリポジトリ全体の調査を任せ、メインセッションは調査結果の査読、生成方針、編集を担う。
+- サブエージェントが利用できない環境、またはユーザーが明示的に禁止した場合は、メインセッションが同じ Task 仕様を読み、編集せずに調査する。
 - 対象プロジェクトの既存規約を優先する。`.codex`、AGENTS/CLAUDE 系ルール、package manager、Docker Compose、env 管理、既存 scripts を先に読む。
 - setup script は軽量・冪等・非破壊にする。DB 起動、migration、volume 削除など時間がかかる処理や危険操作は、原則 project-specific skill または Actions に分ける。
 - `.env`、API key、credential などの秘密情報は生成しない。必要な場合は、既存ファイルの存在とコピー方針だけを扱う。
@@ -39,7 +40,7 @@ Codex App の Worktree モードをプロジェクトごとに運用できる形
 
 `agents/repository-discovery.md` を使って、対象リポジトリの Worktree 運用に必要な事実を調査する。
 
-サブエージェント実行手段が利用できる場合は、この Task 仕様をそのまま worker prompt として渡す。
+サブエージェント実行手段が利用できる場合は、この Task 仕様を 1 つの worker prompt として渡す。
 利用できない場合は、メインセッションが同じ Task 仕様を読み、編集せずに調査だけを実行する。
 
 依頼には最低限以下を含める。
