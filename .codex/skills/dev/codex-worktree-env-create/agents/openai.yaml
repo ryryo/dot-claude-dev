@@ -1,4 +1,0 @@
-interface:
-  display_name: "Codex Worktree 環境作成"
-  short_description: "プロジェクト専用のCodex Worktree環境を設計・生成するスキル"
-  default_prompt: "$codex-worktree-env-create を使って、このリポジトリ向けのCodex Worktree local environment、Actions、setup/cleanup skillを作成してください。"
