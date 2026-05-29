@@ -2,9 +2,9 @@
 name: dev:front-end-refactor-loop
 description: |
   front-end-design-patterns を使い、指定されたフロントエンド範囲に対して
-  サブエージェント調査 → メインセッション修正 → 必要時のみ性能計測 →
-  simple-add → 再調査を NO_FINDINGS まで繰り返す、機能変更なしの
-  内部リファクタリングループ。
+  サブエージェント調査（必要時は複数スコープに分割した独立 fresh audit） →
+  メインセッション修正 → 必要時のみ性能計測 → simple-add → 再調査を
+  NO_FINDINGS まで繰り返す、機能変更なしの内部リファクタリングループ。
 
   Trigger:
   front-end-refactor-loop, front-end-design-patterns リファクタリングループ,
@@ -26,6 +26,7 @@ user-invocable: true
 - 機能変更、UI仕様変更、公開 API 変更、データ形式変更、イベント順変更、外部 API 呼び出し変更をしない。
 - 目的は内部的な責務分離、render hot path、stable dependency、derived state、module boundary、lazy loading、不要再計算などの改善に限定する。
 - 調査は毎回 **新しいサブエージェント** に委譲する。前回のサブエージェントを再利用しない。
+- 広い対象や応答遅延・BLOCKED が起きやすい対象では、単一サブエージェントに固執せず、独立した複数サブエージェントへスコープ分割する。
 - メインセッションは、サブエージェントが見つけた具体的な対象を実装・検証・コミットする。
 - 性能計測は常時必須にしない。性能影響があり得るリファクタリングだけ、Performance Measurement Gate を通す。
 
@@ -57,6 +58,27 @@ user-invocable: true
 
 毎回、新しいサブエージェントを起動し、read-only 調査を依頼する。
 2ループ目以降も、前回結果の確認だけに寄せず、対象範囲を改めて網羅的に読むよう明記する。
+
+### 監査トポロジー
+
+対象が広い、依存関係が複数領域にまたがる、単一サブエージェントの応答が遅い、または `BLOCKED` / 形式崩れ / 親セッションの完了報告を返すなど監査品質が不十分な場合は、Fresh Audit を複数の独立サブエージェントに分割する。
+
+分割を使う目安:
+
+- route / component / shared hook / integration / media 処理など、責務境界が複数ある。
+- lazy import、SSE、canvas / image / video、large object state、list/grid など、異なる性能コストが混在する。
+- 1 本の監査が長時間返らない、`BLOCKED` だけで理由がない、または `NO_FINDINGS` 以外の応答形式が曖昧。
+- 過去ループの文脈を引きずって、最新 clean HEAD の read-only 監査として信用しにくい。
+
+分割ルール:
+
+- 各サブエージェントは **新規・read-only・独立** にする。前回サブエージェントは閉じるか、完了判定から除外する。
+- サブエージェントごとに責任範囲を重ならない程度に切る。例: LP editor、media/video、Codex/SSE、dashboard route、cross-cutting。
+- 各プロンプトの冒頭で `git rev-parse --short HEAD` と `git status --short` を確認させ、期待する latest clean HEAD と一致しなければ `BLOCKED: baseline mismatch` で止めさせる。
+- 親セッションの長い文脈が監査を汚す場合は、最小コンテキストの独立 agent を使い、対象 repo path、期待 HEAD、read-only 制約、調査範囲、出力形式だけを渡す。
+- 完了判定に使えるのは、最新 clean HEAD を確認したうえで対象範囲を調査し、指定形式で返した結果だけ。`BLOCKED`、形式崩れ、親セッションの要約、古い HEAD の結果は採用しない。
+- どれか 1 本でも actionable finding を返したら、その Fresh Audit round は未達扱いにする。修正・検証・コミット後、全スコープを最新 clean HEAD から再監査する。
+- 最終完了には、分割した **全スコープ** の最新 fresh audit が `NO_FINDINGS` であることを要求する。
 
 サブエージェントへのプロンプト雛形:
 
@@ -95,11 +117,32 @@ behavior-preserving refactor 問題をまだ残していないかだけを軽く
 - product/UI の挙動変更は実行・提案しない。
 ```
 
+分割監査用の追記例:
+
+```text
+Expected baseline:
+- `git rev-parse --short HEAD` は `<expected short sha>` であること。
+- `git status --short` は空であること。
+一致しない場合は `BLOCKED: baseline mismatch` とだけ報告して停止してください。
+
+このサブエージェントの担当範囲:
+- <scope name>
+- <files/directories>
+
+Final response must be exactly:
+Baseline: HEAD <short-sha>
+Status: clean
+NO_FINDINGS
+
+If and only if you find actionable issues, replace `NO_FINDINGS` with numbered findings.
+```
+
 ## Triage
 
 `NO_FINDINGS` の場合:
 
-- 最終検証を実行する。
+- 単一監査なら最終検証を実行する。
+- 分割監査なら、全スコープが最新 clean HEAD で `NO_FINDINGS` を返していることを確認してから最終検証を実行する。
 - 作業ツリーが clean であることを確認する。
 - Final Report を作って完了する。
 
@@ -330,10 +373,12 @@ Final Report 作成ルール:
 - プロンプトには前回の修正内容を必要以上に渡さない。必要なら touched files / commit hash 程度に留める。
 - メインセッションは過去 findings に固執せず、最新サブエージェント出力だけを次の修正対象にする。
 - Performance Measurement Gate の実施有無も毎ループで改めて判定する。前回測ったから今回も不要、または前回不要だったから今回も不要、とは扱わない。
+- 分割監査を使った場合、1 スコープの `NO_FINDINGS` だけで完了扱いにしない。全スコープが同じ最新 clean HEAD を確認した `NO_FINDINGS` を返しているかを完了条件にする。
 
 ## 完了条件
 
-- 最新サブエージェントが `NO_FINDINGS` を返している。
+- 最新サブエージェント、または分割監査の全スコープが `NO_FINDINGS` を返している。
+- 各 `NO_FINDINGS` は同じ最新 clean HEAD と空の `git status --short` を確認済みである。
 - 最終検証が通っている、または未実施理由が明確。
 - Performance Measurement Gate 対象の一時 instrumentation が残っていない。
 - 修正済みループは `simple-add` 済み。
