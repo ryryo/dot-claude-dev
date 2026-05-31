@@ -13,8 +13,13 @@
 | render logic を caller 側で柔軟に差し替えたい | [react/render-props-pattern.md](react/render-props-pattern.md), [react/react-composition-2026.md](react/react-composition-2026.md) |
 | auth、logging、feature flag など cross-cutting concern を共有したい | [react/hoc-pattern.md](react/hoc-pattern.md), [javascript/mediator-pattern.md](javascript/mediator-pattern.md) |
 | object creation、command queue、undo / redo、event mediator など framework-agnostic な設計課題がある | [javascript/factory-pattern.md](javascript/factory-pattern.md), [javascript/command-pattern.md](javascript/command-pattern.md), [javascript/observer-pattern.md](javascript/observer-pattern.md), [javascript/mediator-pattern.md](javascript/mediator-pattern.md) |
+| Vue SFC の markup / logic / style、component boundary を整理したい | [vue/components.md](vue/components.md), [vue/script-setup.md](vue/script-setup.md) |
+| Vue の shared reactive state、side effect、computed logic が重複している | [vue/composables.md](vue/composables.md), [vue/script-setup.md](vue/script-setup.md) |
+| Vue component 間で props drilling、deep dependency、shared state がある | [vue/provide-inject.md](vue/provide-inject.md), [vue/state-management.md](vue/state-management.md) |
+| Vue で view と data / business logic を分離したい | [vue/container-presentational.md](vue/container-presentational.md), [vue/data-provider.md](vue/data-provider.md), [vue/renderless-components.md](vue/renderless-components.md) |
+| Vue component を runtime 条件で切り替える、または template では表現しづらい UI を作る | [vue/dynamic-components.md](vue/dynamic-components.md), [vue/render-functions.md](vue/render-functions.md) |
 
-## React Runtime Performance
+## Framework Runtime Performance
 
 | 症状・依頼 | 優先して読む reference |
 |---|---|
@@ -22,6 +27,7 @@
 | 数百〜数千件の list / table で scroll jank や slow initial render がある | [javascript/virtual-lists.md](javascript/virtual-lists.md), [react/react-render-optimization.md](react/react-render-optimization.md) |
 | hot path、loop、DOM operation、cache、data structure が重い | [javascript/js-performance-patterns.md](javascript/js-performance-patterns.md) |
 | component state / derived state / context update の切り分けが必要 | [react/react-render-optimization.md](react/react-render-optimization.md), [react/hooks-pattern.md](react/hooks-pattern.md) |
+| Vue の大きな component、reactive state、computed / watcher の整理が必要 | [vue/composables.md](vue/composables.md), [vue/state-management.md](vue/state-management.md), [vue/components.md](vue/components.md) |
 
 ## Data Fetching / Cache
 
@@ -37,6 +43,7 @@
 |---|---|
 | 初期 JS が大きい、startup に不要な feature が initial bundle に入っている | [javascript/dynamic-import.md](javascript/dynamic-import.md), [javascript/bundle-splitting.md](javascript/bundle-splitting.md), [javascript/vite-bundle-optimization.md](javascript/vite-bundle-optimization.md) |
 | modal、picker、editor、chart などを interaction 後に読みたい | [javascript/import-on-interaction.md](javascript/import-on-interaction.md), [javascript/dynamic-import.md](javascript/dynamic-import.md) |
+| Vue component を非同期 load して initial bundle を下げたい | [vue/async-components.md](vue/async-components.md), [javascript/dynamic-import.md](javascript/dynamic-import.md) |
 | below-the-fold component や画像を viewport 到達まで遅延したい | [javascript/import-on-visibility.md](javascript/import-on-visibility.md), [javascript/loading-sequence.md](javascript/loading-sequence.md) |
 | route ごとに code splitting したい | [javascript/route-based.md](javascript/route-based.md), [javascript/dynamic-import.md](javascript/dynamic-import.md) |
 | preload / prefetch の使い分けが必要 | [javascript/preload.md](javascript/preload.md), [javascript/prefetch.md](javascript/prefetch.md), [javascript/loading-sequence.md](javascript/loading-sequence.md) |
@@ -69,3 +76,5 @@
 | bundle / loading regression | [javascript/dynamic-import.md](javascript/dynamic-import.md), [javascript/tree-shaking.md](javascript/tree-shaking.md), [javascript/vite-bundle-optimization.md](javascript/vite-bundle-optimization.md) |
 | data fetching / cache regression | [react/react-data-fetching.md](react/react-data-fetching.md) |
 | SSR / hydration regression | [react/server-side-rendering.md](react/server-side-rendering.md), [react/react-server-components.md](react/react-server-components.md), [react/react-selective-hydration.md](react/react-selective-hydration.md) |
+| Vue component / composable design regression | [vue/components.md](vue/components.md), [vue/composables.md](vue/composables.md), [vue/script-setup.md](vue/script-setup.md) |
+| Vue state / provide-inject / renderless pattern regression | [vue/state-management.md](vue/state-management.md), [vue/provide-inject.md](vue/provide-inject.md), [vue/renderless-components.md](vue/renderless-components.md) |

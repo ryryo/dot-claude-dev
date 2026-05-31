@@ -1,20 +1,20 @@
 # Front-end Design Patterns References
 
-JavaScript / React の設計・実装・レビュー・リファクタリングで使う reference 群。
+JavaScript / React / Vue の設計・実装・レビュー・リファクタリングで使う reference 群。
 このディレクトリは Patterns.dev 由来の個別 SKILL.md を、統合スキルから参照しやすい形へ変換したもの。
 
 ## 使い方
 
 1. まず [decision-matrix.md](decision-matrix.md) を読む。
-2. 依頼内容とコード上の症状から、必要な React / JavaScript reference を 1〜4 件に絞る。
-3. [react/index.md](react/index.md) または [javascript/index.md](javascript/index.md) で対象 reference を確認する。
+2. 依頼内容とコード上の症状から、必要な React / Vue / JavaScript reference を 1〜4 件に絞る。
+3. [react/index.md](react/index.md)、[vue/index.md](vue/index.md)、または [javascript/index.md](javascript/index.md) で対象 reference を確認する。
 4. 個別 reference の `Original Skill Metadata` と `original-skill-body` を読んで判断する。
 
 ## Scope
 
 - React references: [react/index.md](react/index.md)
+- Vue references: [vue/index.md](vue/index.md)
 - JavaScript references: [javascript/index.md](javascript/index.md)
-- Vue: out of scope。この統合スキルでは Vue 由来の元資料を参照しない。
 
 ## Lossless Conversion Policy
 
