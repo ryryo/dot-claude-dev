@@ -1,963 +1,851 @@
-# Cursor IDE / Composer を AppleScript・CDP で外部操作する実例調査メモ
+# Cursor IDE / Agent Window 外部操作リサーチ
 
 調査日: 2026-06-15  
-目的: 「Codex などの外部エージェントが、Cursor CLI ではなく AppleScript や UI 自動化経由で Cursor IDE / Composer / Agent を叩く」実例を、日本語・英語の公開記事・リポジトリから整理する。
+対象: Codex から Cursor IDE / Cursor Agent window を worker として叩く transport 設計  
+方針: **Cmd+V / pasteboard / clipboard 注入を主経路にしない**
 
 ---
 
 ## 1. 結論
 
-現時点で、**「Codex が PM としてタスク分解し、AppleScript 経由で Cursor IDE / Composer 2.5 に実装を外注する」そのものズバリの公開記事・リポジトリは多くない**。
+この資料の結論は、初期調査時点から更新する。
 
-ただし、同じ思想にかなり近い実装は複数ある。
+採用する主経路:
 
-特に近いのは次の4系統。
+1. **macOS: `Cursor Agents` window の `AXTextArea` へ Accessibility API で直接 `value` を set する**
+2. **macOS fallback / WSL: Cursor CLI の `agent`**
+3. **将来候補: Cursor を remote debugging port 付きで起動し、CDP で DOM / Lexical editor を直接操作する**
 
-1. **AppleScript / osascript で Cursor Composer を開き、プロンプトを貼り付けて送信する実装**
-2. **iPhone / SMS / Telegram など外部入力から、ローカルの Cursor IDE を操作する実装**
-3. **Chrome DevTools Protocol, CDP で Cursor の Electron DOM を直接操作する実装**
-4. **Cursor Hooks / Claude Code Hooks から、Cursor のモデル切替やウィンドウ操作を自動化する実装**
+採用しない主経路:
 
-実装の堅牢性で見ると、だいたい次の順になる。
+- `pbcopy` / pasteboard に prompt を置く
+- `Cmd+V` で prompt を貼る
+- `Cmd+I -> Cmd+V -> Return` を標準経路にする
+- UI 応答テキストを AppleScript で読んで完了判定する
+- Windows native / Windows GUI automation
 
-| 方式 | 使いやすさ | 堅牢性 | 代表例 |
-|---|---:|---:|---|
-| AppleScript / pyautogui | 高い | 中〜低 | cursor-remote, sms-2-cursor, Gist |
-| CDP / DOM 操作 | 中 | 中〜高 | OpenCLI, PocketCursor |
-| Cursor Hooks + osascript | 中 | 中 | model-matchmaker, Claude Code Hooks記事 |
-| Cursor CLI | 高い | 高い | 公式CLI。ただし「IDE内Composerを操作」ではない |
-
-今回のX文脈に最も近いのは、**AppleScriptでCursor IDE内のComposerを開いてプロンプトを投げる系統**。より発展させるなら、CDPでComposer入力欄や応答DOMを直接扱う実装が参考になる。
+既存の公開実装には `Cmd+V` 系が多い。ただし、今回の設計ではそれらは「実例として存在する」「権限・focus・clipboard 汚染で壊れやすい」というリスク確認として扱い、実装の主経路にはしない。
 
 ---
 
-## 2. なぜ Cursor CLI ではなく AppleScript / UI 自動化なのか
+## 2. なぜ Cmd+V 系を避けるか
 
-Cursor CLI は「ターミナルから Cursor Agent を使う」用途には向いている。CI、バッチ処理、非対話実行、スクリプト化には適している。
+`Cmd+V` / clipboard 経路は実装が簡単だが、worker transport としては弱い。
 
-一方で、AppleScript / CDP が狙っているのは少し違う。
+- clipboard を破壊する。
+- focus 事故で別アプリに prompt を貼る可能性がある。
+- 複数行 prompt の整形や IME 状態に影響される。
+- Cursor window / panel / selected input の状態に強く依存する。
+- 成功しても「どの入力欄に入ったか」を機械的に保証しにくい。
+- 既存のユーザー作業中 prompt や入力途中の内容を上書きしやすい。
 
-**いま開いている Cursor IDE の状態をそのまま使う**ことが主目的になる。
+そのため、macOS IDE 経路では以下を優先する。
 
-具体的には以下。
-
-- 既存のワークスペース
-- IDE内のComposer / Agent / Chat UI
-- 選択中ファイルや現在のプロジェクト状態
-- 差分表示・承認UI・チェックポイント
-- モデル選択・Agentモード・PlanモードなどのUI状態
-- Cursor内で蓄積された会話・文脈
-
-CLIは「別プロセスでエージェントを起動する」寄りだが、AppleScriptやCDPは「人間が操作しているCursor IDEそのものを外部から操作する」寄り。
-
-そのため、**Codex = PM / 管理者、Cursor Composer = 実装担当**のような分業を作る場合は、AppleScriptやCDPでIDE本体を叩く動機が強くなる。
+```text
+Cursor Agents window
+  -> Accessibility tree で AXTextArea を検出
+  -> value を直接 set
+  -> submit は明示 opt-in
+  -> 完了判定は UI ではなく git diff / tests / result file
+```
 
 ---
 
-## 3. 最重要リポジトリ・記事
+## 3. Transport 方針
 
-### 3.1 Run Cursor Composer from Terminal / Gist
+| Transport | 位置づけ | 入力方法 | 完了判定 | 採用判断 |
+|---|---|---|---|---|
+| `mac-ide-applescript` | macOS default | `Cursor Agents` window の `AXTextArea` direct set | Codex の diff/test | 採用 |
+| `cli` | macOS fallback / WSL default | `agent` command | CLI log + diff/test | 採用 |
+| `mac-ide-cdp` | 将来候補 | CDP `Input.insertText` または DOM/Lexical API | DOM/result file + diff/test | experimental |
+| `deeplink` | 手動確認 fallback | Cursor deeplink prefill | 人間確認 + diff/test | 限定採用 |
+| `clipboard-paste` | legacy | `pbcopy` + `Cmd+V` | 不安定 | 非採用 |
+
+`mac-ide-applescript` は Cursor IDE の UI automation であり、安定 API ではない。そのため、Codex 側の検収 contract を強くする。
+
+---
+
+## 4. mac-ide-applescript の具体実装
+
+### 4.1 Preflight
+
+委任前に確認する。
+
+```bash
+test "$(uname -s)" = Darwin
+test -d /Applications/Cursor.app
+command -v osascript
+```
+
+さらに runtime で確認する。
+
+- Cursor process が存在する。
+- `Cursor Agents` window が開いている。
+- 対象 workspace が Agent window の workspace selector で選ばれている。
+- edit 委任の場合、入力欄 toolbar に `Ask` chip が残っていない。
+- System Events が Cursor の Accessibility tree を読める。
+
+`Ask` chip が残っていると、Cursor は「Ask mode なので編集できない」と返し、ファイル編集を行わない。これは実測済み。
+
+複数の Cursor / Agent window 候補がある場合は fail closed にする。window title だけで workspace を断定せず、対象 window をユーザーに前面化してもらうか、Computer Use / CDP で target を明示選択する。
+
+### 4.2 Prompt 投入
+
+主経路は `AXTextArea` の direct set。
+
+```applescript
+tell application "Cursor" to activate
+delay 1
+
+tell application "System Events"
+  if not (exists process "Cursor") then error "Cursor process is not available"
+  tell process "Cursor"
+    set frontmost to true
+    if exists window "Cursor Agents" then
+      tell window "Cursor Agents" to set focused to true
+      -- walk UI elements until role = AXTextArea
+      -- set focused of text area to true
+      -- set value of text area to promptText
+    end if
+  end tell
+end tell
+```
+
+実装上の注意:
+
+- `AXTextArea` は settable なことを確認してから `value` を set する。
+- `set value` 後に `value of textArea` を読み返し、prompt と一致することを確認する。
+- Electron / Lexical 側の内部 state と AX value が常に一致する保証はないため、no-submit smoke でも read-back を必須にする。
+- `Cmd+V` fallback は標準では持たない。必要なら明示 opt-in の legacy fallback に隔離する。
+- `submit` は必ず明示 opt-in にする。
+
+読み返しが失敗した場合、または set 後の値が prompt と一致しない場合は送信しない。
+
+### 4.3 Submit
+
+送信も UI 状態依存なので、原則は分離する。
+
+- no-submit smoke: prompt が入力欄へ入ることだけを確認する。
+- submit smoke: `--submit` 指定時だけ送信する。
+- 実編集 smoke: `Ask` chip を外した状態で送信する。
+
+送信方法の優先度:
+
+1. `AXTextArea` を focus した状態で `Cmd+Return` または Cursor の標準送信 shortcut。
+2. Accessibility tree で `Send message` button が安定して見える場合のみ `AXPress`。
+3. Button 全探索は遅く不安定なので避ける。
+
+### 4.4 `Ask` chip / mode 切替
+
+現時点では `Ask` chip を AppleScript だけで安定して外す実装は採用しない。
+
+理由:
+
+- `Cursor Agents` window の Accessibility tree は大きく、全探索が遅い。
+- `AXTextArea` から parent / sibling toolbar を AppleScript で安定して辿れない場合がある。
+- Computer Use では `Remove Ask` button が明確に見えてクリックできたが、AppleScript から同じ経路を安定化するには追加検証が必要。
+- Electron / VS Code fork の AX tree は `AXGroup` や `AXScrollArea` のネスト、画面幅、サイドバー状態、diff / approval sheet の表示で順序が変わる。
+
+したがって、edit 委任の preflight contract は次の通り。
+
+```text
+Before submit:
+- Cursor Agents window is open.
+- Target workspace is selected.
+- Ask chip is absent.
+- Input mode is edit-capable.
+```
+
+`Ask` が残っている場合は preflight warning / failure とし、Cursor に送る前に人間または Computer Use で外す。
+
+AppleScript 経路で manual / preflight に残すもの:
+
+- 正しい workspace の Agent window を開く。
+- Agent / edit-capable mode にする。
+- approval dialog / modal を閉じる。
+- model selection。
+- Run mode / allowlist 設定。
+- 複数 window の target 選択。
+
+---
+
+## 5. CDP / DOM 経路の具体実装候補
+
+CDP は Cmd+V を避ける長期本命になり得る。Cursor は Electron app なので、remote debugging port 付きで起動すると DevTools Protocol から DOM を操作できる。
+
+参考実装:
+
+- OpenCLI Cursor adapter: https://github.com/jackwener/OpenCLI
+- PocketCursor: https://github.com/qmHecker/pocket-cursor
+- Chrome DevTools Protocol Input domain: https://chromedevtools.github.io/devtools-protocol/tot/Input/
+
+### 5.1 起動
+
+手動起動:
+
+```bash
+/Applications/Cursor.app/Contents/MacOS/Cursor \
+  --remote-debugging-port=9226 \
+  --remote-allow-origins=http://127.0.0.1:9226
+```
+
+PocketCursor は `cursor --remote-debugging-port=9222 --remote-allow-origins=http://localhost:9222` のような起動を前提にしている。
+
+Cursor が CDP なしで既に起動している場合、後から同じ process に CDP port を生やすことは前提にしない。一度終了して CDP flags 付きで起動する運用にする。
+
+### 5.2 Target discovery
+
+CDP endpoint から Cursor window target を列挙する。
+
+```bash
+curl http://127.0.0.1:9226/json
+curl http://127.0.0.1:9226/json/version
+```
+
+実装手順:
+
+1. `/json` を読む。
+2. `/json/version` から browser-level `webSocketDebuggerUrl` も取得する。
+3. `type == "page"` の target を選ぶ。
+4. `devtools://` target は除外する。
+5. `title` から workspace 名を推定する。
+6. `webSocketDebuggerUrl` に接続する。
+7. 複数 workspace がある場合は、Codex prompt の workspace absolute path / name と照合する。
+
+必要に応じて、対象 window は次の順で前面化する。
+
+1. CDP `Page.bringToFront`。
+2. browser-level WebSocket の `Target.activateTarget`。
+3. macOS 補助として `osascript -e 'tell application "Cursor" to activate'`。
+
+これは前面化用であり、入力に clipboard は使わない。
+
+### 5.3 Text insertion without Cmd+V
+
+候補は2つ。主経路は CDP native の `Input.insertText` とする。
+
+#### A. CDP `Input.insertText`
+
+PocketCursor は CDP の `Input.insertText` を使う。これは OS clipboard を使わない。
+
+概念コード:
+
+```python
+def cdp_insert_text(ws, text):
+    ws.send(json.dumps({
+        "id": next_id(),
+        "method": "Input.insertText",
+        "params": {"text": text},
+    }))
+    return json.loads(ws.recv())
+```
+
+前提:
+
+- 先に `Runtime.evaluate` で対象の Lexical editor / contenteditable input を focus する。
+- selection を末尾へ collapse する。
+- その後 `Input.insertText` に `{ text }` を送る。
+- 挿入後に `editor.textContent.trim()` などで read-back する。
+
+#### B. DOM `document.execCommand('insertText')`
+
+OpenCLI の `composer.js` は、Composer を開いた後に DOM 上の入力欄を探し、`document.execCommand('insertText', false, text)` で挿入している。clipboard なしではあるが、今回の設計では `Input.insertText` を第一候補、`execCommand` を fallback 候補にする。
+
+概念コード:
+
+```js
+const editor =
+  document.activeElement?.isContentEditable
+    ? document.activeElement
+    : document.querySelector(
+        '.composer-bar [data-lexical-editor="true"], ' +
+        '[id*="composer"] [contenteditable="true"], ' +
+        '.aislash-editor-input'
+      );
+
+if (!editor) throw new Error("Cursor input not found");
+editor.focus();
+document.execCommand("insertText", false, promptText);
+```
+
+`execCommand` は古い API だが、Lexical / contenteditable に人間入力に近いイベントを通せる場合がある。安定性は Cursor の DOM 実装に依存する。
+
+### 5.4 Selector 候補
+
+既存実例からの候補:
+
+```text
+[data-lexical-editor="true"]
+.aislash-editor-input
+.composer-bar [data-lexical-editor="true"]
+[id*="composer"] [contenteditable="true"]
+.composite.auxiliarybar[data-composer-id]
+.composer-bar[data-composer-id]
+textarea
+[role="textbox"]
+```
+
+実装では selector を1つに固定しない。複数 selector を試し、見つかった element の以下を確認する。
+
+- visible
+- editable / contenteditable
+- disabled ではない
+- workspace / active chat の context が期待通り
+
+### 5.5 Send
+
+送信候補:
+
+1. DOM 上の send button を selector で click。
+2. focused editor に `KeyboardEvent` / CDP key event で Enter / Cmd+Return。
+3. CDP `Input.dispatchKeyEvent`。
+
+Enter より Send button click を優先する。確認済み selector 候補:
+
+```text
+.send-with-mode .anysphere-icon-button
+button[aria-label="Send"]
+.send-with-mode button
+button[aria-label="Send message"]
+```
+
+概念コード:
+
+```js
+const sendButton =
+  document.querySelector('[aria-label="Send message"]') ||
+  document.querySelector('button[title*="Send"]') ||
+  Array.from(document.querySelectorAll('button'))
+    .find((b) => /send/i.test(b.textContent || b.getAttribute('aria-label') || ''));
+
+if (!sendButton) throw new Error("Send button not found");
+setTimeout(() => sendButton.click(), 0);
+```
+
+### 5.6 Response / running state
+
+CDP では DOM から以下を取得できる可能性がある。
+
+- active conversation text
+- running / stop button state
+- tool confirmation UI
+- context meter
+- screenshot
+- diff / command block DOM
+
+応答 DOM の selector 候補:
+
+```text
+[data-message-role]
+.composer-human-ai-pair-container
+[data-message-role="human"]
+.aislash-editor-input-readonly
+[data-message-role="ai"]
+[data-message-kind="tool"]
+.anysphere-markdown-container-root
+.markdown-section
+.markdown-block-code
+.markdown-table-container
+[data-stop-button="true"]
+```
+
+チャット切替や複数 workspace 対応では、PocketCursor 型の registry が参考になる。
+
+- 各 Cursor target の workspace / title / WebSocket URL を保存する。
+- active chat を永続化する。
+- `data-composer-id` や `data-resource-name` を使って chat id を安定化する。
+- DOM event listener を注入する場合は `Runtime.addBinding` / `Page.addScriptToEvaluateOnNewDocument` を使う。
+
+ただし、Cursor UI の状態は最終 authority にしない。Codex は必ず以下で検収する。
+
+```bash
+git status --short
+git diff --name-only
+git diff --stat
+<verification command>
+```
+
+### 5.7 セキュリティ
+
+remote debugging port は強い権限を持つ。必ず local-only にする。
+
+- bind は `127.0.0.1` 前提。
+- port は固定または明示設定。
+- LAN へ公開しない。
+- 起動済み Cursor の port を自動検出する場合、対象 process が本当に Cursor か確認する。
+- CDP transport は `experimental` とし、明示 opt-in から始める。
+- WSL から macOS Cursor IDE を直接 GUI 操作しない。必要なら macOS 側 helper が CDP HTTP/WebSocket を受け、WSL は helper に依頼する。
+
+---
+
+## 6. 完了検知と result file contract
+
+Cursor UI を読んで完了判定する設計は採用しない。代わりに、worker prompt に result file contract を入れる。
+
+### 6.1 標準 result directory
+
+委任 run ごとに一意の run id を作る。
+
+```text
+.agent_runs/cursor/<run-id>/
+  prompt.txt
+  result.json.tmp
+  result.json
+  result.md
+  ui_advisory.jsonl
+```
+
+正は `result.json`。`result.md` は人間向け要約、`ui_advisory.jsonl` は wrapper / UI 観測ログにする。
+
+`result.json` schema:
+
+```json
+{
+  "schema_version": 1,
+  "run_id": "20260615-123456-cursor-a",
+  "worker": "cursor-agent",
+  "transport": "mac-ide-applescript",
+  "workspace": "/absolute/path",
+  "status": "completed",
+  "goal": "one concrete task",
+  "allowed_write_scope": ["src/foo.ts", "tests/foo.test.ts"],
+  "files_changed_claimed": ["src/foo.ts"],
+  "verification": [
+    {
+      "command": "npm test -- foo",
+      "exit_code": 0,
+      "summary": "passed"
+    }
+  ],
+  "approvals_requested": [
+    {
+      "kind": "terminal",
+      "summary": "what Cursor asked for",
+      "decision": "not_auto_approved"
+    }
+  ],
+  "blocked_reason": null,
+  "notes_for_main_codex": "rerun tests and inspect diff",
+  "model": "Cursor IDE selected model; not programmatically verified",
+  "finished_at": "2026-06-15T12:34:56+09:00"
+}
+```
+
+`status` は `completed | blocked | failed` の terminal state にする。Cursor worker は完了時だけ `result.json.tmp` を書き、最後に `result.json` へ rename する。外側は partial write を読まない。
+
+### 6.2 Prompt contract に入れる文言
+
+```text
+When finished, write a result file at:
+<workspace>/.agent_runs/cursor/<run-id>/result.json
+
+Write result.json.tmp first, then rename it to result.json only after the JSON is complete.
+
+The result JSON must include:
+- schema_version
+- run_id
+- status: completed | blocked | failed
+- files_changed_claimed
+- verification command and result
+- approvals_requested
+- blocked_reason when blocked or failed
+- notes_for_main_codex
+
+Do not commit.
+Do not push.
+Do not merge.
+Do not edit files outside the allowed write scope.
+```
+
+### 6.3 Codex 側の回収
+
+外側 wrapper / Codex は `result.json` の存在だけでは完了採用しない。まず次を確認する。
+
+- `result.json` が存在する。
+- mtime / size が短時間で安定している。
+- JSON parse に成功する。
+- `run_id` が一致する。
+- `status` が terminal state。
+
+その後、Codex は result file だけを信用せず diff を確認する。
+
+```bash
+git status --short
+git diff --name-only
+git diff --stat
+git diff -- <allowed paths>
+```
+
+確認すること:
+
+- result file の changed files と実 diff が一致する。
+- write scope 外の変更がない。
+- 既存未コミット変更を戻していない。
+- verification command が成功している、または失敗理由が具体的。
+- AppleScript transport では model を programmatically verify できないと記録する。
+- `result.json` が出ない場合は timeout / blocked 扱いにする。途中 diff があっても自動採用しない。
+
+---
+
+## 7. Approval / tool confirmation
+
+approval UI は検知対象にはできるが、自動承認の対象にはしない。
+
+参考:
+
+- cursor-remote は AppleScript で `Allow` / `Approve` / `Accept` button を検出している。
+- PocketCursor は command rules で allow / deny pattern を分け、deny を優先する設計を持つ。
+
+今回の skill では、初期実装は次に留める。
+
+- `Allow` / `Approve` / `Accept` / `Deny` / `Cancel` / `Reject` button の存在を検知する。
+- 検知したら Codex がユーザーに報告する。
+- `ui_advisory.jsonl` に観測イベントとして記録する。
+- 自動 approve はしない。
+- deny pattern に一致する command は、Cursor 側に続行させない。
+
+自動承認を将来検討する場合でも、最初に許可できるのは read-only / safe command に限定する。
+
+許可候補:
+
+```text
+git status
+git diff
+ls
+pwd
+cat <allowed read path>
+```
+
+拒否候補:
+
+```text
+rm
+mv
+git reset
+git checkout --
+git clean
+git push
+git commit
+merge / rebase / branch switch
+deploy / release / publish
+workspace 外ファイルの read/write/delete
+.env / secrets / private key / token / credentials
+DB migration / production data operation
+permission / allowlist / approval 設定の緩和
+credential / token / private key へのアクセス
+```
+
+deny は allow より常に優先する。
+
+Cursor 応答コピー、選択範囲コピー、pasteboard からの応答取得は監査不能なので、result contract の代替にしない。
+
+---
+
+## 8. 既存実装から拾うもの / 捨てるもの
+
+### 8.1 Run Cursor Composer from Terminal / Gist
 
 URL: https://gist.github.com/husniadil/b207227c31ff8a26e03bf00c3a53ebfd
 
-#### 概要
+拾う:
 
-`osascript cursor_prompt.scpt "..."` のように実行し、Cursor Composerへプロンプトを送るAppleScript実装。
+- 外部 process から Cursor Composer を起動する需要があること。
+- AppleScript / Accessibility 権限が必要になること。
 
-#### 何をしているか
+捨てる:
 
-- Cursorを起動または前面化
-- `Cmd+I` でComposerを開く
-- クリップボードにプロンプトを入れる
-- `Cmd+V` で貼り付け
-- Returnで送信
+- `pbcopy`
+- `Cmd+V`
+- `Cmd+I -> paste -> Return` を標準経路にする設計
 
-#### 近さ
+### 8.2 aerkn1/ai-orchestrator-pro
 
-★★★★★
+URL: https://github.com/aerkn1/ai-orchestrator-pro  
+参考: `adapters/run_cursor.sh`
 
-今回の話にかなり近い。最小構成で「外部プロセスからCursor Composerへ投げる」例として参考になる。
+拾う:
 
-#### 注意点
+- 複数 AI worker を orchestrator が束ねる構成。
+- Cursor 用 prompt / workspace / rule を事前生成する設計。
+- Cursor を実装 worker、別 agent を reviewer とする役割分担。
 
-- UIに依存する
-- macOS Accessibility / Automation 権限が必要
-- Cursor側のショートカットやUI変更に弱い
+捨てる:
 
----
+- prompt 投入の primary path としての clipboard/paste。
 
-### 3.2 aerkn1/ai-orchestrator-pro
+### 8.3 yasegev/cursor-remote
 
-URL: https://github.com/aerkn1/ai-orchestrator-pro
+URL: https://github.com/yasegev/cursor-remote  
+参考: `mac-agent/services/cursor_controller.py`
 
-#### 概要
+拾う:
 
-複数AIをCLIアダプタで束ねるオーケストレーション環境。README上では Gemini, Claude Code, Cursor Auto, Codex 5, Warp Sonnet 4.5 などを使う構成になっている。
+- Cursor process 起動確認。
+- Cursor activate。
+- approval dialog 検知。
+- `Allow` / `Approve` / `Accept`、`Deny` / `Cancel` / `Reject` の button 探索。
+- `Stop` button による running heuristic。
 
-#### 重要ポイント
+捨てる:
 
-READMEでは以下のような設計が示されている。
+- prompt 投入としての clipboard/paste。
+- UI 応答 copy を完了判定にする設計。
+- 自動 approve。
 
-- Ideation Cluster
-- Development Cluster
-- Marketing Cluster
-- CLI-Based Execution
-- Human-in-the-Loop
-- Sub-Agent System
-- Shared Workspace
-- Cursor adapter auto-generates `.cursorrules`
-
-開発フェーズでは、Cursorでコード生成し、Codexでレビューするような流れもある。
-
-#### 特に重要なファイル
-
-`adapters/run_cursor.sh`  
-https://github.com/aerkn1/ai-orchestrator-pro/blob/main/adapters/run_cursor.sh
-
-#### 何をしているか
-
-`run_cursor.sh` では以下を行う。
-
-- system/user prompt を読み込む
-- プロジェクト用workspaceを作る
-- `CURSOR_PROMPT.md` を作る
-- `.cursorrules` を生成する
-- Cursor workspace file を作る
-- macOSではAppleScriptを生成する
-- Cursorを開く
-- AppleScriptで `Cmd+I` を押してComposerを開く
-- クリップボードのプロンプトを貼り付ける
-- Returnで生成開始する
-
-該当箇所では、AppleScriptに以下のような意図が書かれている。
-
-```applescript
--- AppleScript to trigger Cursor Composer and paste the prompt
-```
-
-#### 近さ
-
-★★★★★
-
-「複数AIをオーケストレーションし、Cursorを実装担当にする」という意味でかなり近い。
-
-#### 見るべき点
-
-- `.cursorrules` を自動生成してからCursorを叩く設計
-- Cursorを単なるCLIではなく、IDEとして開いて自動生成を観察する設計
-- CodexやClaudeなど他AIとの役割分担
-
----
-
-### 3.3 yasegev/cursor-remote
-
-URL: https://github.com/yasegev/cursor-remote
-
-#### 概要
-
-iPhoneからMac上のCursor IDEを操作するためのシステム。
-
-READMEでは、iPhone app と Mac Agent が Firebase 経由でつながり、Mac AgentがCursorを操作する構成になっている。
-
-#### README上の機能
-
-- Send prompts to Cursor from iPhone
-- View status updates and responses
-- Approve/deny tool actions remotely
-- Mac Agent listens for prompts from Firebase
-- Pastes prompts into Cursor using AppleScript
-- Monitors Cursor for approval requests
-
-#### 特に重要なファイル
-
-`mac-agent/services/cursor_controller.py`  
-https://github.com/yasegev/cursor-remote/blob/main/mac-agent/services/cursor_controller.py
-
-#### 何をしているか
-
-`CursorController` クラスが、AppleScriptでCursor IDEを操作する。
-
-主な実装:
-
-- Cursorが起動中か確認
-- Cursorをactivate
-- Cursorをlaunch
-- プロンプトをクリップボードへコピー
-- Composerなら `Cmd+I`
-- Chatなら `Cmd+L`
-- `Cmd+V` で貼り付け
-- Returnで送信
-- Approval dialogを検出
-- Allow / Approve / Accept ボタンをクリック
-- Deny / Cancel / Reject ボタンをクリック
-- 生成中かどうかをStopボタンの有無で推定
-- 最後の応答をコピーしようとする
-
-#### 近さ
-
-★★★★★
-
-「外部エージェント / 外部UIから、ローカルのCursor IDEを実装ワーカーとして操作する」意味で非常に近い。
-
-#### 参考になる点
-
-AppleScript経由で実用化する場合、このリポジトリの `CursorController` はかなり参考になる。
-
-特に以下が重要。
-
-- ComposerとChatを切り替える引数 `use_composer`
-- `Cmd+I` と `Cmd+L` の使い分け
-- approval dialog の検出
-- approve / deny ボタンの操作
-- `is_agent_running()` でStopボタンを探す実装
-
----
-
-### 3.4 Zenn: Cursorのコミットメッセージ作成自動化スクラップ
-
-URL: https://zenn.dev/kabeya/scraps/ccaab43cf56e02
-
-#### 概要
-
-日本語で見つかった中ではかなり近い事例。VS Code / Cursor拡張から、Cursor Composerへテキストを送る方法としてAppleScriptを試している。
-
-#### 何をしているか
-
-記事中では、Cursor Composerへ外部からテキストを送るために、以下のような方針を試している。
-
-- System Eventsでキーストロークをシミュレート
-- クリップボードに文字列を書き込む
-- `tell application "Cursor" to activate`
-- `Cmd+V` でComposerへ貼り付け
-- Returnで送信
-
-#### 近さ
-
-★★★★☆
-
-日本語ではかなり近い。ただし「Composerとの会話取得」については難しさも書かれており、UI自動化の限界も見える。
-
-#### 参考になる点
-
-- 日本語でAppleScript経由のCursor Composer操作を検討している
-- 失敗・制約も含めて実装上のリアルさがある
-- Cursor拡張からCursor Composerを叩くという少し変則的な構成
-
----
-
-## 4. CDP / DOM 経由で Cursor IDE を操作する実装
-
-AppleScriptは人間操作の再現なので実装は簡単だが、UIの変化やフォーカス事故に弱い。より堅牢にするなら、CursorがElectronアプリであることを利用し、Chrome DevTools ProtocolでDOMを操作する方法がある。
-
----
-
-### 4.1 jackwener/OpenCLI Cursor adapter
-
-URL: https://github.com/jackwener/OpenCLI
-
-Cursor adapter document:  
-https://github.com/jackwener/OpenCLI/blob/main/docs/adapters/desktop/cursor.md
-
-#### 概要
-
-OpenCLIのCursor adapterは、Cursor IDEをCDP経由で操作する。
-
-ドキュメントでは、CursorはElectron / VS Code forkなので、CDPで内部UIを操作し、Composer操作やchat session操作ができると説明されている。
-
-#### できること
-
-- `opencli cursor status`
-- `opencli cursor dump`
-- `opencli cursor screenshot`
-- `opencli cursor send "message"`
-- `opencli cursor ask "message"`
-- `opencli cursor read`
-- `opencli cursor composer "prompt"`
-- `opencli cursor model`
-- `opencli cursor extract-code`
-- `opencli cursor history`
-- `opencli cursor export`
-
-#### 特に重要なファイル
-
-`clis/cursor/composer.js`  
-https://github.com/jackwener/OpenCLI/blob/main/clis/cursor/composer.js
-
-#### 何をしているか
-
-`composer.js` は以下を行う。
-
-- `Meta+I` でComposerを開く
-- DOM上のComposer入力欄を探す
-- `document.execCommand('insertText', false, text)` でテキスト挿入
-- Enterで送信
-
-#### 近さ
-
-★★★★★
-
-AppleScriptではないが、「Cursor IDE内のComposerを外部から叩く」実装としては非常に近い。堅牢化するならこの方向が本命。
-
-#### 必要条件
-
-Cursorをremote debugging port付きで起動する必要がある。
-
-```bash
-/Applications/Cursor.app/Contents/MacOS/Cursor --remote-debugging-port=9226
-```
-
----
-
-### 4.2 qmHecker/pocket-cursor
-
-URL: https://github.com/qmHecker/pocket-cursor
-
-#### 概要
-
-Telegramと実行中のCursor IDEを双方向同期するツール。
-
-READMEでは、Telegramから送ったメッセージをCursorのLexical editorへ注入し、CursorのAI応答をDOM監視してTelegramへ返す、と説明されている。
-
-#### README上の特徴
-
-- Telegram → Cursor: messages from your phone are typed into Cursor
-- Cursor → Telegram: AI responses stream back to your phone
-- Uses Chrome DevTools Protocol
-- Cursor is Electron app, Chromium under the hood
-- Launching with debug port gives full DOM access via WebSocket
-
-#### 特に重要な実装
-
-`cursor_send_message(text, raw=False)` では以下を行う。
-
-- CDPでCursorのactive connectionを取得
-- DOM上の入力欄を探す
-- `.aislash-editor-input` または `[data-lexical-editor="true"]` を探索
-- editorをfocus
-- `Input.insertText` でテキスト挿入
-- send buttonをDOM selectorで探してクリック
-
-#### 近さ
-
-★★★★☆
-
-「Codex → Cursor」ではないが、外部UIからCursor IDEを操作する実装として非常に参考になる。
-
-#### AppleScriptとの違い
-
-AppleScriptは人間のキーボード操作に近い。PocketCursorはElectron内部のDOMを直接見ている。
-
-そのため、以下の点で強い。
-
-- 応答の読み取りがしやすい
-- スクリーンショットやDOM取得ができる
-- 入力欄や送信ボタンを直接特定できる
-- 複数ワークスペースやチャットの追跡が可能
-
-一方で、CursorをCDP有効で起動する必要がある。
-
----
-
-## 5. CursorのUIをキーボード自動化する周辺実装
-
-### 5.1 coyvalyss1/model-matchmaker
-
-URL: https://github.com/coyvalyss1/model-matchmaker
-
-#### 概要
-
-Cursor / Claude Code 用のlocal hook。プロンプト送信前に内容と現在のモデルを見て、適切なモデルを推奨する。
-
-Auto-Switchを有効にすると、Cursorのモデル切替をキーボード自動化で行う。
-
-#### README上の説明
-
-Auto-Switchでは以下を行う。
-
-1. `Cmd+/` でモデルドロップダウンを開く
-2. モデル名をタイプして検索
-3. Enterでモデル選択
-4. 必要に応じてメッセージ送信
-5. Terminal windowが一瞬開いて閉じる
-
-#### 特に重要なファイル
-
-`hooks/auto-switch-model.sh`  
-https://github.com/coyvalyss1/model-matchmaker/blob/main/hooks/auto-switch-model.sh
-
-#### 何をしているか
-
-- Cursorのモデルドロップダウンを `Cmd+/` で開く
-- AppleScriptで検索語をタイプ
-- Enterで選択
-- Cursor子プロセスではAccessibility権限が足りないため、Terminal.appをプロキシとして使う
-
-#### 近さ
-
-★★★★☆
-
-プロンプト投入ではなくモデル切替だが、Cursor IDEのUIをAppleScriptで操作する実装として参考になる。
-
-#### 実務的に重要な知見
-
-Cursorの子プロセスから直接AppleScript/Accessibility操作をすると権限で詰まる場合がある。そこでTerminal.app経由でosascriptを実行している。
-
-これは、CodexやClaude CodeのhookからCursor UIを操作するときにも参考になる。
-
----
-
-### 5.2 jacksonbaxter/sms-2-cursor
+### 8.4 sms-2-cursor
 
 URL: https://github.com/jacksonbaxter/sms-2-cursor
 
-#### 概要
+拾う:
 
-SMSからCursor IDEへコーディング指示を送る自動化システム。
+- 応答取得を UI から読むのではなく、ファイル出力へ逃がす設計。
+- File watcher で result file を回収する考え方。
 
-ワークフローは以下。
+捨てる:
 
-SMS → Google Voice Gateway → Email → Local Machine → Cursor IDE → File Output → Email → SMS
+- pyautogui / keyboard typing / paste を主経路にする設計。
 
-#### README上の構成
+### 8.5 OpenCLI
 
-- Email Handler
-- Cursor Automation
-- File Watcher
-- Orchestrator
+URL: https://github.com/jackwener/OpenCLI  
+参考: `docs/adapters/desktop/cursor.md`, `clis/cursor/composer.js`
 
-Cursor Automationは、pyautoguiとAppleScriptでCursor IDEを操作する。
+拾う:
 
-#### 特に重要なファイル
+- Cursor を CDP endpoint で操作する設計。
+- `/json` / WebSocket target 経由で Cursor UI に接続する発想。
+- DOM 上の input selector を複数試す設計。
+- `document.execCommand('insertText', false, text)` で clipboard を使わず text を入れる実装。
 
-`cursor_automation.py`  
-https://github.com/jacksonbaxter/sms-2-cursor/blob/main/cursor_automation.py
+注意:
 
-#### 何をしているか
+- `Meta+I` で Composer を開く部分は current UI に依存する。
+- Agent window を直接対象にするなら selector / target selection は追加調査が必要。
 
-- AppleScriptでCursorをactivate
-- System EventsでCursorプロセスをfrontmostにする
-- pyautoguiでAgent panelを検出
-- `cmd+i` でAgent panelを開く
-- pyautoguiでプロンプトをタイプ
-- Enterで送信
-- Cursorに完了後の要約ファイルを書かせる
-- File Watcherがそのファイルを読んでSMS返信する
+### 8.6 PocketCursor
 
-#### 近さ
+URL: https://github.com/qmHecker/pocket-cursor
 
-★★★★☆
+拾う:
 
-外部からローカルCursorを操作する実装として近い。特に「応答取得をファイル出力に逃がす」設計が参考になる。
+- Cursor を CDP port 付きで起動する運用。
+- 複数 Cursor workspace / chat を target として扱う registry。
+- Lexical editor への CDP text insertion。
+- DOM monitor で AI response / confirmation / context state を見る設計。
+- command rules の allow / deny pattern。
 
----
+注意:
 
-## 6. 日本語の周辺記事
+- Windows focus fallback は今回対象外。
+- Telegram 連携部分は不要。
+- command auto-approve は初期実装に入れない。
 
-### 6.1 Qiita: Codex Desktop の Computer UseでmacOSを操作
+### 8.7 model-matchmaker
 
-URL: https://qiita.com/nogataka/items/ad8800f067eb5d4a9e54
+URL: https://github.com/coyvalyss1/model-matchmaker
 
-#### 概要
+拾う:
 
-Cursor特化ではないが、Codex DesktopのComputer UseでmacOS GUIを操作するワークフローの日本語記事。
+- 実行元 process によって Accessibility 権限が変わるという知見。
+- Cursor 子 process / hook から直接 UI automation すると権限で詰まる場合があること。
+- Terminal.app proxy は参考にはなる。
 
-#### 参考になる点
+注意:
 
-- Codex Desktopが画面を見て操作する発想
-- Screen Recording / Accessibility 権限
-- Desktop app とCLIの使い分け
-- GUI操作を含むE2E作業の設計
-
-#### 近さ
-
-★★★☆☆
-
-Cursor Composerを直接叩く記事ではないが、「CodexがmacOS GUIを操作する」という観点では参考になる。
+- モデル切替の keyboard automation は今回の prompt transport の主経路ではない。
 
 ---
 
-### 6.2 Zenn: Claude Code HooksでGhostty/Cursor等を最前面化
+## 9. 実装ロードマップ
 
-URL: https://zenn.dev/toono_f/articles/claude-code-hooks-window-focus
+### Phase 1: mac-ide-applescript を安定化
 
-#### 概要
+実装済み / 優先:
 
-Claude Code Hooksから、作業完了時などにGhostty / Cursor / Windsurf / VS Codeなどを最前面化する記事。
+- `Cursor Agents` window を優先する。
+- `AXTextArea` へ direct set する。
+- no-submit smoke を持つ。
+- submit は明示 opt-in にする。
+- `Ask` chip がある edit 委任は preflight warning / failure にする。
+- Cmd+V fallback は標準経路から外す。
 
-#### 参考になる点
+追加候補:
 
-- Hookから `osascript` を呼ぶ
-- `tell application "Cursor" to activate`
-- 作業完了時にユーザーへ視覚的に知らせる
-- macOSアプリ操作にosascriptを使う基本パターン
+- `--require-agent-window`: `Cursor Agents` window がなければ failure。
+- `--legacy-paste-fallback`: 明示指定時だけ paste fallback。
+- `--assert-workspace NAME`: Agent window の workspace selector が期待値を含むか確認。
+- `--assert-no-ask`: Accessibility tree に `Remove Ask` が見える場合は failure。
 
-#### 近さ
+### Phase 2: result file contract
 
-★★★☆☆
+実装候補:
 
-Composerへプロンプト投入する実装ではないが、Hook + osascript + Cursor の構成として参考になる。
+- `run_cursor_delegate.sh` が run id と `.agent_runs/cursor/<run-id>/` を作る。
+- `prompt.txt` を保存する。
+- prompt template に `result.json` path を差し込む。
+- Cursor worker には `result.json.tmp -> result.json` rename を指示する。
+- 終了後、Codex が `result.json` と git diff を照合する。
 
----
+### Phase 3: approval advisory
 
-### 6.3 Cursor Forum: RaycastからComposerへ貼り付け
+実装候補:
 
-URL: https://forum.cursor.com/t/correctly-paste-multiline-text-into-chat-or-composer-e-g-from-raycast/38005
+- AppleScript または Computer Use で approval button の有無を検知。
+- 検知したらユーザーに報告。
+- 自動 approve はしない。
 
-#### 概要
+### Phase 4: mac-ide-cdp experimental
 
-RaycastのScript Commandから、整形した複数行テキストをCursorのChat / Composerへ正しく貼り付ける話。
-
-#### 参考になる点
-
-- Cursorの入力欄への複数行貼り付け問題
-- Raycast Script Command
-- AppleScript / pasteboard 経由の貼り付け
-
-#### 近さ
-
-★★★☆☆
-
-小技寄りだが、Cursor Composer入力欄の扱いでは参考になる。
-
----
-
-## 7. 実装パターン別の整理
-
-### 7.1 AppleScriptで叩く最小構成
-
-一番単純な構成。
-
-```text
-外部エージェント / スクリプト
-  ↓
-pbcopy でプロンプトをクリップボードへ
-  ↓
-tell application "Cursor" to activate
-  ↓
-System Events: Cmd+I
-  ↓
-System Events: Cmd+V
-  ↓
-Return
-  ↓
-Cursor Composer が実行
-```
-
-#### メリット
-
-- 実装が簡単
-- Cursorの公式APIがなくても動く
-- 人間の操作をそのまま再現できる
-- 既存のCursor IDE状態をそのまま使える
-
-#### デメリット
-
-- UI変更に弱い
-- フォーカス事故が起きやすい
-- Accessibility権限が必要
-- 失敗検知が難しい
-- 応答取得が難しい
-- 並列実行に向かない
-
-#### 代表例
-
-- Run Cursor Composer from Terminal Gist
-- ai-orchestrator-pro `run_cursor.sh`
-- cursor-remote `CursorController`
-- sms-2-cursor
-- ZennのComposer送信スクラップ
-
----
-
-### 7.2 AppleScript + ファイル出力で応答取得する構成
-
-Cursorの応答を画面から読むのは難しいため、プロンプト側で「完了したら指定ファイルに要約を書いて」と指示する方式。
-
-```text
-外部スクリプト
-  ↓
-Cursor Composerへ指示
-  ↓
-Cursor Agentがコード編集
-  ↓
-完了後、summary_task_xxx.txt を書く
-  ↓
-File Watcherがそのファイルを読む
-  ↓
-外部システムへ返信
-```
-
-#### メリット
-
-- 応答取得が単純
-- UI読み取りに依存しない
-- SMS/Slack/Telegram連携に向く
-
-#### デメリット
-
-- Cursor Agentにファイルを書かせる必要がある
-- 失敗時にファイルが出ない
-- 実装結果の完全なレビューには不十分
-
-#### 代表例
-
-- sms-2-cursor
-
----
-
-### 7.3 CDPでCursorのDOMを直接操作する構成
-
-Cursorをremote debugging port付きで起動し、Electron内部のDOMを直接操作する。
-
-```text
-外部エージェント / CLI
-  ↓
-CDP WebSocket
-  ↓
-Cursor Electron DOM
-  ↓
-Lexical editorへ Input.insertText
-  ↓
-Send button click
-  ↓
-DOM監視で応答取得
-```
-
-#### メリット
-
-- AppleScriptより制御しやすい
-- 応答取得がしやすい
-- 入力欄や送信ボタンをDOM selectorで探せる
-- スクリーンショット・DOM dump・履歴抽出などが可能
-- フォーカス事故が少ない
-
-#### デメリット
-
-- CursorをCDP有効で起動する必要がある
-- DOM構造変更には弱い
-- セキュリティ面の配慮が必要
-- 実装がAppleScriptより複雑
-
-#### 代表例
-
-- OpenCLI Cursor adapter
-- PocketCursor
-
----
-
-### 7.4 HookからCursor UIを操作する構成
-
-Cursor Hooks / Claude Code Hooks / Codex側のイベントから、osascriptやキーボード操作を発火する。
-
-```text
-beforeSubmitPrompt / Stop Hook / 外部イベント
-  ↓
-シェルスクリプト
-  ↓
-osascript / Terminal.app proxy
-  ↓
-Cursor UI操作
-```
-
-#### メリット
-
-- ユーザー操作の前後に介入できる
-- モデル切替やウィンドウ前面化に向く
-- PMエージェントがワーカーIDEを制御する入口になる
-
-#### デメリット
-
-- 権限まわりが複雑
-- 実行元プロセスによってAccessibility権限が足りないことがある
-- Terminal.appなどをプロキシにする必要がある場合がある
-
-#### 代表例
-
-- model-matchmaker
-- Claude Code HooksでCursorを前面化するZenn記事
-
----
-
-## 8. Codex PM → Cursor実装ワーカー構成を作るなら
-
-今回のX文脈に近い構成を作るなら、段階的には以下がよさそう。
-
-### Phase 1: AppleScriptで最小動作
-
-まずは以下だけ作る。
+実装候補:
 
 ```bash
-codex_orchestrator.sh "実装タスク本文"
+scripts/run_cursor_delegate_cdp.py \
+  --endpoint http://127.0.0.1:9226 \
+  --workspace /Users/ryryo/dev/dot-claude-dev \
+  --prompt-file /tmp/prompt.md \
+  --submit
 ```
 
-内部で行うこと。
+責務:
 
-1. タスク本文を一時ファイルに保存
-2. プロンプトを整形
-3. `pbcopy`
-4. Cursorをactivate
-5. `Cmd+I`
-6. `Cmd+V`
-7. Return
-
-参考:
-
-- Run Cursor Composer from Terminal Gist
-- ai-orchestrator-pro `run_cursor.sh`
-- cursor-remote `paste_and_submit_prompt`
-
-### Phase 2: `.cursorrules` / `.cursor/rules` 自動生成
-
-Cursorへ投げる前に、プロジェクトルールを生成する。
-
-```text
-.cursor/rules/task-worker.mdc
-.cursorrules
-CURSOR_PROMPT.md
-```
-
-参考:
-
-- ai-orchestrator-pro
-- PocketCursor `pocket-cursor.mdc`
-
-### Phase 3: 完了検知を入れる
-
-最初はUI読み取りではなく、ファイル出力でよい。
-
-プロンプト末尾に以下を入れる。
-
-```text
-作業が完了したら、必ず .agent_runs/latest_result.md に以下を書いてください。
-- 実施内容
-- 変更ファイル
-- テスト結果
-- 残タスク
-```
-
-外側のPMスクリプトは、このファイルの更新をwatchする。
-
-参考:
-
-- sms-2-cursor
-
-### Phase 4: Approval / Tool confirmation対策
-
-Cursorの承認UIが出たら検知・通知する。
-
-AppleScriptなら:
-
-- Allow / Approve / Accept ボタンを探す
-- Deny / Cancel / Reject ボタンを探す
-- Stopボタン有無で生成中判定
-
-参考:
-
-- cursor-remote `detect_approval_dialog()`
-- cursor-remote `click_approve_button()`
-- cursor-remote `is_agent_running()`
-
-### Phase 5: CDP化
-
-AppleScriptが不安定になったら、CDPに寄せる。
-
-```bash
-/Applications/Cursor.app/Contents/MacOS/Cursor --remote-debugging-port=9226
-```
-
-その上で、CDPから以下を行う。
-
-- Composerを開く
-- DOMで入力欄を探す
-- `Input.insertText`
-- Send button click
-- 応答DOMを読む
-- conversation export
-
-参考:
-
-- OpenCLI Cursor adapter
-- PocketCursor
+1. CDP endpoint の疎通確認。
+2. target list 取得。
+3. target workspace selection。
+4. input selector 探索。
+5. text insertion without clipboard。
+6. send button click。
+7. optional DOM/screenshot artifact dump。
+8. result file + diff/test は main Codex が検収。
 
 ---
 
-## 9. 実装するときの注意点
+## 10. サブエージェント追加調査タスク
 
-### 9.1 Accessibility / Automation 権限
+今回の subagent 調査で、次の実装メモを取り込んだ。残る作業は実測 smoke と script 化。
 
-AppleScript / System Events / pyautogui系はmacOSのAccessibility権限が必要。
+### Task A: CDP target / selector 調査
 
-特に以下に注意。
+Goal:
 
-- 実行しているターミナルアプリ
-- Terminal.app
-- iTerm2
-- Cursor
-- Python実行環境
-- Codex Desktop / Claude Code Desktop
-- Raycast
+- Cursor Agents window に対する CDP target selection と input selector を実測する。
 
-実行元が変わると権限も変わる。
+調査で得た実装メモ:
 
-model-matchmakerでは、Cursor子プロセスが権限を持たない問題を避けるため、Terminal.appをプロキシにしていた。
+- `/json/version` で browser-level WebSocket、`/json` で page target を取る。
+- `type == "page"`、`devtools://` 除外、title/workspace 推定。
+- `Page.bringToFront`、`Target.activateTarget`、macOS `osascript activate` は前面化補助。
+- 入力は `Runtime.evaluate` で focus し、CDP `Input.insertText` を主経路にする。
+- `execCommand('insertText')` は clipboard なし fallback。
+- send は Enter より DOM button click を優先する。
 
-### 9.2 フォーカス事故
+残る実測:
 
-AppleScript方式では、意図しないアプリに貼り付けるリスクがある。
+- clipboard を使わず no-submit smoke が通る。
+- submit なしで入力欄の DOM value / textContent が確認できる。
+- `Cursor Agents` window と通常 composer panel の selector 差分を確認する。
 
-対策:
+### Task B: AX preflight 調査
 
-- `tell application "Cursor" to activate`
-- `frontmost of process "Cursor"` を確認
-- 実行直前にウィンドウタイトルを確認
-- 失敗時は送信せず停止
-- クリップボード復元
+Goal:
 
-### 9.3 UI変更
+- AppleScript / Accessibility tree で `Cursor Agents` window の workspace、Ask chip、Send button をどこまで安定検出できるか調べる。
 
-CursorのUIやショートカットが変わると壊れる。
+調査で得た実装メモ:
 
-対策:
+- 主経路は `AXTextArea` の `AXValue` direct set。
+- set 後は read-back 一致を必須にする。
+- 複数 window は fail closed。
+- `Ask` chip / workspace / model / approval は自動修正より preflight に寄せる。
+- parent/sibling toolbar traversal は壊れやすい。
 
-- ショートカットを設定化
-- `Cmd+I` / `Cmd+L` を切り替え可能にする
-- 送信前に入力欄フォーカス確認
-- CDP方式なら複数selectorを持つ
+残る実測:
 
-### 9.4 応答取得
+- no-submit smoke が 5 秒以内に完了する。
+- `Ask` chip がある edit 委任を warning / failure にできる。
+- `AXTextArea` direct set 後に Lexical state が必ず送信対象になるか継続確認する。
 
-AppleScriptだけでCursorの応答を読むのは難しい。
+### Task C: result file / approval contract
 
-選択肢:
+Goal:
 
-1. Cursorに完了ファイルを書かせる
-2. `Cmd+Shift+C` 等で最後の応答コピーを試す
-3. Accessibility treeを読む
-4. CDPでDOMを読む
-5. CursorのSQLite state DBを読む
+- Cursor worker prompt に入れる result file schema と approval handling を固める。
 
-実用面では、まずは **完了ファイル方式** が簡単。
+調査で得た実装メモ:
 
-### 9.5 セキュリティ
+- 正は `result.json`。
+- `result.json.tmp -> result.json` rename で partial write を避ける。
+- `ui_advisory.jsonl` は補助ログ。
+- UI completion / Stop button / response text は完了判定の正にしない。
+- Codex は必ず diff と verification command で検収する。
 
-外部からCursorに命令を送る構成は、実質的にローカルマシン上で任意操作が可能になる。
+残る実測:
 
-対策:
-
-- 信頼できる送信元だけ許可
-- 危険コマンドはdeny
-- `rm -rf`, credential, secret, token, private key などをブロック
-- 実行前に承認ステップを入れる
-- ログを残す
-- kill switchを用意する
-
-参考:
-
-- model-matchmakerのdeny/allow/rate limit/kill switch
-- PocketCursorのcommand rules
+- UI response を読まなくても Codex が完了回収できる。
+- write scope 外変更を検出できる。
+- `result.json` timeout / blocked の扱いを wrapper に実装する。
 
 ---
 
-## 10. 参考リンク一覧
+## 11. 更新後の推奨順
 
-### AppleScript / UI自動化系
+短期:
 
-- Run Cursor Composer from Terminal / Gist  
-  https://gist.github.com/husniadil/b207227c31ff8a26e03bf00c3a53ebfd
+1. `mac-ide-applescript` = Agent window + `AXTextArea` direct set。
+2. edit 委任前に `Ask` chip を外す preflight。
+3. result file contract。
+4. Codex 側の diff/test 検収。
 
-- ai-orchestrator-pro  
-  https://github.com/aerkn1/ai-orchestrator-pro
+中期:
 
-- ai-orchestrator-pro / run_cursor.sh  
-  https://github.com/aerkn1/ai-orchestrator-pro/blob/main/adapters/run_cursor.sh
+1. approval advisory。
+2. workspace / mode assertion。
+3. legacy paste fallback の opt-in 化または削除。
 
-- cursor-remote  
-  https://github.com/yasegev/cursor-remote
+長期:
 
-- cursor-remote / cursor_controller.py  
-  https://github.com/yasegev/cursor-remote/blob/main/mac-agent/services/cursor_controller.py
-
-- sms-2-cursor  
-  https://github.com/jacksonbaxter/sms-2-cursor
-
-- sms-2-cursor / cursor_automation.py  
-  https://github.com/jacksonbaxter/sms-2-cursor/blob/main/cursor_automation.py
-
-- Cursor Forum: Correctly paste multiline text into Chat or Composer  
-  https://forum.cursor.com/t/correctly-paste-multiline-text-into-chat-or-composer-e-g-from-raycast/38005
-
-### CDP / DOM操作系
-
-- OpenCLI  
-  https://github.com/jackwener/OpenCLI
-
-- OpenCLI Cursor adapter doc  
-  https://github.com/jackwener/OpenCLI/blob/main/docs/adapters/desktop/cursor.md
-
-- OpenCLI / composer.js  
-  https://github.com/jackwener/OpenCLI/blob/main/clis/cursor/composer.js
-
-- OpenCLI / send.js  
-  https://github.com/jackwener/OpenCLI/blob/main/clis/cursor/send.js
-
-- PocketCursor  
-  https://github.com/qmHecker/pocket-cursor
-
-### Cursor Hooks / モデル切替系
-
-- model-matchmaker  
-  https://github.com/coyvalyss1/model-matchmaker
-
-- model-matchmaker / auto-switch-model.sh  
-  https://github.com/coyvalyss1/model-matchmaker/blob/main/hooks/auto-switch-model.sh
-
-- model-matchmaker / model-advisor.sh  
-  https://github.com/coyvalyss1/model-matchmaker/blob/main/hooks/model-advisor.sh
-
-### 日本語記事
-
-- Zenn: Cursorのコミットメッセージ作成自動化スクラップ  
-  https://zenn.dev/kabeya/scraps/ccaab43cf56e02
-
-- Qiita: Codex Desktop の Computer UseでmacOSを操作  
-  https://qiita.com/nogataka/items/ad8800f067eb5d4a9e54
-
-- Zenn: Claude Code HooksでGhostty/Cursor等を最前面化  
-  https://zenn.dev/toono_f/articles/claude-code-hooks-window-focus
+1. `mac-ide-cdp` experimental。
+2. DOM selector 複数化。
+3. screenshot / DOM dump artifact。
+4. response DOM reading は補助情報に限定。
 
 ---
 
-## 11. 個人的なおすすめ順
+## 12. 参考リンク
 
-### まず読むべき
+### CDP / DOM
 
-1. `yasegev/cursor-remote` の `cursor_controller.py`
-2. `aerkn1/ai-orchestrator-pro` の `run_cursor.sh`
-3. ZennのCursor Composer送信スクラップ
-4. `jackwener/OpenCLI` の Cursor adapter
+- OpenCLI: https://github.com/jackwener/OpenCLI
+- OpenCLI Cursor adapter doc: https://github.com/jackwener/OpenCLI/blob/main/docs/adapters/desktop/cursor.md
+- OpenCLI `composer.js`: https://github.com/jackwener/OpenCLI/blob/main/clis/cursor/composer.js
+- PocketCursor: https://github.com/qmHecker/pocket-cursor
+- Chrome DevTools Protocol Input domain: https://chromedevtools.github.io/devtools-protocol/tot/Input/
 
-### AppleScriptで最小実装するなら
+### AppleScript / Accessibility
 
-- `cursor-remote` の `CursorController` を参考にする
-- `run_cursor.sh` の `.cursorrules` / workspace setup を参考にする
-- 応答取得は `sms-2-cursor` のようにファイル出力に逃がす
+- cursor-remote: https://github.com/yasegev/cursor-remote
+- cursor-remote `cursor_controller.py`: https://github.com/yasegev/cursor-remote/blob/main/mac-agent/services/cursor_controller.py
+- ai-orchestrator-pro: https://github.com/aerkn1/ai-orchestrator-pro
+- Run Cursor Composer from Terminal Gist: https://gist.github.com/husniadil/b207227c31ff8a26e03bf00c3a53ebfd
 
-### 長期的に安定させるなら
+### Completion / remote bridge
 
-- OpenCLI / PocketCursor のようにCDP化する
-- DOM selectorを複数用意する
-- 応答取得・スクショ・履歴exportもCDPで扱う
-- ApprovalだけはAppleScript/Accessibilityと併用する可能性がある
+- sms-2-cursor: https://github.com/jacksonbaxter/sms-2-cursor
+- model-matchmaker: https://github.com/coyvalyss1/model-matchmaker
 
 ---
 
-## 12. まとめ
+## 13. まとめ
 
-今回の調査で確認できたことは以下。
+公開実装を見ると、Cursor IDE を外部から叩く実例はある。ただし多くは `Cmd+V` / clipboard に依存している。
 
-- Cursor CLIは存在するが、IDE内Composerを直接操作する目的とは少し違う。
-- AppleScript経由でCursor IDE / Composerを叩く実装は実際に複数ある。
-- 日本語ではZennのComposer送信スクラップが近い。
-- 英語では `cursor-remote`, `ai-orchestrator-pro`, `sms-2-cursor` がAppleScript系の実例として有用。
-- より堅牢な方向では `OpenCLI` と `PocketCursor` のCDP方式が参考になる。
-- Codex PM → Cursor実装ワーカー構成を作るなら、最初はAppleScriptで十分。ただし応答取得や安定運用まで考えるなら、CDP化を検討した方がよい。
+今回の skill では、そこを主経路にしない。
+
+採用する実装方針は次の通り。
+
+- macOS default は `Cursor Agents` window の `AXTextArea` direct set。
+- `Cmd+V` fallback は標準から外す。
+- edit 委任では `Ask` mode を preflight で弾く。
+- 完了判定は UI ではなく result file + git diff + verification command。
+- CDP は長期的な安定化候補として別 transport 化する。
+
+Codex は orchestrator / reviewer のまま、Cursor IDE は bounded worker として扱う。Cursor に commit、push、merge、完了判定は任せない。
