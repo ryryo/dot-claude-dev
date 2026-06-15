@@ -1,21 +1,21 @@
-# Review Checklist
+# 検収 checklist
 
-Main Codex must validate every worker result before accepting it.
+main Codex は、worker の結果を受け入れる前に必ず検収する。
 
-## Before delegation
+## 委任前
 
-Run and record:
+実行して記録する。
 
 ```bash
 git status --short
 git branch --show-current
 ```
 
-Treat existing uncommitted changes as user or prior-worker work. Do not revert them.
+既存の未コミット変更は、ユーザーまたは先行 worker の作業として扱う。戻してはいけない。
 
-## After delegation
+## 委任後
 
-Run:
+実行する。
 
 ```bash
 git status --short
@@ -24,27 +24,28 @@ git diff --stat
 git diff -- <allowed paths>
 ```
 
-Check:
+確認する。
 
-- Changed files are inside the allowed write scope.
-- The worker did not modify docs/PLAN, tasks.json, progress files, commits, branches, remotes, or package lockfiles unless explicitly allowed.
-- Existing uncommitted changes were not reverted.
-- The worker's final report matches the actual diff, reasoning, and verification output.
-- The requested behavior is complete against the original goal.
-- Verification commands ran and passed, or the failure reason is precise and acceptable.
-- For mac IDE AppleScript transport, report that model selection came from Cursor IDE state and was not programmatically verified.
-- For mac IDE CDP transport, record the target id, title, URL, and workspace/thread hints used for selection.
-- For Codex subagents, inspect the returned summary, changed files, and rationale before integrating.
+- 変更ファイルが許可した編集範囲内に収まっている。
+- 並列実行の場合、同じ変更ファイルが複数 worker に割り当てられていない。
+- worker が、明示的に許可されていない `docs/PLAN`、`tasks.json`、進捗ファイル、commit、branch、remote、package lockfile を変更していない。
+- 既存の未コミット変更を戻していない。
+- worker の final report が、実際の差分、理由、検証結果と一致している。
+- 元の goal に対して必要な挙動が完了している。
+- 検証コマンドが成功している。失敗している場合は、理由が具体的で受け入れ可能である。
+- `mac-ide-applescript` transport では、model 選択は Cursor IDE 側の状態であり、プログラムからは検証できないと報告する。
+- `mac-ide-cdp` transport では、選択に使った target id、title、URL、workspace/thread hint を記録する。これらは CDP の識別情報なので英語表記のまま扱う。
+- Codex subagent の場合は、要約、変更ファイル、判断理由を確認してから統合する。
 
-## Scope drift
+## 範囲外変更
 
-If files outside scope changed:
+許可範囲外のファイルが変更されていた場合:
 
-1. Inspect the log and diff before taking action.
-2. If the out-of-scope change is clearly worker-created and safe to remove, main Codex may correct it.
-3. If the change may belong to the user or another agent, ask the user before altering it.
-4. Do not use broad destructive commands.
+1. log と diff を確認してから判断する。
+2. 範囲外変更が worker によるものだと明確で、安全に戻せる場合だけ main Codex が修正してよい。
+3. ユーザーまたは別 agent の作業である可能性がある場合は、変更前にユーザーへ確認する。
+4. 広範囲に破壊的な command は使わない。
 
-## Acceptance
+## 受け入れ条件
 
-Accept the result only after the diff, scope, report, and verification all line up. Planning/progress updates, final PASS判定, commits, and PRs remain main Codex responsibilities.
+diff、scope、report、verification がそろってから受け入れる。planning/progress 更新、最終 PASS 判定、commit、PR は main Codex の責任である。

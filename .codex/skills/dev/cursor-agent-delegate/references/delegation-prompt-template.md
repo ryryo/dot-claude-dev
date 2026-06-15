@@ -1,55 +1,59 @@
-# Delegation Prompt Template
+# 委任 prompt template
 
 Cursor Agent または Codex subagent に渡す prompt は、実装方針を過剰に誘導せず、期待成果・制約・検証条件を明示する。
 
 ```text
-You are a worker agent running inside this repository.
+あなたはこの repository 内で動く worker agent です。
 
-Worker type:
-<codex-subagent or cursor-agent>
+ワーカー種別:
+<codex-subagent または cursor-agent>
 
-Workspace:
+作業 workspace:
 <absolute workspace path>
 
-Goal:
-<one concrete task>
+タスク ID:
+<一意な task id>
 
-Read first:
+目的:
+<具体的な作業を 1 件だけ>
+
+最初に読むもの:
 - <absolute path>
 - <absolute path>
 
-Write scope:
-- You may edit only:
+編集範囲:
+- 編集してよいファイル:
   - <path>
   - <path>
-- Do not edit:
+- 編集してはいけないファイル:
   - <path>
   - docs/PLAN/**
   - progress/state/generated planning files
-- Do not update commits, branches, remotes, package lockfiles, or generated planning docs unless explicitly listed in the allowed write scope.
-- Do not revert existing uncommitted changes or files outside your scope.
-- Other workers or the user may have active changes. Accommodate them and do not overwrite unrelated work.
+- 許可された write scope に明示されていない限り、commit、branch、remote、package lockfile、generated planning docs を変更しない。
+- 既存の未コミット変更や、自分の担当外ファイルを戻さない。
+- 他の worker やユーザーが変更中のファイルがある前提で、無関係な作業を上書きしない。
 
-Implementation constraints:
+実装制約:
 - <constraint>
 - <constraint>
 
-Verification:
-- Run: <command>
-- If the command cannot run, explain the exact reason and what you checked instead.
+検証:
+- 実行するコマンド: <command>
+- 実行できない場合は、理由と代わりに確認した内容を具体的に報告する。
 
-Final report:
-- Files changed
-- Summary of behavior changed
-- Verification commands and results
-- Anything intentionally left for main Codex
+最終報告:
+- 変更したファイル
+- 変更内容の要約
+- 実行した検証コマンドと結果
+- main Codex に残した作業
 ```
 
-Rules:
+## ルール
 
-- Use absolute paths for workspace and read-first files.
-- Pass exactly one task per worker prompt.
-- Keep write scope non-overlapping across parallel workers.
-- Do not assign final integration, Gate PASS判定, commit, push, PR, or progress-file updates.
-- Include a verification command that main Codex can rerun.
-- For Codex subagents, include explicit ownership and whether the task is implementation, design, review, or test-strategy work.
+- workspace と「最初に読むもの」には絶対パスを使う。
+- 1 つの worker prompt には 1 つのタスクだけを書く。
+- 並列実行では worker ごとに別のファイルを割り当てる。同じファイルを 2 つの worker に編集させない。
+- worker に Git worktree の作成、切替、管理を依頼しない。
+- 最終統合、Gate PASS 判定、commit、push、PR、progress file 更新を worker に任せない。
+- main Codex が再実行できる検証コマンドを含める。
+- Codex subagent には、担当範囲と、実装・設計・レビュー・テスト戦略のどれを依頼するのかを明示する。

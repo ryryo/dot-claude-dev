@@ -1,10 +1,10 @@
-# Troubleshooting
+# 障害対応
 
-Use this reference when Cursor delegation is slow, blocked, or returns unexpected state.
+Cursor 委任が重い、詰まる、または想定外の状態を返す場合に読む。
 
-## First Response
+## 最初の対応
 
-Stop adding more Cursor/CDP runs. Gather state with bounded local commands:
+新しい Cursor/CDP 実行を増やさない。範囲を絞った local command で状態を集める。
 
 ```bash
 git status --short
@@ -13,24 +13,24 @@ tail -n 20 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl" 2>/dev/null || tr
 tail -n 20 "$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl" 2>/dev/null || true
 ```
 
-Do not run broad process scans repeatedly. If a process scan is needed, run it once and summarize it.
+広い process scan を繰り返さない。必要な場合も 1 回だけ実行し、結果を要約する。
 
-## CDP Refuses Connection
+## CDP に接続できない
 
-Symptom:
+症状:
 
 - `Connection refused`
-- `/json/version` fails
+- `/json/version` が失敗する
 
-Likely cause:
+主な原因:
 
-- Cursor is running without `--remote-debugging-port`.
-- The previous launch delegated to an existing non-CDP Cursor process.
+- Cursor が `--remote-debugging-port` なしで起動している。
+- 前回の launch が既存の non-CDP Cursor process に吸収された。
 
-Fix:
+対応:
 
-1. Quit Cursor normally.
-2. Start Cursor with the normal profile and CDP args:
+1. Cursor を通常終了する。
+2. 通常 profile のまま CDP args 付きで起動する。
 
 ```bash
 open -na /Applications/Cursor.app --args \
@@ -39,133 +39,133 @@ open -na /Applications/Cursor.app --args \
   "$WORKSPACE"
 ```
 
-3. Verify `/json/version`.
+3. `/json/version` を確認する。
 
-Do not use a temporary `--user-data-dir`; it can create a separate logged-out Cursor profile.
+一時的な `--user-data-dir` は使わない。別 profile になり、Cursor が未ログイン状態になることがある。
 
-## Cursor Agents Target Missing
+## Cursor Agents target が見つからない
 
-Symptom:
+症状:
 
-- CDP works, but no target titled `Cursor Agents`.
+- CDP は動いているが、title が `Cursor Agents` の target がない。
 
-Actions:
+対応:
 
-- Bring Cursor Agents window to the foreground manually or with the AppleScript focus helper.
-- Recheck `/json`.
-- Do not submit prompts until the `Cursor Agents` target exists.
+- 手動、または AppleScript focus helper で Cursor Agents window を前面に出す。
+- `/json` を再確認する。
+- `Cursor Agents` target が出るまで prompt を submit しない。
 
-## Workspace Lock Failure
+## Workspace lock の失敗
 
-Symptom:
+症状:
 
 - `another Cursor CDP operation is already running`
 
-Actions:
+対応:
 
-1. Wait briefly if another run is genuinely active.
-2. Inspect the lock pid:
+1. 別の実行が本当に動いている場合は少し待つ。
+2. lock pid を確認する。
 
 ```bash
 cat "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock/pid"
 ```
 
-3. If the pid is dead, remove only that lock directory:
+3. pid が dead である場合だけ、その lock directory を削除する。
 
 ```bash
 rm -rf "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock"
 ```
 
-Do not use `--no-lock` except for deliberate manual debugging.
+`--no-lock` は明示的な手動 debug 以外で使わない。
 
-## Process Budget Exceeded
+## Process budget 超過
 
-Symptom:
+症状:
 
-- process guard exits with code `99`
-- process audit has `budget_exceeded: true`
+- process guard が exit code `99` で終了する。
+- process audit に `budget_exceeded: true` がある。
 
-Inspect:
+確認する。
 
 ```bash
 tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 ```
 
-Check:
+見る field:
 
 - `max_processes`
 - `max_descendant_processes`
 - `max_sample`
 - `command`
 
-Response:
+対応:
 
-- Do not immediately raise limits.
-- Identify whether the delegated task asked Cursor to run shell commands or create subprocesses.
-- For normal CDP prompt/monitor operations, expected `max_processes` is usually `1`.
+- すぐに上限を上げない。
+- 委任 task が Cursor に shell command 実行や subprocess 作成を依頼していないか確認する。
+- 通常の CDP prompt/monitor 操作なら、期待される `max_processes` は多くの場合 `1` である。
 
-## CDP Operation Budget Exceeded
+## CDP 操作 budget 超過
 
-Symptom:
+症状:
 
 - `operation guard stopped ... CDP call budget exceeded`
 - `operation guard stopped ... click budget exceeded`
 - `operation guard stopped ... runtime budget exceeded`
 
-Response:
+対応:
 
-- Treat it as a hard failure.
-- Inspect the latest monitor JSON and process audit.
-- Reduce registry scope with `--task-id`, `--max-records`, or `--max-candidates`.
-- Avoid stale registries for `--monitor-all`.
+- 重大な失敗として扱う。
+- 最新の monitor JSON と process audit を確認する。
+- `--task-id`、`--max-records`、`--max-candidates` で registry scope を狭める。
+- 古い registry に対して `--monitor-all` を使わない。
 
-## Monitor Returns Unmatched
+## Monitor が unmatched を返す
 
-Likely causes:
+主な原因:
 
-- Registry is stale.
-- Cursor generated a duplicate or changed title.
-- Sidebar virtualization changed indexes.
-- The target thread is not visible in the current Cursor Agents project.
+- registry が古い。
+- Cursor が重複 title を生成した、または title が変わった。
+- sidebar virtualization により index が変わった。
+- 対象 thread が現在の Cursor Agents project 内に見えていない。
 
-Response:
+対応:
 
-- For active work, prefer `--monitor-registry --task-id`.
-- For multiple tasks, use only fresh registry records from the current session.
-- Do not increase `--max-candidates` beyond a small number unless debugging manually.
+- 実行中の作業には `--monitor-registry --task-id` を優先する。
+- 複数 task の確認には、今回のセッションで作成した registry record だけを使う。
+- 手動 debug でない限り、`--max-candidates` を大きくしない。
 
-## Ask Mode Or Read-Only Completion
+## Ask mode または read-only 完了
 
-Symptom:
+症状:
 
-- Cursor answers but does not edit files.
-- Final report claims completion without expected diff.
+- Cursor が回答するが、ファイルを編集しない。
+- final report は完了を主張しているが、期待した差分がない。
 
-Response:
+対応:
 
-- Treat Cursor report as non-authoritative.
-- Check `git status --short`, `git diff --name-only`, and the expected file path.
-- Ensure the Agent input is edit-capable before delegating edit tasks.
+- Cursor report を完了判定として扱わない。
+- `git status --short`、`git diff --name-only`、期待 file path を確認する。
+- 編集 task を委任する前に、Agent input が編集可能 mode であることを確認する。
 
-## Scope Drift
+## 範囲外変更
 
-Symptom:
+症状:
 
-- Files outside write scope changed.
+- 許可した編集範囲外のファイルが変更されている。
 
-Response:
+対応:
 
-1. Inspect the diff.
-2. If the out-of-scope change is clearly worker-created and safe, main Codex may correct it.
-3. If it may be user or unrelated agent work, ask before changing it.
-4. Do not use broad destructive commands.
+1. diff を確認する。
+2. 範囲外変更が worker によるものだと明確で安全な場合だけ、main Codex が修正してよい。
+3. ユーザーまたは別 agent の作業である可能性がある場合は、変更前に確認する。
+4. 広範囲に破壊的な command は使わない。
 
-## Heavy Or Unresponsive System
+## 重い、または応答が悪い
 
-Immediate actions:
+すぐに行うこと:
 
-- Stop launching new Cursor/CDP commands.
-- Do not run repeated `pgrep`/`ps` loops.
-- Inspect the latest process audit once.
-- Check whether `budget_exceeded` or stale lock exists.
-- Prefer a normal Cursor restart with the normal profile if CDP state is confused.
+- 新しい Cursor/CDP command を起動しない。
+- `pgrep` / `ps` の loop を繰り返さない。
+- 最新の process audit を 1 回だけ確認する。
+- `budget_exceeded` または stale lock がないか確認する。
+- CDP の状態が混乱している場合は、通常 profile のまま Cursor を通常 restart する。

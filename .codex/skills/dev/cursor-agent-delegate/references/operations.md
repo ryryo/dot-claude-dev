@@ -1,19 +1,19 @@
-# Operations
+# 通常運用
 
-This reference is the operational entrypoint for routine Cursor Agent delegation.
+この reference は、Cursor Agent へ通常の委任を行うときの入口である。
 
-## Preconditions
+## 前提条件
 
-- Use macOS Cursor IDE only.
-- Cursor must run with a loopback CDP port.
-- Use the normal Cursor profile. Do not use a temporary `--user-data-dir`.
-- Keep `--no-lock` and `--no-process-guard` off in routine use.
-- Delegate only one bounded task per prompt.
-- Main Codex remains responsible for diff review, tests, commits, push, PR, and final acceptance.
+- macOS の Cursor IDE だけを対象にする。
+- Cursor は loopback CDP port 付きで起動している必要がある。
+- 通常の Cursor profile を使う。一時的な `--user-data-dir` は使わない。
+- 通常運用では `--no-lock` と `--no-process-guard` を使わない。
+- 1 つの prompt では 1 つの範囲限定タスクだけを委任する。
+- 差分確認、test、commit、push、PR、最終受け入れは main Codex が行う。
 
-## Start Cursor With CDP
+## CDP 付きで Cursor を起動する
 
-If CDP is not already listening:
+CDP がまだ listen していない場合は、通常 profile のまま起動する。
 
 ```bash
 open -na /Applications/Cursor.app --args \
@@ -22,28 +22,28 @@ open -na /Applications/Cursor.app --args \
   "$WORKSPACE"
 ```
 
-Verify:
+確認する。
 
 ```bash
 curl http://127.0.0.1:9226/json/version
 curl http://127.0.0.1:9226/json
 ```
 
-There must be a page target titled `Cursor Agents`.
+`Cursor Agents` という page target が必要である。`page target` は CDP の返す対象種別なので英語表記のまま扱う。
 
-## Submit One Cursor Agent Task
+## Cursor Agent に 1 タスクを投入する
 
-Prepare a prompt file with:
+prompt file には次を含める。
 
 - `Workspace`
 - `Task ID`
-- one concrete `Goal`
-- write scope
-- forbidden paths/actions
-- verification command or explicit read-only contract
-- final report format
+- 具体的な `Goal` 1 件
+- 編集してよい範囲
+- 禁止パスと禁止行為
+- 検証コマンド、または read-only であることの明示
+- 最終報告形式
 
-Run:
+実行する。
 
 ```bash
 .codex/skills/dev/cursor-agent-delegate/scripts/run_cursor_delegate.sh \
@@ -54,14 +54,14 @@ Run:
   --submit
 ```
 
-Default outputs:
+既定の出力先は次の 2 つ。
 
 - `$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl`
 - `$WORKSPACE/.agent_runs/cursor/process-audit.jsonl`
 
-For test runs, use explicit `.tmp/...` registry and process report files.
+テスト実行では、明示的に `.tmp/...` 配下の registry file と process report file を指定してよい。
 
-## Monitor One Task
+## 1 タスクを監視する
 
 ```bash
 .codex/skills/dev/cursor-agent-delegate/scripts/run_cursor_delegate.sh \
@@ -72,11 +72,11 @@ For test runs, use explicit `.tmp/...` registry and process report files.
   --wait
 ```
 
-Accept the DOM result only after `matched: true`, `running: false`, and the expected task id appears in the final report.
+DOM result は、`matched: true`、`running: false`、final report 内の task id が確認できた場合だけ回収結果として扱う。
 
-## Monitor Several Fresh Tasks
+## 複数タスクを監視する
 
-Use only for recent registry records created in the current session.
+今回のセッションで作成した registry record だけを対象にする。`registry record` は JSONL に保存される記録単位なので英語表記のまま扱う。
 
 ```bash
 .codex/skills/dev/cursor-agent-delegate/scripts/run_cursor_delegate.sh \
@@ -88,16 +88,16 @@ Use only for recent registry records created in the current session.
   --max-candidates 2
 ```
 
-`--monitor-all` is a fresh-session dashboard. It is not a durable historical thread resolver.
+`--monitor-all` は現在のセッション用の一覧確認である。古い thread を長期的に復元する仕組みとしては使わない。
 
-## Inspect Guard Logs
+## Guard ログを確認する
 
 ```bash
 tail -n 20 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 tail -n 20 "$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl"
 ```
 
-Important process audit fields:
+process audit で見る field:
 
 - `budget_exceeded`
 - `exit_code`
@@ -106,7 +106,7 @@ Important process audit fields:
 - `command`
 - `samples`
 
-Important monitor fields:
+monitor で見る field:
 
 - `matched`
 - `done`
@@ -115,9 +115,9 @@ Important monitor fields:
 - `guard.cdp_calls`
 - `guard.clicks`
 
-## Review After Cursor Completes
+## Cursor 完了後に確認する
 
-Main Codex must run:
+main Codex は必ず実行する。
 
 ```bash
 git status --short
@@ -125,4 +125,4 @@ git diff --name-only
 git diff --stat
 ```
 
-For edit tasks, also inspect the allowed files and rerun verification commands. Cursor's final report is evidence, not authority.
+編集タスクでは、許可したファイルの中身も確認し、検証コマンドを再実行する。Cursor の final report は参考情報であり、完了判定そのものではない。
