@@ -1,15 +1,15 @@
 # 通常運用
 
-この reference は、Cursor Agent へ通常の委任を行うときの入口である。
+Cursor Agent への通常の委任手順を説明する。
 
 ## 前提条件
 
 - macOS の Cursor IDE だけを対象にする。
 - Cursor は loopback CDP port 付きで起動している必要がある。
 - 通常の Cursor profile を使う。一時的な `--user-data-dir` は使わない。
-- 通常運用では `--no-lock` と `--no-process-guard` を使わない。
-- 1 つの prompt では 1 つの範囲限定タスクだけを委任する。
-- 差分確認、test、commit、push、PR、最終受け入れは main Codex が行う。
+- `--no-lock` と `--no-process-guard` は通常運用では使わない。
+- 1 つの prompt には 1 つの範囲限定タスクだけを書く。
+- 差分確認・テスト・commit・push・PR・最終的な受け入れは main Codex が行う。
 
 ## CDP 付きで Cursor を起動する
 
@@ -22,26 +22,26 @@ open -na /Applications/Cursor.app --args \
   "$WORKSPACE"
 ```
 
-確認する。
+起動後に確認する。
 
 ```bash
 curl http://127.0.0.1:9226/json/version
 curl http://127.0.0.1:9226/json
 ```
 
-`Cursor Agents` という page target が必要である。`page target` は CDP の返す対象種別なので英語表記のまま扱う。
+title が `Cursor Agents` の page target が存在することを確認する。
 
 ## Cursor Agent に 1 タスクを投入する
 
-prompt file には次を含める。
+prompt file には以下を含める。
 
 - `Workspace`
 - `Task ID`
 - 具体的な `Goal` 1 件
 - 編集してよい範囲
 - 禁止パスと禁止行為
-- 検証コマンド、または read-only であることの明示
-- 最終報告形式
+- 検証コマンド（read-only タスクの場合はその旨を明記）
+- 最終報告の形式
 
 実行する。
 
@@ -54,7 +54,7 @@ prompt file には次を含める。
   --submit
 ```
 
-既定の出力先は次の 2 つ。
+既定の出力先:
 
 - `$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl`
 - `$WORKSPACE/.agent_runs/cursor/process-audit.jsonl`
@@ -72,11 +72,11 @@ prompt file には次を含める。
   --wait
 ```
 
-DOM result は、`matched: true`、`running: false`、final report 内の task id が確認できた場合だけ回収結果として扱う。
+`matched: true`・`running: false`・final report 内の task id が確認できた場合だけ、DOM result を回収結果として扱う。
 
 ## 複数タスクを監視する
 
-今回のセッションで作成した registry record だけを対象にする。`registry record` は JSONL に保存される記録単位なので英語表記のまま扱う。
+今回のセッションで作成した registry record だけを対象にする。
 
 ```bash
 .codex/skills/dev/cursor-agent-delegate/scripts/run_cursor_delegate.sh \
@@ -88,7 +88,7 @@ DOM result は、`matched: true`、`running: false`、final report 内の task i
   --max-candidates 2
 ```
 
-`--monitor-all` は現在のセッション用の一覧確認である。古い thread を長期的に復元する仕組みとしては使わない。
+`--monitor-all` は現在のセッション用の一覧確認として使う。古い thread を長期的に復元する仕組みとしては使わない。
 
 ## Guard ログを確認する
 
@@ -97,7 +97,7 @@ tail -n 20 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 tail -n 20 "$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl"
 ```
 
-process audit で見る field:
+process audit で確認するフィールド:
 
 - `budget_exceeded`
 - `exit_code`
@@ -106,7 +106,7 @@ process audit で見る field:
 - `command`
 - `samples`
 
-monitor で見る field:
+monitor で確認するフィールド:
 
 - `matched`
 - `done`
@@ -117,7 +117,7 @@ monitor で見る field:
 
 ## Cursor 完了後に確認する
 
-main Codex は必ず実行する。
+main Codex は必ず以下を実行する。
 
 ```bash
 git status --short
@@ -125,4 +125,4 @@ git diff --name-only
 git diff --stat
 ```
 
-編集タスクでは、許可したファイルの中身も確認し、検証コマンドを再実行する。Cursor の final report は参考情報であり、完了判定そのものではない。
+編集タスクでは、許可したファイルの内容も確認し、検証コマンドを再実行する。Cursor の final report は参考情報であり、完了判定そのものではない。

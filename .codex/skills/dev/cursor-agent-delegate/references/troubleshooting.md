@@ -1,10 +1,10 @@
 # 障害対応
 
-Cursor 委任が重い、詰まる、または想定外の状態を返す場合に読む。
+Cursor の委任が重い・詰まる・想定外の状態を返す場合に読む。
 
 ## 最初の対応
 
-新しい Cursor/CDP 実行を増やさない。範囲を絞った local command で状態を集める。
+新しい Cursor / CDP の実行を増やさない。範囲を絞ったローカルコマンドで状態を把握する。
 
 ```bash
 git status --short
@@ -13,7 +13,7 @@ tail -n 20 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl" 2>/dev/null || tr
 tail -n 20 "$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl" 2>/dev/null || true
 ```
 
-広い process scan を繰り返さない。必要な場合も 1 回だけ実行し、結果を要約する。
+広範囲な process scan を繰り返さない。必要な場合も 1 回だけ実行し、結果を要約する。
 
 ## CDP に接続できない
 
@@ -25,7 +25,7 @@ tail -n 20 "$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl" 2>/dev/null || 
 主な原因:
 
 - Cursor が `--remote-debugging-port` なしで起動している。
-- 前回の launch が既存の non-CDP Cursor process に吸収された。
+- 前回の launch が既存の non-CDP Cursor プロセスに吸収された。
 
 対応:
 
@@ -51,7 +51,7 @@ open -na /Applications/Cursor.app --args \
 
 対応:
 
-- 手動、または AppleScript focus helper で Cursor Agents window を前面に出す。
+- 手動または AppleScript focus helper で Cursor Agents window を前面に出す。
 - `/json` を再確認する。
 - `Cursor Agents` target が出るまで prompt を submit しない。
 
@@ -64,13 +64,13 @@ open -na /Applications/Cursor.app --args \
 対応:
 
 1. 別の実行が本当に動いている場合は少し待つ。
-2. lock pid を確認する。
+2. lock の pid を確認する。
 
 ```bash
 cat "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock/pid"
 ```
 
-3. pid が dead である場合だけ、その lock directory を削除する。
+3. pid が存在しない（dead）場合だけ、その lock directory を削除する。
 
 ```bash
 rm -rf "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock"
@@ -91,7 +91,7 @@ rm -rf "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock"
 tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 ```
 
-見る field:
+確認するフィールド:
 
 - `max_processes`
 - `max_descendant_processes`
@@ -101,8 +101,8 @@ tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 対応:
 
 - すぐに上限を上げない。
-- 委任 task が Cursor に shell command 実行や subprocess 作成を依頼していないか確認する。
-- 通常の CDP prompt/monitor 操作なら、期待される `max_processes` は多くの場合 `1` である。
+- 委任タスクが Cursor に shell コマンドの実行や subprocess の作成を依頼していないか確認する。
+- 通常の CDP prompt / monitor 操作であれば、期待される `max_processes` はほとんどの場合 `1` である。
 
 ## CDP 操作 budget 超過
 
@@ -116,7 +116,7 @@ tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 
 - 重大な失敗として扱う。
 - 最新の monitor JSON と process audit を確認する。
-- `--task-id`、`--max-records`、`--max-candidates` で registry scope を狭める。
+- `--task-id`・`--max-records`・`--max-candidates` で registry の scope を狭める。
 - 古い registry に対して `--monitor-all` を使わない。
 
 ## Monitor が unmatched を返す
@@ -125,16 +125,16 @@ tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 
 - registry が古い。
 - Cursor が重複 title を生成した、または title が変わった。
-- sidebar virtualization により index が変わった。
-- 対象 thread が現在の Cursor Agents project 内に見えていない。
+- sidebar の virtualization により index が変わった。
+- 対象の thread が現在の Cursor Agents プロジェクト内に表示されていない。
 
 対応:
 
 - 実行中の作業には `--monitor-registry --task-id` を優先する。
-- 複数 task の確認には、今回のセッションで作成した registry record だけを使う。
+- 複数タスクの確認には、今回のセッションで作成した registry record だけを使う。
 - 手動 debug でない限り、`--max-candidates` を大きくしない。
 
-## Ask mode または read-only 完了
+## Ask mode または read-only で完了してしまう
 
 症状:
 
@@ -143,11 +143,11 @@ tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 
 対応:
 
-- Cursor report を完了判定として扱わない。
-- `git status --short`、`git diff --name-only`、期待 file path を確認する。
-- 編集 task を委任する前に、Agent input が編集可能 mode であることを確認する。
+- Cursor の report を完了判定として扱わない。
+- `git status --short`・`git diff --name-only`・期待するファイルパスを確認する。
+- 編集タスクを委任する前に、Agent input が編集可能な mode になっていることを確認する。
 
-## 範囲外変更
+## 範囲外の変更が混入した
 
 症状:
 
@@ -156,16 +156,16 @@ tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 対応:
 
 1. diff を確認する。
-2. 範囲外変更が worker によるものだと明確で安全な場合だけ、main Codex が修正してよい。
-3. ユーザーまたは別 agent の作業である可能性がある場合は、変更前に確認する。
-4. 広範囲に破壊的な command は使わない。
+2. 範囲外変更が worker によるものだと明確で、安全に戻せる場合だけ main Codex が修正してよい。
+3. ユーザーまたは別の agent の作業である可能性がある場合は、変更前にユーザーへ確認する。
+4. 広範囲に破壊的なコマンドは使わない。
 
-## 重い、または応答が悪い
+## 重い・応答が悪い
 
 すぐに行うこと:
 
-- 新しい Cursor/CDP command を起動しない。
-- `pgrep` / `ps` の loop を繰り返さない。
+- 新しい Cursor / CDP コマンドを起動しない。
+- `pgrep` / `ps` のループを繰り返さない。
 - 最新の process audit を 1 回だけ確認する。
 - `budget_exceeded` または stale lock がないか確認する。
-- CDP の状態が混乱している場合は、通常 profile のまま Cursor を通常 restart する。
+- CDP の状態が混乱している場合は、通常 profile のまま Cursor を通常の手順で restart する。
