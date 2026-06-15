@@ -9,6 +9,26 @@ description: |
 
 main Codex を orchestrator / final reviewer / integrator、Codex subagent と Cursor Agent を worker として扱う。worker に渡すのは、write scope と検証条件が明確な独立タスクだけにする。
 
+## Reference Map
+
+この `SKILL.md` は判断基準と安全契約だけを置く。実行手順や障害対応は必ず該当 reference を読む。
+
+- 通常運用、CDP 起動、submit、monitor、guard log 確認: [references/operations.md](references/operations.md)
+- CDP / Cursor / lock / process guard / monitor 失敗時: [references/troubleshooting.md](references/troubleshooting.md)
+- Cursor / AppleScript / CDP / deeplink の制約: [references/transports.md](references/transports.md)
+- worker 選定: [references/worker-selection.md](references/worker-selection.md)
+- worker prompt 作成: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
+- 検収 checklist: [references/review-checklist.md](references/review-checklist.md)
+
+## Operating Contract
+
+- 通常運用では `mac-ide-cdp` を使う。
+- Cursor は通常 profile のまま loopback CDP port 付きで起動する。別 `--user-data-dir` は使わない。
+- `--no-lock`、`--no-process-guard`、大きな guard 上限値は通常運用で使わない。
+- `--monitor-all` は fresh registry 用の dashboard として扱い、古い thread の完全復元には使わない。
+- 問題が起きたら新しい Cursor/CDP 実行を増やさず、[references/troubleshooting.md](references/troubleshooting.md) に従う。
+- Cursor の final report は証拠であり、完了判定の authority ではない。main Codex が diff / file contents / tests を検収する。
+
 ## 役割分担
 
 | 役割                                             | 担当           |

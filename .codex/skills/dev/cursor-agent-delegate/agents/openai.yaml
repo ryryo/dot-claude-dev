@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent 委任"
-  short_description: "Codex/Cursor workersへ範囲限定タスクを委任"
-  default_prompt: "$cursor-agent-delegate を使って、範囲限定タスクを適切な worker に委任し、差分と検証結果を検収してください。"
+  short_description: "macOS Cursor Agent / Codex subagentへ範囲限定タスクを安全に委任"
+  default_prompt: "$cursor-agent-delegate を使って、references/operations.md と troubleshooting.md の guard 契約に従い、範囲限定タスクを適切な worker に委任して差分と検証結果を検収してください。"
