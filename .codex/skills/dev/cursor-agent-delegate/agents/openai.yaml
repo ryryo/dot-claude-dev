@@ -1,4 +1,4 @@
 interface:
-  display_name: "Cursor Agent 委任"
-  short_description: "Cursor CLI の Composer 2 Fast に作業を依頼し、差分と検証結果をCodex側で確認するスキル"
-  default_prompt: "$cursor-agent-delegate を使って、低〜中複雑度の独立タスクを Cursor Agent に実行させ、成果を検収してください。"
+  display_name: "Agent 委任"
+  short_description: "Codex/Cursor workersへ範囲限定タスクを委任"
+  default_prompt: "$cursor-agent-delegate を使って、範囲限定タスクを適切な worker に委任し、差分と検証結果を検収してください。"

@@ -1,175 +1,161 @@
 ---
-name: dev:cursor-agent-delegate
+name: cursor-agent-delegate
 description: |
-  Cursor CLI の headless agent を使い、Composer 2 Fast に低〜中複雑度の実装・調査・テスト作業を委任し、
-  Codex 側で差分・検証結果・範囲逸脱を確認する。
-  依頼内容・参照資料・既存コードを読み込み、write scope を絞ったプロンプトで cursor-agent を実行する。
-  完了後は main Codex がレビュー・検収を担う。
-
-  Trigger:
-  cursor-agent-delegate, Cursor CLI 委任, Cursor Agent 委任, Composer 2 Fast に作業依頼,
-  composer-2-fast 実行, Cursor Agent で実装, 並列エージェント実行
-user-invocable: true
+  Codex subagent と Cursor Agent を worker pool として使い分け、複雑ロジック・設計レビュー・深い調査は Codex subagent、低〜中複雑度の局所実装・テスト作成は Cursor Agent に委任し、main Codex 側で差分・検証結果・範囲逸脱を検収する。Use when delegating bounded coding work from Codex to Codex subagents or Cursor Agent, coordinating macOS Cursor IDE AppleScript default workflows, WSL Cursor CLI workflows, or parallel non-overlapping worker tasks.
 ---
 
 # cursor-agent-delegate
 
-Cursor CLI の headless mode で `composer-2-fast` に作業を投げ、返ってきた差分を main Codex が検収する。
+main Codex を orchestrator / final reviewer / integrator、Codex subagent と Cursor Agent を worker として扱う。worker に渡すのは、write scope と検証条件が明確な独立タスクだけにする。
 
-**役割分担:**
+## 役割分担
 
-| 役割 | 担当 |
-|------|------|
-| orchestrator / reviewer | main Codex |
-| worker（実装・調査・テスト） | Cursor Agent |
-| 最終統合・進捗ファイル更新・commit / push | main Codex（ユーザーが明示しない限り） |
+| 役割                                             | 担当           |
+| ------------------------------------------------ | -------------- |
+| タスク分解・依頼契約・最終検収                   | main Codex     |
+| 複雑ロジック、設計比較、深い調査、難しいレビュー | Codex subagent |
+| 局所実装、テスト追加、既存 pattern に沿う修正    | Cursor Agent   |
+| 最終統合・進捗更新・commit / push / PR           | main Codex     |
 
----
+worker には planning/progress ファイル更新、Gate PASS 判定、commit、push、merge、最終統合を任せない。
 
-## 前提
+## Worker Selection
 
-- CLI コマンド名は `cursor-agent`（または `agent`）。実在するコマンドを確認し、以後 `CURSOR_AGENT_BIN` として扱う。
-- headless 実行は `-p / --print` フラグを使う。
-- 編集ありの実行は `--force`、read-only の調査・レビューは `--mode ask` または `--mode plan`（`--force` 不要）。
-- `--mode ask` は既存コードの確認・要約・レビュー観点の洗い出しに使う。`--mode plan` は実装方針や手順案を作らせるが、まだ編集させない場合に使う。
-- モデルは原則 `--model composer-2-fast` を明示。毎回 `models` で存在確認し、なければユーザーに報告して代替を確認する。
-- `--workspace <path>` は必ず指定する。暗黙の cwd に依存しない。
-- headless 実行中に workspace 信頼確認で止まらないよう、編集ありの実行では `--trust` を付ける。
+worker 選定の詳細は必要時に [references/worker-selection.md](references/worker-selection.md) を読む。
 
----
+- `codex-subagent`: 複雑な domain logic、アルゴリズム、状態遷移、設計比較、深いレビュー、リスク洗い出し。
+- `cursor-agent`: 純粋関数、adapter、schema、単体テスト、既存 pattern に沿う局所修正、高速な実装代行。
+- `main-codex`: 曖昧な仕様整理、最終統合、scope 判定、完了判定、commit / push / PR。
 
-## Step 1: CLI と環境を確認する
+Codex subagent も worker であり、最終判断者ではない。subagent の結論や差分も main Codex が検収する。
+
+## Transport
+
+Cursor Agent を選んだ場合、macOS の標準 transport は `mac-ide-applescript`。AppleScript preflight / smoke が失敗した場合、またはユーザーが CLI を明示した場合だけ `cli` を使う。WSL の標準 transport は `cli`。prompt を手動確認つきで Cursor IDE に渡したい場合だけ `deeplink` を使う。
+
+Transport の詳細、制約、fallback は必要時に [references/transports.md](references/transports.md) を読む。
+
+- `mac-ide-applescript`: macOS 標準。Cursor IDE に prompt を投入する高速経路。
+- `cli`: macOS fallback / 明示指定、WSL 標準。`agent` コマンドを使う headless 経路。
+- `deeplink`: Cursor IDE に prompt を prefill する手動確認 fallback。
+
+Windows native と Windows GUI automation は対象外。WSL から Windows 側 Cursor IDE を操作しない。
+
+## Step 1: Preflight
+
+必ず委任前に確認する。Codex subagent を使う場合は、利用可能な subagent / worker tool があることを確認し、タスクごとの ownership と write scope を明示する。Cursor Agent を使う場合、macOS では先に `mac-ide-applescript` の preflight を行い、使えない場合だけ CLI preflight を行う。WSL では CLI preflight を行う。
 
 ```bash
-command -v cursor-agent || command -v agent
-"$CURSOR_AGENT_BIN" --version
-"$CURSOR_AGENT_BIN" status
-"$CURSOR_AGENT_BIN" models | rg '^composer-2-fast\b'
+command -v agent
+agent status
+agent models | rg '^composer-2\.5\b'
 git status --short
 ```
 
-- `status` が未ログインなら実行せず、`cursor-agent login` または `CURSOR_API_KEY` が必要だと報告する。
-- `composer-2-fast` が存在しない場合も実行しない。
-- 開始時の `git status --short` と対象ブランチを記録する。既存の未コミット変更はユーザーまたは他 agent の作業として扱い、巻き戻さない。
+- `agent` が存在しない場合は preflight failure。
+- 標準モデルは `composer-2.5`。速度優先が明示されたときだけ `composer-2.5-fast` を使う。
+- WSL では repo が Linux filesystem 配下にあることを推奨する。`/mnt/c/...` は明示許可がなければ warning として扱う。
+- 委任前の `git status --short` を記録し、既存変更を Cursor の成果物と混同しない。
 
-**ゲート**: `composer-2-fast` が確認できなければ次に進まない。
-
----
-
-## Step 2: 対象タスクを選ぶ
-
-Cursor Agent に投げてよいのは、write scope と検証条件を明確にできる作業だけ。
-
-**Cursor Agent に向いている作業:**
-- 純粋関数・helper・schema・validator・adapter・単体テスト
-- 新規小ディレクトリに閉じる実装
-- 依存関係が薄く、単独で完了条件を検証できる低〜中複雑度タスク
-- 既存 UI / state / routing への接続が薄い小さな修正
-- 調査・既存実装の要約・テスト観点の洗い出し
-
-**main Codex に残す作業:**
-- 共通 state・editor / canvas・export pipeline・routing・認可・DB migration など影響範囲が広い変更
-- 複数領域にまたがる最終統合
-- 進捗・状態ファイルの更新、完了判定、生成ドキュメントの同期
-- commit / push / PR
-- 仕様が曖昧で、期待する振る舞いを agent に渡せない作業
-
-**ゲート**: write scope と検証条件を言語化できなければ次に進まない。
-
----
-
-## Step 3: 実行範囲を決める
-
-単発の read-only 調査は現在の workspace でよい。
-
-編集を伴う場合:
-- `git status --short` で既存変更を把握してから実行する。
-- write scope をファイルまたはディレクトリ単位で明示する。
-- 既存の未コミット変更と衝突しそうな作業は Cursor Agent に投げず、main Codex 側で扱うかユーザーに確認する。
-- `--workspace` で対象 workspace を必ず渡す。
-
-**ゲート**: write scope のリストアップが完了してから次に進む。
-
----
-
-## Step 4: worker プロンプトを作る
-
-プロンプトには結論ではなく契約を渡す。以下をすべて含める。
-
-```text
-You are a worker agent running inside this repository.
-
-Workspace:
-<絶対パス>
-
-Goal:
-<具体的なタスク 1 件>
-
-Read first:
-- <絶対パス>
-- <絶対パス>
-
-Write scope:
-- You may edit only: <パス>
-- Do not edit: <パス>
-- Do not update progress/state files, generated planning docs, commits, branches, remotes, or package lockfiles unless explicitly listed in write scope.
-- Do not revert existing uncommitted changes or files outside your scope.
-
-Implementation constraints:
-- <制約>
-
-Verification:
-- Run: <コマンド>
-- If the command cannot run, explain the exact reason.
-
-Final report:
-- Files changed
-- Summary of behavior changed
-- Verification commands and results
-- Anything intentionally left for main Codex
-```
-
-長いプロンプトは一時ファイルに書き出し、`PROMPT="$(< "$PROMPT_FILE")"` で読み込んで渡す。
-（`-f` は Cursor CLI では `--force` の短縮形なので、プロンプトファイル指定には使わない。）
-
-**ゲート**: プロンプトに上記の必須項目がすべて含まれていることを確認してから実行する。
-
----
-
-## Step 5: Cursor Agent を実行する
-
-**read-only 調査:**
+Wrapper を使う場合:
 
 ```bash
-"$CURSOR_AGENT_BIN" -p \
+.codex/skills/dev/cursor-agent-delegate/scripts/run_cursor_delegate.sh \
   --mode ask \
-  --output-format text \
+  --workspace "$PWD" \
+  --prompt-file /path/to/prompt.txt
+```
+
+macOS で prompt 投入後に送信まで行う場合は `--submit` を明示する。送信後も Cursor UI の状態で完了判定せず、main Codex が diff と検証コマンドで回収する。
+編集委任では、送信前に Cursor Agent window が `Ask` mode ではないことを確認する。`Ask` chip が残っている場合、Cursor はファイル編集を行わず read-only 応答で終了する。
+
+macOS で CLI を強制する場合:
+
+```bash
+.codex/skills/dev/cursor-agent-delegate/scripts/run_cursor_delegate.sh \
+  --transport cli \
+  --mode ask \
+  --workspace "$PWD" \
+  --prompt-file /path/to/prompt.txt
+```
+
+## Step 2: Worker と委任可否を判断する
+
+Codex subagent に渡してよい作業:
+
+- 複雑な domain logic、アルゴリズム、状態遷移設計。
+- 複数実装案の比較、設計レビュー、リスク洗い出し。
+- 仕様から実装契約への分解。
+- 高難度の diff review やテスト戦略レビュー。
+
+Cursor Agent に渡してよい作業:
+
+- 純粋関数、helper、schema、validator、adapter、単体テスト。
+- 新規小ディレクトリまたは少数ファイルに閉じた実装。
+- 依存が薄く、検証コマンドで正誤を判断できる作業。
+- 既存コード調査、要約、テスト観点の洗い出し。
+
+main Codex に残す作業:
+
+- 共通 state、routing、認可、DB migration、export pipeline など高結合な変更。
+- 複数領域をまたぐ最終統合。
+- docs/PLAN、tasks.json、spec.md、進捗管理ファイルの更新。
+- commit / push / PR。
+- 期待動作や完了条件が曖昧な作業。
+
+worker の ownership、write scope、検証条件を言語化できない場合は委任しない。
+
+## Step 3: Worker Prompt を作る
+
+プロンプトは結論ではなく契約として書く。詳細テンプレートは [references/delegation-prompt-template.md](references/delegation-prompt-template.md) を読む。
+
+必須項目:
+
+- Workspace absolute path。
+- Goal は 1 件だけ。
+- Read first の実在パス。
+- Write scope と forbidden paths。
+- 既存未コミット変更を戻さない指示。
+- 実装制約。
+- Verification command。
+- Final report format。
+
+長い prompt は一時ファイルに保存し、wrapper の `--prompt-file` で渡す。
+
+## Step 4: 実行する
+
+Codex subagent:
+
+- subagent / worker tool が利用可能な場合だけ使う。
+- prompt には ownership、write scope、他 worker の存在、既存変更を戻さないこと、検証、報告形式を含める。
+- 複数 subagent を並列にする場合は write scope を重複させない。
+
+Cursor Agent read-only 調査:
+
+```bash
+agent -p --mode ask \
   --workspace "$WORKSPACE" \
-  --model composer-2-fast \
+  --model composer-2.5 \
+  --output-format text \
   "$PROMPT"
 ```
 
-**編集あり:**
+Cursor Agent 編集あり:
 
 ```bash
-"$CURSOR_AGENT_BIN" -p \
-  --force \
-  --trust \
+agent -p --force --trust \
+  --workspace "$WORKSPACE" \
+  --model composer-2.5 \
   --output-format stream-json \
   --stream-partial-output \
-  --workspace "$WORKSPACE" \
-  --model composer-2-fast \
   "$PROMPT" | tee "$LOG"
 ```
 
-並列実行は 2〜4 件を上限とし、write scope が重ならないものだけ同時に投げる。
-各 agent ごとに workspace・log path・allowed write scope を記録する。
+並列実行は write scope が重ならない場合だけにする。Cursor Agent は 2〜4 件までを目安にし、Codex subagent は実行環境の同時実行上限に従う。各 worker ごとに worker type、workspace、log path または agent id、allowed write scope を記録する。
 
----
+## Step 5: 検収する
 
-## Step 6: 結果を検収する
-
-Cursor Agent 終了後、main Codex が必ず確認する。
+worker 終了後、main Codex が必ず検収する。詳細チェックリストは [references/review-checklist.md](references/review-checklist.md) を読む。
 
 ```bash
 git status --short
@@ -177,39 +163,22 @@ git diff --name-only
 git diff --stat
 ```
 
-**確認観点:**
-- 変更ファイルが write scope に収まっている
-- 既存の未コミット変更を巻き戻していない
-- agent の報告と実際の diff が一致している
-- 依頼内容・完了条件・検証条件に対して不足がない
-- 検証コマンドが成功している、または失敗理由が妥当
+確認すること:
 
-範囲外の変更がある場合は、agent の log と diff を確認してから判断する。
-ユーザーや他 agent の既存変更と混ざっている可能性があるため、安易に revert しない。
-Cursor Agent が作った範囲外変更だけを特定できる場合に限り main Codex が修正し、特定できなければユーザーに判断を仰ぐ。
+- 変更ファイルが write scope に収まっている。
+- 既存未コミット変更を巻き戻していない。
+- worker の報告と実際の diff / reasoning / 検証結果が一致している。
+- 検証コマンドが成功している、または失敗理由が妥当。
+- CLI transport では stream metadata から実際の model / session を確認する。
+- AppleScript transport では model を programmatically verify できないため、その旨を報告する。
 
-**ゲート**: すべての確認観点をパスしてから次に進む。
+範囲外変更は採用しない。worker が作った範囲外変更だけを特定できる場合に限り main Codex が修正し、特定できなければユーザーに判断を仰ぐ。
 
----
+## Step 6: 報告する
 
-## Step 7: 報告する
+最終報告に含める:
 
-計画ファイル・進捗管理ファイルがある場合:
-- Cursor Agent の報告だけで完了状態にしない。
-- main Codex が完了条件を再検証してから状態を更新する。
-- 同期スクリプトや生成手順がある場合は、プロジェクト規定の手順に従う。
-
-最終報告に含める内容:
-- 実行した Cursor CLI コマンドの要約
-- 使用モデル（通常 `composer-2-fast`）
-- Cursor Agent が変更したファイル
-- main Codex が実施した検証
-- 採用した差分・棄却した差分・残課題
-
----
-
-## 参照
-
-- [Cursor CLI overview](https://cursor.com/docs/cli/overview)
-- [Cursor Headless CLI](https://cursor.com/docs/cli/headless)
-- [Cursor CLI parameters](https://cursor.com/docs/cli/reference/parameters)
+- 使用 worker type、transport、model。
+- worker が変更したファイル。
+- main Codex が確認した diff と検証結果。
+- 採用した差分、棄却した差分、残課題。
