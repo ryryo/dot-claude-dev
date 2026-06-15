@@ -4,21 +4,41 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  run_cursor_delegate.sh --mode ask|plan|edit --workspace PATH --prompt-file FILE [options]
-  run_cursor_delegate.sh --transport auto --mode ask|plan|edit --workspace PATH --prompt-file FILE [options]
-  run_cursor_delegate.sh --transport cli --mode ask|plan|edit --workspace PATH --prompt-file FILE [options]
-  run_cursor_delegate.sh --transport mac-ide-applescript --workspace PATH --prompt-file FILE [options]
+  run_cursor_delegate.sh --workspace PATH --prompt-file FILE [options]
+  run_cursor_delegate.sh --transport mac-ide-cdp [--cdp-endpoint URL] [--prompt-file FILE]
+  run_cursor_delegate.sh --transport mac-ide-cdp --monitor-registry --task-id ID [options]
+  run_cursor_delegate.sh --transport mac-ide-cdp --monitor-all [options]
+  run_cursor_delegate.sh --transport mac-ide-applescript
   run_cursor_delegate.sh --transport deeplink --prompt-file FILE
 
 Options:
-  --transport VALUE        auto | cli | mac-ide-applescript | deeplink (default: auto)
+  --transport VALUE        auto | mac-ide-applescript | mac-ide-cdp | deeplink (default: auto)
   --mode VALUE             ask | plan | edit (default: ask)
   --workspace PATH         Repository workspace path (default: current directory)
-  --prompt-file FILE       File containing the worker prompt (required)
-  --model VALUE            Cursor model (default: composer-2.5)
-  --log FILE               Log path for CLI edit mode
-  --allow-wsl-mnt          Allow WSL workspaces under /mnt/*
-  --submit                 Submit the prompt in Cursor IDE after pasting (mac-ide-applescript only)
+  --prompt-file FILE       File containing the worker prompt
+  --cdp-endpoint URL       Cursor CDP endpoint (default: http://127.0.0.1:9226)
+  --registry-file FILE     JSONL thread registry path (default: WORKSPACE/.agent_runs/cursor/thread-registry.jsonl)
+  --no-registry            Do not write a thread registry entry on submit
+  --monitor-registry       Read/switch to a registered thread and print DOM status/result JSON
+  --monitor-all            Read/switch through all registered task-id threads and print a summary JSON
+  --task-id ID             Task id to monitor in the registry
+  --wait                   Poll until monitored thread(s) are done or timeout is reached
+  --timeout SECONDS        Wait timeout for monitor modes (default: 120)
+  --poll-interval SECONDS  Poll interval for monitor modes (default: 2)
+  --max-candidates N       Max sidebar candidates to try per registered thread (default: 3)
+  --max-records N          Max registry task records for --monitor-all (default: 8)
+  --max-cdp-calls N        Max CDP protocol calls per wrapper invocation (default: 120)
+  --max-clicks N           Max UI clicks per wrapper invocation (default: 6)
+  --max-runtime SECONDS    Max runtime budget inside the CDP helper (default: 180)
+  --max-child-processes N  Max descendant processes started by the guarded helper (default: 6)
+  --process-report-file F  JSONL process audit report path (default: WORKSPACE/.agent_runs/cursor/process-audit.jsonl)
+  --process-poll-interval S Process guard poll interval in seconds (default: 2)
+  --no-process-guard       Skip child process monitoring
+  --no-lock                Skip the workspace-level CDP lock
+  --lock-timeout SECONDS   Seconds to wait for the workspace-level CDP lock (default: 5)
+  --new-agent              Click New Agent before prompt insertion (mac-ide-cdp only)
+  --clear-after-insert     Clear the prompt after read-back (mac-ide-cdp smoke tests)
+  --submit                 Submit after insertion
   -h, --help               Show this help
 USAGE
 }
@@ -27,10 +47,30 @@ transport="auto"
 mode="ask"
 workspace="$PWD"
 prompt_file=""
-model="composer-2.5"
-log_file=""
-allow_wsl_mnt=0
+cdp_endpoint="http://127.0.0.1:9226"
+registry_file=""
+write_registry=1
+monitor_registry=0
+monitor_all=0
+task_id=""
+wait_for_monitor=0
+timeout=120
+poll_interval=2
+max_candidates=3
+max_records=8
+max_cdp_calls=120
+max_clicks=6
+max_runtime=180
+max_child_processes=6
+process_report_file=""
+process_poll_interval=2
+use_process_guard=1
+use_lock=1
+lock_timeout=5
+active_lock_dir=""
 submit=0
+new_agent=0
+clear_after_insert=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -38,118 +78,98 @@ while [[ $# -gt 0 ]]; do
     --mode) mode="${2:?}"; shift 2 ;;
     --workspace) workspace="${2:?}"; shift 2 ;;
     --prompt-file) prompt_file="${2:?}"; shift 2 ;;
-    --model) model="${2:?}"; shift 2 ;;
-    --log) log_file="${2:?}"; shift 2 ;;
-    --allow-wsl-mnt) allow_wsl_mnt=1; shift ;;
+    --cdp-endpoint) cdp_endpoint="${2:?}"; shift 2 ;;
+    --registry-file) registry_file="${2:?}"; shift 2 ;;
+    --no-registry) write_registry=0; shift ;;
+    --monitor-registry) monitor_registry=1; shift ;;
+    --monitor-all) monitor_all=1; shift ;;
+    --task-id) task_id="${2:?}"; shift 2 ;;
+    --wait) wait_for_monitor=1; shift ;;
+    --timeout) timeout="${2:?}"; shift 2 ;;
+    --poll-interval) poll_interval="${2:?}"; shift 2 ;;
+    --max-candidates) max_candidates="${2:?}"; shift 2 ;;
+    --max-records) max_records="${2:?}"; shift 2 ;;
+    --max-cdp-calls) max_cdp_calls="${2:?}"; shift 2 ;;
+    --max-clicks) max_clicks="${2:?}"; shift 2 ;;
+    --max-runtime) max_runtime="${2:?}"; shift 2 ;;
+    --max-child-processes) max_child_processes="${2:?}"; shift 2 ;;
+    --process-report-file) process_report_file="${2:?}"; shift 2 ;;
+    --process-poll-interval) process_poll_interval="${2:?}"; shift 2 ;;
+    --no-process-guard) use_process_guard=0; shift ;;
+    --no-lock) use_lock=0; shift ;;
+    --lock-timeout) lock_timeout="${2:?}"; shift 2 ;;
+    --new-agent) new_agent=1; shift ;;
+    --clear-after-insert) clear_after_insert=1; shift ;;
     --submit) submit=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
-if [[ -z "$prompt_file" || ! -f "$prompt_file" ]]; then
-  echo "Missing or unreadable --prompt-file" >&2
-  exit 2
-fi
-
-workspace="$(cd "$workspace" && pwd)"
-prompt="$(< "$prompt_file")"
-
-is_wsl() {
-  [[ "$(uname -s)" == "Linux" ]] && grep -qi microsoft /proc/version 2>/dev/null
-}
-
-print_metadata_from_log() {
-  local file="$1"
-  command -v python3 >/dev/null 2>&1 || return 0
-  python3 - "$file" <<'PY' || true
-import json
-import sys
-
-path = sys.argv[1]
-system = None
-result = None
-try:
-    with open(path, "r", encoding="utf-8") as fh:
-        for line in fh:
-            try:
-                event = json.loads(line)
-            except Exception:
-                continue
-            if event.get("type") == "system" and event.get("subtype") == "init":
-                system = event
-            elif event.get("type") == "result":
-                result = event
-except FileNotFoundError:
-    sys.exit(0)
-
-if system:
-    print("cursor_delegate.system_model=" + str(system.get("model", "")))
-    print("cursor_delegate.session_id=" + str(system.get("session_id", "")))
-if result:
-    print("cursor_delegate.result_subtype=" + str(result.get("subtype", "")))
-    print("cursor_delegate.duration_ms=" + str(result.get("duration_ms", "")))
-PY
-}
-
-run_cli() {
-  if ! command -v agent >/dev/null 2>&1; then
-    echo "Preflight failed: agent command not found" >&2
+require_macos() {
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "Preflight failed: this skill's Cursor IDE transports are macOS-only" >&2
     exit 1
   fi
+}
 
-  if is_wsl && [[ "$workspace" == /mnt/* && "$allow_wsl_mnt" -ne 1 ]]; then
-    echo "Preflight warning: WSL workspace is under /mnt/*. Prefer Linux filesystem paths or pass --allow-wsl-mnt." >&2
+require_prompt_file() {
+  if [[ -z "$prompt_file" || ! -f "$prompt_file" ]]; then
+    echo "Missing or unreadable --prompt-file" >&2
+    exit 2
   fi
+}
 
-  echo "cursor_delegate.transport=cli"
-  echo "cursor_delegate.workspace=$workspace"
-  echo "cursor_delegate.model_requested=$model"
-
-  agent status >/dev/null
-  if ! agent models | awk '{print $1}' | grep -Fxq "$model"; then
-    echo "Preflight failed: model not available: $model" >&2
-    exit 1
-  fi
-
-  git -C "$workspace" status --short
-
-  case "$mode" in
-    ask|plan)
-      agent -p \
-        --mode "$mode" \
-        --workspace "$workspace" \
-        --model "$model" \
-        --output-format text \
-        "$prompt"
-      ;;
-    edit)
-      if [[ -z "$log_file" ]]; then
-        log_file="${TMPDIR:-/tmp}/cursor-delegate-$(date +%Y%m%d-%H%M%S).ndjson"
+acquire_lock() {
+  [[ "$use_lock" -eq 1 ]] || return 0
+  local lock_root lock_dir waited
+  lock_root="$workspace/.agent_runs/cursor/locks"
+  lock_dir="$lock_root/cdp.lock"
+  mkdir -p "$lock_root"
+  waited=0
+  while ! mkdir "$lock_dir" 2>/dev/null; do
+    if [[ -f "$lock_dir/pid" ]]; then
+      local existing_pid
+      existing_pid="$(cat "$lock_dir/pid" 2>/dev/null || true)"
+      if [[ -n "$existing_pid" ]] && ! kill -0 "$existing_pid" 2>/dev/null; then
+        rm -rf "$lock_dir"
+        continue
       fi
-      agent -p \
-        --force \
-        --trust \
-        --workspace "$workspace" \
-        --model "$model" \
-        --output-format stream-json \
-        --stream-partial-output \
-        "$prompt" | tee "$log_file"
-      echo "cursor_delegate.log=$log_file"
-      print_metadata_from_log "$log_file"
-      ;;
-    *)
-      echo "Invalid --mode for cli: $mode" >&2
-      exit 2
-      ;;
-  esac
+    fi
+    if [[ "$waited" -ge "$lock_timeout" ]]; then
+      echo "Preflight failed: another Cursor CDP operation is already running for this workspace ($lock_dir)" >&2
+      echo "Use --no-lock only for deliberate manual debugging." >&2
+      exit 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  printf '%s\n' "$$" > "$lock_dir/pid"
+  active_lock_dir="$lock_dir"
+  trap 'if [[ -n "${active_lock_dir:-}" ]]; then rm -rf "$active_lock_dir"; fi' EXIT INT TERM
+}
+
+run_guarded() {
+  local label="$1"
+  shift
+  if [[ "$use_process_guard" -eq 0 ]]; then
+    "$@"
+    return
+  fi
+  if [[ -z "$process_report_file" ]]; then
+    process_report_file="$workspace/.agent_runs/cursor/process-audit.jsonl"
+  fi
+  python3 "$script_dir/process_guard.py" \
+    --label "$label" \
+    --max-child-processes "$max_child_processes" \
+    --poll-interval "$process_poll_interval" \
+    --report-file "$process_report_file" \
+    -- "$@"
 }
 
 run_mac_ide_applescript() {
-  if [[ "$(uname -s)" != "Darwin" ]]; then
-    echo "mac-ide-applescript transport is macOS only" >&2
-    return 1
-  fi
+  require_macos
+
   if [[ ! -d /Applications/Cursor.app ]]; then
     echo "Preflight failed: /Applications/Cursor.app not found" >&2
     return 1
@@ -159,35 +179,118 @@ run_mac_ide_applescript() {
     return 1
   fi
 
+  workspace="$(cd "$workspace" && pwd)"
+
   local script_dir
-  local submit_arg="no-submit"
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  if [[ "$submit" -eq 1 ]]; then
-    submit_arg="submit"
-  fi
-  if ! osascript "$script_dir/cursor_ide_prompt.scpt" "$prompt_file" "$submit_arg"; then
-    echo "Preflight failed: Cursor IDE AppleScript prompt insertion failed" >&2
+  if ! osascript "$script_dir/cursor_ide_prompt.scpt" "focus-only"; then
+    echo "Preflight failed: Cursor IDE AppleScript focus failed" >&2
     return 1
   fi
   echo "cursor_delegate.transport=mac-ide-applescript"
-  echo "cursor_delegate.submitted=$submit_arg"
+  echo "cursor_delegate.workspace=$workspace"
+  echo "cursor_delegate.prompt_insertion=axtextarea-direct-set-not-available-on-current-cursor-agents-build"
+  echo "cursor_delegate.mode=$mode"
   echo "cursor_delegate.model=Cursor IDE selected model; not programmatically verified"
+  if [[ -n "$prompt_file" ]]; then
+    echo "Preflight failed: mac-ide-applescript AXTextArea direct-set prompt insertion is not available on this Cursor Agents build; use --transport mac-ide-cdp for no-clipboard insertion" >&2
+    return 1
+  fi
 }
 
-run_auto() {
-  if [[ "$(uname -s)" == "Darwin" ]]; then
-    if run_mac_ide_applescript; then
-      return 0
+run_mac_ide_cdp() {
+  require_macos
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Preflight failed: python3 required for CDP transport" >&2
+    exit 1
+  fi
+
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  workspace="$(cd "$workspace" && pwd)"
+  acquire_lock
+  if [[ -z "$registry_file" ]]; then
+    registry_file="$workspace/.agent_runs/cursor/thread-registry.jsonl"
+  fi
+
+  if [[ "$monitor_registry" -eq 1 || "$monitor_all" -eq 1 ]]; then
+    local args=("--endpoint" "$cdp_endpoint" "--registry-file" "$registry_file" "--timeout" "$timeout" "--poll-interval" "$poll_interval" "--max-candidates" "$max_candidates" "--max-records" "$max_records" "--max-cdp-calls" "$max_cdp_calls" "--max-clicks" "$max_clicks" "--max-runtime" "$max_runtime")
+    if [[ "$monitor_all" -eq 1 ]]; then
+      args+=("--monitor-all")
+    else
+      args+=("--monitor-registry")
     fi
-    echo "cursor_delegate.fallback=cli" >&2
-    run_cli
+    if [[ -n "$task_id" ]]; then
+      args+=("--task-id" "$task_id")
+    fi
+    if [[ "$wait_for_monitor" -eq 1 ]]; then
+      args+=("--wait")
+    fi
+    run_guarded "cursor-cdp-monitor" python3 "$script_dir/cursor_cdp_prompt.py" "${args[@]}"
     return
   fi
 
-  run_cli
+  if [[ -n "$prompt_file" ]]; then
+    local args=("--endpoint" "$cdp_endpoint" "--prompt-file" "$prompt_file" "--workspace" "$workspace" "--max-cdp-calls" "$max_cdp_calls" "--max-clicks" "$max_clicks" "--max-runtime" "$max_runtime")
+    if [[ "$new_agent" -eq 1 ]]; then
+      args+=("--new-agent")
+    fi
+    if [[ "$clear_after_insert" -eq 1 ]]; then
+      args+=("--clear-after-insert")
+    fi
+    if [[ "$submit" -eq 1 ]]; then
+      args+=("--submit")
+    fi
+    if [[ "$submit" -eq 1 && "$write_registry" -eq 1 ]]; then
+      args+=("--registry-file" "$registry_file")
+    fi
+    run_guarded "cursor-cdp-submit" python3 "$script_dir/cursor_cdp_prompt.py" "${args[@]}"
+    return
+  fi
+
+  python3 - "$cdp_endpoint" <<'PY'
+import json
+import sys
+import urllib.request
+
+endpoint = sys.argv[1].rstrip("/")
+
+def get_json(path):
+    with urllib.request.urlopen(endpoint + path, timeout=3) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+version = get_json("/json/version")
+targets = get_json("/json")
+pages = [
+    target for target in targets
+    if target.get("type") == "page"
+    and "devtools://" not in target.get("url", "")
+    and "devtools://" not in target.get("title", "")
+]
+
+print("cursor_delegate.transport=mac-ide-cdp")
+print("cursor_delegate.cdp_endpoint=" + endpoint)
+print("cursor_delegate.browser_ws=" + str(version.get("webSocketDebuggerUrl", "")))
+print("cursor_delegate.page_target_count=" + str(len(pages)))
+for index, target in enumerate(pages):
+    print(
+        "cursor_delegate.page_target[{i}].id={id} title={title!r} url={url!r} ws={ws}".format(
+            i=index,
+            id=target.get("id", ""),
+            title=target.get("title", ""),
+            url=target.get("url", ""),
+            ws=target.get("webSocketDebuggerUrl", ""),
+        )
+    )
+PY
+}
+
+run_auto() {
+  run_mac_ide_cdp
 }
 
 run_deeplink() {
+  require_prompt_file
   command -v python3 >/dev/null 2>&1 || {
     echo "Preflight failed: python3 required for deeplink encoding" >&2
     exit 1
@@ -204,8 +307,8 @@ PY
 
 case "$transport" in
   auto) run_auto ;;
-  cli) run_cli ;;
   mac-ide-applescript) run_mac_ide_applescript ;;
+  mac-ide-cdp) run_mac_ide_cdp ;;
   deeplink) run_deeplink ;;
   *) echo "Invalid --transport: $transport" >&2; exit 2 ;;
 esac

@@ -32,8 +32,8 @@ Check:
 - The worker's final report matches the actual diff, reasoning, and verification output.
 - The requested behavior is complete against the original goal.
 - Verification commands ran and passed, or the failure reason is precise and acceptable.
-- For CLI transport, the log includes the expected session/model metadata when available.
 - For mac IDE AppleScript transport, report that model selection came from Cursor IDE state and was not programmatically verified.
+- For mac IDE CDP transport, record the target id, title, URL, and workspace/thread hints used for selection.
 - For Codex subagents, inspect the returned summary, changed files, and rationale before integrating.
 
 ## Scope drift

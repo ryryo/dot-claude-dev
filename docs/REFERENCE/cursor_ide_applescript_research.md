@@ -12,17 +12,17 @@
 
 採用する主経路:
 
-1. **macOS: `Cursor Agents` window の `AXTextArea` へ Accessibility API で直接 `value` を set する**
-2. **macOS fallback / WSL: Cursor CLI の `agent`**
-3. **将来候補: Cursor を remote debugging port 付きで起動し、CDP で DOM / Lexical editor を直接操作する**
+1. **macOS: Cursor を remote debugging port 付きで起動し、CDP で Agent Window の DOM / Tiptap editor を直接操作する**
+2. **AppleScript: `Cursor Agents` window の前面化、window 選択、補助クリック、ショートカット smoke に使う**
 
 採用しない主経路:
 
 - `pbcopy` / pasteboard に prompt を置く
 - `Cmd+V` で prompt を貼る
 - `Cmd+I -> Cmd+V -> Return` を標準経路にする
+- `AXTextArea` direct set を標準 prompt 投入経路にする
 - UI 応答テキストを AppleScript で読んで完了判定する
-- Windows native / Windows GUI automation
+- non-macOS Cursor IDE automation
 
 既存の公開実装には `Cmd+V` 系が多い。ただし、今回の設計ではそれらは「実例として存在する」「権限・focus・clipboard 汚染で壊れやすい」というリスク確認として扱い、実装の主経路にはしない。
 
@@ -43,9 +43,11 @@
 
 ```text
 Cursor Agents window
-  -> Accessibility tree で AXTextArea を検出
-  -> value を直接 set
-  -> submit は明示 opt-in
+  -> CDP で Cursor Agents target を検出
+  -> Tiptap / ProseMirror contenteditable を focus
+  -> Input.insertText で prompt を投入
+  -> DOM text を read-back
+  -> submit は明示 opt-in かつ send 経路検証後のみ
   -> 完了判定は UI ではなく git diff / tests / result file
 ```
 
@@ -55,13 +57,12 @@ Cursor Agents window
 
 | Transport | 位置づけ | 入力方法 | 完了判定 | 採用判断 |
 |---|---|---|---|---|
-| `mac-ide-applescript` | macOS default | `Cursor Agents` window の `AXTextArea` direct set | Codex の diff/test | 採用 |
-| `cli` | macOS fallback / WSL default | `agent` command | CLI log + diff/test | 採用 |
-| `mac-ide-cdp` | 将来候補 | CDP `Input.insertText` または DOM/Lexical API | DOM/result file + diff/test | experimental |
+| `mac-ide-cdp` | macOS default | CDP `Input.insertText` または DOM/Lexical API | DOM/result file + diff/test | 採用 |
+| `mac-ide-applescript` | macOS helper | window focus / 補助操作 | Codex の diff/test | 補助採用 |
 | `deeplink` | 手動確認 fallback | Cursor deeplink prefill | 人間確認 + diff/test | 限定採用 |
 | `clipboard-paste` | legacy | `pbcopy` + `Cmd+V` | 不安定 | 非採用 |
 
-`mac-ide-applescript` は Cursor IDE の UI automation であり、安定 API ではない。そのため、Codex 側の検収 contract を強くする。
+`mac-ide-applescript` は Cursor IDE の UI automation であり、安定 API ではない。前面化や補助操作には使えるが、長文 prompt の no-clipboard 投入は現行 build では CDP のほうが実測上安定している。そのため、Codex 側の検収 contract を強くする。
 
 ---
 
@@ -91,7 +92,14 @@ command -v osascript
 
 ### 4.2 Prompt 投入
 
-主経路は `AXTextArea` の direct set。
+AppleScript 単独での no-clipboard prompt 投入は、現行 Cursor Agents build では標準経路にしない。
+
+実測結果:
+
+- `Cursor Agents` window の activate / focus は可能。
+- Agent prompt editor は CDP では `.tiptap.ProseMirror.ui-prompt-input-editor__input[contenteditable="true"]` として見える。
+- 同じ prompt editor は Accessibility tree では安定した writable `AXTextArea` として見えなかった。
+- そのため、`AXTextArea` を探索して `value` を direct set する実装は fail closed にする。
 
 ```applescript
 tell application "Cursor" to activate
@@ -103,9 +111,7 @@ tell application "System Events"
     set frontmost to true
     if exists window "Cursor Agents" then
       tell window "Cursor Agents" to set focused to true
-      -- walk UI elements until role = AXTextArea
-      -- set focused of text area to true
-      -- set value of text area to promptText
+      -- focus/preflight helper only
     end if
   end tell
 end tell
@@ -113,13 +119,12 @@ end tell
 
 実装上の注意:
 
-- `AXTextArea` は settable なことを確認してから `value` を set する。
-- `set value` 後に `value of textArea` を読み返し、prompt と一致することを確認する。
-- Electron / Lexical 側の内部 state と AX value が常に一致する保証はないため、no-submit smoke でも read-back を必須にする。
+- AppleScript でできることは「前面化」「Agent window 確認」「補助クリック」「ショートカット smoke」に分ける。
+- `AXTextArea` direct set は、将来の Cursor build で実測できた場合だけ opt-in experimental として戻す。
 - `Cmd+V` fallback は標準では持たない。必要なら明示 opt-in の legacy fallback に隔離する。
 - `submit` は必ず明示 opt-in にする。
 
-読み返しが失敗した場合、または set 後の値が prompt と一致しない場合は送信しない。
+prompt 投入と read-back は CDP 経路で行う。
 
 ### 4.3 Submit
 
@@ -131,9 +136,9 @@ end tell
 
 送信方法の優先度:
 
-1. `AXTextArea` を focus した状態で `Cmd+Return` または Cursor の標準送信 shortcut。
-2. Accessibility tree で `Send message` button が安定して見える場合のみ `AXPress`。
-3. Button 全探索は遅く不安定なので避ける。
+1. CDP で send button DOM selector が安定して確認できる場合のみ DOM click。
+2. focused editor に対する CDP key event。
+3. AppleScript shortcut は smoke 済みの場合だけ補助経路として使う。
 
 ### 4.4 `Ask` chip / mode 切替
 
@@ -142,7 +147,7 @@ end tell
 理由:
 
 - `Cursor Agents` window の Accessibility tree は大きく、全探索が遅い。
-- `AXTextArea` から parent / sibling toolbar を AppleScript で安定して辿れない場合がある。
+- prompt editor から parent / sibling toolbar を AppleScript で安定して辿れない場合がある。
 - Computer Use では `Remove Ask` button が明確に見えてクリックできたが、AppleScript から同じ経路を安定化するには追加検証が必要。
 - Electron / VS Code fork の AX tree は `AXGroup` や `AXScrollArea` のネスト、画面幅、サイドバー状態、diff / approval sheet の表示で順序が変わる。
 
@@ -303,6 +308,7 @@ textarea
 Enter より Send button click を優先する。確認済み selector 候補:
 
 ```text
+button.ui-prompt-input-submit-button[aria-label="Send message"]
 .send-with-mode .anysphere-icon-button
 button[aria-label="Send"]
 .send-with-mode button
@@ -313,6 +319,7 @@ button[aria-label="Send message"]
 
 ```js
 const sendButton =
+  document.querySelector('button.ui-prompt-input-submit-button[aria-label="Send message"]') ||
   document.querySelector('[aria-label="Send message"]') ||
   document.querySelector('button[title*="Send"]') ||
   Array.from(document.querySelectorAll('button'))
@@ -358,6 +365,39 @@ CDP では DOM から以下を取得できる可能性がある。
 
 ただし、Cursor UI の状態は最終 authority にしない。Codex は必ず以下で検収する。
 
+2026-06-15 の実測では、research-only prompt を2本 submit し、次の provisional completion signal で完了を検出できた。
+
+- submit selector: `button.ui-prompt-input-submit-button[aria-label="Send message"]`
+- input selector: `.tiptap.ProseMirror.ui-prompt-input-editor__input[contenteditable="true"]`
+- running signal: visible button text / aria-label に `Stop generation` が出る。
+- completion signal: `Stop generation` が消え、`.composer-rendered-message` の assistant response 側に task id と final report が出る。
+- false positive: prompt 本文にも `STATUS: done` や `FILES_CHANGED: none` が含まれるため、document 全体の text search だけで完了判定しない。
+- thread switch: sidebar の `.glass-sidebar-agent-menu-btn` を title で click できる。title は重複し得るため、切替後は本文の task id で確認する。
+
+追加の parallel-running smoke:
+
+- 35〜65 秒の read-only delay を含む Cursor Agent thread を複数 submit し、active thread では CDP から `Stop generation` を実行中に取得できた。
+- Cursor Agent は同一 project 内で複数 thread を走らせられる。実測では delay 付き thread がそれぞれ `Worked for 42s`、`43s`、`50s`、`56s` として完了した。
+- ただし、複数 running thread の安定した並列監視は title だけでは不十分。Cursor が title を同じ `Parallel-running cursor agent smoke test` に畳む、または prompt 冒頭を sidebar item として表示する場合がある。
+- 実装には thread registry が必要。作成直後に sidebar item index、visible title、expected task id、created order を保存し、切替後に本文 task id で検証する。
+- `Stop generation` は active thread の running signal としては使えるが、inactive thread の running state を直接読むには thread 切替が必要。切替対象の識別が曖昧なままでは誤監視する。
+
+実装反映:
+
+- `run_cursor_delegate.sh --submit` は既定で `$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl` に JSONL registry を追記する。
+- `--registry-file FILE` で保存先を指定できる。
+- `--no-registry` で記録を無効化できる。
+- record には `task_id`、`prompt_sha256`、`prompt_file`、`workspace`、CDP target、submit 直後の `thread_snapshot`、`sidebar_before`、`sidebar_after` を入れる。
+- registry は navigation aid であり、切替後は本文 task id で確認し、最終検収は result file / diff / tests で行う。
+
+同一 mac 上では、research / review / summary タスクの回収は result file より DOM direct result の方が自然な場合がある。実装では `--monitor-registry --task-id ID --wait` が registered thread を開き、assistant bubble から `final_report` を直接返す。
+
+使い分け:
+
+- DOM direct result: ファイル成果物が不要な調査、レビュー、要約、観点洗い出し。
+- result file: 編集タスク、長い structured output、UI DOM だけでは欠落・折り畳み・誤抽出が怖い成果物。
+- diff/tests: 常に最終 authority。DOM result も result file も worker report であり、main Codex が検収する。
+
 ```bash
 git status --short
 git diff --name-only
@@ -373,8 +413,8 @@ remote debugging port は強い権限を持つ。必ず local-only にする。
 - port は固定または明示設定。
 - LAN へ公開しない。
 - 起動済み Cursor の port を自動検出する場合、対象 process が本当に Cursor か確認する。
-- CDP transport は `experimental` とし、明示 opt-in から始める。
-- WSL から macOS Cursor IDE を直接 GUI 操作しない。必要なら macOS 側 helper が CDP HTTP/WebSocket を受け、WSL は helper に依頼する。
+- CDP transport は no-clipboard prompt insertion の標準経路にする。ただし submit は send 経路が smoke 済みになるまで fail closed にする。
+- この資料では macOS Cursor IDE 以外を対象外にする。必要なら別 skill として扱う。
 
 ---
 
@@ -658,23 +698,41 @@ URL: https://github.com/coyvalyss1/model-matchmaker
 
 ## 9. 実装ロードマップ
 
-### Phase 1: mac-ide-applescript を安定化
+### Phase 1: mac-ide-cdp を標準 prompt 投入経路にする
 
 実装済み / 優先:
 
-- `Cursor Agents` window を優先する。
-- `AXTextArea` へ direct set する。
+- CDP endpoint で `Cursor Agents` target を検出する。
+- `New Agent` button を DOM click できる。
+- `.tiptap.ProseMirror.ui-prompt-input-editor__input[contenteditable="true"]` を focus する。
+- CDP `Input.insertText` で clipboard なしに prompt を入れる。
+- DOM text read-back で prompt 一致を確認する。
 - no-submit smoke を持つ。
-- submit は明示 opt-in にする。
+- submit は明示 opt-in にし、send 経路が未検証なら fail closed にする。
 - `Ask` chip がある edit 委任は preflight warning / failure にする。
 - Cmd+V fallback は標準経路から外す。
 
 追加候補:
 
-- `--require-agent-window`: `Cursor Agents` window がなければ failure。
+- `--require-agent-window`: `Cursor Agents` target がなければ failure。
 - `--legacy-paste-fallback`: 明示指定時だけ paste fallback。
-- `--assert-workspace NAME`: Agent window の workspace selector が期待値を含むか確認。
-- `--assert-no-ask`: Accessibility tree に `Remove Ask` が見える場合は failure。
+- `--assert-workspace NAME`: Agent sidebar / workspace selector が期待値を含むか確認。
+- `--assert-no-ask`: DOM 上に Ask chip が見える場合は failure。
+- `--submit`: send button selector / shortcut を smoke 済みの場合だけ有効化。
+
+### Phase 1b: mac-ide-applescript を補助経路として整理
+
+実装済み / 優先:
+
+- Cursor / `Cursor Agents` window の activate / focus。
+- System Events の Accessibility 権限確認。
+- AppleScript 単独 prompt 投入は標準経路にしない。
+
+追加候補:
+
+- `--focus-only` を明示した wrapper。
+- Agent window / modal / approval dialog の advisory 検出。
+- 補助クリックを実装する場合は個別 smoke test を必須にする。
 
 ### Phase 2: result file contract
 
@@ -694,16 +752,16 @@ URL: https://github.com/coyvalyss1/model-matchmaker
 - 検知したらユーザーに報告。
 - 自動 approve はしない。
 
-### Phase 4: mac-ide-cdp experimental
+### Phase 4: mac-ide-cdp submit / monitoring
 
 実装候補:
 
 ```bash
-scripts/run_cursor_delegate_cdp.py \
-  --endpoint http://127.0.0.1:9226 \
+scripts/run_cursor_delegate.sh \
+  --transport mac-ide-cdp \
+  --cdp-endpoint http://127.0.0.1:9226 \
   --workspace /Users/ryryo/dev/dot-claude-dev \
-  --prompt-file /tmp/prompt.md \
-  --submit
+  --prompt-file /tmp/prompt.md
 ```
 
 責務:
@@ -738,11 +796,20 @@ Goal:
 - `execCommand('insertText')` は clipboard なし fallback。
 - send は Enter より DOM button click を優先する。
 
+実測済み:
+
+- 通常ログイン済み Cursor profile を remote debugging port 付きで再起動すると CDP target が見える。
+- 別 `--user-data-dir` profile で起動するとログイン状態が引き継がれない。
+- `Cursor Agents` target は title `Cursor Agents`、URL `vscode-file://.../workbench.html` として見える。
+- `New Agent` button は DOM click できる。
+- 入力欄 selector は `.tiptap.ProseMirror.ui-prompt-input-editor__input[contenteditable="true"]`。
+- CDP `Input.insertText` で clipboard を使わず no-submit smoke が通る。
+- submit なしで入力欄の DOM text / HTML read-back ができる。
+
 残る実測:
 
-- clipboard を使わず no-submit smoke が通る。
-- submit なしで入力欄の DOM value / textContent が確認できる。
 - `Cursor Agents` window と通常 composer panel の selector 差分を確認する。
+- send button selector / shortcut を submit なしの範囲で安全に特定する。
 
 ### Task B: AX preflight 調査
 
@@ -752,17 +819,21 @@ Goal:
 
 調査で得た実装メモ:
 
-- 主経路は `AXTextArea` の `AXValue` direct set。
-- set 後は read-back 一致を必須にする。
+- `AXTextArea` direct set は現行 build では未成立。
+- AppleScript は window focus / helper operation に寄せる。
 - 複数 window は fail closed。
 - `Ask` chip / workspace / model / approval は自動修正より preflight に寄せる。
 - parent/sibling toolbar traversal は壊れやすい。
 
+実測済み:
+
+- `Cursor Agents` window の focus は可能。
+- `AXTextArea` direct set による prompt insertion は失敗し、CDP では同じ editor が contenteditable として見える。
+
 残る実測:
 
-- no-submit smoke が 5 秒以内に完了する。
 - `Ask` chip がある edit 委任を warning / failure にできる。
-- `AXTextArea` direct set 後に Lexical state が必ず送信対象になるか継続確認する。
+- approval / modal の advisory 検出ができるか確認する。
 
 ### Task C: result file / approval contract
 
@@ -790,20 +861,21 @@ Goal:
 
 短期:
 
-1. `mac-ide-applescript` = Agent window + `AXTextArea` direct set。
-2. edit 委任前に `Ask` chip を外す preflight。
+1. `mac-ide-cdp` = Cursor Agents target + Tiptap contenteditable + `Input.insertText`。
+2. `mac-ide-applescript` = Agent window focus / helper operation。
 3. result file contract。
 4. Codex 側の diff/test 検収。
 
 中期:
 
-1. approval advisory。
-2. workspace / mode assertion。
-3. legacy paste fallback の opt-in 化または削除。
+1. send button / shortcut の submit smoke。
+2. approval advisory。
+3. workspace / mode assertion。
+4. legacy paste fallback の opt-in 化または削除。
 
 長期:
 
-1. `mac-ide-cdp` experimental。
+1. `mac-ide-cdp` submit / monitoring。
 2. DOM selector 複数化。
 3. screenshot / DOM dump artifact。
 4. response DOM reading は補助情報に限定。
@@ -842,10 +914,11 @@ Goal:
 
 採用する実装方針は次の通り。
 
-- macOS default は `Cursor Agents` window の `AXTextArea` direct set。
+- macOS default は CDP による `Cursor Agents` target 操作と contenteditable prompt insertion。
+- AppleScript は Agent window focus / helper operation に使う。
 - `Cmd+V` fallback は標準から外す。
 - edit 委任では `Ask` mode を preflight で弾く。
 - 完了判定は UI ではなく result file + git diff + verification command。
-- CDP は長期的な安定化候補として別 transport 化する。
+- 複数 thread / worktree 管理も CDP transport に寄せる。
 
 Codex は orchestrator / reviewer のまま、Cursor IDE は bounded worker として扱う。Cursor に commit、push、merge、完了判定は任せない。
