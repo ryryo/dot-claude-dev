@@ -241,6 +241,80 @@ def click_new_agent(ws):
     )
 
 
+def agent_context_snapshot(ws):
+    return eval_value(
+        ws,
+        r"""
+(() => {
+  const visible = (el) => {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+  };
+  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+  const buttonTexts = [...document.querySelectorAll('button,[role="button"],.ui-button')]
+    .filter(visible)
+    .map(textOf)
+    .filter(Boolean);
+  const projectSelectors = [...document.querySelectorAll('button.project-selector__trigger')]
+    .filter(visible)
+    .map(textOf)
+    .filter(Boolean);
+  const bodyText = (document.body.innerText || document.body.textContent || '').replace(/\s+/g, ' ').trim();
+  const modelCandidates = buttonTexts
+    .filter((text) => /(sonnet|opus|haiku|claude|gpt|gemini|o[0-9]|medium|high|low|thinking|auto)/i.test(text))
+    .slice(0, 20);
+  return {
+    project_selectors: projectSelectors,
+    model_candidates: modelCandidates,
+    button_texts: buttonTexts.slice(0, 80),
+    body_text_sample: bodyText.slice(0, 4000)
+  };
+})()
+""",
+    )
+
+
+def normalize_label(text):
+    return re.sub(r"\s+", " ", text or "").strip().lower()
+
+
+def compact_label(text):
+    return re.sub(r"[^a-z0-9]+", "", normalize_label(text))
+
+
+def label_contains_expected(label, expected):
+    normalized_label = normalize_label(label)
+    normalized_expected = normalize_label(expected)
+    compacted_label = compact_label(label)
+    compacted_expected = compact_label(expected)
+    return (
+        normalized_expected in normalized_label
+        or (compacted_expected and compacted_expected in compacted_label)
+    )
+
+
+def assert_context_matches(context, expected_project=None, expected_model=None):
+    if expected_project:
+        labels = (
+            context.get("project_selectors", [])
+            + context.get("button_texts", [])
+            + [context.get("body_text_sample", "")]
+        )
+        if not any(label_contains_expected(label, expected_project) for label in labels):
+            raise RuntimeError(
+                "Cursor New Agent project mismatch: "
+                f"expected {expected_project!r}, context={json.dumps(context, ensure_ascii=False)}"
+            )
+    if expected_model:
+        labels = context.get("model_candidates", []) + context.get("button_texts", [])
+        if not any(label_contains_expected(label, expected_model) for label in labels):
+            raise RuntimeError(
+                "Cursor New Agent model mismatch: "
+                f"expected {expected_model!r}, context={json.dumps(context, ensure_ascii=False)}"
+            )
+
+
 def focus_editor(ws):
     return eval_value(
         ws,
@@ -288,6 +362,8 @@ def extract_task_id(prompt):
     patterns = [
         r"(?im)^\s*Task ID:\s*([A-Za-z0-9_.:-]+)\s*$",
         r"(?im)^\s*TASK_ID:\s*([A-Za-z0-9_.:-]+)\s*$",
+        r"(?im)^\s*タスク ID:\s*([A-Za-z0-9_.:-]+)\s*$",
+        r"(?im)^\s*タスクID:\s*([A-Za-z0-9_.:-]+)\s*$",
     ]
     for pattern in patterns:
         match = re.search(pattern, prompt)
@@ -373,7 +449,7 @@ def current_thread_snapshot(ws, task_id=None):
     hasTaskId: taskId ? searchableText.includes(taskId) : null,
     stopVisible: buttonTexts.some((label) => /stop generation|cancel/i.test(label)),
     runningHints: buttonTexts.filter((label) => /stop|cancel|approve|reject|resume|continue/i.test(label)).slice(0, 20),
-    assistantReportSeen: assistantBubbles.some((bubbleText) => /STATUS:\\s*done/.test(bubbleText)),
+    assistantReportSeen: assistantBubbles.length > 0,
     bodyTail: searchableText.slice(Math.max(0, searchableText.length - 600))
   }};
 }})()
@@ -580,7 +656,7 @@ def inspect_thread_result(ws, task_id=None):
   const assistantReports = bubbles
     .filter((bubble) => taskId && bubble.text.includes(taskId) && !bubble.text.startsWith('You are running'))
     .filter((bubble) => !(/Workspace:\\s/.test(bubble.text) && /Goal:\\s/.test(bubble.text) && /Write scope:\\s/.test(bubble.text)))
-    .filter((bubble) => /STATUS:\\s*done/.test(bubble.text) || /FILES_CHANGED:\\s*none/.test(bubble.text) || /TASK_ID:/.test(bubble.text));
+    .filter((bubble) => /STATUS:\\s*done/i.test(bubble.text) || /FILES_CHANGED:\\s*none/i.test(bubble.text) || /TASK_ID:/i.test(bubble.text) || /task id/i.test(bubble.text) || /変更したファイル|変更ファイル/.test(bubble.text));
   const finalReport = assistantReports.length ? assistantReports[assistantReports.length - 1].text : null;
   const titleTexts = [...document.querySelectorAll('.chat-title-tab-trigger,[class*="chat-title"]')]
     .map((el) => (el.innerText || el.textContent || '').replace(/\\s+/g, ' ').trim())
@@ -590,7 +666,7 @@ def inspect_thread_result(ws, task_id=None):
     has_task_id: taskId ? searchableText.includes(taskId) : null,
     running,
     running_hints: buttonTexts.filter((label) => /stop|cancel|approve|reject|resume|continue/i.test(label)).slice(0, 20),
-    done: Boolean(!running && finalReport && /STATUS:\\s*done/.test(finalReport)),
+    done: Boolean(!running && finalReport),
     final_report: finalReport,
     title_texts: titleTexts,
     body_tail: searchableText.slice(Math.max(0, searchableText.length - 500))
@@ -804,6 +880,8 @@ def main():
     parser.add_argument("--max-clicks", type=int, default=6)
     parser.add_argument("--max-runtime", type=float, default=180)
     parser.add_argument("--new-agent", action="store_true")
+    parser.add_argument("--expected-project")
+    parser.add_argument("--expected-model")
     parser.add_argument("--clear-after-insert", action="store_true")
     parser.add_argument("--submit", action="store_true")
     args = parser.parse_args()
@@ -845,6 +923,21 @@ def main():
     print("cursor_delegate.guard=" + json.dumps(guard_snapshot(), sort_keys=True))
 
     if not args.prompt_file:
+        if args.expected_project or args.expected_model:
+            ws = CdpWebSocket(target["webSocketDebuggerUrl"])
+            try:
+                ws.call("Page.bringToFront")
+                if args.new_agent:
+                    result = click_new_agent(ws)
+                    if not result or not result.get("ok"):
+                        raise RuntimeError(f"New Agent click failed: {result}")
+                    time.sleep(0.5)
+                    print("cursor_delegate.cdp.new_agent_clicked=true")
+                context = agent_context_snapshot(ws)
+                assert_context_matches(context, args.expected_project, args.expected_model)
+                print("cursor_delegate.cdp.agent_context=" + json.dumps(context, ensure_ascii=False, sort_keys=True))
+            finally:
+                ws.close()
         return
     if args.submit and args.clear_after_insert:
         raise RuntimeError("--clear-after-insert cannot be combined with --submit")
@@ -863,6 +956,9 @@ def main():
                 raise RuntimeError(f"New Agent click failed: {result}")
             time.sleep(0.5)
             print("cursor_delegate.cdp.new_agent_clicked=true")
+            context = agent_context_snapshot(ws)
+            assert_context_matches(context, args.expected_project, args.expected_model)
+            print("cursor_delegate.cdp.agent_context=" + json.dumps(context, ensure_ascii=False, sort_keys=True))
 
         focused = focus_editor(ws)
         if not focused or not focused.get("ok") or not focused.get("active"):

@@ -51,9 +51,37 @@ open -na /Applications/Cursor.app --args \
 
 対応:
 
-- 手動または AppleScript focus helper で Cursor Agents window を前面に出す。
-- `/json` を再確認する。
-- `Cursor Agents` target が出るまで prompt を submit しない。
+- まず setup script を実行する。script は CDP port 確認、Agents window 復旧、`Cursor Agents` target 待機、project/model 検査、read-only smoke submit / monitor まで行う。
+
+```bash
+.codex/skills/dev/cursor-agent-delegate/scripts/setup_cursor_agents.sh \
+  --workspace "$WORKSPACE"
+```
+
+既存 Cursor が CDP なしで起動している場合は、ユーザーに確認してから `--restart-cursor-approved` を付けて再実行する。
+
+```bash
+.codex/skills/dev/cursor-agent-delegate/scripts/setup_cursor_agents.sh \
+  --workspace "$WORKSPACE" \
+  --restart-cursor-approved
+```
+
+script が失敗した場合だけ、`curl -s http://127.0.0.1:9226/json` と process audit を確認する。`Cursor Agents` target が出るまで prompt を submit しない。
+
+## Project / model が違う
+
+症状:
+
+- New Agent 画面の project selector が別 repository のままになっている。
+- model selector が意図した model と違う。
+- submit は成功するが、違う project / model で worker が走る。
+
+対応:
+
+- setup script または `run_cursor_delegate.sh` に `--expected-project` と `--model-tier fast|standard` を指定して submit 前に失敗させる。
+- model 期待値は `--expected-model`、`CURSOR_AGENT_MODEL`、`--model-tier` / `CURSOR_AGENT_MODEL_TIER` の順で決める。tier の解決結果は `fast = composer-2.5-fast`、`standard = composer-2.5`。Cursor UI に現在表示されている model を期待値として採用しない。
+- mismatch した場合は Cursor UI 上で project / model を正しく選び直し、read-only smoke task で再確認してから実装 task を submit する。
+- project / model の自動切り替えは未検証なので、標準運用では行わない。
 
 ## Workspace lock の失敗
 
@@ -127,12 +155,16 @@ tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
 - Cursor が重複 title を生成した、または title が変わった。
 - sidebar の virtualization により index が変わった。
 - 対象の thread が現在の Cursor Agents プロジェクト内に表示されていない。
+- prompt の task id が registry に記録されていない。古い helper では `タスク ID:` を抽出できず `task_id: null` になることがあった。
+- final report が `STATUS: done` 固定形式ではなく、monitor が完了扱いできない。
 
 対応:
 
 - 実行中の作業には `--monitor-registry --task-id` を優先する。
 - 複数タスクの確認には、今回のセッションで作成した registry record だけを使う。
 - 手動 debug でない限り、`--max-candidates` を大きくしない。
+- worker prompt は `Task ID: <id>` を含める。final report にも `TASK_ID: <id>` または task id 文字列を必ず含める。
+- registry に `task_id: null` が出た場合、その record は `monitor-all` の対象外になる。新しい prompt template で再投入するか、対象 thread を UI で確認して main Codex が diff / status / report を直接検収する。
 
 ## Ask mode または read-only で完了してしまう
 

@@ -15,7 +15,8 @@
       "id": "D1",
       "title": "",
       "agent": "cursor-agent",
-      "model": "composer-2-fast",
+      "modelTier": "fast",
+      "model": "composer-2.5-fast",
       "writeScope": [],
       "verification": [],
       "prompt": "",
@@ -80,7 +81,12 @@
       "delegationPolicy": {
         "stateOwner": "main-codex",
         "cursorAgent": "ask-each-run",
-        "defaultCursorModel": "composer-2-fast"
+        "defaultCursorModelTier": "fast",
+        "defaultCursorModel": "composer-2.5-fast",
+        "cursorModelByTier": {
+          "standard": "composer-2.5",
+          "fast": "composer-2.5-fast"
+        }
       }
     }
   }

@@ -37,6 +37,9 @@ Options:
   --no-lock                Skip the workspace-level CDP lock
   --lock-timeout SECONDS   Seconds to wait for the workspace-level CDP lock (default: 5)
   --new-agent              Click New Agent before prompt insertion (mac-ide-cdp only)
+  --expected-project TEXT  Fail submit if New Agent project selector does not contain TEXT
+  --model-tier fast|standard Resolve expected model to composer-2.5-fast or composer-2.5
+  --expected-model TEXT    Fail submit if New Agent model selector/buttons do not contain TEXT
   --clear-after-insert     Clear the prompt after read-back (mac-ide-cdp smoke tests)
   --submit                 Submit after insertion
   -h, --help               Show this help
@@ -70,6 +73,9 @@ lock_timeout=5
 active_lock_dir=""
 submit=0
 new_agent=0
+expected_project=""
+expected_model=""
+model_tier="${CURSOR_AGENT_MODEL_TIER:-}"
 clear_after_insert=0
 
 while [[ $# -gt 0 ]]; do
@@ -99,12 +105,31 @@ while [[ $# -gt 0 ]]; do
     --no-lock) use_lock=0; shift ;;
     --lock-timeout) lock_timeout="${2:?}"; shift 2 ;;
     --new-agent) new_agent=1; shift ;;
+    --expected-project) expected_project="${2:?}"; shift 2 ;;
+    --model-tier) model_tier="${2:?}"; shift 2 ;;
+    --expected-model) expected_model="${2:?}"; shift 2 ;;
     --clear-after-insert) clear_after_insert=1; shift ;;
     --submit) submit=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+resolve_model_from_tier() {
+  case "$1" in
+    fast) printf '%s\n' "composer-2.5-fast" ;;
+    standard) printf '%s\n' "composer-2.5" ;;
+    *) echo "Preflight failed: --model-tier must be 'fast' or 'standard'." >&2; exit 2 ;;
+  esac
+}
+
+if [[ -z "$expected_model" ]]; then
+  if [[ -n "${CURSOR_AGENT_MODEL:-}" ]]; then
+    expected_model="$CURSOR_AGENT_MODEL"
+  elif [[ -n "$model_tier" ]]; then
+    expected_model="$(resolve_model_from_tier "$model_tier")"
+  fi
+fi
 
 require_macos() {
   if [[ "$(uname -s)" != "Darwin" ]]; then
@@ -235,6 +260,12 @@ run_mac_ide_cdp() {
     if [[ "$new_agent" -eq 1 ]]; then
       args+=("--new-agent")
     fi
+    if [[ -n "$expected_project" ]]; then
+      args+=("--expected-project" "$expected_project")
+    fi
+    if [[ -n "$expected_model" ]]; then
+      args+=("--expected-model" "$expected_model")
+    fi
     if [[ "$clear_after_insert" -eq 1 ]]; then
       args+=("--clear-after-insert")
     fi
@@ -245,6 +276,21 @@ run_mac_ide_cdp() {
       args+=("--registry-file" "$registry_file")
     fi
     run_guarded "cursor-cdp-submit" python3 "$script_dir/cursor_cdp_prompt.py" "${args[@]}"
+    return
+  fi
+
+  if [[ -n "$expected_project" || -n "$expected_model" ]]; then
+    local args=("--endpoint" "$cdp_endpoint" "--max-cdp-calls" "$max_cdp_calls" "--max-clicks" "$max_clicks" "--max-runtime" "$max_runtime")
+    if [[ "$new_agent" -eq 1 ]]; then
+      args+=("--new-agent")
+    fi
+    if [[ -n "$expected_project" ]]; then
+      args+=("--expected-project" "$expected_project")
+    fi
+    if [[ -n "$expected_model" ]]; then
+      args+=("--expected-model" "$expected_model")
+    fi
+    run_guarded "cursor-cdp-preflight" python3 "$script_dir/cursor_cdp_prompt.py" "${args[@]}"
     return
   fi
 
