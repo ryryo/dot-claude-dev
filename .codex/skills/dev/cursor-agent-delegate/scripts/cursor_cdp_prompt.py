@@ -294,6 +294,75 @@ def label_contains_expected(label, expected):
     )
 
 
+def context_has_model(context, expected_model):
+    labels = context.get("model_candidates", []) + context.get("button_texts", [])
+    return any(label_contains_expected(label, expected_model) for label in labels)
+
+
+def select_model(ws, expected_model):
+    return eval_value(
+        ws,
+        r"""
+(async (expectedModel) => {
+  const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const compact = (text) => normalize(text).replace(/[^a-z0-9]+/g, '');
+  const matches = (text) => {
+    const normalizedText = normalize(text);
+    const normalizedExpected = normalize(expectedModel);
+    const compactText = compact(text);
+    const compactExpected = compact(expectedModel);
+    return normalizedText.includes(normalizedExpected) || (compactExpected && compactText.includes(compactExpected));
+  };
+  const visible = (el) => {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+  };
+  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const currentButtons = [...document.querySelectorAll('button,[role="button"],.ui-button')].filter(visible);
+  const currentModel = currentButtons.find((el) => matches(textOf(el)));
+  if (currentModel) {
+    return {ok: true, alreadySelected: true, text: textOf(currentModel)};
+  }
+
+  const trigger = currentButtons.find((el) =>
+    el.classList.contains('ui-model-picker__trigger')
+    || /(sonnet|composer|gpt|opus|codex|gemini|fable|haiku|medium|fast)/i.test(textOf(el))
+  );
+  if (!trigger) {
+    return {
+      ok: false,
+      reason: 'model trigger not found',
+      visibleTexts: currentButtons.map(textOf).filter(Boolean).slice(-40)
+    };
+  }
+
+  trigger.click();
+  await wait(500);
+
+  const candidates = [...document.querySelectorAll('button,[role="button"],[role="option"],[role="menuitem"],.ui-button,[data-radix-collection-item],li')]
+    .filter(visible);
+  const option = candidates.find((el) => matches(textOf(el)));
+  if (!option) {
+    return {
+      ok: false,
+      reason: 'model option not found',
+      expectedModel,
+      visibleTexts: candidates.map(textOf).filter(Boolean).slice(0, 120)
+    };
+  }
+
+  const selectedText = textOf(option);
+  option.click();
+  await wait(500);
+  return {ok: true, alreadySelected: false, text: selectedText};
+})(%s)
+""" % json.dumps(expected_model),
+    )
+
+
 def assert_context_matches(context, expected_project=None, expected_model=None):
     if expected_project:
         labels = (
@@ -307,8 +376,7 @@ def assert_context_matches(context, expected_project=None, expected_model=None):
                 f"expected {expected_project!r}, context={json.dumps(context, ensure_ascii=False)}"
             )
     if expected_model:
-        labels = context.get("model_candidates", []) + context.get("button_texts", [])
-        if not any(label_contains_expected(label, expected_model) for label in labels):
+        if not context_has_model(context, expected_model):
             raise RuntimeError(
                 "Cursor New Agent model mismatch: "
                 f"expected {expected_model!r}, context={json.dumps(context, ensure_ascii=False)}"
@@ -934,6 +1002,12 @@ def main():
                     time.sleep(0.5)
                     print("cursor_delegate.cdp.new_agent_clicked=true")
                 context = agent_context_snapshot(ws)
+                if args.new_agent and args.expected_model and not context_has_model(context, args.expected_model):
+                    selected = select_model(ws, args.expected_model)
+                    print("cursor_delegate.cdp.model_select=" + json.dumps(selected, ensure_ascii=False, sort_keys=True))
+                    if not selected or not selected.get("ok"):
+                        raise RuntimeError(f"Cursor New Agent model select failed: {selected}")
+                    context = agent_context_snapshot(ws)
                 assert_context_matches(context, args.expected_project, args.expected_model)
                 print("cursor_delegate.cdp.agent_context=" + json.dumps(context, ensure_ascii=False, sort_keys=True))
             finally:
@@ -957,6 +1031,12 @@ def main():
             time.sleep(0.5)
             print("cursor_delegate.cdp.new_agent_clicked=true")
             context = agent_context_snapshot(ws)
+            if args.expected_model and not context_has_model(context, args.expected_model):
+                selected = select_model(ws, args.expected_model)
+                print("cursor_delegate.cdp.model_select=" + json.dumps(selected, ensure_ascii=False, sort_keys=True))
+                if not selected or not selected.get("ok"):
+                    raise RuntimeError(f"Cursor New Agent model select failed: {selected}")
+                context = agent_context_snapshot(ws)
             assert_context_matches(context, args.expected_project, args.expected_model)
             print("cursor_delegate.cdp.agent_context=" + json.dumps(context, ensure_ascii=False, sort_keys=True))
 
