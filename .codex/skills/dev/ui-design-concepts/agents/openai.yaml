@@ -1,0 +1,4 @@
+interface:
+  display_name: "UIデザイン案生成"
+  short_description: "プロジェクト用UI画像案を生成しdocs/DESIGNへ保存する"
+  default_prompt: "$ui-design-concepts を使って、このプロジェクトのUI案を複数作成し、docs/DESIGNに画像とprompts.mdを保存してください。"

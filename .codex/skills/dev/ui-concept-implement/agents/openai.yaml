@@ -1,0 +1,4 @@
+interface:
+  display_name: "UIコンセプト実装"
+  short_description: "UI画像案を実装しスクリーンショットレビューで修正する"
+  default_prompt: "$ui-concept-implement を使って、選択したUI画像案をプロジェクトルールに沿って実装し、High/Medium指摘がなくなるまでレビュー修正してください。"
