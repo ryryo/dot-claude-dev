@@ -365,12 +365,13 @@ def select_model(ws, expected_model):
 
 def assert_context_matches(context, expected_project=None, expected_model=None):
     if expected_project:
-        labels = (
-            context.get("project_selectors", [])
-            + context.get("button_texts", [])
-            + [context.get("body_text_sample", "")]
-        )
-        if not any(label_contains_expected(label, expected_project) for label in labels):
+        project_labels = context.get("project_selectors", [])
+        if not project_labels:
+            raise RuntimeError(
+                "Cursor New Agent project selector was not found; refusing to infer project from chat history/body text: "
+                f"expected {expected_project!r}, context={json.dumps(context, ensure_ascii=False)}"
+            )
+        if not any(label_contains_expected(label, expected_project) for label in project_labels):
             raise RuntimeError(
                 "Cursor New Agent project mismatch: "
                 f"expected {expected_project!r}, context={json.dumps(context, ensure_ascii=False)}"
