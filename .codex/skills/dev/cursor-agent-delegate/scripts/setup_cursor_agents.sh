@@ -135,14 +135,14 @@ tell application "System Events"
   tell process "Cursor"
     set frontmost to true
     try
-      click menu item "New Agents Window" of menu "File" of menu bar item "File" of menu bar 1
+      click menu item "New Agent" of menu "File" of menu bar item "File" of menu bar 1
       return
     end try
     try
-      click menu item "New Agents Window" of menu "ファイル" of menu bar item "ファイル" of menu bar 1
+      click menu item "New Agent" of menu "ファイル" of menu bar item "ファイル" of menu bar 1
       return
     end try
-    error "New Agents Window menu item was not found"
+    error "New Agent menu item was not found"
   end tell
 end tell
 APPLESCRIPT
@@ -198,7 +198,17 @@ if [[ -n "$expected_model" ]]; then
   preflight_args+=(--expected-model "$expected_model")
 fi
 
-"$script_dir/run_cursor_delegate.sh" "${preflight_args[@]}"
+preflight_log="$tmp_dir/cursor-agents-setup-preflight.log"
+if ! "$script_dir/run_cursor_delegate.sh" "${preflight_args[@]}" 2>&1 | tee "$preflight_log"; then
+  if grep -Eq 'project selector was not found|project mismatch' "$preflight_log"; then
+    echo "cursor_agents_setup.new_agent_menu=retry"
+    open_agents_window
+    wait_for_agents_target
+    "$script_dir/run_cursor_delegate.sh" "${preflight_args[@]}"
+  else
+    exit 1
+  fi
+fi
 
 if [[ "$run_smoke" -eq 1 ]]; then
   task_id="cursor-setup-smoke-$(date +%y%m%d%H%M%S)"

@@ -209,7 +209,7 @@ def choose_target(endpoint):
     agents = [target for target in pages if target.get("title") == "Cursor Agents"]
     if not agents:
         raise RuntimeError("Cursor Agents CDP page target was not found")
-    return agents[0]
+    return agents[-1]
 
 
 def eval_value(ws, expression):
@@ -223,19 +223,43 @@ def eval_value(ws, expression):
     )
     return result.get("result", {}).get("value")
 
-
 def click_new_agent(ws):
     guard_before_click("new-agent")
     return eval_value(
         ws,
         r"""
-(() => {
-  const button = [...document.querySelectorAll('button,[role="button"],.ui-button')]
-    .find((el) => ((el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim()).startsWith('New Agent'));
+(async () => {
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+  const visible = (el) => {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+  };
+  document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+  await wait(100);
+  const candidates = [...document.querySelectorAll('.ui-sidebar-menu-button[role="button"],button.ui-sidebar-menu-button')]
+    .filter(visible)
+    .filter((el) => textOf(el) === 'New Agent' || textOf(el).startsWith('New Agent '));
+  const button = candidates[0];
   if (!button) return {ok: false, reason: 'New Agent button not found'};
   const rect = button.getBoundingClientRect();
   button.click();
-  return {ok: true, rect: {x: rect.x, y: rect.y, w: rect.width, h: rect.height}};
+  await wait(900);
+  const editor = document.querySelector('.tiptap.ProseMirror.ui-prompt-input-editor__input[contenteditable="true"]');
+  const bodyText = (document.body.innerText || document.body.textContent || '').replace(/\s+/g, ' ').trim();
+  const projectSelectors = [...document.querySelectorAll('button.project-selector__trigger')]
+    .filter(visible)
+    .map(textOf)
+    .filter(Boolean);
+  return {
+    ok: true,
+    text: textOf(button),
+    rect: {x: rect.x, y: rect.y, w: rect.width, h: rect.height},
+    editorText: editor ? textOf(editor) : null,
+    projectSelectors,
+    bodyHead: bodyText.slice(0, 500)
+  };
 })()
 """,
     )
@@ -299,6 +323,78 @@ def context_has_model(context, expected_model):
     return any(label_contains_expected(label, expected_model) for label in labels)
 
 
+def context_has_project(context, expected_project):
+    labels = context.get("project_selectors", [])
+    return any(label_contains_expected(label, expected_project) for label in labels)
+
+
+def select_project(ws, expected_project):
+    return eval_value(
+        ws,
+        r"""
+(async (expectedProject) => {
+  const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const compact = (text) => normalize(text).replace(/[^a-z0-9]+/g, '');
+  const matches = (text) => {
+    const normalizedText = normalize(text);
+    const normalizedExpected = normalize(expectedProject);
+    const compactText = compact(text);
+    const compactExpected = compact(expectedProject);
+    return normalizedText.includes(normalizedExpected) || (compactExpected && compactText.includes(compactExpected));
+  };
+  const visible = (el) => {
+    const rect = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+  };
+  const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+  await wait(100);
+
+  const trigger = [...document.querySelectorAll('button.project-selector__trigger')]
+    .filter(visible)[0];
+  if (!trigger) return {ok: false, reason: 'project trigger not found'};
+  if (matches(textOf(trigger))) {
+    return {ok: true, alreadySelected: true, text: textOf(trigger)};
+  }
+
+  trigger.click();
+  await wait(500);
+  const rows = [...document.querySelectorAll('.ui-menu__row[role="menuitem"],[role="menuitem"].ui-menu__row')]
+    .filter(visible);
+  const row = rows.find((el) => matches(textOf(el)));
+  if (!row) {
+    return {
+      ok: false,
+      reason: 'project option not found',
+      expectedProject,
+      visibleTexts: rows.map(textOf).filter(Boolean).slice(0, 120)
+    };
+  }
+
+  const selectedText = textOf(row);
+  row.click();
+  await wait(1200);
+  const afterTrigger = [...document.querySelectorAll('button.project-selector__trigger')]
+    .filter(visible)
+    .map(textOf)
+    .filter(Boolean);
+  if (!afterTrigger.some(matches)) {
+    return {
+      ok: false,
+      reason: 'project selection did not keep expected New Agent project',
+      text: selectedText,
+      afterTrigger
+    };
+  }
+  return {ok: true, alreadySelected: false, text: selectedText, afterTrigger};
+})(%s)
+""" % json.dumps(expected_project),
+    )
+
+
 def select_model(ws, expected_model):
     return eval_value(
         ws,
@@ -321,16 +417,24 @@ def select_model(ws, expected_model):
   const textOf = (el) => (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const currentButtons = [...document.querySelectorAll('button,[role="button"],.ui-button')].filter(visible);
+  const projectTrigger = [...document.querySelectorAll('button.project-selector__trigger')]
+    .filter(visible)[0];
+  if (!projectTrigger) {
+    return {ok: false, reason: 'project trigger not found before model select'};
+  }
+  const composer = projectTrigger.closest('.agent-panel-empty-state-shell');
+  if (!composer) {
+    return {ok: false, reason: 'New Agent composer container not found before model select'};
+  }
+
+  const currentButtons = [...composer.querySelectorAll('button.ui-model-picker__trigger')]
+    .filter(visible);
   const currentModel = currentButtons.find((el) => matches(textOf(el)));
   if (currentModel) {
     return {ok: true, alreadySelected: true, text: textOf(currentModel)};
   }
 
-  const trigger = currentButtons.find((el) =>
-    el.classList.contains('ui-model-picker__trigger')
-    || /(sonnet|composer|gpt|opus|codex|gemini|fable|haiku|medium|fast)/i.test(textOf(el))
-  );
+  const trigger = currentButtons[0];
   if (!trigger) {
     return {
       ok: false,
@@ -342,7 +446,7 @@ def select_model(ws, expected_model):
   trigger.click();
   await wait(500);
 
-  const candidates = [...document.querySelectorAll('button,[role="button"],[role="option"],[role="menuitem"],.ui-button,[data-radix-collection-item],li')]
+  const candidates = [...document.querySelectorAll('.ui-menu__row,[role="menuitem"],[role="option"],button,[role="button"],li')]
     .filter(visible);
   const option = candidates.find((el) => matches(textOf(el)));
   if (!option) {
@@ -357,7 +461,27 @@ def select_model(ws, expected_model):
   const selectedText = textOf(option);
   option.click();
   await wait(500);
-  return {ok: true, alreadySelected: false, text: selectedText};
+  document.body.click();
+  await wait(100);
+  const afterProjectTrigger = [...document.querySelectorAll('button.project-selector__trigger')]
+    .filter(visible)
+    .map(textOf)
+    .filter(Boolean);
+  const afterModelTrigger = [...document.querySelectorAll('button.ui-model-picker__trigger')]
+    .filter(visible)
+    .filter((el) => el.closest('.agent-panel-empty-state-shell'))
+    .map(textOf)
+    .filter(Boolean);
+  if (!afterProjectTrigger.length) {
+    return {
+      ok: false,
+      reason: 'model selection left New Agent composer',
+      text: selectedText,
+      afterProjectTrigger,
+      afterModelTrigger
+    };
+  }
+  return {ok: true, alreadySelected: false, text: selectedText, afterProjectTrigger, afterModelTrigger};
 })(%s)
 """ % json.dumps(expected_model),
     )
@@ -998,11 +1122,18 @@ def main():
                 ws.call("Page.bringToFront")
                 if args.new_agent:
                     result = click_new_agent(ws)
+                    print("cursor_delegate.cdp.new_agent_result=" + json.dumps(result, ensure_ascii=False, sort_keys=True))
                     if not result or not result.get("ok"):
                         raise RuntimeError(f"New Agent click failed: {result}")
                     time.sleep(0.5)
                     print("cursor_delegate.cdp.new_agent_clicked=true")
                 context = agent_context_snapshot(ws)
+                if args.new_agent and args.expected_project and not context_has_project(context, args.expected_project):
+                    selected = select_project(ws, args.expected_project)
+                    print("cursor_delegate.cdp.project_select=" + json.dumps(selected, ensure_ascii=False, sort_keys=True))
+                    if not selected or not selected.get("ok"):
+                        raise RuntimeError(f"Cursor New Agent project select failed: {selected}")
+                    context = agent_context_snapshot(ws)
                 if args.new_agent and args.expected_model and not context_has_model(context, args.expected_model):
                     selected = select_model(ws, args.expected_model)
                     print("cursor_delegate.cdp.model_select=" + json.dumps(selected, ensure_ascii=False, sort_keys=True))
@@ -1027,11 +1158,18 @@ def main():
         before_sidebar = sidebar_snapshot(ws) if args.new_agent else None
         if args.new_agent:
             result = click_new_agent(ws)
+            print("cursor_delegate.cdp.new_agent_result=" + json.dumps(result, ensure_ascii=False, sort_keys=True))
             if not result or not result.get("ok"):
                 raise RuntimeError(f"New Agent click failed: {result}")
             time.sleep(0.5)
             print("cursor_delegate.cdp.new_agent_clicked=true")
             context = agent_context_snapshot(ws)
+            if args.expected_project and not context_has_project(context, args.expected_project):
+                selected = select_project(ws, args.expected_project)
+                print("cursor_delegate.cdp.project_select=" + json.dumps(selected, ensure_ascii=False, sort_keys=True))
+                if not selected or not selected.get("ok"):
+                    raise RuntimeError(f"Cursor New Agent project select failed: {selected}")
+                context = agent_context_snapshot(ws)
             if args.expected_model and not context_has_model(context, args.expected_model):
                 selected = select_model(ws, args.expected_model)
                 print("cursor_delegate.cdp.model_select=" + json.dumps(selected, ensure_ascii=False, sort_keys=True))
