@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cursor Agent Sprint CLI（CLI版）"
+  short_description: "Cursor CLI で軽量 worker sprint を実行"
+  default_prompt: "$cursor-agent-sprint-cli を使って、この作業を軽量 sprint に分解し、Cursor CLI worker へ安全な部分だけ並列委任してください。"
