@@ -8,8 +8,6 @@ description: |
 
 短時間で完了する worker sprint を Cursor CLI で実行する。sprint の状態は `.codex/tmp/{YYMMDD}_{slug}/` に閉じ込め、委任する作業は範囲を明確にし、統合・検証・最終判断は main Codex が行う。
 
-このスキルは自己完結で運用する。実行中に `cursor-agent-sprint`、`cursor-agent-delegate`、`cursor-agent-plan`、それらの `references/`、それらの scripts を読まない。この `SKILL.md` と、このスキル配下の `scripts/`、`templates/` だけを使う。
-
 ## 適用条件
 
 以下をすべて満たすときに使う。
@@ -21,7 +19,7 @@ description: |
 - Cursor CLI の `--yolo` 実行を、main Codex の diff 検収で受け止められる。
 - 現在の working tree の中で統合と検収まで完了できる。
 
-複数日にまたがる大きな計画、プロダクト判断が曖昧な作業、schema / auth / routing / migration / 本番副作用を伴う危険な変更、write scope が重なる作業には使わない。その場合は main Codex が直接扱うか、永続的な計画にするかをユーザーに確認する。
+複数日にまたがる大きな計画、プロダクト判断が曖昧な作業、write scope が重なる作業には使わない。その場合は main Codex が直接扱うか、永続的な計画にするかをユーザーに確認する。
 
 ## 絶対ルール
 
@@ -286,3 +284,15 @@ worker の完了順ではなく依存順に統合する。main Codex は共有 c
 - 残リスクや follow-up
 
 ユーザーに求められていない限り、内部 plan を長く説明しない。
+
+## Optional: 大きな計画を sprint-cli 実行単位へ分割する
+
+大きな実装計画や調査計画を実行する前に、ユーザーが
+`cursor-agent-sprint-cli でどう分けるか考えて`、`フェーズごとに sprint-cli したい`、
+`大きい計画を CLI worker に分割したい` などを求めた場合だけ使う。
+
+この option は **実装ではなく分割設計** を行う。計画の source of truth を先に特定し、
+main Codex が sprint boundary を決める。ユーザー作業や外部設定が必要な場合は、
+preflight、sprint group、barrier、次 sprint group のように stage を分ける。
+
+詳細手順は `references/large-plan-sprint-division.md` を読む。
