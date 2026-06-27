@@ -1,0 +1,4 @@
+interface:
+  display_name: "フロントエンドリファクタリングループ"
+  short_description: "CursorCLIでNO_FINDINGSまで反復リファクタ"
+  default_prompt: "$front-end-refactor-loop を使って、対象範囲を挙動変更なしでNO_FINDINGSまでリファクタしてください。"
