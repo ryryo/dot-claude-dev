@@ -1,0 +1,4 @@
+interface:
+  display_name: "アーキテクチャリファクタリングループ"
+  short_description: "段階計画・委譲判定・Codexレビューで安全にリファクタ"
+  default_prompt: "$architecture-refactor-loop を使って、このコードベースをアーキテクチャに満足できるまでフェーズ分けしてリファクタしてください。"
