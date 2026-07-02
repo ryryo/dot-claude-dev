@@ -1,0 +1,4 @@
+interface:
+  display_name: "公開前チェックリスト診断"
+  short_description: "Webサービス公開前チェックリストで診断し、抜けの実装計画を作る"
+  default_prompt: "Webサービス公開前チェックリストに沿って、このサイトを診断し、抜けを実装する計画を作ってください。"

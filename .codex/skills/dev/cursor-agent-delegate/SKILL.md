@@ -1,8 +1,7 @@
 ---
 name: cursor-agent-delegate
 description: |
-  macOS の Cursor IDE Agent Window と Codex subagent を worker pool として使い分ける。複雑なロジック・設計レビュー・深い調査は Codex subagent に、低〜中程度の局所実装・テスト作成は Cursor Agent に委任する。差分の検収・検証・最終判断は main Codex が担う。Use when delegating bounded coding work from Codex to Codex subagents or Cursor Agent, coordinating macOS Cursor IDE AppleScript/CDP workflows, or parallel non-overlapping worker tasks.
-  Anchors: Cursor Agent, macOS Cursor IDE, CDP, Codex subagent, worker delegation.
+  macOS の Cursor IDE Agent Window と Codex subagent を worker pool として使い分ける。複雑なロジック・設計レビュー・深い調査は Codex subagent に、低〜中程度の局所実装・テスト作成は Cursor Agent に委任する。差分の検収・検証・最終判断は main Codex が担う。
 ---
 
 # cursor-agent-delegate
