@@ -1,203 +1,50 @@
-# 障害対応
+# Cursor CLI の例外処理
 
-Cursor の委任が重い・詰まる・想定外の状態を返す場合に読む。
+この文書は通常フローでは読まない。submit または monitor の結果から、worker task ではなく Cursor CLI 自体の疎通問題だと判断した場合だけ使う。
 
 ## 最初の対応
 
-新しい Cursor / CDP の実行を増やさない。範囲を絞ったローカルコマンドで状態を把握する。
+- 追加の Cursor CLI worker 投入を止める。
+- 失敗した task の `stderr_tail`、exit code、result JSON を確認する。
+- prompt、test、実装上の失敗と CLI 疎通失敗を区別する。
+
+preflight に進む条件:
+
+- `cursor` command が見つからない、または `cursor agent` が起動できない。
+- login、status、model list、`composer-2.5-fast` に関する CLI-level error が出る。
+- JSON result が生成されず、prompt 内容ではなく CLI 起動の問題と判断できる。
+- 複数 task が同種の CLI-level error で失敗する。
+
+## 疎通を確認する
+
+条件を満たした場合だけ実行する。
 
 ```bash
-git status --short
-lsof -nP -iTCP:9226 -sTCP:LISTEN 2>/dev/null || true
-tail -n 20 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl" 2>/dev/null || true
-tail -n 20 "$WORKSPACE/.agent_runs/cursor/thread-registry.jsonl" 2>/dev/null || true
-```
+WORKSPACE="$(pwd)"
+SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
 
-広範囲な process scan を繰り返さない。必要な場合も 1 回だけ実行し、結果を要約する。
-
-## CDP に接続できない
-
-症状:
-
-- `Connection refused`
-- `/json/version` が失敗する
-
-主な原因:
-
-- Cursor が `--remote-debugging-port` なしで起動している。
-- 前回の launch が既存の non-CDP Cursor プロセスに吸収された。
-
-対応:
-
-1. Cursor を通常終了する。
-2. 通常 profile のまま CDP args 付きで起動する。
-
-```bash
-open -na /Applications/Cursor.app --args \
-  --remote-debugging-port=9226 \
-  --remote-allow-origins=http://127.0.0.1:9226 \
-  "$WORKSPACE"
-```
-
-3. `/json/version` を確認する。
-
-一時的な `--user-data-dir` は使わない。別 profile になり、Cursor が未ログイン状態になることがある。
-
-## Cursor Agents target が見つからない
-
-症状:
-
-- CDP は動いているが、title が `Cursor Agents` の target がない。
-
-対応:
-
-- まず setup script を実行する。script は CDP port 確認、Agents window 復旧、`Cursor Agents` target 待機、project/model 検査、read-only smoke submit / monitor まで行う。
-
-```bash
-.codex/skills/dev/cursor-agent-delegate/scripts/setup_cursor_agents.sh \
-  --workspace "$WORKSPACE"
-```
-
-既存 Cursor が CDP なしで起動している場合は、ユーザーに確認してから `--restart-cursor-approved` を付けて再実行する。
-
-```bash
-.codex/skills/dev/cursor-agent-delegate/scripts/setup_cursor_agents.sh \
+"$SKILL_DIR/scripts/run_cursor_delegate.sh" \
   --workspace "$WORKSPACE" \
-  --restart-cursor-approved
+  --preflight
 ```
 
-script が失敗した場合だけ、`curl -s http://127.0.0.1:9226/json` と process audit を確認する。`Cursor Agents` target が出るまで prompt を submit しない。
+preflight は `cursor agent --version`、login status、model list、read-only smoke JSON を確認する。通常の worker task、task graph、投入前 checklist には含めない。
 
-## Project / model が違う
+## 判断する
 
-症状:
+- preflight が成功した場合: 元の stderr と prompt を見直し、必要なら失敗 task だけ再投入する。
+- preflight が失敗した場合: Cursor CLI の復旧を無制限に繰り返さず、main Codex が直接引き取るか Codex subagent へ切り替える。
+- model が見つからない場合: model を自動変更しない。`composer-2.5-fast` を使えない事実をユーザーへ報告する。
+- login が必要な場合: main Codex が認証情報を扱わず、ユーザー操作が必要な blocker として報告する。
 
-- New Agent 画面の project selector が別 repository のままになっている。
-- model selector が意図した model と違う。
-- submit は成功するが、違う project / model で worker が走る。
+## worker task の失敗
 
-対応:
+CLI 疎通が正常なら preflight を使わない。次を確認して main Codex が修正、再委任、棄却を判断する。
 
-- setup script または `run_cursor_delegate.sh` に `--expected-project` と `--model-tier fast|standard` を指定して submit 前に失敗させる。
-- model 期待値は `--expected-model`、`CURSOR_AGENT_MODEL`、`--model-tier` / `CURSOR_AGENT_MODEL_TIER` の順で決める。tier の解決結果は `fast = composer-2.5-fast`、`standard = composer-2.5`。Cursor UI に現在表示されている model を期待値として採用しない。
-- mismatch した場合は Cursor UI 上で project / model を正しく選び直し、read-only smoke task で再確認してから実装 task を submit する。
-- project / model の自動切り替えは未検証なので、標準運用では行わない。
+- prompt の goal と write scope が矛盾していないか。
+- worker が forbidden path を必要として停止していないか。
+- verification failure が既存不具合か worker の変更によるものか。
+- timeout 後も process が生きているか。
+- final report と実際の diff が一致しているか。
 
-## Workspace lock の失敗
-
-症状:
-
-- `another Cursor CDP operation is already running`
-
-対応:
-
-1. 別の実行が本当に動いている場合は少し待つ。
-2. lock の pid を確認する。
-
-```bash
-cat "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock/pid"
-```
-
-3. pid が存在しない（dead）場合だけ、その lock directory を削除する。
-
-```bash
-rm -rf "$WORKSPACE/.agent_runs/cursor/locks/cdp.lock"
-```
-
-`--no-lock` は明示的な手動 debug 以外で使わない。
-
-## Process budget 超過
-
-症状:
-
-- process guard が exit code `99` で終了する。
-- process audit に `budget_exceeded: true` がある。
-
-確認する。
-
-```bash
-tail -n 1 "$WORKSPACE/.agent_runs/cursor/process-audit.jsonl"
-```
-
-確認するフィールド:
-
-- `max_processes`
-- `max_descendant_processes`
-- `max_sample`
-- `command`
-
-対応:
-
-- すぐに上限を上げない。
-- 委任タスクが Cursor に shell コマンドの実行や subprocess の作成を依頼していないか確認する。
-- 通常の CDP prompt / monitor 操作であれば、期待される `max_processes` はほとんどの場合 `1` である。
-
-## CDP 操作 budget 超過
-
-症状:
-
-- `operation guard stopped ... CDP call budget exceeded`
-- `operation guard stopped ... click budget exceeded`
-- `operation guard stopped ... runtime budget exceeded`
-
-対応:
-
-- 重大な失敗として扱う。
-- 最新の monitor JSON と process audit を確認する。
-- `--task-id`・`--max-records`・`--max-candidates` で registry の scope を狭める。
-- 古い registry に対して `--monitor-all` を使わない。
-
-## Monitor が unmatched を返す
-
-主な原因:
-
-- registry が古い。
-- Cursor が重複 title を生成した、または title が変わった。
-- sidebar の virtualization により index が変わった。
-- 対象の thread が現在の Cursor Agents プロジェクト内に表示されていない。
-- prompt の task id が registry に記録されていない。古い helper では `タスク ID:` を抽出できず `task_id: null` になることがあった。
-- final report が `STATUS: done` 固定形式ではなく、monitor が完了扱いできない。
-
-対応:
-
-- 実行中の作業には `--monitor-registry --task-id` を優先する。
-- 複数タスクの確認には、今回のセッションで作成した registry record だけを使う。
-- 手動 debug でない限り、`--max-candidates` を大きくしない。
-- worker prompt は `Task ID: <id>` を含める。final report にも `TASK_ID: <id>` または task id 文字列を必ず含める。
-- registry に `task_id: null` が出た場合、その record は `monitor-all` の対象外になる。新しい prompt template で再投入するか、対象 thread を UI で確認して main Codex が diff / status / report を直接検収する。
-
-## Ask mode または read-only で完了してしまう
-
-症状:
-
-- Cursor が回答するが、ファイルを編集しない。
-- final report は完了を主張しているが、期待した差分がない。
-
-対応:
-
-- Cursor の report を完了判定として扱わない。
-- `git status --short`・`git diff --name-only`・期待するファイルパスを確認する。
-- 編集タスクを委任する前に、Agent input が編集可能な mode になっていることを確認する。
-
-## 範囲外の変更が混入した
-
-症状:
-
-- 許可した編集範囲外のファイルが変更されている。
-
-対応:
-
-1. diff を確認する。
-2. 範囲外変更が worker によるものだと明確で、安全に戻せる場合だけ main Codex が修正してよい。
-3. ユーザーまたは別の agent の作業である可能性がある場合は、変更前にユーザーへ確認する。
-4. 広範囲に破壊的なコマンドは使わない。
-
-## 重い・応答が悪い
-
-すぐに行うこと:
-
-- 新しい Cursor / CDP コマンドを起動しない。
-- `pgrep` / `ps` のループを繰り返さない。
-- 最新の process audit を 1 回だけ確認する。
-- `budget_exceeded` または stale lock がないか確認する。
-- CDP の状態が混乱している場合は、通常 profile のまま Cursor を通常の手順で restart する。
+再投入する場合も、同じ task を理由なく繰り返さない。原因を修正してから 1 task 単位で再投入する。

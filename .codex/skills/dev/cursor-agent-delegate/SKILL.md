@@ -1,59 +1,79 @@
 ---
 name: cursor-agent-delegate
 description: |
-  macOS の Cursor IDE Agent Window と Codex subagent を worker pool として使い分ける。複雑なロジック・設計レビュー・深い調査は Codex subagent に、低〜中程度の局所実装・テスト作成は Cursor Agent に委任する。差分の検収・検証・最終判断は main Codex が担う。
+  main Codex が実装・調査・レビュー作業の worker と model を選定する。Codex subagent は `gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.5` から作業特性に合わせて選び、範囲限定の局所実装やテストは headless Cursor CLI worker に委任できる。統合と最終判断は main Codex が担う。worker 選定、subagent model 選定、作業分割、Cursor CLI 委任、並列 worker、差分検収を行うときに使う。
 ---
 
 # cursor-agent-delegate
 
-main Codex を orchestrator・reviewer・integrator として位置づけ、Codex subagent と Cursor Agent を範囲限定の worker として活用する。worker には独立したタスクだけを渡し、最終判断・差分の検収・commit / push / PR は main Codex が行う。
+main Codex を orchestrator・reviewer・integrator とし、タスクごとに `main-codex`、`codex-subagent`、`cursor-cli-agent` のいずれかを選ぶ。委任は手段であり、分割によって待ち時間または認知負荷が実際に減る場合だけ行う。
 
 ## 参照先
 
-このファイルは目的・絶対ルール・実行ステップのみを持つ。詳細は必要になった時点で以下を読む。
-
-- Cursor Agent の通常運用: [references/operations.md](references/operations.md)
-- 障害・CDP/lock/guard/monitor の失敗・重い挙動: [references/troubleshooting.md](references/troubleshooting.md)
-- transport の制約や実装の確認・変更: [references/transports.md](references/transports.md)
-- worker の選定に迷う場合: [references/worker-selection.md](references/worker-selection.md)
-- worker prompt の作成: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
-- worker の結果を受け入れる際: [references/review-checklist.md](references/review-checklist.md)
+- worker の判断が自明でない場合: [references/worker-selection.md](references/worker-selection.md)
+- Codex subagent を候補にした場合: [references/model-selection.md](references/model-selection.md)
+- worker prompt を作る場合: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
+- Cursor CLI worker を投入・監視する場合: [references/operations.md](references/operations.md)
+- Cursor CLI の submit / monitor が失敗した場合: [references/troubleshooting.md](references/troubleshooting.md)
+- worker の成果を受け入れる場合: [references/review-checklist.md](references/review-checklist.md)
 
 ## 絶対ルール
 
-- Cursor Agent の標準経路は macOS `mac-ide-cdp`。通常 profile の Cursor IDE を loopback CDP port 付きで使う。
-- 別 `--user-data-dir`・`--no-lock`・`--no-process-guard`・大きな guard 上限値は通常運用では使わない。
-- `--monitor-all` は今回のセッションで作成した registry を一覧確認するために使う。古い thread の完全復元には使わない。
-- Cursor の final report は参考情報であり、完了判定そのものではない。main Codex が diff・ファイル内容・検証結果を確認して判断する。
-- worker には以下を任せない: planning / progress の更新、Gate PASS 判定、commit、push、merge、PR、最終統合。
-- 複数の worker を並列で動かす場合、同じファイルを複数の worker に編集させない。write scope が少しでも重なるなら分割せず main Codex が扱う。
-- 既存の未コミット変更やユーザーの作業を元に戻さない。範囲外変更が混入した場合は [references/review-checklist.md](references/review-checklist.md) に従う。
-- 問題が起きたとき、新しい Cursor / CDP の実行を増やさない。[references/troubleshooting.md](references/troubleshooting.md) に従う。
+- worker 選定を先に行う。基本的な実装は、Cursor が担当する。Cursorが苦手な領域のみをCodex がカバーする。
+- Codex subagent を選ぶ場合は model も同時に選ぶ。分割表や委任メモに worker だけを書いて model を省略しない。
+- model は task の難易度、中心作業、失敗時の影響、並列数から選ぶ。すべてを最大 model に寄せず、安さだけで品質要件を下げない。
+- ユーザーが model を明示した場合は、その model が現在の起動 schema で利用可能なら選定ルールより優先する。
+- worker には独立した 1 タスクだけを渡す。goal、read scope、write scope、禁止事項、検証方法を明示できない作業は委任しない。
+- 複雑な domain logic、設計比較、深い調査、難しい review は `codex-subagent` を優先する。
+- 既存パターンに沿う局所実装、pure function、adapter、validator、unit test は `cursor-cli-agent` の候補にする。
+- 低リスクで範囲限定できる repository 内の実装、調査、定型確認は、Codex subagent model を選ぶ前に `cursor-cli-agent` を優先する。
+- shared contract、横断的な state / routing / auth / migration、最終統合は `main-codex` が扱う。
+- 複数 worker の write scope を重ねない。少しでも重なる場合は直列化するか main Codex が扱う。
+- worker に planning / progress 更新、完了判定、commit、push、merge、PR、branch 切替を任せない。
+- worker の報告だけで受け入れない。main Codex が diff、実ファイル、検証結果を確認する。
+- 既存の未コミット変更やユーザーの作業を元に戻さない。
+- Cursor IDE、Agent Window、CDP、AppleScript、deeplink を操作経路として使わない。
 
 ## 実行ステップ
 
-### 1. 委任するかどうかを決める
+### 1. 作業境界を定義する
 
-goal・読む範囲・編集してよい範囲・触ってはいけないパス・検証方法を言語化できる場合だけ委任する。並列委任は worker ごとの編集対象ファイルが重ならない場合だけ行う。複雑なロジック・設計比較・深い調査は Codex subagent に、低〜中程度の局所実装・テスト追加は Cursor Agent に優先して割り当てる。選定に迷う場合は [references/worker-selection.md](references/worker-selection.md) を読む。
+ユーザーの goal と repository context を確認し、委任候補ごとに次を定義する。
 
-### 2. 委任内容をまとめる
+- 具体的な成果 1 件
+- 最初に読むファイル
+- 編集してよいファイル
+- 触ってはいけないファイルと操作
+- worker と main Codex が行う検証
 
-worker prompt には 1 つのタスクだけを書く。workspace・task id・最初に読むファイル・編集してよい範囲・禁止事項・検証コマンド・最終報告形式を含める。prompt の作成時は [references/delegation-prompt-template.md](references/delegation-prompt-template.md) を読む。
+定義できない場合は分割せず main Codex が扱う。
 
-### 3. 実行する
+### 2. worker と model を選定する
 
-**Cursor Agent を使う場合:** 実行前に [references/operations.md](references/operations.md) を読む。CDP endpoint・Cursor Agents target・guard・registry・process audit の各契約に従って submit・monitor を行う。transport の仕様を確認する必要がある場合だけ [references/transports.md](references/transports.md) を読む。
+[references/worker-selection.md](references/worker-selection.md) の判断表に従い、各タスクを `main-codex`、`codex-subagent`、`cursor-cli-agent` のいずれかに割り当てる。まず Cursor CLI で安全に閉じる task かを判定し、該当しない `codex-subagent` task だけ [references/model-selection.md](references/model-selection.md) に従って model と reasoning effort を決める。worker 起動と回収のコストが直接実装より大きい小作業は main Codex が扱う。
 
-**Codex subagent を使う場合:** ownership・scope・verification・final report format を prompt に含め、main Codex が結果を検収する。
+分割内容は最低限この形式で書く。
 
-### 4. 監視・回収する
+```text
+Task ID | Worker | Model | Reasoning | Mode | Goal | Write scope | Verification
+T10     | codex-subagent | gpt-5.6-terra | medium | read-only | ... | none | ...
+T20     | cursor-cli-agent | composer-2.5-fast | fixed | edit | ... | src/... | ...
+```
 
-research / review 系の Cursor Agent タスクは DOM final report を回収してよい。編集系は DOM final report に加えて、実ファイル・diff・検証結果を確認する。複数の Cursor thread を確認する場合は、今回のセッションで作成した registry だけを対象に `monitor-all` を使う。
+### 3. 委任内容を作る
 
-### 5. 検収する
+[references/delegation-prompt-template.md](references/delegation-prompt-template.md) を使い、1 prompt に 1 タスクだけを書く。Codex subagent prompt には選定した `Model:` と `Reasoning effort:` を書く。Cursor CLI prompt には一意な `Task Summary:` と `Task ID:` を含める。
 
-worker が完了したら必ず [references/review-checklist.md](references/review-checklist.md) を読む。write scope・既存の変更・diff・報告内容・検証結果を main Codex が確認する。範囲外の変更は採用しない。
+### 4. 実行・回収する
 
-### 6. 報告・統合する
+`cursor-cli-agent` を選んだ場合は [references/operations.md](references/operations.md) に従い、同梱 script で submit / monitor する。通常フローに preflight を追加しない。CLI 疎通に失敗した場合だけ [references/troubleshooting.md](references/troubleshooting.md) の例外処理を使う。
 
-最終報告には worker type・transport・変更ファイル・検証結果・採用 / 棄却の判断・残課題を含める。commit / push / PR が必要な場合も main Codex が行う。
+`codex-subagent` を選んだ場合は、起動直前に現在の subagent schema で model が利用可能か確認し、選定した `model` と `reasoning_effort` を明示して起動する。prompt に書いた値と起動引数を一致させる。read-only の調査・review を優先し、編集を許可する場合は write scope を明示する。
+
+### 5. 検収・統合する
+
+worker 完了後に [references/review-checklist.md](references/review-checklist.md) を読み、scope、diff、報告、検証結果を main Codex が確認する。範囲外変更や不十分な成果はそのまま採用せず、main Codex が修正、再委任、棄却を判断する。
+
+### 6. 報告する
+
+worker type、実際に使った model と reasoning effort、変更ファイル、検証結果、採用または棄却の判断、残課題を簡潔に報告する。model を変更または fallback した場合は理由も報告する。最終的な完了判断は main Codex が行う。

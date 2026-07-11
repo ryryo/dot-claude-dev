@@ -5,7 +5,7 @@ description: |
   tasks.json を正とし、Gate 契約 (Goal/Constraints/AC) に基づいて実装・検証・レビューを行う。
 
   Trigger:
-  spec-codex-run, spec-run, 仕様書を実行, 計画書の実行, docs/PLAN の実装
+  spec-codex-run, spec-run
 user-invocable: true
 ---
 

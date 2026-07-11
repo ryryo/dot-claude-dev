@@ -1,21 +1,17 @@
 # 検収チェックリスト
 
-worker の結果を受け入れる前に、main Codex が必ず確認する。
+worker の結果を受け入れる前に main Codex が確認する。
 
 ## 委任前
-
-以下を実行して状態を記録する。
 
 ```bash
 git status --short
 git branch --show-current
 ```
 
-既存の未コミット変更は、ユーザーまたは先行 worker の作業として扱う。元に戻さない。
+既存の未コミット変更はユーザーまたは先行 worker の作業として記録し、元に戻さない。
 
 ## 委任後
-
-以下を実行する。
 
 ```bash
 git status --short
@@ -24,26 +20,25 @@ git diff --stat
 git diff -- <allowed paths>
 ```
 
-以下を確認する。
+- 変更ファイルが許可した write scope 内に収まっている。
+- 同じファイルが複数 worker に割り当てられていない。
+- `docs/PLAN`、progress file、branch、remote、lockfile が明示的な許可なく変更されていない。
+- 既存の未コミット変更が消されていない。
+- worker の final report が実際の diff と一致している。
+- 分割時に選んだ model / reasoning effort、起動時の override、final report の値が一致している。
+- model が fallback された場合、利用不能または task 再評価の理由が記録されている。
+- worker が実行した検証と結果を確認できる。
+- main Codex が必要な検証を再実行している。
+- goal と受け入れ条件を満たしている。
+- Codex subagent の提案は根拠と repository context を main Codex が確認している。
 
-- 変更されたファイルが、許可した編集範囲内に収まっている。
-- 並列実行の場合、同じファイルが複数の worker に割り当てられていない。
-- `docs/PLAN`・`tasks.json`・progress ファイル・commit・branch・remote・package lockfile が、明示的な許可なく変更されていない。
-- 既存の未コミット変更が元に戻されていない。
-- worker の final report が、実際の差分・理由・検証結果と一致している。
-- 元の goal に対して必要な挙動が完了している。
-- 検証コマンドが成功している。失敗している場合は、理由が具体的で受け入れ可能である。
-- `mac-ide-applescript` transport を使った場合、model の選択は Cursor IDE 側の状態であり、プログラムからは検証できないと報告する。
-- `mac-ide-cdp` transport を使った場合、選択に使った target id・title・URL・workspace/thread hint を記録する。
-- Codex subagent の場合、要約・変更ファイル・判断の根拠を確認してから統合する。
+## 範囲外変更がある場合
 
-## 範囲外の変更が混入していた場合
-
-1. ログと diff を確認してから判断する。
-2. 範囲外変更が worker によるものだと明確で、安全に戻せる場合だけ main Codex が修正してよい。
-3. ユーザーまたは別の agent の作業である可能性がある場合は、変更前にユーザーへ確認する。
-4. 広範囲に破壊的なコマンドは使わない。
+1. diff と registry / report を確認して変更元を判断する。
+2. worker が作ったと明確に判断できる範囲外変更だけを main Codex が修正する。
+3. ユーザーまたは別 worker の変更の可能性がある場合は勝手に戻さない。
+4. 変更元を分離できなければ、その成果を未検収として扱う。
 
 ## 受け入れ条件
 
-diff・scope・report・verification がそろってから受け入れる。planning / progress の更新・最終 PASS 判定・commit・PR は main Codex の責任とする。
+scope、diff、report、verification が揃った場合だけ採用する。planning / progress 更新、完了判定、commit、push、PR は main Codex の責任とする。

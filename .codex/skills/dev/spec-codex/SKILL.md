@@ -5,7 +5,7 @@ description: |
   Gate 契約 (Goal / Constraints / Acceptance Criteria)、Mermaid 図、Cursor Agent 委任ヒントを含む。
 
   Trigger:
-  spec-codex, 仕様書を作成, 実装計画, 実装仕様, docs/PLAN 作成
+  spec-codex
 context: fork
 user-invocable: true
 ---

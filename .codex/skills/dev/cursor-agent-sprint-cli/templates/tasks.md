@@ -4,7 +4,6 @@
 
 | Task | 状態 | 担当 | 種別 | 依存 | 並列グループ | 統合バッチ | メモ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| T00 | not_started | main-codex | setup | [] | setup | B0 | Cursor CLI preflight |
 | T10 | not_started | main-codex | contract | [] | contract | B1 | 下流を決める変更があれば先に固定 |
 | T20a | not_started | cursor-cli-agent | parallel | [T10] | P1 | B2 | write scope が局所的な委任候補 A |
 | T20b | not_started | cursor-cli-agent | parallel | [T10] | P1 | B2 | write scope が局所的な委任候補 B |
@@ -18,13 +17,11 @@
 
 ```mermaid
 flowchart TD
-  T00["T00 setup: Cursor CLI preflight"]
   T10["T10 contract: shared boundary"]
   T20a["T20a parallel: isolated write scope A"]
   T20b["T20b parallel: isolated write scope B"]
   T90["T90 validation: integration checks"]
 
-  T00 --> T10
   T10 --> T20a
   T10 --> T20b
   T20a --> T90
@@ -65,6 +62,18 @@ Cursor CLI 投入ルール:
 - 同じ `parallel_group` の ready task は、各 `--submit` の成功だけ確認して次 task を投入する。
 - worker の実装完了は個別に待たず、対象 group を全部 submit してから `--monitor-all` で待つ。
 - 並列性は submit 後の Cursor CLI process の実行 overlap で判定する。
+- Cursor CLI preflight は通常の task graph や投入前 checklist に入れない。submit / monitor が CLI 疎通問題で失敗した場合だけ、例外処理として実行する。
+
+## 例外処理: Cursor CLI 疎通失敗
+
+この section は、通常の sprint task として扱わない。`--submit` / `--monitor-registry` / `--monitor-all` が CLI-level error で失敗した場合だけ使う。
+
+実行する場合:
+
+- 追加の Cursor CLI worker 投入を止める。
+- `run_cursor_cli_delegate.sh --preflight --workspace <workspace>` を実行する。
+- smoke task 由来の tracked diff がないことを `git status --short` で確認する。
+- preflight 成功後、失敗した task を再投入するか、Cursor CLI 委任を中止して main Codex が引き取るかを判断する。
 
 ## 停止中
 
@@ -82,52 +91,11 @@ Cursor CLI 投入ルール:
 
 | Batch | Tasks | 担当 | 受け入れ確認 | メモ |
 | --- | --- | --- | --- | --- |
-| B0 | T00 | main-codex | preflight / smoke 成功 | 実装 task 投入前に必須 |
 | B1 | T10 | main-codex | contract acceptance | 下流 task の依存元 |
 | B2 | T20a, T20b | main-codex | worker diff + focused check | 並列 worker 成果をまとめて検収 |
 | B9 | T90 | main-codex | final checks | 完了判定 |
 
 ## 作業契約
-
-### T00: Cursor CLI 事前確認
-
-owner: main-codex
-type: setup
-status: not_started
-depends_on: []
-parallel_group: setup
-integration_batch: B0
-
-purpose:
-
-- Cursor CLI worker へ task を投げる前に、CLI、ログイン状態、model、read-only smoke が動くことを確認する。
-
-read_scope:
-
-- `<workspace>`
-
-write_scope:
-
-- none
-
-forbidden_paths:
-
-- repo tracked files
-
-acceptance:
-
-- `run_cursor_cli_delegate.sh --preflight --workspace <workspace>` が成功する。
-- smoke task 由来の tracked diff がない。
-
-verification:
-
-- main:
-  - `<preflight command>`
-  - `git status --short`
-
-final_report:
-
-- Cursor CLI version、status、model、smoke JSON result。
 
 ### T10: <契約固定または main task>
 

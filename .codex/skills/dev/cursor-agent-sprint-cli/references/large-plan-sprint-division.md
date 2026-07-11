@@ -89,7 +89,7 @@ Input units: env docs update + local setup script update
 分割案では sprint の列挙だけでなく、次のような実行ステージを作る。
 
 ```text
-Stage 0: preflight / source-of-truth confirmation
+Stage 0: source-of-truth confirmation
 Stage 1: sprint group 1 - local foundation
 Barrier A: user config - OAuth callback registration
 Stage 2: sprint group 2 - app integration after callback exists
@@ -114,7 +114,7 @@ barrier がある場合、ユーザーに「今すぐ実行できる sprint grou
 ```text
 Sprint Plan for <source-of-truth>
 
-Stage 0 main-only: preflight / external state / shared contract
+Stage 0 main-only: source-of-truth / external state / shared contract
   reason: outside-local-state and source-of-truth decisions
 
 Stage 1 sprint group: Phase A+B partial - shared config + foundation
@@ -137,6 +137,8 @@ Stage 2 sprint group: Phase C split - repositories
   integration:
     - main Codex resolves shared helper contract
 ```
+
+Cursor CLI preflight は stage 0、分割表、task graph に事前配置しない。submit / monitor が CLI 疎通問題で失敗した場合だけ、復旧用の途中処理として差し込む。
 
 各 sprint に必ず書く。
 

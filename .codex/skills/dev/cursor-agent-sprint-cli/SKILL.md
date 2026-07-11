@@ -1,7 +1,7 @@
 ---
 name: cursor-agent-sprint-cli
 description: |
-  Cursor CLI headless worker を使い、ユーザーの実装指示を短いローカル実行計画に分解し、安全に分離できる小タスクだけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に並列委任する。`.codex/tmp/YYMMDD_slug/` 配下で状態を管理し、docs/PLAN を作らず main Codex が統合と検収を行う。cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、yolo Cursor CLI worker で軽く並列実装するときに使う。
+  Cursor CLI headless worker を使い、ユーザーの実装指示を短いローカル実行計画に分解し、安全に分離できる小タスクだけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に並列委任する。`.codex/tmp/YYMMDD_slug/` 配下で状態を管理し、docs/PLAN を作らず main Codex が統合と検収を行う。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、 Cursor を使って計画を実装
 ---
 
 # Cursor Agent Sprint CLI（CLI 版軽量 Sprint）
@@ -113,20 +113,7 @@ task を分類する。
 - `integration`: worker 成果の統合、conflict 解消、共有面の調整。必ず main Codex。
 - `validation`: typecheck、test、build、browser check、dry-run。最終責任は main Codex。
 
-### 3. Cursor CLI を preflight する
-
-Cursor CLI worker を 1 task でも使う場合は必ず実行する。
-
-```bash
-"$SKILL_DIR/scripts/run_cursor_cli_delegate.sh" \
-  --workspace "$WORKSPACE" \
-  --registry-file "$REGISTRY_FILE" \
-  --preflight
-```
-
-preflight は `cursor` command、`cursor agent --version`、`cursor agent status`、`cursor agent models` 内の `composer-2.5-fast`、read-only smoke JSON result を確認する。成功するまで実装 task を submit しない。
-
-### 4. Worker Prompt（委任プロンプト）を作る
+### 3. Worker Prompt（委任プロンプト）を作る
 
 task ごとに `prompts/Txx.md` を 1 つ作る。絶対パスを使う。1 prompt には 1 task だけを書く。
 
@@ -184,9 +171,11 @@ Final report:
 
 Codex subagent には同じ構造を使い、`Worker: codex-subagent` と書く。read-only か edit-allowed かを明示する。write scope が強く分離できない限り read-only を優先する。
 
-### 5. Cursor CLI task を投入する
+### 4. Cursor CLI task を投入する
 
 依存関係が解決済みで、write scope が重ならない task だけを submit する。同一 `parallel_group` に複数の ready task がある場合は、1 件ずつ monitor で完了待ちせず、すべて連続 submit してから `--monitor-all` する。
+
+Cursor CLI は、この skill を使う環境では既に利用可能な前提で扱う。通常の sprint plan、task graph、投入前 checklist に preflight task を入れない。
 
 ```bash
 "$SKILL_DIR/scripts/run_cursor_cli_delegate.sh" \
@@ -208,7 +197,7 @@ cursor agent --print --yolo --trust \
 
 stdout は `$SPRINT_DIR/reports/<task-id>.json`、stderr は `$SPRINT_DIR/reports/<task-id>.stderr.log`、exit code は `$SPRINT_DIR/reports/<task-id>.exit-code` に残る。
 
-### 6. 監視と復旧
+### 5. 監視する
 
 個別 task を monitor する。
 
@@ -238,7 +227,29 @@ sprint 内の task をまとめて monitor する。
 
 monitor output が `done: true` の task だけ Cursor CLI result として受け入れる。`failed: true` の場合は stderr tail と JSON output を読んで、main Codex が修正・再投入・棄却を判断する。
 
-### 7. 受け入れ前に検収する
+## 例外処理: Cursor CLI 疎通に失敗した場合
+
+この section は通常フローでは実行しない。`--submit`、`--monitor-registry`、`--monitor-all` の実行結果を見て、Cursor CLI 自体の疎通問題だと判断した場合だけ使う。task graph や sprint の最初の作業には入れない。
+
+preflight に進む条件:
+
+- `cursor` command が見つからない、または `cursor agent` が起動できない。
+- login / status / model list / `composer-2.5-fast` 由来のエラーが出る。
+- read-only smoke 以前の段階で JSON output が得られず、worker prompt の問題ではなく CLI 疎通問題だと判断できる。
+- 複数 task の submit / monitor が同種の CLI-level error で失敗する。
+
+追加投入を止め、復旧確認として次を実行する。
+
+```bash
+"$SKILL_DIR/scripts/run_cursor_cli_delegate.sh" \
+  --workspace "$WORKSPACE" \
+  --registry-file "$REGISTRY_FILE" \
+  --preflight
+```
+
+preflight は `cursor` command、`cursor agent --version`、`cursor agent status`、`cursor agent models` 内の `composer-2.5-fast`、read-only smoke JSON result を確認する。成功したら失敗した task を再投入する。失敗した場合は、Cursor CLI 環境の問題として main Codex が復旧、ユーザー確認、または Cursor CLI 委任の中止を判断する。
+
+### 6. 受け入れ前に検収する
 
 worker 完了後、main Codex は必ず確認する。
 
@@ -260,7 +271,7 @@ git diff -- <allowed paths>
 
 範囲外変更が見えた場合は、diff を見てから判断する。worker 由来で安全に直せると明確な場合だけ main Codex が修正してよい。ユーザーの変更かもしれない場合は触る前に確認する。
 
-### 8. 統合と検証
+### 7. 統合と検証
 
 worker の完了順ではなく依存順に統合する。main Codex は共有 contract を解決し、リスクに見合う最小検証を実行する。
 
@@ -272,7 +283,7 @@ worker の完了順ではなく依存順に統合する。main Codex は共有 c
 
 結果は `review.md` に記録する。diff、scope、report、verification が揃ってから task を accepted にする。
 
-### 9. 報告
+### 8. 報告
 
 最終報告には必要なものだけを書く。
 
@@ -293,6 +304,9 @@ worker の完了順ではなく依存順に統合する。main Codex は共有 c
 
 この option は **実装ではなく分割設計** を行う。計画の source of truth を先に特定し、
 main Codex が sprint boundary を決める。ユーザー作業や外部設定が必要な場合は、
-preflight、sprint group、barrier、次 sprint group のように stage を分ける。
+sprint group、barrier、次 sprint group のように stage を分ける。
+
+Cursor CLI preflight は sprint stage や task として事前配置しない。submit / monitor で
+CLI 疎通問題が出たときだけ、その場の復旧処理として差し込む。
 
 詳細手順は `references/large-plan-sprint-division.md` を読む。
