@@ -244,8 +244,11 @@ def read_result(path):
 def task_state(record):
     exit_path = Path(record["exit_code_file"])
     exit_code = None
-    if exit_path.exists() and exit_path.read_text(encoding="utf-8").strip():
+    if exit_path.exists():
         raw = exit_path.read_text(encoding="utf-8").strip()
+    else:
+        raw = ""
+    if raw:
         try:
             exit_code = int(raw)
         except ValueError:
@@ -347,6 +350,7 @@ def monitor_all(args):
         }
         if (
             not args.wait
+            or not records
             or output["all_done"]
             or failed_count
             or time.time() >= deadline
@@ -356,15 +360,16 @@ def monitor_all(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Run and monitor headless Cursor CLI workers")
     parser.add_argument("--workspace", default=os.getcwd())
     parser.add_argument("--registry-file", default="")
     parser.add_argument("--prompt-file")
-    parser.add_argument("--submit", action="store_true")
-    parser.add_argument("--monitor-registry", action="store_true")
-    parser.add_argument("--monitor-all", action="store_true")
-    parser.add_argument("--preflight", action="store_true")
-    parser.add_argument("--validate-prompt", action="store_true")
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--submit", action="store_true")
+    action.add_argument("--monitor-registry", action="store_true")
+    action.add_argument("--monitor-all", action="store_true")
+    action.add_argument("--preflight", action="store_true")
+    action.add_argument("--validate-prompt", action="store_true")
     parser.add_argument("--task-id")
     parser.add_argument("--wait", action="store_true")
     parser.add_argument("--timeout", type=int, default=120)
@@ -402,8 +407,6 @@ def main():
                 "task_id": context["task_id"],
                 "task_summary": context["task_summary"],
             }
-        else:
-            raise RuntimeError("choose exactly one action")
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
     except Exception as error:
         print(

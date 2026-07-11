@@ -1,79 +1,66 @@
 ---
 name: cursor-agent-delegate
 description: |
-  main Codex が実装・調査・レビュー作業の worker と model を選定する。Codex subagent は `gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.5` から作業特性に合わせて選び、範囲限定の局所実装やテストは headless Cursor CLI worker に委任できる。統合と最終判断は main Codex が担う。worker 選定、subagent model 選定、作業分割、Cursor CLI 委任、並列 worker、差分検収を行うときに使う。
+  事前設計が必要な中〜大規模作業について、repositoryを調査し、依存関係・設計境界・worker/model・統合順・完了条件を持つsingle-md実行計画を `docs/PLAN/{YYMMDD}_{slug}.md` に作成してから実行する。局所実装はheadless Cursor CLI、複雑な実装・調査・レビューはmodelを明示したCodex subagent、共有境界・統合・最終判断はmain Codexが担う。短期作業は対象外。Trigger: cursor-agent-delegate、Cursorで計画、worker委任計画、依存関係を設計して実装
 ---
 
 # cursor-agent-delegate
 
-main Codex を orchestrator・reviewer・integrator とし、タスクごとに `main-codex`、`codex-subagent`、`cursor-cli-agent` のいずれかを選ぶ。委任は手段であり、分割によって待ち時間または認知負荷が実際に減る場合だけ行う。
+main Codex が、永続的な実行計画の作成、worker選定、進捗管理、統合、最終検収を一貫して担う。
+
+## 適用範囲
+
+複数module・stage・worker、shared contract、migration、production barrierなど、実装前に依存関係と統合順を固定する必要がある作業に使う。現在のworking tree内で完了できる短期作業には使わず、`cursor-agent-sprint-cli`へ切り替える。
 
 ## 参照先
 
-- worker の判断が自明でない場合: [references/worker-selection.md](references/worker-selection.md)
-- Codex subagent を候補にした場合: [references/model-selection.md](references/model-selection.md)
-- worker prompt を作る場合: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
-- Cursor CLI worker を投入・監視する場合: [references/operations.md](references/operations.md)
-- Cursor CLI の submit / monitor が失敗した場合: [references/troubleshooting.md](references/troubleshooting.md)
-- worker の成果を受け入れる場合: [references/review-checklist.md](references/review-checklist.md)
+- 計画の土台: [templates/plan.md](templates/plan.md)
+- workerとmodelの選定: [references/selection.md](references/selection.md)
+- 委任prompt: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
+- Cursor CLIの実行: [references/operations.md](references/operations.md)
+- 成果の検収: [references/review-checklist.md](references/review-checklist.md)
 
-## 絶対ルール
+## 原則
 
-- worker 選定を先に行う。基本的な実装は、Cursor が担当する。Cursorが苦手な領域のみをCodex がカバーする。
-- Codex subagent を選ぶ場合は model も同時に選ぶ。分割表や委任メモに worker だけを書いて model を省略しない。
-- model は task の難易度、中心作業、失敗時の影響、並列数から選ぶ。すべてを最大 model に寄せず、安さだけで品質要件を下げない。
-- ユーザーが model を明示した場合は、その model が現在の起動 schema で利用可能なら選定ルールより優先する。
-- worker には独立した 1 タスクだけを渡す。goal、read scope、write scope、禁止事項、検証方法を明示できない作業は委任しない。
-- 複雑な domain logic、設計比較、深い調査、難しい review は `codex-subagent` を優先する。
-- 既存パターンに沿う局所実装、pure function、adapter、validator、unit test は `cursor-cli-agent` の候補にする。
-- 低リスクで範囲限定できる repository 内の実装、調査、定型確認は、Codex subagent model を選ぶ前に `cursor-cli-agent` を優先する。
-- shared contract、横断的な state / routing / auth / migration、最終統合は `main-codex` が扱う。
-- 複数 worker の write scope を重ねない。少しでも重なる場合は直列化するか main Codex が扱う。
-- worker に planning / progress 更新、完了判定、commit、push、merge、PR、branch 切替を任せない。
-- worker の報告だけで受け入れない。main Codex が diff、実ファイル、検証結果を確認する。
-- 既存の未コミット変更やユーザーの作業を元に戻さない。
-- Cursor IDE、Agent Window、CDP、AppleScript、deeplink を操作経路として使わない。
+- task graphとstatus boardを実行順・進捗のsource of truthにする。
+- taskにはgoal、dependencies、owner/model、read/write scope、acceptance、worker/main verificationを持たせる。
+- write scopeが重なるworkerを並列実行しない。shared contractとintegration batchはmain Codexが扱う。
+- workerにplan更新、完了判定、commit、push、merge、PR、branch切替を任せない。
+- Cursor CLI preflightをplan taskにしない。CLI疎通失敗時だけ例外処理として実行する。
+- 既存の未コミット変更を戻さず、worker reportではなくdiffと検証結果で採否を決める。
 
-## 実行ステップ
+## 実行フロー
 
-### 1. 作業境界を定義する
+### 1. 設計対象を調査する
 
-ユーザーの goal と repository context を確認し、委任候補ごとに次を定義する。
+ユーザーの依頼とrepositoryを読み、目的、対象外、現状、設計判断、shared contract、検証方法を確定する。未解決の判断がtask graphを変える場合は、plan作成前に調査またはユーザー確認を行う。
 
-- 具体的な成果 1 件
-- 最初に読むファイル
-- 編集してよいファイル
-- 触ってはいけないファイルと操作
-- worker と main Codex が行う検証
+### 2. planを初期化する
 
-定義できない場合は分割せず main Codex が扱う。
+日付と短いslugを決め、同名planがないことを確認してtemplateをコピーする。
 
-### 2. worker と model を選定する
-
-[references/worker-selection.md](references/worker-selection.md) の判断表に従い、各タスクを `main-codex`、`codex-subagent`、`cursor-cli-agent` のいずれかに割り当てる。まず Cursor CLI で安全に閉じる task かを判定し、該当しない `codex-subagent` task だけ [references/model-selection.md](references/model-selection.md) に従って model と reasoning effort を決める。worker 起動と回収のコストが直接実装より大きい小作業は main Codex が扱う。
-
-分割内容は最低限この形式で書く。
-
-```text
-Task ID | Worker | Model | Reasoning | Mode | Goal | Write scope | Verification
-T10     | codex-subagent | gpt-5.6-terra | medium | read-only | ... | none | ...
-T20     | cursor-cli-agent | composer-2.5-fast | fixed | edit | ... | src/... | ...
+```bash
+WORKSPACE="$(pwd)"
+SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
+"$SKILL_DIR/scripts/init_plan.sh" --workspace "$WORKSPACE" --slug <slug>
 ```
 
-### 3. 委任内容を作る
+### 3. planを設計する
 
-[references/delegation-prompt-template.md](references/delegation-prompt-template.md) を使い、1 prompt に 1 タスクだけを書く。Codex subagent prompt には選定した `Model:` と `Reasoning effort:` を書く。Cursor CLI prompt には一意な `Task Summary:` と `Task ID:` を含める。
+生成したsingle-md planを編集する。[selection.md](references/selection.md)に従ってtaskごとのworker、model、reasoning effortを決め、task graph、write-scope conflict、integration batch、acceptanceを整合させる。Ready/Blocked queueは別管理せず、statusとdependenciesから判断する。
 
-### 4. 実行・回収する
+### 4. 実行前レビューを行う
 
-`cursor-cli-agent` を選んだ場合は [references/operations.md](references/operations.md) に従い、同梱 script で submit / monitor する。通常フローに preflight を追加しない。CLI 疎通に失敗した場合だけ [references/troubleshooting.md](references/troubleshooting.md) の例外処理を使う。
+最初のworkerを起動する前に、依存関係の循環、未確定contract、write scope重複、検証不能なacceptance、owner/model未設定がないことを確認する。問題があればplanを直してから実行する。
 
-`codex-subagent` を選んだ場合は、起動直前に現在の subagent schema で model が利用可能か確認し、選定した `model` と `reasoning_effort` を明示して起動する。prompt に書いた値と起動引数を一致させる。read-only の調査・review を優先し、編集を許可する場合は write scope を明示する。
+### 5. task単位で実行する
 
-### 5. 検収・統合する
+dependenciesが完了したtaskだけを実行する。promptは[delegation-prompt-template.md](references/delegation-prompt-template.md)、Cursor CLIは[operations.md](references/operations.md)を使う。Codex subagentはplanに記録した`model`と`reasoning_effort`を起動引数へ設定する。
 
-worker 完了後に [references/review-checklist.md](references/review-checklist.md) を読み、scope、diff、報告、検証結果を main Codex が確認する。範囲外変更や不十分な成果はそのまま採用せず、main Codex が修正、再委任、棄却を判断する。
+### 6. 検収・更新・統合する
 
-### 6. 報告する
+[review-checklist.md](references/review-checklist.md)で検収し、main Codexだけがstatus、decision log、検証結果をplanへ反映する。worker完了順ではなくintegration batch順に統合する。
 
-worker type、実際に使った model と reasoning effort、変更ファイル、検証結果、採用または棄却の判断、残課題を簡潔に報告する。model を変更または fallback した場合は理由も報告する。最終的な完了判断は main Codex が行う。
+### 7. 完了を判定する
+
+required task、integration batch、completion criteria、最終検証が揃った場合だけ完了とする。残課題はriskまたはdeferred taskとしてplanへ残し、使用worker/model、変更、検証結果とともに報告する。

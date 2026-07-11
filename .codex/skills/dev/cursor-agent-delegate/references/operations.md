@@ -1,80 +1,53 @@
-# Cursor CLI worker の運用
+# Cursor CLI の実行
 
-この skill に同梱した runner から headless Cursor CLI worker を直接実行する。Cursor IDE や別 skill は使わない。
-
-## 前提
-
-- Cursor CLI は通常利用できる前提で扱う。
-- model は `composer-2.5-fast` に固定する。
-- worker は `--print --yolo --trust` で実行する。
-- 1 prompt には 1 つの範囲限定タスクだけを書く。
-- preflight を通常の作業手順や投入前 checklist に入れない。
-- diff、再検証、受け入れ、commit、push、PR は main Codex が行う。
-
-## 1 タスクを投入する
+同梱 CLI は `cursor agent --print --yolo --trust --model composer-2.5-fast` を background 実行し、既定で `.agent_runs/cursor-delegate/` に registry と task report を保存する。
 
 ```bash
 WORKSPACE="$(pwd)"
-SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
-PROMPT_FILE="/absolute/path/to/prompt.md"
+RUNNER="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate/scripts/cursor_cli_delegate.py"
+PROMPT_FILE="$WORKSPACE/.agent_runs/cursor-delegate/prompts/<plan-id>-<task-id>.md"
+```
 
-"$SKILL_DIR/scripts/run_cursor_delegate.sh" \
+planのtask contractから[delegation-prompt-template.md](delegation-prompt-template.md)に沿って`PROMPT_FILE`を作る。workerにplan自体を更新させない。
+
+## Submit
+
+```bash
+"$RUNNER" \
   --workspace "$WORKSPACE" \
   --prompt-file "$PROMPT_FILE" \
   --submit
 ```
 
-runner は次の command を background で実行する。
+write scope が重ならない task だけを連続 submit できる。各 submit の成功を確認してからまとめて monitor する。
+
+## Monitor
 
 ```bash
-cursor agent --print --yolo --trust \
-  --workspace "$WORKSPACE" \
-  --model composer-2.5-fast \
-  --output-format json \
-  "$PROMPT_TEXT"
+# 1 task
+"$RUNNER" --workspace "$WORKSPACE" \
+  --monitor-registry --task-id T20 --wait --timeout 180
+
+# registry 内の最新 task
+"$RUNNER" --workspace "$WORKSPACE" \
+  --monitor-all --wait --max-records 4 --timeout 180
 ```
 
-既定の registry は `$WORKSPACE/.agent_runs/cursor-delegate/thread-registry.jsonl`。stdout、stderr、exit code、終了時刻は同じ directory の `reports/` に task id 単位で保存する。
+`thread.done: true` の task だけを正常終了として扱う。`thread.failed: true` なら `stderr_tail` と result JSON を確認し、main Codex が修正・再投入・棄却を判断する。worker の報告を根拠に完了判定せず、[review-checklist.md](review-checklist.md) で diff と検証を確認する。
 
-呼び出し側で作業状態を別 directory に閉じたい場合は `--registry-file` を指定する。
+`--registry-file` で保存先を変更できる。その他の引数は `"$RUNNER" --help` で確認する。
 
-## 1 タスクを監視する
+## 例外: CLI 疎通失敗
+
+preflight は通常フローや投入前 checklist に入れない。submit / monitor が次の CLI-level error で失敗した場合だけ、追加投入を止めて実行する。
+
+- `cursor` command または `cursor agent` を起動できない。
+- login、status、model list、`composer-2.5-fast` の error。
+- worker prompt より前の段階で JSON result を生成できない。
+- 複数 task が同種の CLI-level error で失敗する。
 
 ```bash
-"$SKILL_DIR/scripts/run_cursor_delegate.sh" \
-  --workspace "$WORKSPACE" \
-  --monitor-registry \
-  --task-id "T20a" \
-  --wait \
-  --timeout 180
+"$RUNNER" --workspace "$WORKSPACE" --preflight
 ```
 
-`thread.done: true` の場合だけ正常終了した Cursor CLI result として扱う。`thread.failed: true` の場合は `stderr_tail` と result JSON を確認する。
-
-## 複数タスクを監視する
-
-同じ registry に連続 submit した task をまとめて監視する。
-
-```bash
-"$SKILL_DIR/scripts/run_cursor_delegate.sh" \
-  --workspace "$WORKSPACE" \
-  --monitor-all \
-  --wait \
-  --max-records 4 \
-  --timeout 180
-```
-
-同時 submit してよいのは write scope が重ならない task だけ。各 task の submit 成功を確認してから、まとめて monitor する。
-
-## 回収後
-
-main Codex が次を確認する。
-
-```bash
-git status --short
-git diff --name-only
-git diff --stat
-git diff -- <allowed paths>
-```
-
-worker が報告した検証を main Codex でも再実行する。final report と実際の diff が食い違う場合は diff を正とする。
+成功したら元の task error を見直し、必要な task だけ再投入する。失敗したら復旧を繰り返さず、main Codex または Codex subagent へ割り当て直す。login が必要な場合や固定 model が利用できない場合はユーザーへ報告する。

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Worker・Model 選定"
-  short_description: "作業ごとに worker と subagent model を選び、安全に委任する"
-  default_prompt: "$cursor-agent-delegate を使って作業ごとの worker、model、reasoning effort を選定し、安全に委任できる部分だけを実行・検収してください。"
+  display_name: "委任実行計画"
+  short_description: "依存関係を設計した永続計画を作り、workerへ委任して実行する"
+  default_prompt: "$cursor-agent-delegate を使ってrepositoryを調査し、永続的な実行計画を作成してからworkerへ委任・検収してください。"
