@@ -1,0 +1,4 @@
+interface:
+  display_name: "キャラクターからCodexペットを作成"
+  short_description: "既存画像を承認制でピクセルアートのCodexペットに変換"
+  default_prompt: "$character-to-codex-pet を使って、添付したキャラクター画像からCodexペットを段階的に作成してください。"
