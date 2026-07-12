@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "run_dir": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet",
+  "canonical": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/references/canonical-base.png",
+  "spritesheet": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/final/spritesheet.webp",
+  "validation": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/final/validation.json",
+  "contact_sheet": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/contact-sheet.png",
+  "review": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/review.json",
+  "visual_qa": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/final-visual-qa.json",
+  "package": "/Users/ryryo/.codex/pets/nanon"
+}
