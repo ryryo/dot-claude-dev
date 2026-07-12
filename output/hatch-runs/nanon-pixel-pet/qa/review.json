@@ -1,33 +1,21 @@
 {
   "ok": true,
-  "frames_root": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames",
+  "frames_root": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames",
   "errors": [],
-  "warnings": [
-    "idle used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "running-right used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "running-left used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "waving used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "jumping used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "failed used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "waiting used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "running used extraction method stable-slots; confirm motion playback remains stable and unclipped",
-    "review used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-  ],
+  "warnings": [],
   "rows": [
     {
       "state": "idle",
       "expected_frames": 6,
       "actual_frames": 6,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "idle used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/idle/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/idle/frame-00.png",
           "width": 192,
           "height": 208,
           "nontransparent_pixels": 17244,
@@ -42,7 +30,7 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/idle/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/idle/frame-01.png",
           "width": 192,
           "height": 208,
           "nontransparent_pixels": 17257,
@@ -57,14 +45,14 @@
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/idle/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/idle/frame-02.png",
           "width": 192,
           "height": 208,
           "nontransparent_pixels": 17357,
           "bbox": [
-            35,
+            36,
             5,
-            155,
+            156,
             202
           ],
           "edge_pixels": 0,
@@ -72,7 +60,7 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/idle/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/idle/frame-03.png",
           "width": 192,
           "height": 208,
           "nontransparent_pixels": 17845,
@@ -87,14 +75,14 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/idle/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/idle/frame-04.png",
           "width": 192,
           "height": 208,
           "nontransparent_pixels": 17229,
           "bbox": [
-            36,
+            37,
             6,
-            154,
+            155,
             203
           ],
           "edge_pixels": 0,
@@ -102,7 +90,7 @@
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/idle/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/idle/frame-05.png",
           "width": 192,
           "height": 208,
           "nontransparent_pixels": 17057,
@@ -121,53 +109,51 @@
       "state": "running-right",
       "expected_frames": 8,
       "actual_frames": 8,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "running-right used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16229,
+          "nontransparent_pixels": 17335,
           "bbox": [
-            33,
-            7,
-            157,
-            196
+            32,
+            5,
+            160,
+            200
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15953,
+          "nontransparent_pixels": 16993,
           "bbox": [
-            33,
-            10,
-            158,
-            197
+            31,
+            5,
+            160,
+            198
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14858,
+          "nontransparent_pixels": 15874,
           "bbox": [
-            36,
-            12,
-            154,
+            35,
+            6,
+            157,
             203
           ],
           "edge_pixels": 0,
@@ -175,14 +161,14 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14826,
+          "nontransparent_pixels": 15855,
           "bbox": [
-            37,
-            12,
-            154,
+            35,
+            6,
+            156,
             203
           ],
           "edge_pixels": 0,
@@ -190,29 +176,29 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15395,
+          "nontransparent_pixels": 16525,
           "bbox": [
-            37,
+            35,
             5,
-            154,
-            186
+            156,
+            192
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-05.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16006,
+          "nontransparent_pixels": 17110,
           "bbox": [
-            34,
-            12,
-            156,
+            33,
+            6,
+            159,
             196
           ],
           "edge_pixels": 0,
@@ -220,14 +206,14 @@
         },
         {
           "index": 6,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/06.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-06.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14812,
+          "nontransparent_pixels": 15859,
           "bbox": [
-            37,
-            15,
-            154,
+            35,
+            9,
+            156,
             203
           ],
           "edge_pixels": 0,
@@ -235,14 +221,14 @@
         },
         {
           "index": 7,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-right/07.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-right/frame-07.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15600,
+          "nontransparent_pixels": 16667,
           "bbox": [
-            36,
-            13,
-            155,
+            34,
+            7,
+            157,
             203
           ],
           "edge_pixels": 0,
@@ -254,53 +240,51 @@
       "state": "running-left",
       "expected_frames": 8,
       "actual_frames": 8,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "running-left used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16229,
+          "nontransparent_pixels": 17328,
           "bbox": [
-            33,
-            7,
-            157,
-            196
+            32,
+            5,
+            160,
+            200
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15953,
+          "nontransparent_pixels": 16993,
           "bbox": [
-            33,
-            10,
-            158,
-            197
+            31,
+            5,
+            160,
+            198
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14894,
+          "nontransparent_pixels": 15911,
           "bbox": [
-            36,
-            12,
-            154,
+            35,
+            6,
+            157,
             203
           ],
           "edge_pixels": 0,
@@ -308,14 +292,14 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14826,
+          "nontransparent_pixels": 15856,
           "bbox": [
-            37,
-            12,
-            154,
+            35,
+            6,
+            156,
             203
           ],
           "edge_pixels": 0,
@@ -323,29 +307,29 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15395,
+          "nontransparent_pixels": 16525,
           "bbox": [
-            37,
+            35,
             5,
-            154,
-            186
+            156,
+            192
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-05.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15997,
+          "nontransparent_pixels": 17104,
           "bbox": [
-            34,
-            12,
-            156,
+            33,
+            6,
+            159,
             196
           ],
           "edge_pixels": 0,
@@ -353,14 +337,14 @@
         },
         {
           "index": 6,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/06.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-06.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14825,
+          "nontransparent_pixels": 15873,
           "bbox": [
-            37,
-            15,
-            154,
+            35,
+            9,
+            156,
             203
           ],
           "edge_pixels": 0,
@@ -368,14 +352,14 @@
         },
         {
           "index": 7,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running-left/07.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running-left/frame-07.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15595,
+          "nontransparent_pixels": 16656,
           "bbox": [
-            37,
-            13,
-            156,
+            34,
+            7,
+            157,
             203
           ],
           "edge_pixels": 0,
@@ -387,22 +371,20 @@
       "state": "waving",
       "expected_frames": 4,
       "actual_frames": 4,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "waving used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waving/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waving/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16788,
+          "nontransparent_pixels": 16532,
           "bbox": [
-            38,
-            5,
+            39,
+            6,
             153,
             203
           ],
@@ -411,13 +393,13 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waving/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waving/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16908,
+          "nontransparent_pixels": 16640,
           "bbox": [
-            35,
-            6,
+            36,
+            7,
             156,
             202
           ],
@@ -426,13 +408,13 @@
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waving/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waving/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16218,
+          "nontransparent_pixels": 15960,
           "bbox": [
-            35,
-            10,
+            36,
+            11,
             156,
             202
           ],
@@ -441,13 +423,13 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waving/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waving/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16556,
+          "nontransparent_pixels": 16302,
           "bbox": [
-            38,
-            5,
+            39,
+            6,
             152,
             203
           ],
@@ -460,23 +442,21 @@
       "state": "jumping",
       "expected_frames": 5,
       "actual_frames": 5,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "jumping used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/jumping/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/jumping/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 7611,
+          "nontransparent_pixels": 14573,
           "bbox": [
-            54,
-            87,
-            137,
+            38,
+            43,
+            153,
             203
           ],
           "edge_pixels": 0,
@@ -484,59 +464,59 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/jumping/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/jumping/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 8310,
+          "nontransparent_pixels": 15877,
           "bbox": [
-            54,
             38,
-            137,
-            177
+            7,
+            153,
+            199
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/jumping/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/jumping/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 8301,
+          "nontransparent_pixels": 15895,
           "bbox": [
-            54,
-            5,
-            137,
-            139
+            38,
+            8,
+            153,
+            193
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/jumping/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/jumping/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 8426,
+          "nontransparent_pixels": 16052,
           "bbox": [
-            54,
-            34,
-            137,
-            172
+            38,
+            8,
+            153,
+            198
           ],
           "edge_pixels": 0,
           "chroma_adjacent_pixels": 0
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/jumping/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/jumping/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 7568,
+          "nontransparent_pixels": 14411,
           "bbox": [
-            55,
-            82,
-            136,
+            40,
+            36,
+            152,
             203
           ],
           "edge_pixels": 0,
@@ -548,23 +528,21 @@
       "state": "failed",
       "expected_frames": 8,
       "actual_frames": 8,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "failed used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15618,
+          "nontransparent_pixels": 15368,
           "bbox": [
             41,
-            5,
-            151,
+            6,
+            150,
             203
           ],
           "edge_pixels": 0,
@@ -572,13 +550,13 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15228,
+          "nontransparent_pixels": 14976,
           "bbox": [
-            40,
-            15,
+            41,
+            16,
             151,
             203
           ],
@@ -587,14 +565,14 @@
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14810,
+          "nontransparent_pixels": 14555,
           "bbox": [
             38,
-            28,
-            154,
+            29,
+            153,
             203
           ],
           "edge_pixels": 0,
@@ -602,14 +580,14 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 13414,
+          "nontransparent_pixels": 13169,
           "bbox": [
             38,
-            45,
-            154,
+            46,
+            153,
             203
           ],
           "edge_pixels": 0,
@@ -617,14 +595,14 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 11489,
+          "nontransparent_pixels": 11268,
           "bbox": [
             37,
-            74,
-            155,
+            75,
+            154,
             203
           ],
           "edge_pixels": 0,
@@ -632,14 +610,14 @@
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-05.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14115,
+          "nontransparent_pixels": 13861,
           "bbox": [
             40,
-            33,
-            152,
+            34,
+            151,
             203
           ],
           "edge_pixels": 0,
@@ -647,13 +625,13 @@
         },
         {
           "index": 6,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/06.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-06.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 14756,
+          "nontransparent_pixels": 14495,
           "bbox": [
-            40,
-            23,
+            41,
+            24,
             151,
             203
           ],
@@ -662,13 +640,13 @@
         },
         {
           "index": 7,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/failed/07.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/failed/frame-07.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15506,
+          "nontransparent_pixels": 15257,
           "bbox": [
-            41,
-            5,
+            42,
+            6,
             150,
             203
           ],
@@ -681,23 +659,21 @@
       "state": "waiting",
       "expected_frames": 6,
       "actual_frames": 6,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "waiting used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waiting/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waiting/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 17571,
+          "nontransparent_pixels": 17318,
           "bbox": [
             32,
-            5,
-            160,
+            6,
+            159,
             202
           ],
           "edge_pixels": 0,
@@ -705,14 +681,14 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waiting/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waiting/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16926,
+          "nontransparent_pixels": 16667,
           "bbox": [
             38,
-            5,
-            154,
+            6,
+            153,
             203
           ],
           "edge_pixels": 0,
@@ -720,14 +696,14 @@
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waiting/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waiting/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16553,
+          "nontransparent_pixels": 16296,
           "bbox": [
             37,
-            5,
-            155,
+            6,
+            154,
             202
           ],
           "edge_pixels": 0,
@@ -735,13 +711,13 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waiting/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waiting/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16040,
+          "nontransparent_pixels": 15775,
           "bbox": [
-            35,
-            17,
+            36,
+            18,
             156,
             202
           ],
@@ -750,14 +726,14 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waiting/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waiting/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 17554,
+          "nontransparent_pixels": 17300,
           "bbox": [
             33,
-            5,
-            160,
+            6,
+            159,
             202
           ],
           "edge_pixels": 0,
@@ -765,14 +741,14 @@
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/waiting/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/waiting/frame-05.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16682,
+          "nontransparent_pixels": 16423,
           "bbox": [
             39,
-            5,
-            153,
+            6,
+            152,
             202
           ],
           "edge_pixels": 0,
@@ -784,23 +760,21 @@
       "state": "running",
       "expected_frames": 6,
       "actual_frames": 6,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "running used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16575,
+          "nontransparent_pixels": 16328,
           "bbox": [
             42,
-            5,
-            150,
+            6,
+            149,
             203
           ],
           "edge_pixels": 0,
@@ -808,14 +782,14 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16040,
+          "nontransparent_pixels": 15800,
           "bbox": [
             42,
-            5,
-            150,
+            6,
+            149,
             203
           ],
           "edge_pixels": 0,
@@ -823,14 +797,14 @@
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16133,
+          "nontransparent_pixels": 15887,
           "bbox": [
             42,
-            6,
-            150,
+            7,
+            149,
             203
           ],
           "edge_pixels": 0,
@@ -838,14 +812,14 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15930,
+          "nontransparent_pixels": 15687,
           "bbox": [
             42,
-            5,
-            150,
+            6,
+            149,
             202
           ],
           "edge_pixels": 0,
@@ -853,14 +827,14 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16401,
+          "nontransparent_pixels": 16154,
           "bbox": [
             42,
-            5,
-            150,
+            6,
+            149,
             203
           ],
           "edge_pixels": 0,
@@ -868,14 +842,14 @@
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/running/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/running/frame-05.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 15893,
+          "nontransparent_pixels": 15650,
           "bbox": [
             42,
-            8,
-            150,
+            9,
+            149,
             203
           ],
           "edge_pixels": 0,
@@ -887,23 +861,21 @@
       "state": "review",
       "expected_frames": 6,
       "actual_frames": 6,
-      "extraction_method": "stable-slots",
+      "extraction_method": null,
       "ok": true,
       "errors": [],
-      "warnings": [
-        "review used extraction method stable-slots; confirm motion playback remains stable and unclipped"
-      ],
+      "warnings": [],
       "frames": [
         {
           "index": 0,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/review/00.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/review/frame-00.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 17118,
+          "nontransparent_pixels": 16872,
           "bbox": [
             40,
-            5,
-            152,
+            6,
+            151,
             203
           ],
           "edge_pixels": 0,
@@ -911,14 +883,14 @@
         },
         {
           "index": 1,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/review/01.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/review/frame-01.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16600,
+          "nontransparent_pixels": 16350,
           "bbox": [
             40,
-            5,
-            152,
+            6,
+            151,
             203
           ],
           "edge_pixels": 0,
@@ -926,14 +898,14 @@
         },
         {
           "index": 2,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/review/02.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/review/frame-02.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16389,
+          "nontransparent_pixels": 16140,
           "bbox": [
             40,
-            6,
-            152,
+            7,
+            151,
             203
           ],
           "edge_pixels": 0,
@@ -941,14 +913,14 @@
         },
         {
           "index": 3,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/review/03.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/review/frame-03.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16719,
+          "nontransparent_pixels": 16469,
           "bbox": [
             40,
-            5,
-            152,
+            6,
+            151,
             203
           ],
           "edge_pixels": 0,
@@ -956,14 +928,14 @@
         },
         {
           "index": 4,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/review/04.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/review/frame-04.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16761,
+          "nontransparent_pixels": 16513,
           "bbox": [
             40,
-            5,
-            152,
+            6,
+            151,
             203
           ],
           "edge_pixels": 0,
@@ -971,14 +943,14 @@
         },
         {
           "index": 5,
-          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/frames/review/05.png",
+          "file": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/repair/geometry-normalization/frames/review/frame-05.png",
           "width": 192,
           "height": 208,
-          "nontransparent_pixels": 16495,
+          "nontransparent_pixels": 16245,
           "bbox": [
             40,
-            5,
-            152,
+            6,
+            151,
             203
           ],
           "edge_pixels": 0,

@@ -1,5 +1,10 @@
 {
   "visual_qa": "pass",
-  "qa_note": "青いクロマ縁は目立たない状態まで除去され、jumpingの安定した垂直移動とfailedの自然な縮みを含め、全9状態で同一性・意味・方向・輪郭・非クリップを確認した。",
-  "repair_rows": []
+  "qa_note": "状態行ごとの共通倍率で身長を正規化し、jumpingは見かけの縮小を解消して上下移動幅を10pxへ圧縮した。屈み姿勢などのポーズ差は維持し、全9状態で同一性、輪郭、非クリップ、足元を確認した。",
+  "repair_rows": [
+    "running-right",
+    "running-left",
+    "jumping"
+  ],
+  "geometry_report": "qa/geometry-report.json"
 }

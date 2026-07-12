@@ -7,5 +7,8 @@
   "contact_sheet": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/contact-sheet.png",
   "review": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/review.json",
   "visual_qa": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/final-visual-qa.json",
+  "geometry_report": "/Users/ryryo/dev/dot-claude-dev/output/hatch-runs/nanon-pixel-pet/qa/geometry-report.json",
+  "geometry_normalized": true,
+  "jump_amplitude_px": 10,
   "package": "/Users/ryryo/.codex/pets/nanon"
 }
