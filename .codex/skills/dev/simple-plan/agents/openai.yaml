@@ -1,0 +1,4 @@
+interface:
+  display_name: "dev:simple-plan"
+  short_description: "チェックリスト式の軽量計画を作成・実行し、必要時だけ委任する"
+  default_prompt: "$simple-plan を使って、軽量な永続計画を作成し、進捗を更新しながら実行してください。"

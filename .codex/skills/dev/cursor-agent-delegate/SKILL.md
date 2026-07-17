@@ -10,7 +10,7 @@ main Codex が、永続的な実行計画の作成、worker選定、進捗管理
 
 ## 適用範囲
 
-複数module・stage・worker、shared contract、migration、production barrierなど、実装前に依存関係と統合順を固定する必要がある作業に使う。現在のworking tree内で完了できる短期作業には使わず、`cursor-agent-sprint-cli`へ切り替える。
+複数module・stage・worker、shared contract、migration、production barrierなど、実装前に依存関係と統合順を固定する必要がある作業に使う。現在のworking tree内で完了でき、永続planが不要な短期作業は`cursor-agent-sprint-cli`へ切り替える。永続的なチェックリストは必要だが、owner/model、task graph、write conflict、integration batchの事前設計までは不要な作業は`simple-plan`へ切り替える。
 
 ## 参照先
 

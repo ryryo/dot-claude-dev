@@ -21,6 +21,8 @@ description: |
 
 複数日にまたがる大きな計画、プロダクト判断が曖昧な作業、write scope が重なる作業には使わない。その場合は main Codex が直接扱うか、永続的な計画にするかをユーザーに確認する。
 
+複数の停止点を`docs/PLAN`のチェックリストで管理・再開したいが、詳細なtask graphまでは不要な場合は`simple-plan`を使う。shared contract、migration、複数worker/model、非自明な統合順の事前設計が必要な場合は`cursor-agent-delegate`を使う。
+
 ## 絶対ルール
 
 - worker に commit、push、PR 作成、branch 切替、progress file 更新、最終完了判断を任せない。
@@ -35,7 +37,7 @@ description: |
 
 ```bash
 WORKSPACE="$(pwd)"
-SKILL_DIR="$WORKSPACE/.codex/skills/project/cursor-agent-sprint-cli"
+SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-sprint-cli"
 SPRINT_SLUG="<short-slug>"
 "$SKILL_DIR/scripts/init_sprint.sh" --workspace "$WORKSPACE" --slug "$SPRINT_SLUG"
 . "$WORKSPACE/.codex/tmp/$(date +%y%m%d)_$SPRINT_SLUG/sprint-env.sh"
