@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cloudflare 設計メモ"
+  short_description: "Cloudflare新規設計の入口になる薄い設計メモskill"
+  default_prompt: "$cloudflare-design-brief を使って、実装前に新しい Cloudflare ベースのアプリを設計してください。"

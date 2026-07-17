@@ -1,150 +1,100 @@
 ---
 name: simple-plan
 description: |
-  repositoryを調査し、`docs/PLAN/YYMMDD_{slug}.md` に軽量な永続計画を作成し、`- [ ]` / `- [x]` を進捗の正としてmain Codexが実行・更新する。独立して安全に分離できる作業だけを必要に応じて`cursor-agent-sprint-cli`へ委任する。Use when the user asks for simple-plan、チェックリスト式の計画、軽量な実装計画、複数の停止点を持つ作業の進捗管理、または既存`docs/PLAN`の再開・更新。永続計画が不要な即時sprintや、詳細なtask graph・複数worker・shared contract・migration・production barrierを事前設計する大規模作業には使わない。
+  repositoryを調査し、`docs/PLAN/YYMMDD_{slug}.md` にPhase・完了状態・Gate・チェック項目・実行ルールを持つ自己完結した永続計画を作成または再構成する。Use when the user asks for simple-plan、チェックリスト式の計画、複数停止点を持つ中規模作業、段階的なapp分割やlocal migration、production前Gate、または既存planの構成変更。単発Sprintでは収まらないが、全体の詳細task graphまでは不要な作業向け。既存planをそのまま実行・再開するだけの場合は使わない。
 ---
 
 # Simple Plan
 
-次の順序で、調査、判断、plan作成、実行、進捗更新を行う。後のstepを先に実行せず、plan作成後はそのfileを進捗のsource of truthにする。
+複数Phaseをまたぐ作業について、作成後はこのskillを再度使わなくても任意のagentが実行・再開できる永続planを作る。このskillの責務はplanの新規作成または構造変更と検査までであり、planの実行やcheckbox更新は行わない。
 
-## Workflow
+## 適用範囲
 
-1. 開始状態を確定する。
-2. repositoryを調査する。
-3. 進捗項目とCursor sprintの使用有無を決める。
-4. planを新規作成または再開する。
-5. planを検査し、plan-onlyなら終了する。
-6. 未完了項目を実行・検収・更新する。
-7. 完了条件を確認して完了を報告する。
+このskillは`cursor-agent-sprint-cli`以上、詳細な`cursor-agent-delegate`以下の粒度を担う。2つ以上の成果段階、停止点、再開点のいずれかを持ち、Phaseの直列順序とGateで管理できる中規模作業に使う。
 
-## Step 1: 開始状態を確定する
+- 単発Sprintで完結する局所実装には`cursor-agent-sprint-cli`を直接使う。
+- 全Phaseのowner、model、file単位の競合、integration batchを事前設計しなければ実行不能な作業には、より詳細な委任計画を使う。
+- 既存planをそのまま実行または再開する場合は、そのplanを直接読む。このskillを経由しない。
+- goal、scope、Phase境界、Gate、完了条件を変更する場合は、このskillでplanを再構成する。
 
-最初に次の3点を決める。
+## 1. Repositoryを調査する
 
-- **新規 / 再開**: ユーザーが既存plan pathを指定した場合は再開し、それ以外は新規作成する。
-- **plan-only / execute**: 計画作成だけの依頼ならplan-only、実装や「この計画で進める」依頼ならexecuteとする。
-- **write可否**: 現在のcollaboration modeがfile writeを禁止する場合はStep 3まで行い、decision-completeなplanを会話内に提示して止める。modeを回避してfileを作らない。
-
-再開pathが指定された場合は存在を確認して全文を読む。存在しない場合は別planを作らず、正しいpathまたは復元が必要だと報告する。
-
-## Step 2: repositoryを調査する
-
-planを書く前に、判断に必要な範囲だけを読む。
+planを書く前に、判断に必要な範囲を読む。
 
 1. 適用される`AGENTS.md`とrepository固有の指示を読む。
 2. `git status --short`で既存変更を確認する。
-3. 依頼に関係するsource、config、docs、既存testを読む。
-4. 現在の振る舞い、変更対象、変更しない範囲を確認する。
+3. 依頼に関係するsource、config、docs、既存test、現行commandを読む。
+4. 現在の振る舞い、変更対象、変更しない範囲、外部stateを変える操作を確認する。
 5. 実行可能な検証commandと、ユーザーまたは呼び出し元から観測できるacceptanceを決める。
 
-コードから確認できることをユーザーへ質問しない。goal、scope、acceptanceを変える未解決の選択だけを確認する。「目的」「前提・対象範囲」「完了条件」を書ける状態になってからStep 3へ進む。
+コードから確認できることをユーザーへ質問しない。goal、scope、acceptanceを変える未解決の選択だけを確認する。
 
-## Step 3: 進捗と委任を設計する
+## 2. Planを設計する
 
-### 3A. 進捗候補を作る
+### PhaseとGate
 
-- 作業を、diffと検証結果で完了判定できる成果単位へ分ける。
-- 実装操作の羅列ではなく、成立させる振る舞いを書く。
-- 依存する項目を先、依存される項目を後へ並べる。
-- 検証も必要な進捗項目として含める。
-- phaseとtask IDは、依存や類似項目を区別する場合だけ使う。
+`## 進捗`を`### Phase A: ...`形式の有用な中間状態で分ける。各Phaseを上から読むだけで実行できるよう、次を同じPhase内に含める。checkboxは入れ子にしない。
 
-### 3B. 各項目をmain実行またはCursor sprintへ分類する
+- **開始条件**: 先行Gate、必要な入力、外部承認など、着手可能と判定できる状態。
+- **完了状態**: Phaseを終えたと外部から判定できる1文。
+- **実行方針**: main agentが直接実行するか、Cursor候補をどの条件で使うか、誰が統合・検収するか。
+- **進捗項目**: 通常2から5件程度のflatな`- [ ]`。依存順に並べる。
+- **Gate**: 次Phaseの入力、ユーザー判断、外部state変更、またはCursor再判定が必要な位置に置く。
 
-main Codexでの直接実行をdefaultにする。次をすべて満たす項目だけCursor sprint候補にする。
+Phaseは「移設後appが単独buildできる」などの成立状態で区切る。「ファイルを移動する」「構造を整える」だけをPhaseの成果にしない。
 
-- goal、read scope、write scope、禁止範囲、acceptance、検証方法を具体化できる。
-- shared contractや重要な設計判断を含まないleaf taskである。
-- main Codexの直近作業が結果待ちにならず、他の作業とwrite scopeが重ならない。
-- 局所実装、機械的変更、分離したtest、範囲限定のdocs変更、独立した調査である。
-- sprint準備、監視、diff review、再検証を含めても速度またはcontext分離の実益がある。
+### 進捗項目の粒度
 
-次はmain Codexに残す。
+1項目には主な成果、write scopeまたは責務surface、具体的な検証結果をそれぞれ1つ持たせる。次に該当する場合は分割する。
 
-- 後続の設計や実装が結果に直ちに依存する項目
-- 未確定の要件、contract、schema、auth、routing、migrationを決める項目
-- write scope、contract、UI surfaceが他taskと重なる項目
-- 委任準備と検収の方が重い小さな項目
-- production操作、commit、push、PR、branch、統合、最終検証、完了判断
+- route、content、shared UI、config、testなど複数surfaceを同時に含む。
+- 「一式」「構造を整える」「必要な対応をする」だけで成果物を特定できない。
+- 一部だけ成功する状態が自然に発生する。
+- Cursor taskへ分けると複数の独立write scopeになる。
 
-### 3C. Cursor sprintを使う場合だけsprint境界を決める
+検証は進捗項目またはPhase末尾のGateへ明記する。IDは依存と再開位置を判別できるよう付ける。
 
-1. `cursor-agent-sprint-cli`の`SKILL.md`を完全に読む。
-2. 複数taskまたはbarrierがある場合は、同skillの`references/large-plan-sprint-division.md`も読む。
-3. 各sprintについて、goal、source item、依存・barrier、main-owned task、Cursor候補、禁止範囲、main acceptance、次contractを決める。
-4. 「進捗」に「sprint分割を確定する」と「Sprint Sxを実行し、main Codexが検収する」を追加する。
-5. worker内部taskは「進捗」へ展開しない。委任詳細は`.codex/tmp/`で管理する。
+### Phase内の実行方針
 
-Cursor sprintを使わない場合は、sprint用の進捗項目と「委任計画」を作らない。
+実行方針は独立したplan-wide sectionへ分離せず、対象Phaseの開始条件と完了状態の直後へ置く。main agentが直接実行するPhaseは1文で明示する。Cursor候補があるPhaseだけ、開始条件、候補scope、main担当、main検収条件、判断結果の記録先を書く。
 
-## Step 4: plan fileを作成または再開する
+shared contract、schema、routing、migration方針、production操作、統合、最終検証、完了判断はmain agentに残す。次をすべて満たすleaf taskが見込めるPhaseだけをCursor候補にする。
 
-### 4A. 新規作成
+- goal、read scope、write scope、禁止範囲、acceptance、検証方法を実行時に具体化できる。
+- shared contractや重要な設計判断を含まない。
+- 他taskとwrite scopeやUI surfaceが重ならない。
+- 委任準備、diff review、再検証を含めても速度またはcontext分離の実益がある。
 
-workspace rootでpathを決める。
+まだ存在しないscaffold、未確定contract、生成pathに依存する分割は確定しない。その直前のPhase末尾にCursor再判定Gateを置き、判断対象の次Phaseに実行方針を書く。Gate到達時に判断結果とSprint pathを次Phaseの実行方針へ記録し、Cursorを使う場合だけ`cursor-agent-sprint-cli`を読んで現在Sprintを`.codex/tmp/`へ詳細化する。worker task graphや未確定file pathは永続planへ書かない。
 
-```bash
-WORKSPACE="$(pwd)"
-DATE="$(date +%y%m%d)"
-SKILL_DIR="$WORKSPACE/.codex/skills/dev/simple-plan"
-PLAN_DIR="$WORKSPACE/docs/PLAN"
-SLUG="<lowercase_snake_case>"
-PLAN_PATH="$PLAN_DIR/${DATE}_${SLUG}.md"
-```
+`## Cursor委任計画`のような横断sectionは作らない。Phaseの実行に必要なowner、委任条件、検収条件をPhase外へ分散させない。
 
-次の順序で作成する。
+## 3. Planを作成・再構成する
 
-1. `assets/plan-template.md`が`$SKILL_DIR`に存在することを確認する。
+新規planはworkspace rootの`docs/PLAN/YYMMDD_{lowercase_snake_case}.md`へ作る。同名fileがある場合は上書きせず、具体的なslugまたは連番を使う。
+
+1. `assets/plan-template.md`を読む。
 2. `docs/PLAN/`がなければ作成する。
-3. `PLAN_PATH`が既に存在しないことを確認する。存在する場合は上書きせず、より具体的なslugまたは連番を使う。
-4. templateを読み、`apply_patch`で`PLAN_PATH`を新規作成する。未編集templateをそのままcopyしない。
-5. 「タイトル」「目的」「前提・対象範囲」「進捗」「完了条件」の順に今回の内容へ置き換える。
-6. Step 3でCursor sprintを使うと決めた場合だけ「委任計画」を埋める。確定済みの「sprint分割」項目は`[x]`、未実行sprintは`[ ]`で書く。
-7. 使わないplaceholder、説明文、sprint項目、「委任計画」「補足」を見出しごと削除する。
-8. ユーザーの使用言語で書く。
+3. `apply_patch`でplanを作成し、未編集templateをそのままcopyしない。
+4. タイトル、目的、前提・対象範囲、実行ルール、Phase化した進捗、全体完了条件を今回の内容で埋める。
+5. 不要な例、placeholder、空sectionを削除する。
+6. ユーザーの使用言語で書く。
 
-### 4B. 既存planを再開
+既存planの構造変更では、そのfileを唯一のsource of truthとして更新する。repositoryの実状態とcheckboxを照合し、有効なdecision、完了記録、検証結果を保つ。未完了項目を構造変更だけで完了扱いにせず、ユーザーの変更を巻き戻さない。
 
-1. 指定fileを唯一のsource of truthとして使い、新規planを作らない。
-2. repositoryの実状態と既存checkboxを照合する。
-3. 実態と異なるcheckboxは、根拠を確認してからmain Codexが修正する。
-4. 新しく判明した必須task、acceptance、sprint境界だけを追記する。
-5. 既存の有効なdecisionと完了記録を消さない。
+## 4. Planを検査する
 
-## Step 5: planを実行可能か検査する
+作成後に全文を読み直し、次を確認する。
 
-実行前にplanを読み直して確認する。
-
-- 「目的」が実装後の観測可能な状態を示している。
-- 「前提・対象範囲」に対象と変更しない範囲がある。
-- すべての「進捗」項目が完了判定可能で、依存順に並んでいる。
-- 「完了条件」に振る舞いベースのacceptanceと必要な検証commandがある。
-- 「委任計画」を残した場合、各sprintのmain acceptanceとbarrierが明確である。
+- plan単体で開始位置、実行順序、進捗更新、Gate停止、Cursor再判定、失敗記録を判断できる。
+- 目的と完了条件が観測可能な振る舞いを示している。
+- 対象、変更しない範囲、外部操作前の停止点が明記されている。
+- 各Phaseに開始条件、完了状態、実行方針、依存順のflatな進捗項目、必要なGateがある。
+- 現在Phaseの外を参照しなくても、担当、Cursor使用条件、統合・検収責任を判断できる。
+- 各項目が単一成果、主なscope、具体的な検証方法を持つ。
+- 検証commandが実行可能な形で記載されている。
+- Cursor候補は対象Phaseの実行方針にだけ記載され、独立したCursor委任section、未確定path、worker task graphがない。
 - placeholder、空section、旧式のworker/model実行注釈が残っていない。
-- 既存の未コミット変更を上書きまたは巻き戻す計画になっていない。
+- 既存の未コミット変更を上書きまたは巻き戻す内容になっていない。
 
-plan-onlyの場合は、ここでplan pathと要点を報告して終了する。実装を開始しない。executeの場合だけStep 6へ進む。
-
-## Step 6: 実行・検収・進捗更新を反復する
-
-未完了項目がある間、次を1項目ずつ反復する。
-
-1. planを読み、依存が解決済みの最初の`[ ]`項目を選ぶ。
-2. main-ownedならmain Codexが実装または調査する。
-3. sprint項目なら、「委任計画」の内容を入力として`cursor-agent-sprint-cli`を実行する。
-4. 実際のdiff、scope、verificationをmain Codexが確認する。worker reportだけで受け入れない。
-5. acceptanceを満たした場合だけ該当項目を`[x]`へ更新する。
-6. 一部だけ完了した場合は、完了部分を`[x]`、残りを新しい`[ ]`へ分割する。
-7. 失敗、範囲外変更、未検証がある場合は`[ ]`のままにし、必要な理由を短く「補足」または「委任計画」へ残す。
-8. 次項目の前に、planだけで完了済み・残作業・barrier・次の検証が分かることを確認する。
-
-workerにplan更新、完了判断、commit、push、PR、branch切替を任せない。planのcheckboxと完了判断はmain Codexだけが更新する。
-
-## Step 7: 完了を判定して報告する
-
-1. すべての必須の進捗項目が`[x]`、または理由付きでdeferredになっていることを確認する。
-2. 「完了条件」を上から確認し、必要な最終検証をmain Codexが実行する。
-3. scope外変更、未解決conflict、未通過barrierがないことを確認する。
-4. 必要な場合だけ短い結果を「補足」へ追加する。
-5. plan path、完了した成果、検証結果、未完了・deferred、修正または棄却した委任成果を簡潔に報告する。
+最後にplan path、Phase、Gate、Cursor再判定位置を報告して終了する。実装、deploy、checkbox更新は開始しない。
