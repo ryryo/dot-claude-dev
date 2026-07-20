@@ -1,0 +1,4 @@
+interface:
+  display_name: "キャラクターシート画像生成"
+  short_description: "参照写真から整った人物キャラクターシートを生成・検証"
+  default_prompt: "$character-sheet-imagegen を使って、参照画像から人物同一性を保った実用的なキャラクターシートを作成してください。"
