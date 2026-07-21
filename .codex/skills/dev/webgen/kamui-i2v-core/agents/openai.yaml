@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kamui i2v共通基盤"
+  short_description: "Kamui MCP i2v共通実行基盤"
+  default_prompt: "$kamui-i2v-core を使って、Kamui MCPのi2vモデル設定、逐次生成、検査、比較ページ作成を行ってください。"

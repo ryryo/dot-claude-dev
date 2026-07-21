@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}}</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #18201c; background: #f4f6f5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, select { font: inherit; }
+    .toolbar { position: sticky; z-index: 10; top: 0; border-bottom: 1px solid #cdd5d1; background: rgb(255 255 255 / 94%); backdrop-filter: blur(12px); }
+    .toolbar__inner, main { width: min(1440px, calc(100% - 32px)); margin-inline: auto; }
+    .toolbar__inner { display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 24px; }
+    .heading h1 { margin: 0; font-size: 20px; line-height: 1.3; letter-spacing: 0; }
+    .heading p { margin: 4px 0 0; color: #59645e; font-size: 13px; letter-spacing: 0; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    .controls button, .rate-control { min-height: 36px; border: 1px solid #b8c2bd; border-radius: 6px; background: #fff; color: #18201c; }
+    .controls button { padding: 7px 12px; cursor: pointer; }
+    .controls button:hover { border-color: #09813d; color: #056b32; }
+    .controls button:focus-visible, .rate-control:focus-within { outline: 3px solid rgb(0 135 68 / 24%); outline-offset: 2px; }
+    .rate-control { display: flex; align-items: center; gap: 8px; padding-left: 10px; color: #59645e; font-size: 13px; }
+    .rate-control select { height: 34px; border: 0; border-left: 1px solid #d6ddd9; background: transparent; padding: 0 28px 0 10px; color: #18201c; }
+    main { padding-block: 24px 48px; }
+    .summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; color: #59645e; font-size: 13px; }
+    .status { color: #056b32; font-weight: 600; }
+    .video-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .video-item { overflow: hidden; border: 1px solid #cdd5d1; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgb(25 40 32 / 8%); }
+    .video-item__header { display: flex; min-height: 58px; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 14px; border-bottom: 1px solid #e0e5e2; }
+    .video-item h2 { margin: 0; font-size: 15px; line-height: 1.35; letter-spacing: 0; }
+    .video-item__meta { flex: 0 0 auto; color: #68736d; font-size: 12px; white-space: nowrap; }
+    .video-item__warning { margin: 0; padding: 8px 14px; border-bottom: 1px solid #f0d7a8; background: #fff7e8; color: #784f0b; font-size: 12px; }
+    .video-frame { display: grid; place-items: center; aspect-ratio: 4 / 3; background: #eef1ef; }
+    video { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    @media (max-width: 880px) {
+      .toolbar { position: static; }
+      .toolbar__inner { min-height: 0; align-items: stretch; flex-direction: column; gap: 14px; padding-block: 16px; }
+      .controls { justify-content: flex-start; }
+      .video-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .toolbar__inner, main { width: min(100% - 20px, 1440px); }
+      .controls button { flex: 1 1 auto; }
+      .rate-control { width: 100%; justify-content: space-between; }
+      .summary, .video-item__header { align-items: flex-start; flex-direction: column; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="toolbar">
+    <div class="toolbar__inner">
+      <div class="heading"><h1>{{TITLE}}</h1><p>同一画像・同一プロンプトの比較</p></div>
+      <div class="controls" aria-label="全動画の操作">
+        <button id="play-all" type="button">すべて再生</button>
+        <button id="pause-all" type="button">すべて停止</button>
+        <button id="restart-all" type="button">先頭から再生</button>
+        <label class="rate-control">再生速度
+          <select id="playback-rate">
+            <option value="0.5">0.5x</option><option value="0.75">0.75x</option>
+            <option value="1" selected>1.0x</option><option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option><option value="2">2.0x</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="summary"><span>{{SUMMARY}}</span><span id="status" class="status" role="status">ループ再生中</span></div>
+    <section class="video-grid" aria-label="モデル別動画">{{VIDEO_ITEMS}}</section>
+  </main>
+  <script>
+    const videos = [...document.querySelectorAll("video")];
+    const status = document.querySelector("#status");
+    function playAll(restart = false) {
+      videos.forEach((video) => { if (restart) video.currentTime = 0; void video.play().catch(() => {}); });
+      status.textContent = "ループ再生中";
+    }
+    function pauseAll() { videos.forEach((video) => video.pause()); status.textContent = "一時停止中"; }
+    document.querySelector("#play-all").addEventListener("click", () => playAll());
+    document.querySelector("#pause-all").addEventListener("click", pauseAll);
+    document.querySelector("#restart-all").addEventListener("click", () => playAll(true));
+    document.querySelector("#playback-rate").addEventListener("change", (event) => {
+      const rate = Number(event.currentTarget.value); videos.forEach((video) => { video.playbackRate = rate; });
+    });
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) pauseAll(); else playAll(true);
+  </script>
+</body>
+</html>

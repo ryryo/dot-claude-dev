@@ -1,0 +1,4 @@
+interface:
+  display_name: "Image Gen Core"
+  short_description: "Image Gen画像生成の共通出力規約を統一"
+  default_prompt: "$imagegen-core を読み、Image Gen画像生成の出力先、モデル名、候補、メタデータ、目視確認の共通規約に従ってください。"

@@ -1,0 +1,230 @@
+{
+  "catalog_version": 1,
+  "updated_at": "2026-07-20",
+  "pricing_basis": "fal.aiの公開価格を参考にした概算。実行前に再確認すること",
+  "defaults": {
+    "mode": "loop",
+    "duration_seconds": 4,
+    "selection": "enabledかつsupports_loop=trueのモデルを、最低解像度でのprice_usd_per_second昇順に選ぶ",
+    "fallback_model": "seedance-2.0-mini"
+  },
+  "models": [
+    {
+      "slug": "seedance-2.0-mini",
+      "display_name": "Seedance 2.0 Mini",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "ByteDance / Seedance",
+      "price_usd_per_second": 0.0721,
+      "price_resolution": "480p",
+      "resolutions": ["480p", "720p"],
+      "default_resolution": "480p",
+      "min_duration": 4,
+      "max_duration": 15,
+      "aspect_ratios": ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+      "mcp": {
+        "server_id": "i2v-sd2-kamui-bytedance-seedance-v20-mini",
+        "url": "https://kamui-code.ai/i2v_sd2/fal/bytedance/seedance-v2.0-mini",
+        "description": "Kamui Code経由のByteDance Seedance 2.0 Mini画像から動画生成",
+        "submit_tool": "bytedance_seedance_v20_mini_i2v_submit",
+        "status_tool": "bytedance_seedance_v20_mini_i2v_status",
+        "result_tool": "bytedance_seedance_v20_mini_i2v_result"
+      },
+      "parameters": {
+        "image_field": "image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": "resolution",
+        "duration_field": "duration",
+        "aspect_ratio_field": "aspect_ratio",
+        "audio_field": "generate_audio"
+      }
+    },
+    {
+      "slug": "kling-o3-standard",
+      "display_name": "Kling O3 Standard",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "Kling / O3",
+      "price_usd_per_second": 0.084,
+      "price_resolution": "Standard",
+      "resolutions": ["standard"],
+      "default_resolution": "standard",
+      "min_duration": 3,
+      "max_duration": 15,
+      "aspect_ratios": [],
+      "mcp": {
+        "server_id": "i2v-kamui-kling-video-o3-standard",
+        "url": "https://kamui-code.ai/i2v/fal/kling-video/o3-standard",
+        "description": "Kamui Code経由のKling O3 Standard画像から動画生成",
+        "submit_tool": "kling_video_o3_standard_image_to_video_submit",
+        "status_tool": "kling_video_o3_standard_image_to_video_status",
+        "result_tool": "kling_video_o3_standard_image_to_video_result"
+      },
+      "parameters": {
+        "image_field": "image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": null,
+        "duration_field": "duration",
+        "aspect_ratio_field": null,
+        "audio_field": "generate_audio"
+      }
+    },
+    {
+      "slug": "kling-v3-standard",
+      "display_name": "Kling V3 Standard",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "Kling / V3",
+      "price_usd_per_second": 0.084,
+      "price_resolution": "720p",
+      "resolutions": ["720p"],
+      "default_resolution": "720p",
+      "min_duration": 3,
+      "max_duration": 15,
+      "aspect_ratios": ["16:9", "9:16", "1:1"],
+      "mcp": {
+        "server_id": "i2v-kamui-kling-video-v3-standard",
+        "url": "https://kamui-code.ai/i2v/fal/kling-video/v3-standard",
+        "description": "Kamui Code経由のKling V3 Standard画像から動画生成",
+        "submit_tool": "kling_video_v3_standard_image_to_video_submit",
+        "status_tool": "kling_video_v3_standard_image_to_video_status",
+        "result_tool": "kling_video_v3_standard_image_to_video_result"
+      },
+      "parameters": {
+        "image_field": "start_image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": null,
+        "duration_field": "duration",
+        "aspect_ratio_field": "aspect_ratio",
+        "audio_field": "generate_audio"
+      }
+    },
+    {
+      "slug": "kling-o3-pro",
+      "display_name": "Kling O3 Pro",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "Kling / O3",
+      "price_usd_per_second": 0.112,
+      "price_resolution": "1080p相当",
+      "resolutions": ["pro"],
+      "default_resolution": "pro",
+      "min_duration": 3,
+      "max_duration": 15,
+      "aspect_ratios": [],
+      "mcp": {
+        "server_id": "i2v-kamui-kling-video-o3-pro",
+        "url": "https://kamui-code.ai/i2v/fal/kling-video/o3-pro",
+        "description": "Kamui Code経由のKling O3 Pro画像から動画生成",
+        "submit_tool": "kling_video_o3_pro_image_to_video_submit",
+        "status_tool": "kling_video_o3_pro_image_to_video_status",
+        "result_tool": "kling_video_o3_pro_image_to_video_result"
+      },
+      "parameters": {
+        "image_field": "image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": null,
+        "duration_field": "duration",
+        "aspect_ratio_field": null,
+        "audio_field": "generate_audio"
+      }
+    },
+    {
+      "slug": "kling-v3-pro",
+      "display_name": "Kling V3 Pro",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "Kling / V3",
+      "price_usd_per_second": 0.112,
+      "price_resolution": "1080p相当",
+      "resolutions": ["pro"],
+      "default_resolution": "pro",
+      "min_duration": 3,
+      "max_duration": 15,
+      "aspect_ratios": ["16:9", "9:16", "1:1"],
+      "mcp": {
+        "server_id": "i2v-kamui-kling-video-v3-pro",
+        "url": "https://kamui-code.ai/i2v/fal/kling-video/v3-pro",
+        "description": "Kamui Code経由のKling V3 Pro画像から動画生成",
+        "submit_tool": "kling_video_v3_pro_image_to_video_submit",
+        "status_tool": "kling_video_v3_pro_image_to_video_status",
+        "result_tool": "kling_video_v3_pro_image_to_video_result"
+      },
+      "parameters": {
+        "image_field": "start_image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": null,
+        "duration_field": "duration",
+        "aspect_ratio_field": "aspect_ratio",
+        "audio_field": "generate_audio"
+      }
+    },
+    {
+      "slug": "seedance-2.0-fast",
+      "display_name": "Seedance 2.0 Fast",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "ByteDance / Seedance",
+      "price_usd_per_second": 0.2419,
+      "price_resolution": "720p",
+      "resolutions": ["480p", "720p"],
+      "default_resolution": "480p",
+      "min_duration": 4,
+      "max_duration": 15,
+      "aspect_ratios": ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+      "mcp": {
+        "server_id": "i2v-sd2-kamui-bytedance-seedance-v20-fast",
+        "url": "https://kamui-code.ai/i2v_sd2/fal/bytedance/seedance-v2.0-fast",
+        "description": "Kamui Code経由のByteDance Seedance 2.0 Fast画像から動画生成",
+        "submit_tool": "bytedance_seedance_v20_fast_i2v_submit",
+        "status_tool": "bytedance_seedance_v20_fast_i2v_status",
+        "result_tool": "bytedance_seedance_v20_fast_i2v_result"
+      },
+      "parameters": {
+        "image_field": "image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": "resolution",
+        "duration_field": "duration",
+        "aspect_ratio_field": "aspect_ratio",
+        "audio_field": "generate_audio"
+      }
+    },
+    {
+      "slug": "seedance-2.0-standard",
+      "display_name": "Seedance 2.0 Standard",
+      "enabled": true,
+      "tested": true,
+      "supports_loop": true,
+      "service": "ByteDance / Seedance",
+      "price_usd_per_second": 0.3034,
+      "price_resolution": "720p",
+      "resolutions": ["480p", "720p", "1080p"],
+      "default_resolution": "480p",
+      "min_duration": 4,
+      "max_duration": 15,
+      "aspect_ratios": ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+      "mcp": {
+        "server_id": "i2v-sd2-kamui-bytedance-seedance-v20",
+        "url": "https://kamui-code.ai/i2v_sd2/fal/bytedance/seedance-v2.0",
+        "description": "Kamui Code経由のByteDance Seedance 2.0 Standard画像から動画生成",
+        "submit_tool": "bytedance_seedance_v20_i2v_submit",
+        "status_tool": "bytedance_seedance_v20_i2v_status",
+        "result_tool": "bytedance_seedance_v20_i2v_result"
+      },
+      "parameters": {
+        "image_field": "image_url",
+        "end_image_field": "end_image_url",
+        "resolution_field": "resolution",
+        "duration_field": "duration",
+        "aspect_ratio_field": "aspect_ratio",
+        "audio_field": "generate_audio"
+      }
+    }
+  ]
+}

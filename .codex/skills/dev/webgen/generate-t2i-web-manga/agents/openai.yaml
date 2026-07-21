@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web漫画画像生成"
+  short_description: "LP・Webサイト用の短い漫画画像を生成して仕上げる"
+  default_prompt: "$generate-t2i-web-manga を使い、このLPセクションに入れる短い漫画画像を生成してください。"

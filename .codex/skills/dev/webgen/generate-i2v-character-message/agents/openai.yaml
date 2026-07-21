@@ -1,0 +1,4 @@
+interface:
+  display_name: "I2V人物メッセージ動画生成"
+  short_description: "生成済み人物静止画から固定カメラ短尺i2v動画を生成"
+  default_prompt: "$generate-i2v-character-message を使って、この人物静止画から固定カメラの短尺メッセージ動画を生成してください。"

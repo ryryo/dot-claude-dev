@@ -1,0 +1,4 @@
+interface:
+  display_name: "人物メッセージ静止画生成"
+  short_description: "人物メッセージ動画用の静止画を生成して確認"
+  default_prompt: "$generate-t2i-web-character-message を使って、人物メッセージ動画に使う固定カメラ向けの1枚絵を生成してください。"
