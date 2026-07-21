@@ -1,4 +1,0 @@
-interface:
-  display_name: "Webアイソメ画像生成"
-  short_description: "LP・Webサイト用のアイソメ画像を生成して仕上げる"
-  default_prompt: "$web-isometric-imagegen を使い、デフォルトの青#009FE8・淡青#7DCCF3・緑#02A550・淡緑#34B772で、このLPセクションのアイソメ画像を生成してください。"

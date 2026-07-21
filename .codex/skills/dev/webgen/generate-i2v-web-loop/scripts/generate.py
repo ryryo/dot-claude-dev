@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Webループi2v用の互換ラッパー。実装はkamui-i2v-coreに置く。"""
+"""Webループi2v用のKamui互換ラッパー。実装はkamui-i2v-coreに置く。"""
 
 from __future__ import annotations
 

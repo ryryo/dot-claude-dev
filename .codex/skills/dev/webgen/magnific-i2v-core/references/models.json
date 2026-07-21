@@ -1,0 +1,18 @@
+{
+  "models": [
+    {
+      "slug": "magnific-kling-3.0-omni",
+      "display_name": "Kling 3.0 Omni",
+      "provider": "Magnific AI browser UI",
+      "default": false,
+      "notes": "User-visible Magnific model observed in the video generator UI. Supports image-to-video start frame workflows."
+    },
+    {
+      "slug": "magnific-cheapest-lowres",
+      "display_name": "Cheapest available low-resolution Magnific i2v model",
+      "provider": "Magnific AI browser UI",
+      "default": true,
+      "notes": "Use only when the user asks for Magnific but does not specify a model. Confirm actual UI model, resolution, duration, and credit display before generation."
+    }
+  ]
+}

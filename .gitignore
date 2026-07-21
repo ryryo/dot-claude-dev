@@ -43,3 +43,5 @@ dashboard/node_modules/
 # Pi Coding Agent
 .pi/settings.json
 .pi/AGENTS.md
+
+__pycache__/

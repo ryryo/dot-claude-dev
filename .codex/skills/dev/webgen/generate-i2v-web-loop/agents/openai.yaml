@@ -1,4 +1,4 @@
 interface:
   display_name: "Web向けi2vループ動画生成"
-  short_description: "静止画から安定したWeb用ループ動画と比較ページを生成"
-  default_prompt: "$generate-i2v-web-loop を使って、この画像からWeb掲載用のループ動画を生成してください。"
+  short_description: "静止画からKamui/MagnificでWeb用ループ動画と比較ページを生成"
+  default_prompt: "$generate-i2v-web-loop を使って、この画像からWeb掲載用のループ動画を生成してください。指定がなければKamui、Magnific指定時はブラウザUIで実行してください。"
