@@ -66,11 +66,6 @@ def build_filter(args: argparse.Namespace, width: int, height: int, font: str) -
     font_size2 = round(height * args.font_scale2)
     pad_x = round(width * args.box_pad_x_ratio)
     pad_y = round(height * args.box_pad_y_ratio)
-    box_h1 = font_size1 + pad_y * 2
-    box_h2 = font_size2 + pad_y * 2
-    # 日本語文字幅の近似。drawtextのtext_wを使う前に背景帯を置くため、少し広めに取る。
-    box_w1 = round(min(width * args.max_box_width_ratio, max(width * args.min_box_width_ratio, font_size1 * len(args.line1) * 0.92 + pad_x * 2)))
-    box_w2 = round(min(width * args.max_box_width_ratio, max(width * args.min_box_width_ratio, font_size2 * len(args.line2) * 0.92 + pad_x * 2)))
     y1 = round(height * args.y1_ratio)
     y2 = round(height * args.y2_ratio)
     bg = f"0x{hex_color(args.bg_color)}@{args.bg_opacity}"
@@ -81,17 +76,17 @@ def build_filter(args: argparse.Namespace, width: int, height: int, font: str) -
     line2 = escape_drawtext_text(args.line2)
     return ",".join(
         [
-            f"drawbox=x=(w-{box_w1})/2:y={y1}:w={box_w1}:h={box_h1}:color={bg}:t=fill",
-            f"drawbox=x=(w-{box_w2})/2:y={y2}:w={box_w2}:h={box_h2}:color={bg}:t=fill",
             (
                 f"drawtext=fontfile='{font_q}':text='{line1}':"
                 f"x=(w-text_w)/2:y={y1 + pad_y - round(font_size1 * 0.06)}:"
-                f"fontsize={font_size1}:fontcolor={text}:borderw={args.border_width}:bordercolor={border}"
+                f"fontsize={font_size1}:fontcolor={text}:borderw={args.border_width}:bordercolor={border}:"
+                f"box=1:boxcolor={bg}:boxborderw={pad_x}"
             ),
             (
                 f"drawtext=fontfile='{font_q}':text='{line2}':"
                 f"x=(w-text_w)/2:y={y2 + pad_y - round(font_size2 * 0.06)}:"
-                f"fontsize={font_size2}:fontcolor={text}:borderw={args.border_width}:bordercolor={border}"
+                f"fontsize={font_size2}:fontcolor={text}:borderw={args.border_width}:bordercolor={border}:"
+                f"box=1:boxcolor={bg}:boxborderw={pad_x}"
             ),
         ]
     )
