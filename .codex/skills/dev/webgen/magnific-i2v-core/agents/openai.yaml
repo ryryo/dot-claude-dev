@@ -1,4 +1,4 @@
 interface:
   display_name: "Magnific i2v共通基盤"
-  short_description: "MagnificブラウザUIでのi2v共通実行手順"
-  default_prompt: "$magnific-i2v-core を使って、Magnific AIのブラウザUIで開始画像からi2v動画を生成し、MP4保存と技術検査まで行ってください。"
+  short_description: "Magnific APIでのi2v共通実行手順"
+  default_prompt: "$magnific-i2v-core を使って、Magnific APIで開始画像からi2v動画を生成し、MP4保存と技術検査まで行ってください。APIが使えない場合だけブラウザUI fallbackを使ってください。"

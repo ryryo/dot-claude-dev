@@ -45,3 +45,6 @@ dashboard/node_modules/
 .pi/AGENTS.md
 
 __pycache__/
+
+.env
+.env.local

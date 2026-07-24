@@ -1,18 +1,453 @@
 {
+  "catalog_version": 1,
+  "updated_at": "2026-07-24",
+  "source": "Magnific API official documentation",
+  "pricing_basis": "Magnific APIはクレジット制。モデル別費用は実行前にDashboardまたはPricingで確認すること",
+  "defaults": {
+    "duration_seconds": 5,
+    "selection": "enabledかつsupports_i2v=trueのモデルからdefault=trueを選ぶ",
+    "fallback_model": "magnific-seedance-2-mini"
+  },
+  "notes": [
+    "Kamuiのseedance-2.0-standardはMagnific API docs上では同名確認できず、Seedance 2.0 Pro/Fast/Miniとして提供されている。",
+    "Kamuiのkling-o3-standard/proはMagnific API docs上では同名確認できず、近い候補はKling O1 Standard/Pro。",
+    "解像度がendpoint名で決まるモデルでは、resolution_fieldを使わずapi.create_paths_by_resolutionでcreate endpointを選ぶ。"
+  ],
   "models": [
     {
-      "slug": "magnific-kling-3.0-omni",
-      "display_name": "Kling 3.0 Omni",
-      "provider": "Magnific AI browser UI",
-      "default": false,
-      "notes": "User-visible Magnific model observed in the video generator UI. Supports image-to-video start frame workflows."
+      "slug": "magnific-seedance-2-mini",
+      "display_name": "Seedance 2.0 Mini",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "ByteDance / Seedance",
+      "resolutions": ["480p", "720p"],
+      "default_resolution": "480p",
+      "min_duration": 5,
+      "max_duration": 10,
+      "duration_values": [5, 10],
+      "aspect_ratios": [
+        "film_horizontal_21_9",
+        "widescreen_16_9",
+        "classic_4_3",
+        "square_1_1",
+        "traditional_3_4",
+        "social_story_9_16",
+        "film_vertical_9_21"
+      ],
+      "default_aspect_ratio": "widescreen_16_9",
+      "aspect_ratio_aliases": {
+        "21:9": "film_horizontal_21_9",
+        "16:9": "widescreen_16_9",
+        "4:3": "classic_4_3",
+        "1:1": "square_1_1",
+        "3:4": "traditional_3_4",
+        "9:16": "social_story_9_16",
+        "9:21": "film_vertical_9_21"
+      },
+      "api": {
+        "create_paths_by_resolution": {
+          "480p": "/v1/ai/video/seedance-2-mini-480p",
+          "720p": "/v1/ai/video/seedance-2-mini-720p"
+        },
+        "poll_path": "/v1/ai/video/seedance-2-mini/{task_id}",
+        "duration_type": "integer",
+        "parameters": {
+          "image_field": "image",
+          "end_image_field": "image_end",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "camera_fixed_field": "camera_fixed",
+          "seed_field": "seed",
+          "safety_field": "enable_safety_checker"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/seedance-2-mini/overview",
+      "notes": "Magnific API docsで確認済み。最安候補。"
     },
     {
-      "slug": "magnific-cheapest-lowres",
-      "display_name": "Cheapest available low-resolution Magnific i2v model",
-      "provider": "Magnific AI browser UI",
-      "default": true,
-      "notes": "Use only when the user asks for Magnific but does not specify a model. Confirm actual UI model, resolution, duration, and credit display before generation."
+      "slug": "magnific-seedance-2-fast",
+      "display_name": "Seedance 2.0 Fast",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "ByteDance / Seedance",
+      "resolutions": ["480p", "720p"],
+      "default_resolution": "480p",
+      "min_duration": 5,
+      "max_duration": 10,
+      "duration_values": [5, 10],
+      "aspect_ratios": [
+        "film_horizontal_21_9",
+        "widescreen_16_9",
+        "classic_4_3",
+        "square_1_1",
+        "traditional_3_4",
+        "social_story_9_16",
+        "film_vertical_9_21"
+      ],
+      "default_aspect_ratio": "widescreen_16_9",
+      "aspect_ratio_aliases": {
+        "21:9": "film_horizontal_21_9",
+        "16:9": "widescreen_16_9",
+        "4:3": "classic_4_3",
+        "1:1": "square_1_1",
+        "3:4": "traditional_3_4",
+        "9:16": "social_story_9_16",
+        "9:21": "film_vertical_9_21"
+      },
+      "api": {
+        "create_paths_by_resolution": {
+          "480p": "/v1/ai/video/seedance-2-fast-480p",
+          "720p": "/v1/ai/video/seedance-2-fast-720p"
+        },
+        "poll_path": "/v1/ai/video/seedance-2-fast/{task_id}",
+        "duration_type": "integer",
+        "parameters": {
+          "image_field": "image",
+          "end_image_field": "image_end",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "camera_fixed_field": "camera_fixed",
+          "seed_field": "seed",
+          "safety_field": "enable_safety_checker"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/seedance-2-fast/overview",
+      "notes": "Magnific API docsで確認済み。高速候補。"
+    },
+    {
+      "slug": "magnific-seedance-2-pro",
+      "display_name": "Seedance 2.0 Pro",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "ByteDance / Seedance",
+      "resolutions": ["480p", "720p", "1080p"],
+      "default_resolution": "480p",
+      "min_duration": 5,
+      "max_duration": 10,
+      "duration_values": [5, 10],
+      "aspect_ratios": [
+        "film_horizontal_21_9",
+        "widescreen_16_9",
+        "classic_4_3",
+        "square_1_1",
+        "traditional_3_4",
+        "social_story_9_16",
+        "film_vertical_9_21"
+      ],
+      "default_aspect_ratio": "widescreen_16_9",
+      "aspect_ratio_aliases": {
+        "21:9": "film_horizontal_21_9",
+        "16:9": "widescreen_16_9",
+        "4:3": "classic_4_3",
+        "1:1": "square_1_1",
+        "3:4": "traditional_3_4",
+        "9:16": "social_story_9_16",
+        "9:21": "film_vertical_9_21"
+      },
+      "api": {
+        "create_paths_by_resolution": {
+          "480p": "/v1/ai/video/seedance-2-pro-480p",
+          "720p": "/v1/ai/video/seedance-2-pro-720p",
+          "1080p": "/v1/ai/video/seedance-2-pro-1080p"
+        },
+        "poll_path": "/v1/ai/video/seedance-2-pro/{task_id}",
+        "duration_type": "integer",
+        "parameters": {
+          "image_field": "image",
+          "end_image_field": "image_end",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "camera_fixed_field": "camera_fixed",
+          "seed_field": "seed",
+          "safety_field": "enable_safety_checker"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/seedance-2-pro/overview",
+      "notes": "Magnific API docsで確認済み。Kamuiのseedance-2.0-standardに最も近い高品質候補。"
+    },
+    {
+      "slug": "magnific-kling-v3-std",
+      "display_name": "Kling 3 Standard",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / V3",
+      "resolutions": ["standard"],
+      "default_resolution": "standard",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": ["16:9", "9:16", "1:1"],
+      "default_aspect_ratio": "16:9",
+      "api": {
+        "create_path": "/v1/ai/video/kling-v3-std",
+        "poll_path": "/v1/ai/video/kling-v3/{task_id}",
+        "duration_type": "string",
+        "parameters": {
+          "image_field": "start_image_url",
+          "end_image_field": "end_image_url",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "audio_field": "generate_audio",
+          "negative_prompt_field": "negative_prompt",
+          "cfg_scale_field": "cfg_scale"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/kling-v3/generate-std",
+      "notes": "openreel-videoの既存実装と同じ系統。"
+    },
+    {
+      "slug": "magnific-kling-v3-pro",
+      "display_name": "Kling 3 Pro",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / V3",
+      "resolutions": ["pro"],
+      "default_resolution": "pro",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": ["16:9", "9:16", "1:1"],
+      "default_aspect_ratio": "16:9",
+      "api": {
+        "create_path": "/v1/ai/video/kling-v3-pro",
+        "poll_path": "/v1/ai/video/kling-v3/{task_id}",
+        "duration_type": "string",
+        "parameters": {
+          "image_field": "start_image_url",
+          "end_image_field": "end_image_url",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "audio_field": "generate_audio",
+          "negative_prompt_field": "negative_prompt",
+          "cfg_scale_field": "cfg_scale"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/kling-v3/generate-pro",
+      "notes": "Magnific API docsで確認済み。"
+    },
+    {
+      "slug": "magnific-kling-v3-omni-std",
+      "display_name": "Kling 3.0 Omni Standard",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / V3 Omni",
+      "resolutions": ["standard"],
+      "default_resolution": "standard",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": ["auto", "16:9", "9:16", "1:1"],
+      "default_aspect_ratio": "auto",
+      "api": {
+        "create_path": "/v1/ai/video/kling-v3-omni-std",
+        "poll_path": "/v1/ai/video/kling-v3-omni/{task_id}",
+        "duration_type": "string",
+        "parameters": {
+          "image_field": "image_url",
+          "end_image_field": "end_image_url",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "audio_field": "generate_audio"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/kling-v3-omni/generate-std",
+      "notes": "Magnific API docsで確認済み。"
+    },
+    {
+      "slug": "magnific-kling-v3-omni-pro",
+      "display_name": "Kling 3.0 Omni Pro",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / V3 Omni",
+      "resolutions": ["pro"],
+      "default_resolution": "pro",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": ["auto", "16:9", "9:16", "1:1"],
+      "default_aspect_ratio": "auto",
+      "api": {
+        "create_path": "/v1/ai/video/kling-v3-omni-pro",
+        "poll_path": "/v1/ai/video/kling-v3-omni/{task_id}",
+        "duration_type": "string",
+        "parameters": {
+          "image_field": "image_url",
+          "end_image_field": "end_image_url",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio",
+          "audio_field": "generate_audio"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/kling-v3-omni/generate-pro",
+      "notes": "Magnific API docsで確認済み。"
+    },
+    {
+      "slug": "magnific-kling-v3-turbo-720p",
+      "display_name": "Kling 3.0 Turbo 720p",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": false,
+      "service": "Kling / V3 Turbo",
+      "resolutions": ["720p"],
+      "default_resolution": "720p",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": [],
+      "default_aspect_ratio": null,
+      "api": {
+        "create_path": "/v1/ai/image-to-video/kling-v3-turbo-720p",
+        "poll_path": "/v1/ai/image-to-video/kling-v3-turbo/{task_id}",
+        "duration_type": "string",
+        "parameters": {
+          "image_field": "image",
+          "duration_field": "duration"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/image-to-video/kling-v3-turbo/overview",
+      "notes": "I2Vは入力画像比率を継承し、aspect_ratio指定と終了画像には非対応。"
+    },
+    {
+      "slug": "magnific-kling-4k-i2v",
+      "display_name": "Kling 4K I2V",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / 4K",
+      "resolutions": ["4k"],
+      "default_resolution": "4k",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": [],
+      "default_aspect_ratio": null,
+      "api": {
+        "create_path": "/v1/ai/video/kling-4k-i2v",
+        "poll_path": "/v1/ai/video/kling-4k-i2v/{task_id}",
+        "duration_type": "integer",
+        "parameters": {
+          "image_field": "image",
+          "end_image_field": "image_tail",
+          "duration_field": "duration",
+          "negative_prompt_field": "negative_prompt",
+          "cfg_scale_field": "cfg_scale"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/video/post-kling-4k-i2v",
+      "notes": "公式docsでPOST/GETを確認済み。motion brush用maskはこのCLIでは未対応。"
+    },
+    {
+      "slug": "magnific-kling-v3-turbo-1080p",
+      "display_name": "Kling 3.0 Turbo 1080p",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": false,
+      "service": "Kling / V3 Turbo",
+      "resolutions": ["1080p"],
+      "default_resolution": "1080p",
+      "min_duration": 3,
+      "max_duration": 15,
+      "duration_values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "aspect_ratios": [],
+      "default_aspect_ratio": null,
+      "api": {
+        "create_path": "/v1/ai/image-to-video/kling-v3-turbo-1080p",
+        "poll_path": "/v1/ai/image-to-video/kling-v3-turbo/{task_id}",
+        "duration_type": "string",
+        "parameters": {
+          "image_field": "image",
+          "duration_field": "duration"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/image-to-video/kling-v3-turbo/overview",
+      "notes": "I2Vは入力画像比率を継承し、aspect_ratio指定と終了画像には非対応。"
+    },
+    {
+      "slug": "magnific-kling-o1-std",
+      "display_name": "Kling O1 Standard",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / O1",
+      "resolutions": ["standard"],
+      "default_resolution": "standard",
+      "min_duration": 5,
+      "max_duration": 10,
+      "duration_values": [5, 10],
+      "aspect_ratios": ["16:9", "9:16", "1:1"],
+      "default_aspect_ratio": "16:9",
+      "api": {
+        "create_path": "/v1/ai/image-to-video/kling-o1-std",
+        "poll_path": "/v1/ai/image-to-video/kling-o1/{task_id}",
+        "duration_type": "integer",
+        "parameters": {
+          "image_field": "first_frame",
+          "end_image_field": "last_frame",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/image-to-video/kling-o1/overview",
+      "notes": "Magnific API docsで確認済み。Kamuiのkling-o3-standardとは同名ではない。"
+    },
+    {
+      "slug": "magnific-kling-o1-pro",
+      "display_name": "Kling O1 Pro",
+      "enabled": true,
+      "api_docs_verified": true,
+      "runtime_tested": false,
+      "supports_i2v": true,
+      "supports_loop": true,
+      "service": "Kling / O1",
+      "resolutions": ["pro"],
+      "default_resolution": "pro",
+      "min_duration": 5,
+      "max_duration": 10,
+      "duration_values": [5, 10],
+      "aspect_ratios": ["16:9", "9:16", "1:1"],
+      "default_aspect_ratio": "16:9",
+      "api": {
+        "create_path": "/v1/ai/image-to-video/kling-o1-pro",
+        "poll_path": "/v1/ai/image-to-video/kling-o1/{task_id}",
+        "duration_type": "integer",
+        "parameters": {
+          "image_field": "first_frame",
+          "end_image_field": "last_frame",
+          "duration_field": "duration",
+          "aspect_ratio_field": "aspect_ratio"
+        }
+      },
+      "docs": "https://docs.magnific.com/api-reference/image-to-video/kling-o1/overview",
+      "notes": "Magnific API docsで確認済み。Kamuiのkling-o3-proとは同名ではない。"
     }
   ]
 }
