@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Worktree Environment"
+  short_description: "Codex App用Worktree環境を生成・実動検証"
+  default_prompt: "Use $dev:codex-worktree-env-create to create and verify this repository Codex App Worktree environment."
