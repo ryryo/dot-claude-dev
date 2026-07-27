@@ -4,7 +4,7 @@
 
 この option は実装ではなく分割設計を行う。入力計画の形式は固定しない。main Codex が計画の source of truth を特定し、sprint boundary を決める。Cursor CLI worker に計画全体の進行判断、完了判定、計画ファイル更新、commit/push は任せない。
 
-特定の計画フォーマットを前提にしない。構造化された計画、Markdown の実装メモ、issue、PR description、Linear ticket、設計 doc、手元のチェックリスト、または会話内の指示だけで構成された大きな作業にも同じ考え方で分割する。
+特定の計画フォーマットを前提にしない。構造化された計画、Markdown の実装メモ、issue、PR description、Linear ticket、設計ドキュメント、手元のチェックリスト、または会話内の指示だけで構成された大きな作業にも同じ考え方で分割する。
 
 ## A. 入力計画の形式を判定する
 
@@ -28,7 +28,7 @@
 
 - 作業単位の候補。milestone、phase、section、step、epic、checklist item、feature area など名前は問わない。
 - 依存関係。先に決める contract、後続が使う helper、schema、API boundary、routing、state など。
-- 受け入れ条件。明示されていない場合は、ユーザー視点の完了条件と最小 verification を推定する。
+- 受け入れ条件。明示されていない場合は、ユーザー視点の完了条件と最小検証を推定する。
 - 影響範囲。read scope、write scope、外部 state、cross-repo、migration、UI surface、tests。
 - 既に完了済みの部分と、未完了部分。
 - ユーザー判断が必要な部分。
@@ -43,9 +43,9 @@
 
 - 1 単位の中に複数の独立 write scope がある。
 - schema / contract / env / route / UI / tests など、失敗時の原因を分けたい領域が混在する。
-- 1 回の sprint で typecheck / test が長時間 broken になり、検収しづらい。
+- 1 回の sprint で typecheck や test が長時間失敗したままになり、検収しづらい。
 - Worker に任せられる局所 task と、main Codex が持つべき contract task が混ざっている。
-- 外部 state を変える作業と、local code edit が混ざっている。
+- 外部 state を変える作業と、ローカルのコード編集が混ざっている。
 
 例:
 
@@ -61,7 +61,7 @@ Input unit: Runtime repository migration
 ### 結合してよい条件
 
 - 片方がもう片方の小さな前提変更で、分けると検証が重複する。
-- write scope が重ならず、同じ local check でまとめて検証できる。
+- write scope が重ならず、同じローカルの確認作業でまとめて検証できる。
 - contract が既に固まっていて、片方だけ完了しても有用な中間状態にならない。
 - まとめても Cursor CLI worker に渡す task は小さく分離できる。
 
@@ -76,7 +76,7 @@ Input units: env docs update + local setup script update
 ### main Codex 専有にする条件
 
 - cross-repo source of truth、auth security、cookie domain、DB schema ownership、API contract を決める。
-- source-of-truth 計画、progress、checklist、完了判定などを更新する。
+- source-of-truth 計画、進捗、チェックリスト、完了判定などを更新する。
 - production secret、OAuth callback、deploy、remote migration など外部 state を変える。
 - 複数 worker の成果を統合する。
 - write scope が広すぎて Cursor CLI worker の `--yolo` に渡すと rollback 判断が難しい。
@@ -103,7 +103,7 @@ barrier には必ず書く。
 - 何を完了する必要があるか。
 - 完了確認方法。画面での確認、CLI readback、env presence、API smoke など。
 - barrier 前に進められる sprint と、barrier 後でなければ進められない sprint。
-- blocker が解消しない場合の fallback。skip、mock、local-only、plan update、作業停止など。
+- blocker が解消しない場合の fallback。skip、mock、local-only、計画更新、作業停止など。
 
 barrier がある場合、ユーザーに「今すぐ実行できる sprint group」と「ユーザー作業後に実行する sprint group」を分けて提示する。ユーザー作業を暗黙の前提にして sprint を開始しない。
 
@@ -147,7 +147,7 @@ Cursor CLI preflight は stage 0、分割表、task graph に事前配置しな�
 - main-owned task。
 - Cursor CLI worker 候補。
 - 禁止する write scope。
-- sprint 完了時の最小 verification。
+- sprint 完了時の最小検証。
 - 次 sprint へ渡す contract。
 - barrier がある場合、必要なユーザー作業と完了確認方法。
 
@@ -160,7 +160,7 @@ barrier に到達したら、その先の sprint を開始せず、ユーザー�
 1 sprint の完了条件:
 
 - 対象 sprint の diff が main Codex によって検収済み。
-- sprint 内の required verification が実行済み、または未実行理由が明確。
+- sprint 内の必須検証が実行済み、または未実行理由が明確。
 - 次 sprint に必要な contract が `review.md` か最終報告に残っている。
 - 元計画の完了判定や進捗更新は、必要なら main Codex が別途行う。
 
@@ -168,10 +168,10 @@ barrier に到達したら、その先の sprint を開始せず、ユーザー�
 
 sprint-cli に投げる前に確認する。
 
-- [ ] この sprint は 1 から 3 個程度の integration batch に収まる。
+- [ ] この sprint は 1 から 3 個程度の統合バッチに収まる。
 - [ ] 各 Cursor CLI task の write scope が重ならない。
 - [ ] worker が触ってよいファイルを絶対パスで書ける。
-- [ ] source-of-truth 計画ファイル、commit、push、progress update を worker に任せていない。
+- [ ] source-of-truth 計画ファイル、commit、push、進捗更新を worker に任せていない。
 - [ ] main Codex 専有の contract task と worker task が分かれている。
 - [ ] sprint 完了後に通す最小検証が決まっている。
 - [ ] ユーザー作業や外部 state が必要な barrier を越えて sprint を開始しようとしていない。

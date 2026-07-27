@@ -13,7 +13,7 @@
 
 ## 作業依存グラフ
 
-依存関係の source of truth。`depends_on` が解決済みで、Conflict Table で衝突しない同一 `parallel_group` は、1 つずつ完了待ちせず連続 submit してからまとめて monitor する。
+依存関係の source of truth。`depends_on` が解決済みで、競合表で衝突しない同一 `parallel_group` は、1 つずつ完了待ちせず連続 submit してからまとめて monitor する。
 
 ```mermaid
 flowchart TD

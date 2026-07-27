@@ -81,4 +81,4 @@ dependenciesが完了したtaskだけを実行する。promptの作成には[del
 
 ### 7. 完了を判定する
 
-completion criteriaに沿って判定する。required taskが完了（または理由付きでdeferred）し、integration batchのacceptanceが済み、最終検証まで通った場合だけ完了とする。残った課題はriskまたはdeferred taskとしてplanに記録し、使用したworker/model、変更内容、検証結果を添えて報告する。
+planのcompletion criteriaに沿って、required taskの完了（理由付きのdeferredを含む）、integration batchのacceptance、最終検証という3点がすべてそろって初めて完了とする。残った課題はriskまたはdeferred taskとしてplanに記録し、報告時にはどのworker/modelを使ったか、何を変更したか、どう検証したかを明記する。

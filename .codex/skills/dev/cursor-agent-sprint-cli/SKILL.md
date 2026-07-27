@@ -1,7 +1,7 @@
 ---
 name: cursor-agent-sprint-cli
 description: |
-  Cursor CLI headless worker を使い、ユーザーの実装指示を短いローカル実行計画に分解し、安全に分離できる小タスクだけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に並列委任する。`.codex/tmp/YYMMDD_slug/` 配下で状態を管理し、docs/PLAN を作らず main Codex が統合と検収を行う。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、 Cursor を使って計画を実装
+  Cursor CLI headless worker を使い、ユーザーの実装指示を短いローカル実行計画に分解し、安全に分離できる小タスクだけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に並列委任する。`.codex/tmp/YYMMDD_slug/` 配下で状態を管理し、docs/PLAN を作らず main Codex が統合と検収を行う。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、Cursor を使って計画を実装
 ---
 
 # Cursor Agent Sprint CLI（CLI 版軽量 Sprint）
@@ -16,7 +16,7 @@ description: |
 - 作業を小さな task graph にできる。
 - 委任する edit task ごとに read scope、write scope、禁止パス、検証コマンドを書ける。
 - 並列化する task の write scope が重ならない。
-- Cursor CLI の `--yolo` 実行を、main Codex の diff 検収で受け止められる。
+- Cursor CLI の `--yolo` 実行を、main Codex の diff 検収で吸収できる。
 - 現在の working tree の中で統合と検収まで完了できる。
 
 複数日にまたがる大きな計画、プロダクト判断が曖昧な作業、write scope が重なる作業には使わない。その場合は main Codex が直接扱うか、永続的な計画にするかをユーザーに確認する。
@@ -33,7 +33,7 @@ description: |
 
 ## Sprint Directory（作業ディレクトリ）
 
-まず workspace と skill path を設定し、同梱 script で sprint directory を初期化する。
+まず workspace と skill のパスを設定し、同梱スクリプトで sprint directory を初期化する。
 
 ```bash
 WORKSPACE="$(pwd)"
@@ -57,7 +57,7 @@ script は次の構成を作る。
   sprint-env.sh
 ```
 
-`brief.md` には user goal、scope、制約、最小検証を書く。`tasks.md` は task id、依存関係、owner、read/write scope、conflict、検証方法の source of truth にする。`review.md` には main Codex の統合・検収メモを書く。
+`brief.md` にはユーザーの目的、範囲、制約、最小検証を書く。`tasks.md` は task id、依存関係、owner、read/write scope、競合、検証方法の source of truth にする。`review.md` には main Codex の統合・検収メモを書く。
 
 ## 進め方
 
@@ -81,11 +81,11 @@ git branch --show-current
 
 ### 2. Mini Plan（短い実行計画）を書く
 
-`SPRINT_DIR` の `brief.md` と `tasks.md` を編集する。計画は小さく、実行に必要なことだけを書く。`init_sprint.sh` が同梱テンプレートをコピー済みなので、今回不要な task / section を削る。
+`SPRINT_DIR` の `brief.md` と `tasks.md` を編集する。計画は小さく、実行に必要なことだけを書く。`init_sprint.sh` が同梱テンプレートをコピー済みなので、今回使わない task や section を削る。
 
-`brief.md` には目的、scope、repo context、制約、最小検証、acceptance を書く。`tasks.md` には Status Board、Task Graph、File Dependency Graph、Ready Queue、Parallel Execution Plan、Blocked Queue、Conflict Table、Integration Batches、Task Contracts を書く。
+`brief.md` にはユーザーの目的、範囲、Repository Context、制約、最小検証、受け入れ条件を書く。`tasks.md` には状態一覧、作業依存グラフ、ファイル依存グラフ、投入待ち、並列投入計画、停止中、競合表、統合単位、作業契約を書く。
 
-並列実行は明示する。`Task Graph` と `File Dependency Graph` で依存と write scope を可視化し、`Parallel Execution Plan` に同時投入する task group を書く。同一 `parallel_group` の ready task は 1 件ずつ完了待ちしない。各 `--submit` の成功だけ確認して group 内の task を連続投入し、その後 `--monitor-all` でまとめて待つ。
+並列実行は明示する。`作業依存グラフ` と `ファイル依存グラフ` で依存と write scope を可視化し、`並列投入計画` に同時投入する task group を書く。同一 `parallel_group` の ready task は 1 件ずつ完了待ちしない。各 `--submit` の成功だけ確認して group 内の task を連続投入し、その後 `--monitor-all` でまとめて待つ。
 
 task contract はこの形を保つ。`Task ID:` は worker prompt と検証 script の必須ラベルなので英語表記のまま使う。
 
@@ -111,15 +111,15 @@ task を分類する。
 
 - `contract`: data source、auth、routing、schema、state、API boundary など下流を決める変更。main Codex 優先。
 - `parallel`: write scope が局所的で分離できる実装。Cursor CLI worker 候補。
-- `review`: read-only の risk analysis、設計比較、test strategy。Codex subagent 候補。
-- `integration`: worker 成果の統合、conflict 解消、共有面の調整。必ず main Codex。
+- `review`: read-only のリスク分析、設計比較、テスト戦略。Codex subagent 候補。
+- `integration`: worker 成果の統合、競合解消、共有面の調整。必ず main Codex。
 - `validation`: typecheck、test、build、browser check、dry-run。最終責任は main Codex。
 
 ### 3. Worker Prompt（委任プロンプト）を作る
 
 task ごとに `prompts/Txx.md` を 1 つ作る。絶対パスを使う。1 prompt には 1 task だけを書く。
 
-prompt の先頭には `Task Summary:` を置く。このラベルは Cursor CLI thread の title をばらけさせるための必須契約なので英語表記のまま使う。先頭 1 から 3 行だけで task id、担当領域、成果物が分かる短い固有文にする。複数 worker で同じ `Task Summary` を使わない。`--submit` する prompt は `Task Summary:` が必須で、180 文字以内にする。
+prompt の先頭には `Task Summary:` を置く。このラベルは Cursor CLI thread の title を区別するための必須ラベルなので英語表記のまま使う。先頭 1 から 3 行だけで task id、担当領域、成果物が分かる短い固有文にする。複数 worker で同じ `Task Summary` を使わない。`--submit` する prompt は `Task Summary:` が必須で、180 文字以内にする。
 
 ```text
 Task Summary:
@@ -249,7 +249,7 @@ preflight に進む条件:
   --preflight
 ```
 
-preflight は `cursor` command、`cursor agent --version`、`cursor agent status`、`cursor agent models` 内の `composer-2.5-fast`、read-only smoke JSON result を確認する。成功したら失敗した task を再投入する。失敗した場合は、Cursor CLI 環境の問題として main Codex が復旧、ユーザー確認、または Cursor CLI 委任の中止を判断する。
+preflight は `cursor` command、`cursor agent --version`、`cursor agent status`、`cursor agent models` 内の `composer-2.5-fast`、read-only smoke の JSON result を確認する。成功したら失敗した task を再投入する。失敗した場合は、Cursor CLI 環境の問題として main Codex が復旧、ユーザー確認、または Cursor CLI 委任の中止を判断する。
 
 ### 6. 受け入れ前に検収する
 
@@ -283,7 +283,7 @@ worker の完了順ではなく依存順に統合する。main Codex は共有 c
 - app-level / routing 変更: `npm run build`
 - UI 変更: 可能なら browser check
 
-結果は `review.md` に記録する。diff、scope、report、verification が揃ってから task を accepted にする。
+結果は `review.md` に記録する。diff、scope、report、検証が揃ってから task を accepted にする。
 
 ### 8. 報告
 
@@ -300,15 +300,10 @@ worker の完了順ではなく依存順に統合する。main Codex は共有 c
 
 ## Optional: 大きな計画を sprint-cli 実行単位へ分割する
 
-大きな実装計画や調査計画を実行する前に、ユーザーが
-`cursor-agent-sprint-cli でどう分けるか考えて`、`フェーズごとに sprint-cli したい`、
-`大きい計画を CLI worker に分割したい` などを求めた場合だけ使う。
+大きな実装計画や調査計画を実行する前に、ユーザーが`cursor-agent-sprint-cli でどう分けるか考えて`、`フェーズごとに sprint-cli したい`、`大きい計画を CLI worker に分割したい` などを求めた場合だけ使う。
 
-この option は **実装ではなく分割設計** を行う。計画の source of truth を先に特定し、
-main Codex が sprint boundary を決める。ユーザー作業や外部設定が必要な場合は、
-sprint group、barrier、次 sprint group のように stage を分ける。
+この option は**実装ではなく分割設計**を行う。計画の source of truth を先に特定し、main Codex が sprint boundary を決める。ユーザー作業や外部設定が必要な場合は、sprint group、barrier、次 sprint group のように stage を分ける。
 
-Cursor CLI preflight は sprint stage や task として事前配置しない。submit / monitor で
-CLI 疎通問題が出たときだけ、その場の復旧処理として差し込む。
+Cursor CLI preflight は sprint stage や task として事前配置しない。submit / monitor で CLI 疎通問題が出たときだけ、その場の復旧処理として差し込む。
 
 詳細手順は `references/large-plan-sprint-division.md` を読む。
