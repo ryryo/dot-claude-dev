@@ -1,4 +1,4 @@
 interface:
   display_name: "委任実行計画"
-  short_description: "依存・難度・UI/UXを設計した永続計画を作り、workerへ委任する"
-  default_prompt: "$cursor-agent-delegate を使ってrepositoryを調査し、task難度に応じたworker/modelとUI/UX受け入れを含む永続的な実行計画を作成してから委任・検収してください。"
+  short_description: "main所有・Cursor実装・補助調査を分離した永続計画を作る"
+  default_prompt: "$cursor-agent-delegate を使ってrepositoryを調査し、高難度と統合はmain、固定済みの低〜中難度実装はCursor、独立調査はCodex subagentとする永続計画を作成・実行してください。"

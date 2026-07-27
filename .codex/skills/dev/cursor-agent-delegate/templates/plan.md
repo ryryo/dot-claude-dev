@@ -4,7 +4,7 @@
 
 ## Planning policy
 
-- Worker/model routing: `<policy_id from references/task-routing.json>`
+- Execution routing: `<policy_id from references/task-routing.json>`
 - UI / UX contract: `required | not_applicable` — `<reason>`
 
 ## Goal
@@ -29,7 +29,7 @@
 
 ## Design
 
-- <採用する設計と境界>
+- <main Codexが決定した設計と境界>
 - <shared contract / data flow / state ownership>
 - <移行・rollback方針があれば記載>
 
@@ -51,23 +51,24 @@ UI影響がある場合だけ残す。UI影響がない場合はPlanning policy�
 
 ## Status board
 
-| Task | Status | Routing class | Owner | Model / reasoning | Depends on | Integration batch | Summary |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| T10 | not_started | main_boundary | main-codex | inherited | [] | B1 | <contract task> |
-| T20 | not_started | low | cursor-cli-agent | composer-2.5-fast / fixed | [T10] | B2 | <local implementation> |
-| T30 | not_started | medium | codex-subagent | <resolved model / reasoning> | [T10] | B2 | <analysis or complex task> |
-| T90 | not_started | main_boundary | main-codex | inherited | [T20, T30] | B9 | final integration and validation |
+| Task | Status | Work kind | Difficulty | Execution route | Owner | Model / reasoning | Depends on | Integration batch | Summary |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T10 | not_started | design | high | main | main-codex | inherited | [] | B1 | <contract or architecture> |
+| T20 | not_started | implementation | medium | cursor | cursor-cli-agent | composer-2.5-fast / fixed | [T10] | B2 | <bounded implementation> |
+| T90 | not_started | integration | high | main | main-codex | inherited | [T20] | B9 | final integration and validation |
 
 Status: `not_started | ready | running | needs_review | done | blocked | deferred`
+
+Work kind: `design | implementation | support | integration | verification`
+
+subagentが必要な場合だけ`support` taskを追加する。標準taskとして作らない。
 
 ## Task graph
 
 ```mermaid
 flowchart TD
   T10["T10 Contract"] --> T20["T20 Implementation"]
-  T10 --> T30["T30 Analysis"]
   T20 --> T90["T90 Final validation"]
-  T30 --> T90
 ```
 
 ## Conflict and integration
@@ -75,7 +76,7 @@ flowchart TD
 | Batch | Tasks | Conflict / barrier | Main acceptance |
 | --- | --- | --- | --- |
 | B1 | T10 | downstream contractを先に固定 | <check> |
-| B2 | T20, T30 | write scopeが重ならないこと | <combined check> |
+| B2 | T20 | workerのwrite scopeを分離 | <combined check> |
 | B9 | T90 | required task完了後 | <final checks> |
 
 ## Task contracts
@@ -83,8 +84,10 @@ flowchart TD
 ### T10: <title>
 
 - Status: `not_started`
-- Routing class: `main_boundary`
-- Routing reason: `<main ownership boundary>`
+- Work kind: `design`
+- Difficulty: `high`
+- Execution route: `main`
+- Route reason: `<main ownership boundary>`
 - Owner: `main-codex`
 - Model / reasoning: `inherited`
 - Mode: `edit | read-only`
@@ -96,51 +99,58 @@ flowchart TD
 - Constraints: <守るcontract>
 - UI / UX: `<surface / flow / states / interaction / verification | not_applicable>`
 - Acceptance: <観測可能な完了状態>
-- Worker verification: `<command | none>`
+- Worker verification: `none`
 - Main verification: `<command>`
 - Final report: <必要な報告>
 
 ### T20: <title>
 
 - Status: `not_started`
-- Routing class: `low`
-- Routing reason: `<task type and low-route conditions>`
+- Work kind: `implementation`
+- Difficulty: `low | medium`
+- Execution route: `cursor`
+- Route reason: `<task type and every satisfied cursor condition>`
 - Owner: `cursor-cli-agent`
 - Model / reasoning: `composer-2.5-fast / fixed`
 - Mode: `edit`
 - Depends on: `[T10]`
 - Goal: <このtaskが成立させる状態>
 - Read scope: `<paths>`
-- Write scope: `<paths>`
+- Write scope: `<separated paths>`
 - Forbidden: `plan更新、commit、branch、remote、scope外変更`
+- Fixed contract / reference: `<main decision / existing pattern / sample>`
 - Constraints: <守るcontract>
-- UI / UX: `<surface / flow / states / interaction / verification | not_applicable>`
-- Acceptance: <観測可能な完了状態>
+- UI / UX: `<fixed local UI contract | not_applicable>`
+- Acceptance: <観測可能な局所完了状態>
 - Worker verification: `<focused command>`
 - Main verification: `<acceptance command>`
 - Final report: `TASK_ID / MODEL / changed files / verification / remaining work`
 
-### T30: <title>
+### Optional support task: <title>
+
+許可用途に該当し、並列化・別context・独立比較に具体的な利益がある場合だけ追加する。
 
 - Status: `not_started`
-- Routing class: `high | medium`
-- Routing reason: `<task type, escalation signals, policy route>`
+- Work kind: `support`
+- Difficulty: `high | medium`
+- Execution route: `support_subagent_high | support_subagent_medium`
+- Route reason: `<allowed support type and concrete parallel/context-isolation benefit>`
 - Owner: `codex-subagent`
-- Model / reasoning: `<resolved from Planning policy>`
-- Mode: `edit | read-only`
-- Depends on: `[T10]`
-- Goal: <このtaskが成立させる状態>
-- Read scope: `<paths>`
-- Write scope: `<paths | none>`
-- Forbidden: `plan更新、commit、branch、remote、scope外変更`
-- Constraints: <守るcontract>
-- UI / UX: `<surface / flow / states / interaction / verification | not_applicable>`
-- Acceptance: <観測可能な完了状態>
-- Worker verification: `<focused command | none>`
-- Main verification: `<acceptance command>`
-- Final report: `TASK_ID / MODEL / REASONING_EFFORT / changed files / verification / remaining work`
+- Model / reasoning: `<resolved from task-routing.json>`
+- Mode: `read-only`
+- Depends on: `<task ids>`
+- Goal / question: <独立して答えられるbounded question>
+- Read scope: `<paths / logs / sources>`
+- Write scope: `none`
+- Forbidden: `source変更、plan更新、commit、branch、remote、外部state変更`
+- Constraints: <評価基準と前提>
+- UI / UX: `<audit target | not_applicable>`
+- Acceptance: `根拠、結論、不確実性、推奨を要約してmainへ返す`
+- Worker verification: `<read-only checks | none>`
+- Main verification: `<evidence review / comparison / command>`
+- Final report: `TASK_ID / MODEL / REASONING_EFFORT / evidence / conclusion / uncertainty / recommendation`
 
-必要なtask contractだけを追加する。taskごとのprogress欄やReady/Blocked queueは作らない。
+必要なtask contractだけを追加する。小さな調査をsubagent taskとして水増ししない。taskごとのprogress欄やReady/Blocked queueは作らない。
 
 ## Decision log
 
@@ -151,9 +161,11 @@ flowchart TD
 ## Completion criteria
 
 - [ ] required taskが`done`、または理由付きで`deferred`
+- [ ] Cursor taskのdiffとfocused verificationをmainが検収
+- [ ] support subagentの根拠をmainが検証し、採否をDecision logへ反映
 - [ ] integration batchのacceptanceが完了
 - [ ] final typecheck / test / build / browser / dry-runの必要項目が成功
-- [ ] UI taskはplanで定義したflow、状態、interaction/accessibility、visual verificationが完了
+- [ ] UI taskは定義したflow、状態、interaction/accessibility、visual verificationが完了
 - [ ] scope外変更と未解決conflictがない
 
 ## Risks / deferred

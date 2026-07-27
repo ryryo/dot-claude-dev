@@ -50,4 +50,4 @@ preflightは通常フローや投入前checklistには含めない。submit / mo
 "$RUNNER" --workspace "$WORKSPACE" --preflight
 ```
 
-preflightが成功したら元のtask errorを見直し、必要なtaskだけ再投入する。失敗した場合は復旧を繰り返さず、main CodexまたはCodex subagentへ割り当て直す。loginが必要な場合や固定modelが利用できない場合は、ユーザーへ報告する。
+preflightが成功したら元のtask errorを見直し、必要なtaskだけ再投入する。失敗した場合は復旧を繰り返さず、実装taskをmain Codexへ戻す。Codex subagentを実装fallbackにしない。loginが必要な場合や固定modelが利用できない場合は、ユーザーへ報告する。

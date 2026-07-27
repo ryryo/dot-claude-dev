@@ -1,153 +1,155 @@
 {
-  "schema_version": 1,
-  "policy_id": "cursor-agent-delegate-routing-2026-07-27",
+  "schema_version": 2,
+  "policy_id": "cursor-agent-delegate-routing-2026-07-28",
+  "policy_summary": "高難度と共有境界はmain Codex、contractを固定できる低〜中難度の局所実装はCursor、Codex subagentはread-onlyの補助workstreamに限定する",
   "resolution_order": [
     "main_ownership_boundary",
-    "task_type_default",
-    "escalation_signals",
+    "implementation_difficulty",
+    "cursor_eligibility",
+    "support_workstream_eligibility",
     "execution_surface_availability"
   ],
-  "routes": {
-    "main_boundary": {
+  "execution_routes": {
+    "main": {
       "owner": "main-codex",
       "model": "inherited",
       "reasoning_effort": "inherited",
-      "description": "難度に関係なく、共有境界、統合、外部変更、最終判断をmain Codexが所有する"
+      "source_write_allowed": true,
+      "description": "高難度、設計、共有境界、統合、外部変更、最終判断を所有する"
     },
-    "high": {
-      "owner": "codex-subagent",
-      "model": "gpt-5.6-sol",
-      "reasoning_effort": "high",
-      "description": "新規性または失敗影響が大きく、細かな正確性判断と強い検証が必要なtask"
-    },
-    "medium": {
-      "owner": "codex-subagent",
-      "model": "gpt-5.5",
-      "reasoning_effort": "high",
-      "description": "境界が明確で、既存のcontract、参照実装、サンプル、個別のtestを使って完遂できるtask"
-    },
-    "low": {
+    "cursor": {
       "owner": "cursor-cli-agent",
       "model": "composer-2.5-fast",
       "reasoning_effort": "fixed",
-      "description": "局所的で反復可能、write scopeと完了条件を明確に分離できるtask"
+      "source_write_allowed": true,
+      "allowed_difficulties": [
+        "low",
+        "medium"
+      ],
+      "description": "contractを固定でき、局所的に検証・棄却できる低〜中難度の実装を行う"
+    },
+    "support_subagent_high": {
+      "owner": "codex-subagent",
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "source_write_allowed": false,
+      "work_kind": "support",
+      "description": "独立した難しい調査、比較、監査、分析、レビューを行い、mainへ根拠付き要約を返す"
+    },
+    "support_subagent_medium": {
+      "owner": "codex-subagent",
+      "model": "gpt-5.5",
+      "reasoning_effort": "high",
+      "source_write_allowed": false,
+      "work_kind": "support",
+      "description": "境界が明確な調査、比較、監査、分析、レビューを行い、mainへ根拠付き要約を返す"
     }
   },
-  "task_type_defaults": [
-    {
-      "task_type": "shared_contract_or_public_schema",
-      "route": "main_boundary"
-    },
-    {
-      "task_type": "cross_module_integration_or_migration",
-      "route": "main_boundary"
-    },
-    {
-      "task_type": "production_or_external_state_change",
-      "route": "main_boundary"
-    },
-    {
-      "task_type": "final_acceptance_or_release_decision",
-      "route": "main_boundary"
-    },
-    {
-      "task_type": "exact_numeric_or_media_algorithm",
-      "route": "high"
-    },
-    {
-      "task_type": "concurrency_crash_recovery_or_fencing",
-      "route": "high"
-    },
-    {
-      "task_type": "security_authorization_or_privacy_boundary",
-      "route": "high"
-    },
-    {
-      "task_type": "codec_browser_runtime_or_cross_system_debugging",
-      "route": "high"
-    },
-    {
-      "task_type": "high_risk_correctness_review",
-      "route": "high"
-    },
-    {
-      "task_type": "reference_driven_implementation",
-      "route": "medium"
-    },
-    {
-      "task_type": "bounded_feature_integration",
-      "route": "medium"
-    },
-    {
-      "task_type": "design_comparison_or_read_only_audit",
-      "route": "medium"
-    },
-    {
-      "task_type": "durable_local_repository_without_shared_schema_ownership",
-      "route": "medium"
-    },
-    {
-      "task_type": "multi_surface_ui_state_or_editorial_flow",
-      "route": "medium"
-    },
-    {
-      "task_type": "isolated_component_or_existing_pattern_ui",
-      "route": "low"
-    },
-    {
-      "task_type": "isolated_adapter_or_validator",
-      "route": "low"
-    },
-    {
-      "task_type": "focused_unit_test_or_fixture",
-      "route": "low"
-    },
-    {
-      "task_type": "mechanical_refactor_or_bounded_documentation",
-      "route": "low"
-    }
+  "main_ownership_task_types": [
+    "architecture_or_product_decision",
+    "shared_contract_or_public_schema",
+    "cross_module_integration_or_migration",
+    "shared_state_or_canonical_store_change",
+    "high_difficulty_implementation",
+    "production_or_external_state_change",
+    "final_acceptance_or_release_decision",
+    "multi_surface_ui_flow_or_product_interaction_decision"
   ],
-  "high_escalation_signals": [
-    "新しい領域固有の意味づけやアルゴリズムを設計する",
+  "implementation_difficulty": {
+    "high": {
+      "default_route": "main",
+      "description": "新規設計、複雑な正確性判断、重大な失敗影響、複数境界の調整が必要"
+    },
+    "medium": {
+      "default_route": "cursor_if_eligible_otherwise_main",
+      "description": "既存contract、参照実装、sample、既存testを使い、bounded scopeで完遂できる"
+    },
+    "low": {
+      "default_route": "cursor_if_eligible_otherwise_main",
+      "description": "局所的、反復可能、既存pattern準拠で、安全に差分を棄却できる"
+    }
+  },
+  "high_difficulty_signals": [
+    "新しい領域固有の意味づけ、algorithm、architectureを設計する",
     "正確なtime、frame、sample、PCM、codec byte、暗号、数値安定性を扱う",
     "複数tab/process、crash、retry、lease、fence、古い結果を扱う",
-    "auth、permission、secret、privacy、リモートの権限を扱う",
+    "auth、permission、secret、privacy、remote権限を扱う",
     "browser runtime、Worklet、renderer、media decode、外部providerの実挙動が正確性を左右する",
-    "失敗がデータ損失、セキュリティ上の問題、サイレント破損、広範囲の回帰につながる",
-    "独立した判定基準（オラクル）または多数のネガティブコントロールを必要とする"
+    "失敗がデータ損失、security問題、silent corruption、広範囲の回帰につながる",
+    "複数moduleの文脈と設計判断を反復的に統合する必要がある"
   ],
-  "low_route_required_conditions": [
+  "cursor_required_conditions": [
+    "difficultyがlowまたはmediumである",
+    "設計判断とcontractがmain Codexによって固定されている",
     "write scopeを他taskから分離できる",
-    "shared contract、public schema、中央ストア、routing、migrationを変更しない",
-    "既存patternまたは凍結済みcontractをそのまま使う",
-    "絞り込んだverificationと観測可能なacceptanceがある",
+    "shared contract、public schema、migration、中央store、routingを変更しない",
+    "既存pattern、参照実装、sampleのいずれかを直接利用できる",
+    "focused verificationと観測可能なacceptanceがある",
     "失敗時にmain Codexが局所差分を安全に棄却または補正できる"
   ],
+  "cursor_task_type_examples": [
+    "reference_driven_implementation",
+    "bounded_feature_or_adapter_implementation",
+    "isolated_component_or_existing_pattern_ui",
+    "isolated_validator_or_serializer",
+    "focused_unit_test_or_fixture",
+    "mechanical_refactor_or_bounded_documentation"
+  ],
+  "support_subagent_policy": {
+    "is_general_implementation_route": false,
+    "default_source_write_scope": "none",
+    "allowed_work_types": [
+      "independent_codebase_exploration",
+      "proposal_document_or_hypothesis_comparison",
+      "read_only_architecture_security_or_correctness_audit",
+      "test_log_stack_trace_or_failure_cause_analysis",
+      "independent_review_or_oracle",
+      "multi_source_research_or_summarization"
+    ],
+    "required_conditions": [
+      "allowed_work_typesのいずれかに該当する",
+      "mainの進行中の推論と独立したbounded questionとして定義できる",
+      "並列化、別context、独立比較のいずれかに具体的な利益がある",
+      "source fileを編集せずshared mutable stateを競合しない",
+      "raw logではなく根拠、結論、不確実性、推奨を要約して返せる",
+      "main Codexが結果を検証して最終判断を行う"
+    ],
+    "do_not_delegate_when": [
+      "前の判断を受けて次の判断を行う単一の連続した推論である",
+      "taskが小さくmain Codexが短時間で完了できる",
+      "実装、debug、再設計を同じcontextで反復する必要がある",
+      "同じsourceまたはshared stateへのwriteが必要である",
+      "subagentへ背景を再構築するcostが期待利益を上回る"
+    ],
+    "model_selection": {
+      "high": "support_subagent_high",
+      "medium": "support_subagent_medium",
+      "low": "main"
+    }
+  },
   "ui_routing_guidance": {
-    "low": [
-      "既存design systemを使う単一componentまたは単一surface",
-      "状態とeventが局所的で、既存controller/contractへ接続するだけ"
+    "main": [
+      "product flow、情報設計、複数surfaceのstate、重要interactionを決める",
+      "canonical renderer、media timing、durable state、security approvalとUIが一体である"
     ],
-    "medium": [
-      "複数surface、draft/commit/cancel、keyboard/focus、responsive stateを統合する",
-      "reference UIを既存product surfaceへ翻訳し、意図的な差を判断する"
+    "cursor": [
+      "既存design systemを使う単一componentまたは単一surfaceを実装する",
+      "状態とeventが局所的で、固定済みcontrollerまたはcontractへ接続する"
     ],
-    "high": [
-      "canonical renderer、media timing、cross-surface durable state、security approvalとUIが一体",
-      "UI上の誤表示がサイレント破損または危険な外部操作につながる"
+    "support_subagent": [
+      "reference UIや既存product patternを調査・比較する",
+      "accessibility、visual consistency、interaction contractをread-onlyで監査する"
     ]
   },
   "availability_policy": {
     "allow_silent_fallback": false,
-    "on_unavailable": [
-      "指定したmodelとreasoningを明示するCodex task/threadまたはcustom agent経路を使う",
-      "利用できなければmain Codexがrouting classまたはownerを再決定しplanのDecision logへ残す",
-      "再決定前にtaskを開始しない"
-    ]
+    "cursor_unavailable": "main Codexへ戻す。Codex subagentを実装fallbackにしない",
+    "support_subagent_unavailable": "main Codexが補助workstreamを直接行うか、省略可能性を判断する",
+    "model_unavailable": "別modelへsilent fallbackせず、main Codexがrouteまたはmodelを再決定してDecision logへ記録する"
   },
   "maintenance": {
     "on_route_or_task_type_change": "policy_idを更新し、既存planは完了済み履歴を維持したままnot_started taskだけを再評価する",
     "on_wording_only_change": "policy_idは維持できる",
-    "plan_traceability": "planへpolicy_id、Routing class、Routing reason、resolved owner/model/reasoningを保存する"
+    "plan_traceability": "planへpolicy_id、work kind、difficulty、execution route、理由、owner、model/reasoningを保存する"
   }
 }

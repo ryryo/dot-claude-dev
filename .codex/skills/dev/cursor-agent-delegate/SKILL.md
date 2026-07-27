@@ -1,48 +1,57 @@
 ---
 name: cursor-agent-delegate
 description: |
-  事前設計が必要な中〜大規模作業を対象に、repositoryを調査したうえで、依存関係・設計境界・task難度・worker/model・UI/UX契約・統合順・完了条件を盛り込んだsingle-md実行計画を `docs/PLAN/{YYMMDD}_{slug}.md` に作成し、それに沿って実行する。局所的な実装はheadless Cursor CLIに、高・中難度のtaskはrouting policyでmodelを明示したCodex subagentに委任し、共有境界・統合・最終判断はmain Codexが担う。短期作業は対象外。Trigger: cursor-agent-delegate、Cursorで計画、worker委任計画、依存関係やUI受け入れを設計して実装
+  事前設計が必要な中〜大規模作業についてrepositoryを調査し、依存関係・設計境界・実装難度・実行主体・UI/UX契約・統合順・完了条件を持つsingle-md計画を `docs/PLAN/{YYMMDD}_{slug}.md` に作成して実行する。高難度・共有境界・統合はmain Codexが所有し、contractを固定できる低〜中難度の局所実装だけをheadless Cursor CLIへ委任する。Codex subagentは独立した調査・比較・監査・障害分析・レビューに限定する。Trigger: cursor-agent-delegate、Cursorで計画、worker委任計画、依存関係やUI受け入れを設計して実装
 ---
 
 # cursor-agent-delegate
 
-main Codex が、永続的な実行計画の作成、worker選定、進捗管理、統合、最終検収を一貫して担う。
+main Codexが計画、設計判断、worker選定、進捗管理、統合、最終検収を一貫して担う。
 
 ## 適用範囲
 
-複数のmodule・stage・workerが絡み、shared contract、migration、本番反映の障壁などが伴う作業のように、実装前に依存関係と統合順を固定しておく必要がある場合に使う。次のようなケースでは別のskillに切り替える。
-
-- working tree内で完結し、永続planを必要としない短期作業 → `cursor-agent-sprint-cli`
-- 永続的なチェックリストは必要だが、owner/model・task graph・write scopeの重複・integration batchまでの事前設計は不要な作業 → `simple-plan`
+複数moduleやstageが絡み、実装前に依存関係、shared contract、統合順を固定する必要がある作業に使う。短期の局所作業には`cursor-agent-sprint-cli`、owner/modelやtask graphまで不要な永続チェックリストには`simple-plan`を使う。
 
 ## 参照先
 
-- 計画の土台: [templates/plan.md](templates/plan.md)
-- task種別・難度・modelのsource of truth: [references/task-routing.json](references/task-routing.json)
-- 委任prompt: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
-- Cursor CLIの実行: [references/operations.md](references/operations.md)
-- 成果の検収: [references/review-checklist.md](references/review-checklist.md)
+- 計画template: [templates/plan.md](templates/plan.md)
+- 実行主体・難度・modelのsource of truth: [references/task-routing.json](references/task-routing.json)
+- worker prompt: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
+- Cursor CLI操作: [references/operations.md](references/operations.md)
+- 検収: [references/review-checklist.md](references/review-checklist.md)
 
-## 原則
+## 所有と委任
 
-- task graphとstatus boardを実行順・進捗のsource of truthにする。
-- taskにはgoal、dependencies、routing classと理由、owner/model、read/write scope、acceptance、worker/main verificationを持たせる。
-- 共有境界・統合・外部変更・最終判断は難度に関係なくmain Codexへ置き、残るtaskだけをrouting policyで高・中・低へ分類する。
-- write scopeが重なるworkerを並列実行しない。shared contractとintegration batchはmain Codexが扱う。
-- UIを変更するplanでは、影響surface、利用者の目的と主要flow、既存design system/pattern、必要な状態とfeedback、interaction/accessibility、リスクに応じたvisual verificationをtask contractとして明文化する。参照UIが実在する場合はsourceと意図的な差分だけを記録し、viewport・theme・evidence形式はrepositoryやproductの要件を優先する。
-- workerにplan更新、完了判定、commit、push、merge、PR、branch切替を任せない。
-- Cursor CLI preflightをplan taskにしない。CLI疎通失敗時だけ例外処理として実行する。
-- 既存の未コミット変更を戻さず、worker reportではなくdiffと検証結果で採否を決める。
+難度と実行主体を別々に判定する。Codex subagentを高・中難度実装の一般的な委任先にしない。
+
+1. **main Codex所有**
+   高難度実装、設計判断、shared contract、public schema、migration、複数moduleの統合、共有state、外部変更、最終検収を扱う。
+2. **Cursor実装**
+   低〜中難度で、設計とcontractが固定され、write scopeを分離でき、既存patternや参照実装に従い、局所的に検証・棄却できる実装だけを扱う。条件を満たさないtaskはmainへ戻す。
+3. **Codex subagentによる補助workstream**
+   独立したコード調査、複数案・仮説の比較、read-only audit、test/log/障害原因分析、独立レビューだけを扱う。sourceを編集させず、mainが結果を要約・採否判断する。小さな調査や、前後の判断と密結合な分析はmainが直接行う。
+
+subagentは実装taskのfallbackではない。Cursorが利用できない場合も、実装をsubagentへ自動的に振り替えない。
+
+## UI / UX契約
+
+UI変更を含むplanでは、次をtask contractへ簡潔に記録する。
+
+- 影響surfaceと利用者の目的、主要flow
+- 既存design system、component、interaction pattern
+- loading、empty、error、disabled、success、recoveryなど必要な状態とfeedback
+- keyboard、focus、pointer、semantics、accessibility
+- riskに応じたbehavior test、browser操作、visual確認
+
+product flow、複数surfaceのstate、重要なinteraction判断はmainが所有する。Cursorへ委任できるのは、既存patternとcontractが固定された局所UI実装だけである。subagentはUI調査、比較、audit、独立レビューに限る。参照UIがある場合はsourceと意図的な差分だけを記録し、viewport、theme、evidence形式はrepository固有の要件を優先する。
 
 ## 実行フロー
 
-### 1. 設計対象を調査する
+### 1. repositoryを調査する
 
-ユーザーの依頼とrepositoryを読み込み、目的、対象外、現状、設計判断、shared contract、検証方法、UI影響と参照sourceを確定する。未解決の判断がtask graphに影響する場合は、planを作成する前に追加調査を行うか、ユーザーに確認する。
+目的、対象外、現状、設計境界、shared contract、UI影響、検証方法を確認する。task graphを左右する未解決事項は、追加調査またはユーザー確認で解消する。
 
 ### 2. planを初期化する
-
-日付と短いslugを決め、同名planがないことを確認してtemplateをコピーする。
 
 ```bash
 WORKSPACE="$(pwd)"
@@ -50,35 +59,46 @@ SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
 "$SKILL_DIR/scripts/init_plan.sh" --workspace "$WORKSPACE" --slug <slug>
 ```
 
-### 3. planを設計する
+### 3. task graphと契約を設計する
 
-生成したsingle-md planを編集する。
+[task-routing.json](references/task-routing.json)を読み、次の順で各taskを解決する。
 
-- [task-routing.json](references/task-routing.json)の`policy_id`をplanへ記録する。
-- routingは`main ownership boundary → task_type_defaults → high_escalation_signals`の順に判定する。`low`は`low_route_required_conditions`をすべて満たす場合だけ選び、それ以外のbounded taskは`medium`にする。
-- 解決したrouting class、理由、worker、model、reasoning effortをplanへ記録する。
-- UI影響がある場合は、影響surface、user flow、既存pattern、状態、interaction/accessibility、visual verificationをtask contractへ対応付ける。
-- task graph、write-scope conflict、integration batch、acceptanceの内容に矛盾がないよう整合させる。Ready/Blocked queueは別管理せず、statusとdependenciesから判断する。
+1. main ownership boundary
+2. implementation difficulty
+3. Cursor eligibility
+4. 必要な場合だけsupport workstream eligibility
+5. execution surface availability
+
+planへ`policy_id`、work kind、difficulty、execution route、理由、owner、model/reasoning、read/write scope、acceptance、worker/main verificationを記録する。subagent taskには、並列化またはcontext隔離の具体的な利益と、mainが受け取る成果物を記録する。
 
 ### 4. 実行前レビューを行う
 
-最初のworkerを起動する前に、次の問題がないことを確認する。問題があればplanを修正してから実行する。
+最初のworkerを起動する前に次を確認し、問題があればplanを修正する。
 
-- 依存関係の循環
-- 未確定のcontract
-- write scopeの重複
-- 検証不能なacceptance
-- routing class・owner・model未設定
-- UI taskにおけるuser flow・主要state・verificationの欠落
+- 依存関係の循環、未確定contract、write scopeの重複
+- 検証不能なacceptance、未設定のowner/model
+- 高難度・共有境界・統合taskがworkerへ流れていないこと
+- Cursor taskが必要条件をすべて満たすこと
+- subagent taskが許可用途に該当し、source writeを持たないこと
+- UI taskにuser flow、主要state、interaction/accessibility、verificationがあること
 
 ### 5. task単位で実行する
 
-dependenciesが完了したtaskだけを実行する。promptの作成には[delegation-prompt-template.md](references/delegation-prompt-template.md)、Cursor CLIの実行には[operations.md](references/operations.md)を使う。Codex subagentを起動する際は、planに記録した`model`と`reasoning_effort`を起動引数に設定する。
+dependenciesを満たしたtaskだけを実行する。Cursor promptとsubagent promptは[delegation-prompt-template.md](references/delegation-prompt-template.md)に従う。Cursor CLIは[operations.md](references/operations.md)で実行する。
 
-### 6. 検収・更新・統合する
+Codex subagentを起動する場合は、planに記録したmodelとreasoning effortを起動引数へ設定する。subagentにはtask-localなsourceと契約だけを渡し、mainの結論を先に教えない。
 
-[review-checklist.md](references/review-checklist.md)で検収する。status、decision log、検証結果をplanへ反映できるのはmain Codexだけである。統合はworkerの完了順ではなく、integration batch順に行う。
+### 6. 検収・統合する
+
+[review-checklist.md](references/review-checklist.md)でdiff、検証結果、worker reportを照合する。mainだけがplanのstatus、decision log、統合結果を更新できる。subagentの報告は根拠であり、設計判断や完了判定そのものではない。
 
 ### 7. 完了を判定する
 
-planのcompletion criteriaに沿って、required taskの完了（理由付きのdeferredを含む）、integration batchのacceptance、最終検証という3点がすべてそろって初めて完了とする。残った課題はriskまたはdeferred taskとしてplanに記録し、報告時にはどのworker/modelを使ったか、何を変更したか、どう検証したかを明記する。
+required taskの完了または理由付きdeferred、integration batchのacceptance、最終検証がすべてそろったときだけ完了とする。残存課題はriskまたはdeferred taskとして記録する。
+
+## 共通禁止事項
+
+- workerにplan更新、完了判定、commit、push、merge、PR、branch切替を任せない。
+- write scopeが重なるworkerを並列実行しない。
+- worker reportだけで採否を決めず、既存の未コミット変更を戻さない。
+- Cursor CLI preflightを通常taskにしない。CLI-level errorが起きた場合だけ実行する。
