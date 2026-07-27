@@ -58,7 +58,7 @@ SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
 - routingは`main ownership boundary → task_type_defaults → high_escalation_signals`の順に判定する。`low`は`low_route_required_conditions`をすべて満たす場合だけ選び、それ以外のbounded taskは`medium`にする。
 - 解決したrouting class、理由、worker、model、reasoning effortをplanへ記録する。
 - UI影響がある場合は、影響surface、user flow、既存pattern、状態、interaction/accessibility、visual verificationをtask contractへ対応付ける。
-- task graph、write-scope conflict、integration batch、acceptanceを整合させる。Ready/Blocked queueは別管理せず、statusとdependenciesから判断する。
+- task graph、write-scope conflict、integration batch、acceptanceの内容に矛盾がないよう整合させる。Ready/Blocked queueは別管理せず、statusとdependenciesから判断する。
 
 ### 4. 実行前レビューを行う
 
@@ -81,4 +81,4 @@ dependenciesが完了したtaskだけを実行する。promptの作成には[del
 
 ### 7. 完了を判定する
 
-required task、integration batch、completion criteria、最終検証がすべて揃った場合だけ完了とする。残課題はriskまたはdeferred taskとしてplanに残し、使用したworker/model、変更内容、検証結果とともに報告する。
+completion criteriaに沿って判定する。required taskが完了（または理由付きでdeferred）し、integration batchのacceptanceが済み、最終検証まで通った場合だけ完了とする。残った課題はriskまたはdeferred taskとしてplanに記録し、使用したworker/model、変更内容、検証結果を添えて報告する。
