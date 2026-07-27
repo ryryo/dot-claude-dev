@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "policy_id": "cursor-agent-delegate-routing-2026-07-27",
+  "resolution_order": [
+    "main_ownership_boundary",
+    "task_type_default",
+    "escalation_signals",
+    "execution_surface_availability"
+  ],
+  "routes": {
+    "main_boundary": {
+      "owner": "main-codex",
+      "model": "inherited",
+      "reasoning_effort": "inherited",
+      "description": "難度に関係なく、共有境界、統合、外部変更、最終判断をmain Codexが所有する"
+    },
+    "high": {
+      "owner": "codex-subagent",
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "description": "新規性または失敗影響が大きく、細かなcorrectness判断と強い検証が必要なtask"
+    },
+    "medium": {
+      "owner": "codex-subagent",
+      "model": "gpt-5.5",
+      "reasoning_effort": "high",
+      "description": "境界が明確で、既存contract、reference、sample、focused testを使って完遂できるtask"
+    },
+    "low": {
+      "owner": "cursor-cli-agent",
+      "model": "composer-2.5-fast",
+      "reasoning_effort": "fixed",
+      "description": "局所的で反復可能、write scopeと完了条件を明確に分離できるtask"
+    }
+  },
+  "task_type_defaults": [
+    {
+      "task_type": "shared_contract_or_public_schema",
+      "route": "main_boundary"
+    },
+    {
+      "task_type": "cross_module_integration_or_migration",
+      "route": "main_boundary"
+    },
+    {
+      "task_type": "production_or_external_state_change",
+      "route": "main_boundary"
+    },
+    {
+      "task_type": "final_acceptance_or_release_decision",
+      "route": "main_boundary"
+    },
+    {
+      "task_type": "exact_numeric_or_media_algorithm",
+      "route": "high"
+    },
+    {
+      "task_type": "concurrency_crash_recovery_or_fencing",
+      "route": "high"
+    },
+    {
+      "task_type": "security_authorization_or_privacy_boundary",
+      "route": "high"
+    },
+    {
+      "task_type": "codec_browser_runtime_or_cross_system_debugging",
+      "route": "high"
+    },
+    {
+      "task_type": "high_risk_correctness_review",
+      "route": "high"
+    },
+    {
+      "task_type": "reference_driven_implementation",
+      "route": "medium"
+    },
+    {
+      "task_type": "bounded_feature_integration",
+      "route": "medium"
+    },
+    {
+      "task_type": "design_comparison_or_read_only_audit",
+      "route": "medium"
+    },
+    {
+      "task_type": "durable_local_repository_without_shared_schema_ownership",
+      "route": "medium"
+    },
+    {
+      "task_type": "multi_surface_ui_state_or_editorial_flow",
+      "route": "medium"
+    },
+    {
+      "task_type": "isolated_component_or_existing_pattern_ui",
+      "route": "low"
+    },
+    {
+      "task_type": "isolated_adapter_or_validator",
+      "route": "low"
+    },
+    {
+      "task_type": "focused_unit_test_or_fixture",
+      "route": "low"
+    },
+    {
+      "task_type": "mechanical_refactor_or_bounded_documentation",
+      "route": "low"
+    }
+  ],
+  "high_escalation_signals": [
+    "新しいdomain semanticsまたはalgorithmを設計する",
+    "exact time、frame、sample、PCM、codec byte、暗号、数値安定性を扱う",
+    "複数tab/process、crash、retry、lease、fence、stale resultを扱う",
+    "auth、permission、secret、privacy、remote authorityを扱う",
+    "browser runtime、Worklet、renderer、media decode、外部providerの実挙動がcorrectnessを左右する",
+    "失敗がdata loss、security問題、silent corruption、広い回帰につながる",
+    "独立oracleまたは多数のnegative controlを必要とする"
+  ],
+  "low_route_required_conditions": [
+    "write scopeを他taskから分離できる",
+    "shared contract、public schema、中央store、routing、migrationを変更しない",
+    "既存patternまたは凍結済みcontractをそのまま使う",
+    "focused verificationと観測可能なacceptanceがある",
+    "失敗時にmain Codexが局所差分を安全に棄却または補正できる"
+  ],
+  "ui_routing_guidance": {
+    "low": [
+      "既存design systemを使う単一componentまたは単一surface",
+      "状態とeventが局所的で、既存controller/contractへ接続するだけ"
+    ],
+    "medium": [
+      "複数surface、draft/commit/cancel、keyboard/focus、responsive stateを統合する",
+      "reference UIを既存product surfaceへ翻訳し、意図的な差を判断する"
+    ],
+    "high": [
+      "canonical renderer、media timing、cross-surface durable state、security approvalとUIが一体",
+      "UI上の誤表示がsilent corruptionまたは危険な外部操作につながる"
+    ]
+  },
+  "availability_policy": {
+    "allow_silent_fallback": false,
+    "on_unavailable": [
+      "指定modelとreasoningをadvertiseするCodex task/threadまたはcustom agent経路を使う",
+      "利用できなければmain Codexがrouting classまたはownerを再決定しplanのDecision logへ残す",
+      "再決定前にtaskを開始しない"
+    ]
+  },
+  "maintenance": {
+    "on_route_or_task_type_change": "policy_idを更新し、既存planは完了済み履歴を維持したままnot_started taskだけを再評価する",
+    "on_wording_only_change": "policy_idは維持できる",
+    "plan_traceability": "planへpolicy_id、Routing class、Routing reason、resolved owner/model/reasoningを保存する"
+  }
+}
