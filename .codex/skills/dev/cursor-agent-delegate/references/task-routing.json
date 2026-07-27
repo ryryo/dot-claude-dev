@@ -18,13 +18,13 @@
       "owner": "codex-subagent",
       "model": "gpt-5.6-sol",
       "reasoning_effort": "high",
-      "description": "新規性または失敗影響が大きく、細かなcorrectness判断と強い検証が必要なtask"
+      "description": "新規性または失敗影響が大きく、細かな正確性判断と強い検証が必要なtask"
     },
     "medium": {
       "owner": "codex-subagent",
       "model": "gpt-5.5",
       "reasoning_effort": "high",
-      "description": "境界が明確で、既存contract、reference、sample、focused testを使って完遂できるtask"
+      "description": "境界が明確で、既存のcontract、参照実装、サンプル、個別のtestを使って完遂できるtask"
     },
     "low": {
       "owner": "cursor-cli-agent",
@@ -108,19 +108,19 @@
     }
   ],
   "high_escalation_signals": [
-    "新しいdomain semanticsまたはalgorithmを設計する",
-    "exact time、frame、sample、PCM、codec byte、暗号、数値安定性を扱う",
-    "複数tab/process、crash、retry、lease、fence、stale resultを扱う",
-    "auth、permission、secret、privacy、remote authorityを扱う",
-    "browser runtime、Worklet、renderer、media decode、外部providerの実挙動がcorrectnessを左右する",
-    "失敗がdata loss、security問題、silent corruption、広い回帰につながる",
-    "独立oracleまたは多数のnegative controlを必要とする"
+    "新しい領域固有の意味づけやアルゴリズムを設計する",
+    "正確なtime、frame、sample、PCM、codec byte、暗号、数値安定性を扱う",
+    "複数tab/process、crash、retry、lease、fence、古い結果を扱う",
+    "auth、permission、secret、privacy、リモートの権限を扱う",
+    "browser runtime、Worklet、renderer、media decode、外部providerの実挙動が正確性を左右する",
+    "失敗がデータ損失、セキュリティ上の問題、サイレント破損、広範囲の回帰につながる",
+    "独立した判定基準（オラクル）または多数のネガティブコントロールを必要とする"
   ],
   "low_route_required_conditions": [
     "write scopeを他taskから分離できる",
-    "shared contract、public schema、中央store、routing、migrationを変更しない",
+    "shared contract、public schema、中央ストア、routing、migrationを変更しない",
     "既存patternまたは凍結済みcontractをそのまま使う",
-    "focused verificationと観測可能なacceptanceがある",
+    "絞り込んだverificationと観測可能なacceptanceがある",
     "失敗時にmain Codexが局所差分を安全に棄却または補正できる"
   ],
   "ui_routing_guidance": {
@@ -134,13 +134,13 @@
     ],
     "high": [
       "canonical renderer、media timing、cross-surface durable state、security approvalとUIが一体",
-      "UI上の誤表示がsilent corruptionまたは危険な外部操作につながる"
+      "UI上の誤表示がサイレント破損または危険な外部操作につながる"
     ]
   },
   "availability_policy": {
     "allow_silent_fallback": false,
     "on_unavailable": [
-      "指定modelとreasoningをadvertiseするCodex task/threadまたはcustom agent経路を使う",
+      "指定したmodelとreasoningを明示するCodex task/threadまたはcustom agent経路を使う",
       "利用できなければmain Codexがrouting classまたはownerを再決定しplanのDecision logへ残す",
       "再決定前にtaskを開始しない"
     ]

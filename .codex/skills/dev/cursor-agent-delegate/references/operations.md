@@ -1,6 +1,6 @@
-# Cursor CLI の実行
+# Cursor CLIの実行
 
-同梱 CLI は `cursor agent --print --yolo --trust --model composer-2.5-fast` を background 実行し、既定で `.agent_runs/cursor-delegate/` に registry と task report を保存する。
+同梱のCLIは`cursor agent --print --yolo --trust --model composer-2.5-fast`をbackgroundで実行し、既定では`.agent_runs/cursor-delegate/`にregistryとtask reportを保存する。
 
 ```bash
 WORKSPACE="$(pwd)"
@@ -8,7 +8,7 @@ RUNNER="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate/scripts/cursor_cli_de
 PROMPT_FILE="$WORKSPACE/.agent_runs/cursor-delegate/prompts/<plan-id>-<task-id>.md"
 ```
 
-planのtask contractから[delegation-prompt-template.md](delegation-prompt-template.md)に沿って`PROMPT_FILE`を作る。workerにplan自体を更新させない。
+planのtask contractをもとに、[delegation-prompt-template.md](delegation-prompt-template.md)に沿って`PROMPT_FILE`を作る。plan自体の更新はworkerに行わせない。
 
 ## Submit
 
@@ -19,7 +19,7 @@ planのtask contractから[delegation-prompt-template.md](delegation-prompt-temp
   --submit
 ```
 
-write scope が重ならない task だけを連続 submit できる。各 submit の成功を確認してからまとめて monitor する。
+write scopeが重ならないtask同士は連続してsubmitできる。各submitの成功を確認してから、まとめてmonitorする。
 
 ## Monitor
 
@@ -33,21 +33,21 @@ write scope が重ならない task だけを連続 submit できる。各 submi
   --monitor-all --wait --max-records 4 --timeout 180
 ```
 
-`thread.done: true` の task だけを正常終了として扱う。`thread.failed: true` なら `stderr_tail` と result JSON を確認し、main Codex が修正・再投入・棄却を判断する。worker の報告を根拠に完了判定せず、[review-checklist.md](review-checklist.md) で diff と検証を確認する。
+正常終了として扱うのは`thread.done: true`のtaskだけである。`thread.failed: true`の場合は`stderr_tail`とresult JSONを確認し、main Codexが修正・再投入・棄却を判断する。workerの報告を完了判定の根拠にせず、[review-checklist.md](review-checklist.md)でdiffと検証結果を確認する。
 
-`--registry-file` で保存先を変更できる。その他の引数は `"$RUNNER" --help` で確認する。
+保存先は`--registry-file`で変更できる。その他の引数は`"$RUNNER" --help`で確認する。
 
-## 例外: CLI 疎通失敗
+## 例外: CLI疎通失敗
 
-preflight は通常フローや投入前 checklist に入れない。submit / monitor が次の CLI-level error で失敗した場合だけ、追加投入を止めて実行する。
+preflightは通常フローや投入前checklistには含めない。submit / monitorが次のCLI-level errorで失敗した場合だけ、追加投入を止めてpreflightを実行する。
 
-- `cursor` command または `cursor agent` を起動できない。
-- login、status、model list、`composer-2.5-fast` の error。
-- worker prompt より前の段階で JSON result を生成できない。
-- 複数 task が同種の CLI-level error で失敗する。
+- `cursor` commandまたは`cursor agent`を起動できない。
+- login、status、model list、`composer-2.5-fast`でerrorが出る。
+- worker promptより前の段階でJSON resultを生成できない。
+- 複数taskが同種のCLI-level errorで失敗する。
 
 ```bash
 "$RUNNER" --workspace "$WORKSPACE" --preflight
 ```
 
-成功したら元の task error を見直し、必要な task だけ再投入する。失敗したら復旧を繰り返さず、main Codex または Codex subagent へ割り当て直す。login が必要な場合や固定 model が利用できない場合はユーザーへ報告する。
+preflightが成功したら元のtask errorを見直し、必要なtaskだけ再投入する。失敗した場合は復旧を繰り返さず、main CodexまたはCodex subagentへ割り当て直す。loginが必要な場合や固定modelが利用できない場合は、ユーザーへ報告する。

@@ -1,6 +1,6 @@
-# 委任 prompt
+# 委任prompt
 
-1 prompt に 1 task だけを書く。Cursor CLI prompt は一意な `Task Summary:` を先頭に置き、`Task ID:` を必ず含める。Codex subagent は `Task Summary:` を省略できる。
+1つのpromptには1つのtaskだけを書く。Cursor CLI向けのpromptは、先頭に一意な`Task Summary:`を置き、`Task ID:`を必ず含める。Codex subagentの場合は`Task Summary:`を省略できる。
 
 ```text
 Task Summary:
@@ -44,4 +44,4 @@ Final report:
 - main Codex に残した作業
 ```
 
-Codex subagent の model / reasoning は prompt と起動引数を一致させる。指定値が使えない場合はfallbackせずmain Codexへ戻す。UI taskはplanのUI / UX contractを要約し、worker scope外のproduct-level visual verificationはmain Codexへ残す。
+Codex subagentのmodel / reasoningは、promptと起動引数で値を一致させる。指定した値が使えない場合はfallbackせず、main Codexへ差し戻す。UI taskではplanのUI / UX contractを要約し、worker scope外となるproduct-level visual verificationはmain Codex側の作業として残す。
