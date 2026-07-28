@@ -39,9 +39,6 @@ Constraints:
 - 設計やshared contractを変更せず、必要になった場合は停止して報告する。
 - <task固有の制約>
 
-UI / UX contract:
-- <fixed local surface / states / interaction / verification | not_applicable>
-
 Verification:
 - Run: <specific command>
 - 実行できない場合は理由と代替確認を報告する。
@@ -52,6 +49,50 @@ Final report:
 - 検証結果
 - main Codexに残した判断・作業
 ```
+
+### UI blockの追記
+
+taskが`UI: surface`の場合だけ、上のpromptへ次の3blockを追記する。`<>`部分はplanの`## UI foundation`から**具体値を転記する**。「UI foundationに従う」とだけ書かない。workerはplanを読まない前提で書く。
+
+```text
+UI components (これ以外を新規に作らない):
+- <UI要素>: <import path>
+- <UI要素>: <import path>
+
+UI tokens:
+- 使用してよい: <token list>
+- 使用禁止: <legacy token / 生palette色 / hardcoded hex,rgb,oklch>
+
+UI labels / i18n:
+- 表示文字列は <namespace> へ追加し、<locale list> をすべて埋める。文字列を直書きしない。
+- 利用者向けlabelへ内部ID、enum識別子、schema field名、例外message原文を出さない。
+- testを書く場合、表示文言でassertせず data-testid か role + 安定key で参照する。
+
+UI layout:
+- 新規surfaceの配置: <panel内 / dialog / overlay / banner>
+- 次の共通surfaceは自分で作らず <path> をimportする: <primary/secondary/destructive action, error, success, loading, empty, disabled, 承認surface のうち該当するもの>
+
+UI forbidden (追加):
+- 上のUI componentsに対応がある要素を、素の<button> <select> <input> <textarea>や独自実装で新規に作ること
+- 上のUI tokensのallowlist外の色指定
+- 上のUI layoutで他taskが所有すると書かれた共通surfaceの再実装
+- 上の配置方針から外れるsurfaceの新設
+
+UI verification (追加):
+- Run: <S1 command>
+- Run: <S2 command>
+- Run: <S3 command>
+- Run: <S4 command>
+- Run: <S5 command>
+- いずれかが0件でない場合は修正するか、停止して該当箇所と理由を報告する。
+
+UI final report (追加):
+- 使用したcomponentとtokenの一覧
+- S1〜S5の結果
+- UI componentsやtokensで表現できず独自実装した箇所と、その理由
+```
+
+`UI / UX contract: not_applicable`のplan、または`UI: -`のtaskではこのblockを付けない。付ける場合は`not_applicable`と1行書いて済ませず、blockごと省く。
 
 ## Codex subagentの補助workstream
 

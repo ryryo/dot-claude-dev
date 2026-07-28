@@ -19,6 +19,7 @@ main Codexが計画、設計判断、worker選定、進捗管理、統合、最�
 - worker prompt: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
 - Cursor CLI操作: [references/operations.md](references/operations.md)
 - 検収: [references/review-checklist.md](references/review-checklist.md)
+- UI契約（UI影響がある場合のみ）: [references/ui-contract.md](references/ui-contract.md)
 
 ## 所有と委任
 
@@ -35,21 +36,36 @@ subagentは実装taskのfallbackではない。Cursorが利用できない場合
 
 ## UI / UX契約
 
-UI変更を含むplanでは、次をtask contractへ簡潔に記録する。
+まずplanの`Planning policy`で`UI / UX contract`を`required`か`not_applicable`に判定する。UI変更が1つも無いplanは`not_applicable`とし、以下と[ui-contract.md](references/ui-contract.md)を適用しない。planのUI節も削除する。
 
-- 影響surfaceと利用者の目的、主要flow
-- 既存design system、component、interaction pattern
-- loading、empty、error、disabled、success、recoveryなど必要な状態とfeedback
-- keyboard、focus、pointer、semantics、accessibility
-- riskに応じたbehavior test、browser操作、visual確認
+`required`の場合、UI品質を任意の記述欄に置かない。**任意欄は実行圧力で落ちる。** 実際に、旧構成で作られた30 taskのplanでは`- UI / UX:`欄の残存が0/30だった一方、workerの起動に必須な欄（Write scope、Forbidden、Verificationなど）は30/30残った。したがってUI規約は次の3箇所だけへ載せる。
 
-product flow、複数surfaceのstate、重要なinteraction判断はmainが所有する。Cursorへ委任できるのは、既存patternとcontractが固定された局所UI実装だけである。subagentはUI調査、比較、audit、独立レビューに限る。参照UIがある場合はsourceと意図的な差分だけを記録し、viewport、theme、evidence形式はrepository固有の要件を優先する。
+1. **task graph上のgate task**（Status boardに出るため省略できない）
+2. **task contractの`Forbidden`**（worker promptへ必ず転記される）
+3. **task contractの`Worker verification` / `Main verification`**（実行可能なcommandとして残る）
+
+`Read scope`へdesign systemのpathを入れても義務にはならない。読んでよい、と読み替えられる。
+
+UI実装taskが1つでもあるplanは、次の3段をtask graphへ必ず入れる。詳細と各gateの中身は[ui-contract.md](references/ui-contract.md)に従う。
+
+```
+UI-F (UI Foundation Gate, main所有)
+  └─> 各UI実装task (surface)
+        └─> UI-I (UI Design Integration Gate, main所有)
+```
+
+- **UI-F**は全UI実装taskの前段。component mapping、token allowlist、共通surfaceのowner、label方針、i18n方針、layout/theme/density、そして**repository固有のstatic scan command**を具体値で確定し、planの`## UI foundation`節へ書き切る。これが未完了のUI実装taskを起動しない。
+- **各UI実装task**は、ui-contract.mdの固定blockを`Forbidden`と`Worker verification`へliteralで転記する。要約・言い換えをしない。
+- **UI-I**は全UI実装taskの後段。surfaceを個別に見るのではなく、**全surfaceを1つの比較表へ並置して差分を見る**。同一意味のaction・error・success・loading・empty・disabled・承認surface・密度・配置が一致するかを横断で確認する。目視の前にUI-Fが定めたstatic scanを変更範囲全体へ再実行する。
+- UI-Iは`deferred`にできない。`done`か`blocked`のみ。検出済みの違反を後追いtaskへ移してplanを`done`にしない。
+
+UI-FとUI-Iはmain所有で、Cursorにもsubagentにも委任しない。Cursorへ委任できるのはUI-Fが値を確定した後の局所surface実装だけである。subagentはUI調査、比較、audit、独立レビューのread-onlyに限る。参照UIがある場合、参照traceは`## Reference UI trace`へ分けて書き、`## UI foundation`のdesign system規約を置き換えない。viewport、theme、evidence形式はrepository固有の要件を優先する。
 
 ## 実行フロー
 
 ### 1. repositoryを調査する
 
-目的、対象外、現状、設計境界、shared contract、UI影響、検証方法を確認する。task graphを左右する未解決事項は、追加調査またはユーザー確認で解消する。
+目的、対象外、現状、設計境界、shared contract、UI影響、検証方法を確認する。task graphを左右する未解決事項は、追加調査またはユーザー確認で解消する。ここでUI影響の有無を判定し、`Planning policy`の`UI / UX contract`を確定する。
 
 ### 2. planを初期化する
 
@@ -71,6 +87,8 @@ SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
 
 planへ`policy_id`、work kind、difficulty、execution route、理由、owner、model/reasoning、read/write scope、acceptance、worker/main verificationを記録する。subagent taskには、並列化またはcontext隔離の具体的な利益と、mainが受け取る成果物を記録する。
 
+`UI / UX contract: required`の場合は、UI実装taskを1つでも置く前にUI-FとUI-Iをtask graphへ追加し、Status boardの`UI`列を全taskへ埋める（`foundation | surface | integration | -`）。UI実装taskの`Depends on`にUI-Fを、UI-Iの`Depends on`に全UI実装taskを入れる。
+
 ### 4. 実行前レビューを行う
 
 最初のworkerを起動する前に次を確認し、問題があればplanを修正する。
@@ -80,7 +98,14 @@ planへ`policy_id`、work kind、difficulty、execution route、理由、owner�
 - 高難度・共有境界・統合taskがworkerへ流れていないこと
 - Cursor taskが必要条件をすべて満たすこと
 - subagent taskが許可用途に該当し、source writeを持たないこと
-- UI taskにuser flow、主要state、interaction/accessibility、verificationがあること
+
+`UI / UX contract: required`のplanでは追加で次を確認する。
+
+- UI-FとUI-Iがtask graphに存在し、依存関係が正しく張られていること
+- UI-Fの成果物（component mapping、token allowlist、共通surface owner、label方針、i18n方針、layout/theme/density、static scan command）が抽象語でなく**具体値**でplanに書かれていること
+- 全UI実装taskの`Forbidden`と`Worker verification`に、ui-contract.mdの固定blockがliteralで入っていること
+- 共通surfaceを複数taskが独立に実装する構成になっていないこと
+- static scan commandが実際に走ること（1回はmainが手元で実行して確認する）
 
 ### 5. task単位で実行する
 
@@ -96,9 +121,14 @@ Codex subagentを起動する場合は、planに記録したmodelとreasoning ef
 
 required taskの完了または理由付きdeferred、integration batchのacceptance、最終検証がすべてそろったときだけ完了とする。残存課題はriskまたはdeferred taskとして記録する。
 
+`UI / UX contract: required`のplanでは、UI-Iの合格が完了の必要条件になる。UI-Iが不合格の項目を1つでも持つ間は、他taskが全て`done`でもplanを完了としない。UI-Iを`blocked`のまま残し、完了判定を出さない。**検出済みのUI違反を後追い修正taskへ移してplanを`done`にすることを禁止する。**
+
 ## 共通禁止事項
 
 - workerにplan更新、完了判定、commit、push、merge、PR、branch切替を任せない。
 - write scopeが重なるworkerを並列実行しない。
 - worker reportだけで採否を決めず、既存の未コミット変更を戻さない。
 - Cursor CLI preflightを通常taskにしない。CLI-level errorが起きた場合だけ実行する。
+- Codex subagentにsource writeを与えない。`Mode: edit`のsubagent taskを作らない。実装が必要ならmainかCursorへ回す。
+- UI-F未完了のままUI実装taskを起動しない。
+- UI-FとUI-IをCursorまたはsubagentへ委任しない。

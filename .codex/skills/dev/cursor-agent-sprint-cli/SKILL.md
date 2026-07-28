@@ -1,32 +1,32 @@
 ---
 name: cursor-agent-sprint-cli
 description: |
-  Cursor CLI headless worker を使い、ユーザーの実装指示を短いローカル実行計画に分解し、安全に分離できる小タスクだけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に並列委任する。`.codex/tmp/YYMMDD_slug/` 配下で状態を管理し、docs/PLAN を作らず main Codex が統合と検収を行う。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、Cursor を使って計画を実装
+  main Codex を既定の実行主体とし、ユーザーの実装指示から小さく局所的で write scope を明確に分離できる task だけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に委任する。`.codex/tmp/YYMMDD_slug/` 配下で短い実行状態を管理し、docs/PLAN は作らない。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、Cursor を使って計画を実装
 ---
 
 # Cursor Agent Sprint CLI（CLI 版軽量 Sprint）
 
-短時間で完了する worker sprint を Cursor CLI で実行する。sprint の状態は `.codex/tmp/{YYMMDD}_{slug}/` に閉じ込め、委任する作業は範囲を明確にし、統合・検証・最終判断は main Codex が行う。
+短時間で完了する worker sprint を Cursor CLI で実行する。sprint の状態は `.codex/tmp/{YYMMDD}_{slug}/` に閉じ込め、main Codex が作業を進めながら、安全に分離できる部分だけを Cursor CLI worker に渡す。
+
+## 委任判定
+
+Cursor へ委任するかは次の 1 条件だけで決める。
+
+> 小さく局所的で、write scope を他の作業から明確に分離できる task だけを Cursor へ委任する。
+
+これは、allowed path、禁止パス、focused verification を具体的に書け、同時に動く task と write scope が重ならない状態を指す。条件を満たさない task は、種類や難易度を追加判定せず main Codex がそのまま実行する。`contract`、`integration`、`validation`、`UI` などの作業名だけで担当を固定しない。
 
 ## 適用条件
 
-以下をすべて満たすときに使う。
-
-- ユーザーが永続的な計画書ではなく、今すぐ実装または調査を進めたい。
-- 作業を小さな task graph にできる。
-- 委任する edit task ごとに read scope、write scope、禁止パス、検証コマンドを書ける。
-- 並列化する task の write scope が重ならない。
-- Cursor CLI の `--yolo` 実行を、main Codex の diff 検収で吸収できる。
-- 現在の working tree の中で統合と検収まで完了できる。
-
-複数日にまたがる大きな計画、プロダクト判断が曖昧な作業、write scope が重なる作業には使わない。その場合は main Codex が直接扱うか、永続的な計画にするかをユーザーに確認する。
+ユーザーが永続的な計画書ではなく、今すぐ実装または調査を進めたい場合に使う。上の条件を満たす委任候補がなければ Cursor CLI を起動せず、main Codex が直接作業する。複数日にまたがる作業や再開可能な計画管理が必要な場合は、適切な永続計画を使う。
 
 複数の停止点を`docs/PLAN`のチェックリストで管理・再開したいが、詳細なtask graphまでは不要な場合は`simple-plan`を使う。shared contract、migration、複数worker/model、非自明な統合順の事前設計が必要な場合は`cursor-agent-delegate`を使う。
 
 ## 絶対ルール
 
 - worker に commit、push、PR 作成、branch 切替、progress file 更新、最終完了判断を任せない。
-- 2 つ以上の worker に同じファイル、同じ contract、同じ UI surface を並列編集させない。
+- 実行主体は常に main Codex から考え始め、委任条件を満たす task だけ `cursor-cli-agent` に切り替える。
+- 2 つ以上の worker の write scope を重ねない。
 - ユーザーが明示しない限り、既存の未コミット変更を戻さない。
 - Cursor CLI worker は `--yolo` で動く。final report は参考情報として扱い、diff と検証を main Codex が確認してから受け入れる。
 - Cursor CLI model は `composer-2.5-fast` 固定。
@@ -91,8 +91,7 @@ task contract はこの形を保つ。`Task ID:` は worker prompt と検証 scr
 
 ```text
 Task ID: T20a
-担当: cursor-cli-agent | main-codex | codex-subagent
-種別: contract | parallel | review | integration | validation | setup
+担当: main-codex | cursor-cli-agent
 状態:
 目的:
 依存:
@@ -107,13 +106,7 @@ worker 検証:
 main 検証:
 ```
 
-task を分類する。
-
-- `contract`: data source、auth、routing、schema、state、API boundary など下流を決める変更。main Codex 優先。
-- `parallel`: write scope が局所的で分離できる実装。Cursor CLI worker 候補。
-- `review`: read-only のリスク分析、設計比較、テスト戦略。Codex subagent 候補。
-- `integration`: worker 成果の統合、競合解消、共有面の調整。必ず main Codex。
-- `validation`: typecheck、test、build、browser check、dry-run。最終責任は main Codex。
+担当は最初に `main-codex` と置く。小さく局所的で write scope を明確に分離できる場合だけ `cursor-cli-agent` に変える。task の種類を担当判定に使わず、この skill から Codex subagent への別経路も作らない。
 
 ### 3. Worker Prompt（委任プロンプト）を作る
 
@@ -170,8 +163,6 @@ Final report:
 - 実行した検証と結果
 - main Codex に残した作業
 ```
-
-Codex subagent には同じ構造を使い、`Worker: codex-subagent` と書く。read-only か edit-allowed かを明示する。write scope が強く分離できない限り read-only を優先する。
 
 ### 4. Cursor CLI task を投入する
 
@@ -265,7 +256,7 @@ git diff -- <allowed paths>
 確認項目:
 
 - 変更ファイルが allowed write scope に収まっている。
-- 複数 worker が同じファイルや contract を触っていない。
+- 複数 worker の write scope が重なっていない。
 - 既存のユーザー変更または先行 agent 変更が戻されていない。
 - final report と実際の diff が一致している。
 - ユーザー視点で必要な振る舞いが完了している。

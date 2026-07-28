@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "policy_id": "cursor-agent-delegate-routing-2026-07-28",
+  "policy_id": "cursor-agent-delegate-routing-2026-07-28b",
   "policy_summary": "高難度と共有境界はmain Codex、contractを固定できる低〜中難度の局所実装はCursor、Codex subagentはread-onlyの補助workstreamに限定する",
   "resolution_order": [
     "main_ownership_boundary",
@@ -53,7 +53,9 @@
     "high_difficulty_implementation",
     "production_or_external_state_change",
     "final_acceptance_or_release_decision",
-    "multi_surface_ui_flow_or_product_interaction_decision"
+    "multi_surface_ui_flow_or_product_interaction_decision",
+    "ui_design_system_foundation",
+    "cross_surface_ui_design_integration"
   ],
   "implementation_difficulty": {
     "high": {
@@ -98,6 +100,10 @@
   "support_subagent_policy": {
     "is_general_implementation_route": false,
     "default_source_write_scope": "none",
+    "allowed_modes": [
+      "read-only"
+    ],
+    "edit_mode_allowed": false,
     "allowed_work_types": [
       "independent_codebase_exploration",
       "proposal_document_or_hypothesis_comparison",
@@ -128,17 +134,66 @@
     }
   },
   "ui_routing_guidance": {
+    "applies_when": "planのPlanning policyがUI / UX contract: required",
+    "contract_reference": "references/ui-contract.md",
+    "required_gate_tasks": {
+      "condition": "UI実装taskが1つ以上ある場合は省略できない",
+      "UI-F": {
+        "work_kind": "design",
+        "ui": "foundation",
+        "execution_route": "main",
+        "delegable": false,
+        "position": "全UI実装taskの前段",
+        "deliverables": [
+          "component mapping (import path付き)",
+          "token allowlist (許可と禁止)",
+          "共通surfaceのowner task",
+          "label policy",
+          "i18n policy",
+          "layout / theme / density",
+          "repository固有のstatic scan command S1-S5"
+        ]
+      },
+      "UI-I": {
+        "work_kind": "integration",
+        "ui": "integration",
+        "execution_route": "main",
+        "delegable": false,
+        "position": "全UI実装taskの後段",
+        "method": "surfaceを個別に確認せず、全surfaceを1つの比較表へ並置して差分を見る",
+        "allowed_status": [
+          "done",
+          "blocked"
+        ],
+        "forbidden_status": [
+          "deferred"
+        ]
+      }
+    },
     "main": [
       "product flow、情報設計、複数surfaceのstate、重要interactionを決める",
-      "canonical renderer、media timing、durable state、security approvalとUIが一体である"
+      "canonical renderer、media timing、durable state、security approvalとUIが一体である",
+      "UI-F / UI-Iのgate taskそのもの"
     ],
     "cursor": [
-      "既存design systemを使う単一componentまたは単一surfaceを実装する",
+      "UI-Fが値を確定した後の、既存design systemを使う単一componentまたは単一surfaceを実装する",
       "状態とeventが局所的で、固定済みcontrollerまたはcontractへ接続する"
     ],
     "support_subagent": [
       "reference UIや既存product patternを調査・比較する",
       "accessibility、visual consistency、interaction contractをread-onlyで監査する"
+    ],
+    "ui_surface_task_required_contract_fields": {
+      "note": "任意記述欄はplan実行中に脱落するため、UI規約は下の3欄へliteralで埋め込む",
+      "Forbidden": "ui-contract.mdの固定Forbidden blockを転記",
+      "Worker verification": "UI-F F7のS1-S5を自分のwrite scopeへ実行",
+      "Final report": "使用component / token一覧、S1-S5結果、逸脱と理由"
+    },
+    "prohibited": [
+      "UI-F未完了のUI実装taskを起動する",
+      "UI-FまたはUI-IをCursorやsubagentへ委任する",
+      "design system pathをRead scopeへ入れるだけで使用義務としたつもりになる",
+      "検出済みUI違反を後追いtaskへ移してplanをdoneにする"
     ]
   },
   "availability_policy": {

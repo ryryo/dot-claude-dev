@@ -36,11 +36,45 @@ git diff -- <allowed paths>
 
 ## UI / UX
 
-- surface、user flow、既存pattern、主要state、interaction/accessibility、verificationがtask contractと一致する。
+`Planning policy`が`UI / UX contract: required`のときだけ適用する。
+
+### 所有
+
+- UI-FとUI-Iがmain所有で、Cursorにもsubagentにも渡っていない。
+- Cursor taskは、UI-Fが値を確定した後の局所surface実装に限定されている。
+- subagent taskはread-onlyのUI調査、比較、audit、レビューに限定され、`Mode: edit`を持たない。
 - product flow、複数surface state、重要interaction判断はmainが所有している。
-- Cursor taskは固定済みcontractに従う局所UI実装に限定されている。
-- subagent taskはread-onlyのUI調査、比較、audit、レビューに限定されている。
 - product-level visual verificationをmainが確認し、behavior/data correctnessの検証と混同していない。
+
+### task受け入れ時（`UI: surface`のtask）
+
+**目視の前にscanを実行する。** UI-F F7で確定したS1〜S5をtaskのwrite scopeへmainが再実行し、worker reportの数値と一致することを確認する。
+
+| # | 不合格条件 |
+| --- | --- |
+| S1 | design system componentを1つもimportしていないUI fileが、記録済み例外以外に存在する |
+| S2 | F1に対応componentがある要素を素の`<button> <select> <input> <textarea>`で新規追加している |
+| S3 | F2のallowlist外の色指定（生palette色、hardcoded hex/rgb/oklch、禁止側legacy token）がある |
+| S4 | CSS frameworkが実際に出力しないutility classを書いている（classはあるがCSSが出ない＝無音で消える） |
+| S5 | i18n基盤があるのに表示文字列を直書きしている |
+
+加えて次を確認する。
+
+- 利用者向けlabelに内部ID、enum識別子、schema field名、例外message原文が出ていない。
+- F3で他taskが所有すると決めた共通surfaceを再実装していない。
+- F6の配置方針から外れるsurfaceを新設していない。
+- 範囲外の判断が必要になった箇所で、workerが黙って進めず停止して報告している。
+
+### UI-I受け入れ時
+
+- I1の横断比較表が**1つの表**として作られ、surfaceごとに節を分けていない。
+- 比較軸（primary / secondary / destructive action、error、success、loading、empty、disabled、承認surfaceの構造、密度、配置）がすべて`yes`である。
+- `no`の軸がある場合、`## UI foundation`の意図的な差分へ**事前に**記録されている。事後の追認は不合格。
+- S1〜S5をUI変更範囲**全体**へ再実行し、0件（または記録済み例外のみ）である。task単位で通っていても統合後に再実行する。
+- F6の同時表示の組み合わせを実際に発生させて確認している。
+- F6の全themeと全viewportでI1の各軸が成立している。
+- UI-Iのstatusが`done`か`blocked`であり、`deferred`になっていない。
+- 検出済みのUI違反を後追い修正taskへ移してplanを`done`にしていない。
 
 範囲外の変更はworker由来と断定できるものだけmainが修正する。ユーザーまたは別workerによる変更の可能性がある場合は戻さず、未検収として扱う。
 

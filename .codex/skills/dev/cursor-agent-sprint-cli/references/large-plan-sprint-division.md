@@ -2,7 +2,7 @@
 
 大きな実装計画や調査計画を Cursor CLI sprint の実行単位へ分割するための手順。
 
-この option は実装ではなく分割設計を行う。入力計画の形式は固定しない。main Codex が計画の source of truth を特定し、sprint boundary を決める。Cursor CLI worker に計画全体の進行判断、完了判定、計画ファイル更新、commit/push は任せない。
+この option は実装ではなく分割設計を行う。入力計画の形式は固定しない。main Codex が計画の source of truth を特定し、sprint boundary を決める。実行は main Codex を既定とし、小さく局所的で write scope を明確に分離できる task だけ Cursor CLI worker に委任する。Cursor CLI worker に計画全体の進行判断、完了判定、計画ファイル更新、commit/push は任せない。
 
 特定の計画フォーマットを前提にしない。構造化された計画、Markdown の実装メモ、issue、PR description、Linear ticket、設計ドキュメント、手元のチェックリスト、または会話内の指示だけで構成された大きな作業にも同じ考え方で分割する。
 
@@ -37,14 +37,14 @@
 
 最初は入力計画に書かれている自然な単位を候補にする。milestone、phase、section、step、チェックリスト項目、機能領域など、計画内で使われている区切りから始める。
 
-その後、次の観点で分割 / 結合 / main Codex 専有を判断する。
+その後、次の観点で sprint boundary を調整する。
 
 ### 分割する条件
 
 - 1 単位の中に複数の独立 write scope がある。
 - schema / contract / env / route / UI / tests など、失敗時の原因を分けたい領域が混在する。
 - 1 回の sprint で typecheck や test が長時間失敗したままになり、検収しづらい。
-- Worker に任せられる局所 task と、main Codex が持つべき contract task が混ざっている。
+- Cursor に分離できる局所 task と、それ以外の作業が混ざっている。
 - 外部 state を変える作業と、ローカルのコード編集が混ざっている。
 
 例:
@@ -73,14 +73,11 @@ Input units: env docs update + local setup script update
   結合しない: auth security contract と runtime repository migration
 ```
 
-### main Codex 専有にする条件
+### Cursor 委任を決める
 
-- cross-repo source of truth、auth security、cookie domain、DB schema ownership、API contract を決める。
-- source-of-truth 計画、進捗、チェックリスト、完了判定などを更新する。
-- production secret、OAuth callback、deploy、remote migration など外部 state を変える。
-- 複数 worker の成果を統合する。
-- write scope が広すぎて Cursor CLI worker の `--yolo` に渡すと rollback 判断が難しい。
-- ユーザー判断が必要な仕様を含む。
+task の種類や難易度ごとの routing table は作らない。小さく局所的で、write scope を他の作業から明確に分離できる task だけ Cursor 候補にする。それ以外は main Codex が実行する。
+
+たとえば contract、UI、test、validation という名前だけでは担当を決めない。同じ種類の作業でも、allowed path と focused verification を具体的に書け、他の作業と編集範囲が重ならない場合だけ Cursor に渡す。
 
 ## C. 実行ステージと barrier を決める
 
@@ -114,15 +111,15 @@ barrier がある場合、ユーザーに「今すぐ実行できる sprint grou
 ```text
 Sprint Plan for <source-of-truth>
 
-Stage 0 main-only: source-of-truth / external state / shared contract
-  reason: outside-local-state and source-of-truth decisions
+Stage 0 main: sprint boundary と依存関係を確認
+  reason: Cursor に渡す独立 task を抽出する
 
 Stage 1 sprint group: Phase A+B partial - shared config + foundation
   cursor-cli candidates:
     - T1 env parser behavior tests
     - T2 schema mapping tests
-  main-owned:
-    - cross-repo config contract
+  main:
+    - Cursor 委任条件を満たさない残りの作業
 
 Barrier A user action: configure external callback
   needed before:
@@ -134,8 +131,8 @@ Stage 2 sprint group: Phase C split - repositories
   cursor-cli candidates:
     - T3 list/detail behavior tests + implementation
     - T4 artifact visibility behavior tests + implementation
-  integration:
-    - main Codex resolves shared helper contract
+  main:
+    - Cursor task と write scope が重なる残りの作業
 ```
 
 Cursor CLI preflight は stage 0、分割表、task graph に事前配置しない。submit / monitor が CLI 疎通問題で失敗した場合だけ、復旧用の途中処理として差し込む。
@@ -144,7 +141,7 @@ Cursor CLI preflight は stage 0、分割表、task graph に事前配置しな�
 
 - 対象 source-of-truth 単位。milestone / phase / section / step / checklist item / issue section など。
 - まとめる理由、または分ける理由。
-- main-owned task。
+- main Codex が実行する残りの task。
 - Cursor CLI worker 候補。
 - 禁止する write scope。
 - sprint 完了時の最小検証。
@@ -172,7 +169,7 @@ sprint-cli に投げる前に確認する。
 - [ ] 各 Cursor CLI task の write scope が重ならない。
 - [ ] worker が触ってよいファイルを絶対パスで書ける。
 - [ ] source-of-truth 計画ファイル、commit、push、進捗更新を worker に任せていない。
-- [ ] main Codex 専有の contract task と worker task が分かれている。
+- [ ] Cursor CLI task は小さく局所的で、他の作業から write scope を明確に分離できる。
 - [ ] sprint 完了後に通す最小検証が決まっている。
 - [ ] ユーザー作業や外部 state が必要な barrier を越えて sprint を開始しようとしていない。
 - [ ] 次 sprint が必要な場合、その入力 contract が明確。
