@@ -4,7 +4,7 @@
 
 ## 共通
 
-- planの`policy_id`、work kind、difficulty、execution route、理由、owner、model/reasoningが`task-routing.json`と一致する。
+- planの`policy_id`、work kind、complexity、decision state、independence、side-effect scope、verification oracle、execution route、理由、owner、model/reasoningが`task-routing.json`と一致する。
 - worker reportと実際のdiff・command結果・task contractが一致する。
 - planning / progress、branch、remote、未許可のlockfileやgenerated fileを変更していない。
 - main Codexがacceptanceに必要な検証を再実行する。
@@ -18,11 +18,16 @@ git diff --stat
 git diff -- <allowed paths>
 ```
 
-- difficultyが`low`または`medium`で、`cursor_required_conditions`をすべて満たす。
-- 設計、shared contract、public schema、migration、中央storeを変更していない。
+- `cursor_required_conditions`をすべて満たし、complexityに応じたprompt量、timeout、検証強度が設定されている。
+- decision stateが`fixed`または決定規則付き`bounded`で、workerが新しいarchitecture、product、security、data ownership判断を追加していない。
+- independenceが`independent`またはGateで分解済み`staged`であり、mainや他workerとの反復調整を前提にしていない。
+- shared contract、public schema、migration方針、中央store、routing方針そのものを変更していない。
 - diffが分離済みwrite scope内に収まり、既存変更を消していない。
 - 既存pattern、参照実装、sampleのどれを使ったか確認できる。
-- focused verificationがacceptanceを直接確認している。
+- verification oracleが`strong`、または`partial`でもmainが残りを限定的に再確認でき、focused verificationがacceptanceを直接確認している。
+- side-effect scopeがローカルで棄却可能、またはexclusive ownershipとrollbackが明記された共有artifactに限定されている。
+- auth、secret、crypto、retry/lease、外部providerなどのrisk modifierがある場合、main固定のinvariant、negative case、redaction、timeout/corruption/cross-owner等の該当testを再実行している。
+- real secret、production account、課金API、不可逆migrationをworker verificationで使用していない。
 - 範囲外判断が必要になったtaskを無理に完了扱いしていない。
 
 ## Codex subagentの補助workstream
@@ -41,7 +46,7 @@ git diff -- <allowed paths>
 ### 所有
 
 - UI-FとUI-Iがmain所有で、Cursorにもsubagentにも渡っていない。
-- Cursor taskは、UI-Fが値を確定した後の局所surface実装に限定されている。
+- Cursor taskは、UI-Fが値を確定した後、product判断を増やさず、独立scopeとvisual/behavior oracleを持つsurface実装に限定されている。
 - subagent taskはread-onlyのUI調査、比較、audit、レビューに限定され、`Mode: edit`を持たない。
 - product flow、複数surface state、重要interaction判断はmainが所有している。
 - product-level visual verificationをmainが確認し、behavior/data correctnessの検証と混同していない。

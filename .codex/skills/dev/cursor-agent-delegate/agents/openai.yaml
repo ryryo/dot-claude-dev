@@ -1,4 +1,4 @@
 interface:
   display_name: "委任実行計画"
-  short_description: "main所有・Cursor実装・補助調査を分離した永続計画を作る"
-  default_prompt: "$cursor-agent-delegate を使ってrepositoryを調査し、高難度と統合はmain、固定済みの低〜中難度実装はCursor、独立調査はCodex subagentとする永続計画を作成・実行してください。"
+  short_description: "独立性・副作用・検証oracleで実行主体を決める永続計画"
+  default_prompt: "$cursor-agent-delegate を使って、判断の確定度・独立性・write scope・検証oracle・可逆性からmainとCursorの実行主体を定める永続計画を作成・実行してください。"

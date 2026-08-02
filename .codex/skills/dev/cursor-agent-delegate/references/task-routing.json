@@ -1,11 +1,31 @@
 {
-  "schema_version": 2,
-  "policy_id": "cursor-agent-delegate-routing-2026-07-28b",
-  "policy_summary": "高難度と共有境界はmain Codex、contractを固定できる低〜中難度の局所実装はCursor、Codex subagentはread-onlyの補助workstreamに限定する",
+  "schema_version": 3,
+  "policy_id": "cursor-agent-delegate-routing-2026-08-02b",
+  "policy_summary": "実行主体は判断の確定度、実装の独立性、write scope、検証oracle、副作用と可逆性で決める。fixedまたはboundedな判断、独立した実装、排他的write scope、再現可能なoracle、可逆な副作用を備えた実装はCursorが担当する",
+  "capability_basis": {
+    "model": "composer-2.5-fast",
+    "official_sources": [
+      "https://cursor.com/blog/composer-2-5",
+      "https://cursor.com/composer",
+      "https://cursor.com/blog/self-summarization",
+      "https://cursor.com/blog/agent-best-practices"
+    ],
+    "confirmed_claims": [
+      "long-horizon taskと複雑な指示追従を想定する",
+      "file edit、terminal、multi-file change、数百tool callを扱う",
+      "testをoracleにしたfeature deletionと再実装を訓練へ利用する",
+      "Fast variantは発表上Standardと同じintelligenceである"
+    ],
+    "interpretation": "Cursorの対象にはlong-horizon、multi-file、high complexityの実装を含める。固定contract、focused verification、main検収を必須controlとする"
+  },
   "resolution_order": [
-    "main_ownership_boundary",
-    "implementation_difficulty",
-    "cursor_eligibility",
+    "non_delegable_ownership_boundary",
+    "decision_state",
+    "implementation_independence",
+    "write_scope_isolation",
+    "verification_oracle",
+    "side_effect_scope_and_reversibility",
+    "complexity_sizing",
     "support_workstream_eligibility",
     "execution_surface_availability"
   ],
@@ -15,18 +35,19 @@
       "model": "inherited",
       "reasoning_effort": "inherited",
       "source_write_allowed": true,
-      "description": "高難度、設計、共有境界、統合、外部変更、最終判断を所有する"
+      "description": "未解決の設計・契約判断、結合した実装、外部または不可逆な変更、統合、最終判断を所有する"
     },
     "cursor": {
       "owner": "cursor-cli-agent",
       "model": "composer-2.5-fast",
       "reasoning_effort": "fixed",
       "source_write_allowed": true,
-      "allowed_difficulties": [
+      "allowed_complexities": [
         "low",
-        "medium"
+        "medium",
+        "high"
       ],
-      "description": "contractを固定でき、局所的に検証・棄却できる低〜中難度の実装を行う"
+      "description": "判断とoracleが固定され、独立完結し、write scopeを隔離でき、局所棄却できる実装を行う。対象complexityはlow、medium、highとする"
     },
     "support_subagent_high": {
       "owner": "codex-subagent",
@@ -45,57 +66,97 @@
       "description": "境界が明確な調査、比較、監査、分析、レビューを行い、mainへ根拠付き要約を返す"
     }
   },
-  "main_ownership_task_types": [
-    "architecture_or_product_decision",
-    "shared_contract_or_public_schema",
-    "cross_module_integration_or_migration",
-    "shared_state_or_canonical_store_change",
-    "high_difficulty_implementation",
-    "production_or_external_state_change",
-    "final_acceptance_or_release_decision",
-    "multi_surface_ui_flow_or_product_interaction_decision",
-    "ui_design_system_foundation",
-    "cross_surface_ui_design_integration"
+  "non_delegable_ownership_boundaries": [
+    "未解決のarchitecture、product behavior、data ownership、security policyを決定する",
+    "shared contract、public schema、migration方針、canonical store、routing方針そのものを決定または変更する",
+    "複数taskのwriteや判断を反復的に調停しながら統合する",
+    "production deploy、外部設定、課金、権限付与、実データmigrationなど外部または不可逆なstateを変更する",
+    "release、最終acceptance、rollback可否、plan完了を判断する",
+    "UI-F、UI-I、複数surfaceのproduct flowまたはdesign systemを決定する",
+    "高影響なのに再現可能なoracleを用意できず、worker差分を安全に棄却できない"
   ],
-  "implementation_difficulty": {
-    "high": {
-      "default_route": "main",
-      "description": "新規設計、複雑な正確性判断、重大な失敗影響、複数境界の調整が必要"
+  "delegation_axes": {
+    "decision_state": {
+      "fixed": "公開contract、期待動作、禁止境界、tie-break ruleが固定済み",
+      "bounded": "選択肢と採用条件が列挙され、workerが新しい方針を作らず決められる",
+      "unresolved": "実装中にarchitecture、product、security、data ownershipの判断が必要"
     },
-    "medium": {
-      "default_route": "cursor_if_eligible_otherwise_main",
-      "description": "既存contract、参照実装、sample、既存testを使い、bounded scopeで完遂できる"
+    "implementation_independence": {
+      "independent": "task-localなsourceと契約だけで完結し、他taskとの反復調整が不要",
+      "staged": "mainの前段Gateまたは後段integrationに挟めば独立実行できる",
+      "coupled": "同じsource、shared state、または未確定判断を他taskと反復共有する"
     },
-    "low": {
-      "default_route": "cursor_if_eligible_otherwise_main",
-      "description": "局所的、反復可能、既存pattern準拠で、安全に差分を棄却できる"
+    "write_scope_isolation": {
+      "isolated": "allowed pathが排他的で、並行taskと重ならない",
+      "serializable": "同じpathでもmainが先に固定し、その後workerが単独所有できる",
+      "overlapping": "並行中のmain、user、workerと同じ変更単位を触る"
+    },
+    "verification_oracle": {
+      "strong": "focused test、fixture、snapshot、typecheck、build、dry-runなどが期待動作を直接判定する",
+      "partial": "一部を機械判定でき、残りの限定的な判断をmainが再確認できる",
+      "weak": "主観評価、live環境、偶発的状態に依存し、合否を再現できない"
+    },
+    "side_effect_scope": {
+      "local_reversible": "未commitの局所diffとして棄却または補正できる",
+      "shared_reversible": "共有artifactへ触るがexclusive ownershipとrollbackが具体化される",
+      "external_or_irreversible": "production、外部service、実data、課金、権限などローカルdiffで戻せない"
     }
   },
-  "high_difficulty_signals": [
-    "新しい領域固有の意味づけ、algorithm、architectureを設計する",
-    "正確なtime、frame、sample、PCM、codec byte、暗号、数値安定性を扱う",
-    "複数tab/process、crash、retry、lease、fence、古い結果を扱う",
-    "auth、permission、secret、privacy、remote権限を扱う",
-    "browser runtime、Worklet、renderer、media decode、外部providerの実挙動が正確性を左右する",
-    "失敗がデータ損失、security問題、silent corruption、広範囲の回帰につながる",
-    "複数moduleの文脈と設計判断を反復的に統合する必要がある"
-  ],
+  "complexity": {
+    "usage": "prompt_timeout_and_verification_sizing",
+    "high": "長い探索、multi-file、複雑なprotocolやalgorithm、反復的なwrite-run-fixを要する。独立性とoracleが強ければCursor可。verificationとmain reviewを強化する",
+    "medium": "既存contract、参照実装、sample、testを使いbounded scopeで完遂できる",
+    "low": "局所的、反復可能、既存pattern準拠で短い検証により判定できる"
+  },
   "cursor_required_conditions": [
-    "difficultyがlowまたはmediumである",
-    "設計判断とcontractがmain Codexによって固定されている",
-    "write scopeを他taskから分離できる",
-    "shared contract、public schema、migration、中央store、routingを変更しない",
-    "既存pattern、参照実装、sampleのいずれかを直接利用できる",
-    "focused verificationと観測可能なacceptanceがある",
-    "失敗時にmain Codexが局所差分を安全に棄却または補正できる"
+    "non_delegable_ownership_boundariesに該当しない",
+    "decision_stateがfixed、またはboundedでdeterministicなtie-break ruleがある",
+    "implementation_independenceがindependent、またはmain Gateでstagedへ分解済みである",
+    "write_scope_isolationがisolated、または投入中にworkerが排他的に所有できるserializableである",
+    "verification_oracleがstrong、またはpartialでもmainが残りを限定的に再確認できる",
+    "side_effect_scopeがlocal_reversible、またはshared_reversibleでexclusive ownershipとrollbackが明記される",
+    "既存pattern、参照実装、sample、fixture、testのいずれかを直接利用できる",
+    "失敗時にmain Codexがtask-local diffを安全に棄却または補正できる"
   ],
+  "risk_modifiers": {
+    "signals": [
+      "auth、permission、secret、privacy、remote権限",
+      "暗号、time、frame、sample、PCM、codec byte、数値安定性",
+      "複数tab/process、crash、retry、lease、fence、古い結果",
+      "browser runtime、Worklet、renderer、media decode、外部provider実挙動",
+      "データ損失、security問題、silent corruption、広範囲回帰"
+    ],
+    "routing_rule": "mainがinvariant、negative case、禁止副作用を固定し、strong oracleと局所rollbackを用意する。required controlを満たす実装はCursor、満たせない実装はmainが所有する",
+    "required_controls": [
+      "mainがsecurity/correctness invariantと禁止境界を先に固定する",
+      "happy pathだけでなくnegative、cross-owner、corruption、timeout、retry、redactionの該当caseをtestへ入れる",
+      "real secret、production account、課金API、不可逆migrationをworker verificationで使わない",
+      "mainがdiffとrisk-specific verificationを再実行する"
+    ]
+  },
+  "task_partition_policy": {
+    "required_for_unresolved_or_coupled_task": true,
+    "rule": "未解決判断または結合実装を含むtaskを、mainが所有する判断/Gate/統合と、Cursorが所有する固定契約準拠の実装shardへ分割する",
+    "preferred_split": [
+      "main: contract、invariant、acceptance oracle、integration boundaryを固定",
+      "cursor: reference-driven implementation、feature deletion/reimplementation、adapter、codec、validator、test fixtureを独立scopeで実装",
+      "main: diff review、risk-specific verification、integration、final acceptance"
+    ],
+    "do_not_fragment_when": [
+      "分割により同じsourceの往復編集が増える",
+      "契約を固定すると本体実装までほぼ完了し委任利益がない",
+      "worker context再構築と検収costが直接実装costを上回る"
+    ]
+  },
   "cursor_task_type_examples": [
-    "reference_driven_implementation",
+    "reference_driven_reimplementation_even_if_multi_file",
+    "test_or_fixture_oracle_driven_feature_deletion",
     "bounded_feature_or_adapter_implementation",
+    "contract_preserving_refactor",
     "isolated_component_or_existing_pattern_ui",
-    "isolated_validator_or_serializer",
-    "focused_unit_test_or_fixture",
-    "mechanical_refactor_or_bounded_documentation"
+    "isolated_validator_serializer_or_protocol_codec",
+    "focused_unit_integration_test_or_fixture",
+    "mechanical_migration_code_generation_or_bounded_documentation_without_execution"
   ],
   "support_subagent_policy": {
     "is_general_implementation_route": false,
@@ -171,13 +232,13 @@
       }
     },
     "main": [
-      "product flow、情報設計、複数surfaceのstate、重要interactionを決める",
+      "product flow、情報設計、複数surface state、重要interactionを決める",
       "canonical renderer、media timing、durable state、security approvalとUIが一体である",
       "UI-F / UI-Iのgate taskそのもの"
     ],
     "cursor": [
-      "UI-Fが値を確定した後の、既存design systemを使う単一componentまたは単一surfaceを実装する",
-      "状態とeventが局所的で、固定済みcontrollerまたはcontractへ接続する"
+      "UI-Fが値を確定した後の、既存design systemを使う独立surface実装",
+      "固定済みcontroller/contractへ接続し、write scopeとvisual/behavior oracleを分離できるUI実装"
     ],
     "support_subagent": [
       "reference UIや既存product patternを調査・比較する",
@@ -205,6 +266,6 @@
   "maintenance": {
     "on_route_or_task_type_change": "policy_idを更新し、既存planは完了済み履歴を維持したままnot_started taskだけを再評価する",
     "on_wording_only_change": "policy_idは維持できる",
-    "plan_traceability": "planへpolicy_id、work kind、difficulty、execution route、理由、owner、model/reasoningを保存する"
+    "plan_traceability": "planへpolicy_id、work kind、complexity、decision state、independence、side-effect scope、oracle、execution route、理由、owner、model/reasoningを保存する"
   }
 }

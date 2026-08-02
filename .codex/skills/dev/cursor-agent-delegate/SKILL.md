@@ -1,7 +1,7 @@
 ---
 name: cursor-agent-delegate
 description: |
-  事前設計が必要な中〜大規模作業についてrepositoryを調査し、依存関係・設計境界・実装難度・実行主体・UI/UX契約・統合順・完了条件を持つsingle-md計画を `docs/PLAN/{YYMMDD}_{slug}.md` に作成して実行する。高難度・共有境界・統合はmain Codexが所有し、contractを固定できる低〜中難度の局所実装だけをheadless Cursor CLIへ委任する。Codex subagentは独立した調査・比較・監査・障害分析・レビューに限定する。Trigger: cursor-agent-delegate、Cursorで計画、worker委任計画、依存関係やUI受け入れを設計して実装
+  事前設計が必要な中〜大規模作業についてrepositoryを調査し、依存関係・設計境界・複雑さ・判断の確定度・実装の独立性・副作用・検証oracle・実行主体・UI/UX契約・統合順・完了条件を持つsingle-md計画を `docs/PLAN/{YYMMDD}_{slug}.md` に作成して実行する。fixedまたはboundedな判断、独立した実装、排他的write scope、再現可能なoracle、可逆な副作用を備えた実装をheadless Cursor CLIへ委任する。Codex subagentは独立した調査・比較・監査・障害分析・レビューに限定する。Trigger: cursor-agent-delegate、Cursorで計画、worker委任計画、依存関係やUI受け入れを設計して実装
 ---
 
 # cursor-agent-delegate
@@ -15,24 +15,40 @@ main Codexが計画、設計判断、worker選定、進捗管理、統合、最�
 ## 参照先
 
 - 計画template: [templates/plan.md](templates/plan.md)
-- 実行主体・難度・modelのsource of truth: [references/task-routing.json](references/task-routing.json)
+- 実行主体・独立性・副作用・検証oracle・modelのsource of truth: [references/task-routing.json](references/task-routing.json)
 - worker prompt: [references/delegation-prompt-template.md](references/delegation-prompt-template.md)
 - Cursor CLI操作: [references/operations.md](references/operations.md)
 - 検収: [references/review-checklist.md](references/review-checklist.md)
 - UI契約（UI影響がある場合のみ）: [references/ui-contract.md](references/ui-contract.md)
 
+## Cursor能力の前提
+
+Composer 2.5の適用範囲には、long-horizon task、multi-file change、数百tool call、testをoracleにしたfeature deletion/reimplementationを含める。Fast variantは発表上Standardと同じintelligenceとして扱う。[Composer 2.5](https://cursor.com/blog/composer-2-5)と[Composer model page](https://cursor.com/composer)を根拠とする。
+
+Cursor実装には、固定contract、negative test、scope制限、mainによるdiff検収を必須とする。公称benchmarkの未達成caseと公式記事が報告するtraining時のreward hackingを、この検収要件へ反映する。
+
 ## 所有と委任
 
-難度と実行主体を別々に判定する。Codex subagentを高・中難度実装の一般的な委任先にしない。
+実行主体は判断の確定度、実装の独立性、write scope、検証oracle、副作用と可逆性から決める。complexityは工数、prompt量、timeout、検証強度へ反映する。Codex subagentは補助workstreamに限定する。
 
 1. **main Codex所有**
-   高難度実装、設計判断、shared contract、public schema、migration、複数moduleの統合、共有state、外部変更、最終検収を扱う。
+   未解決のarchitecture/product/security判断、shared contractやstate ownershipの決定、反復調整が必要な結合実装、外部・不可逆state変更、統合、最終検収を扱う。
 2. **Cursor実装**
-   低〜中難度で、設計とcontractが固定され、write scopeを分離でき、既存patternや参照実装に従い、局所的に検証・棄却できる実装だけを扱う。条件を満たさないtaskはmainへ戻す。
+   contractと判断がfixedまたは決定規則付きでbounded、実装がindependentまたはstaged、write scopeがisolatedまたはserializable、検証oracleがstrongまたは限定可能なpartial、副作用が可逆な実装を扱う。complexityは`low`、`medium`、`high`を対象とする。
 3. **Codex subagentによる補助workstream**
    独立したコード調査、複数案・仮説の比較、read-only audit、test/log/障害原因分析、独立レビューだけを扱う。sourceを編集させず、mainが結果を要約・採否判断する。小さな調査や、前後の判断と密結合な分析はmainが直接行う。
 
 subagentは実装taskのfallbackではない。Cursorが利用できない場合も、実装をsubagentへ自動的に振り替えない。
+
+auth、secret、crypto、crash/retry/lease、外部providerなどのrisk modifierには、mainが固定するinvariant、negative case、禁止副作用、real secretやproduction stateを使わないoracle、局所rollbackを必須controlとして設定する。controlを満たす実装はCursor、満たせない実装はmainが所有する。
+
+未解決判断または結合実装を含むtaskは、次の所有境界へ分割する。
+
+1. mainがcontract、invariant、acceptance oracle、integration boundaryを固定する。
+2. Cursorが参照実装の適応、feature deletion/reimplementation、adapter、codec、validator、fixtureを分離scopeで実装する。
+3. mainがrisk-specific verification、統合、最終acceptanceを行う。
+
+分割で同じsourceの往復編集が増える、契約固定だけで実装がほぼ終わる、context再構築と検収costが利益を上回る場合は分割しない。
 
 ## UI / UX契約
 
@@ -59,7 +75,7 @@ UI-F (UI Foundation Gate, main所有)
 - **UI-I**は全UI実装taskの後段。surfaceを個別に見るのではなく、**全surfaceを1つの比較表へ並置して差分を見る**。同一意味のaction・error・success・loading・empty・disabled・承認surface・密度・配置が一致するかを横断で確認する。目視の前にUI-Fが定めたstatic scanを変更範囲全体へ再実行する。
 - UI-Iは`deferred`にできない。`done`か`blocked`のみ。検出済みの違反を後追いtaskへ移してplanを`done`にしない。
 
-UI-FとUI-Iはmain所有で、Cursorにもsubagentにも委任しない。Cursorへ委任できるのはUI-Fが値を確定した後の局所surface実装だけである。subagentはUI調査、比較、audit、独立レビューのread-onlyに限る。参照UIがある場合、参照traceは`## Reference UI trace`へ分けて書き、`## UI foundation`のdesign system規約を置き換えない。viewport、theme、evidence形式はrepository固有の要件を優先する。
+UI-FとUI-Iはmain所有で、Cursorにもsubagentにも委任しない。Cursorへ委任できるのはUI-Fが値を確定した後、product判断を増やさず独立したwrite scopeとvisual/behavior oracleを持つsurface実装である。subagentはUI調査、比較、audit、独立レビューのread-onlyに限る。参照UIがある場合、参照traceは`## Reference UI trace`へ分けて書き、`## UI foundation`のdesign system規約を置き換えない。viewport、theme、evidence形式はrepository固有の要件を優先する。
 
 ## 実行フロー
 
@@ -79,13 +95,17 @@ SKILL_DIR="$WORKSPACE/.codex/skills/dev/cursor-agent-delegate"
 
 [task-routing.json](references/task-routing.json)を読み、次の順で各taskを解決する。
 
-1. main ownership boundary
-2. implementation difficulty
-3. Cursor eligibility
-4. 必要な場合だけsupport workstream eligibility
-5. execution surface availability
+1. non-delegable ownership boundary
+2. decision state
+3. implementation independence
+4. write scope isolation
+5. verification oracle
+6. side-effect scopeとreversibility
+7. complexityに応じたprompt量、timeout、検証強度
+8. 必要な場合だけsupport workstream eligibility
+9. execution surface availability
 
-planへ`policy_id`、work kind、difficulty、execution route、理由、owner、model/reasoning、read/write scope、acceptance、worker/main verificationを記録する。subagent taskには、並列化またはcontext隔離の具体的な利益と、mainが受け取る成果物を記録する。
+planへ`policy_id`、work kind、complexity、decision state、independence、side-effect scope、verification oracle、execution route、理由、owner、model/reasoning、read/write scope、acceptance、worker/main verificationを記録する。subagent taskには、並列化またはcontext隔離の具体的な利益と、mainが受け取る成果物を記録する。
 
 `UI / UX contract: required`の場合は、UI実装taskを1つでも置く前にUI-FとUI-Iをtask graphへ追加し、Status boardの`UI`列を全taskへ埋める（`foundation | surface | integration | -`）。UI実装taskの`Depends on`にUI-Fを、UI-Iの`Depends on`に全UI実装taskを入れる。
 
@@ -95,7 +115,8 @@ planへ`policy_id`、work kind、difficulty、execution route、理由、owner�
 
 - 依存関係の循環、未確定contract、write scopeの重複
 - 検証不能なacceptance、未設定のowner/model
-- 高難度・共有境界・統合taskがworkerへ流れていないこと
+- execution routeが判断状態、独立性、write scope、oracle、副作用と可逆性から決まり、complexityが実行量と検証強度へ反映されていること
+- 未解決判断、結合write、弱いoracle、外部・不可逆副作用、最終統合がworkerへ流れていないこと
 - Cursor taskが必要条件をすべて満たすこと
 - subagent taskが許可用途に該当し、source writeを持たないこと
 

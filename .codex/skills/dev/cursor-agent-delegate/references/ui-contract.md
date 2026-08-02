@@ -26,7 +26,7 @@ UI実装taskが1つだけでも省略しない。1 surfaceでも既存design sys
 
 ## UI-F: UI Foundation Gate
 
-- Work kind: `design` / Difficulty: `high` / Execution route: `main` / Owner: `main-codex`
+- Work kind: `design` / Complexity: `high` / Decision state: `unresolved` / Independence: `coupled` / Execution route: `main` / Owner: `main-codex`
 - 全UI実装taskの`Depends on`に入る
 - 成果物はplanの`## UI foundation`節へ**具体値で**書き切る。抽象語で埋めない
 
@@ -142,7 +142,7 @@ UI実装task（`Work kind: implementation`かつ`UI: surface`）のcontractへ�
 
 ## UI-I: UI Design Integration Gate
 
-- Work kind: `integration` / Difficulty: `high` / Execution route: `main` / Owner: `main-codex`
+- Work kind: `integration` / Complexity: `high` / Decision state: `fixed` / Independence: `coupled` / Execution route: `main` / Owner: `main-codex`
 - 全UI実装taskの後段
 - **surfaceを個別に確認するgateではない。surfaceを並置して差分を見るgateである**
 
@@ -190,6 +190,6 @@ F7のS1〜S5をUI変更範囲**全体**へ実行し、0件（または記録済�
 ## 委任の制約
 
 - UI-FとUI-Iはmain所有。Cursorにもsubagentにも委任しない
-- Cursorへ委任できるのは、UI-Fが値を確定した後のsurface実装だけ。UI-F未完了のUI taskを起動しない
+- Cursorへ委任できるのは、UI-Fが値を確定した後、product判断を増やさず、独立したwrite scopeとvisual/behavior oracleを持つsurface実装だけ。UI-F未完了のUI taskを起動しない
 - subagentはUI調査・比較・auditのread-onlyに限る。UI実装を持たせない
 - 複数UI surfaceのflowや情報設計の判断が必要になったtaskは、workerが判断せず停止してmainへ返す

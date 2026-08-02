@@ -1,24 +1,41 @@
 ---
 name: cursor-agent-sprint-cli
 description: |
-  main Codex を既定の実行主体とし、ユーザーの実装指示から小さく局所的で write scope を明確に分離できる task だけを `cursor agent --print --yolo --trust --model composer-2.5-fast` に委任する。`.codex/tmp/YYMMDD_slug/` 配下で短い実行状態を管理し、docs/PLAN は作らない。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、Cursor を使って計画を実装
+  main Codex を既定の実行主体とし、fixedまたはboundedな判断、independentまたはstagedな実装、排他的write scope、再現可能なoracle、可逆な副作用を備えたtaskを `cursor agent --print --yolo --trust --model composer-2.5-fast` に委任する。`.codex/tmp/YYMMDD_slug/` 配下で短い実行状態を管理し、docs/PLAN は作らない。Trigger: cursor-agent-sprint-cli、Cursor CLI sprint、headless Cursor Agent 並列実装、CLI worker sprint、Cursor を使って計画を実装
 ---
 
 # Cursor Agent Sprint CLI（CLI 版軽量 Sprint）
 
-短時間で完了する worker sprint を Cursor CLI で実行する。sprint の状態は `.codex/tmp/{YYMMDD}_{slug}/` に閉じ込め、main Codex が作業を進めながら、安全に分離できる部分だけを Cursor CLI worker に渡す。
+boundedな worker sprint を Cursor CLI で実行する。sprint の状態は `.codex/tmp/{YYMMDD}_{slug}/` に閉じ込め、main Codex が作業を進めながら、独立して検証・棄却できる部分を Cursor CLI worker に渡す。
+
+## Cursor能力の前提
+
+Composer 2.5の適用範囲には、long-horizon task、multi-file change、数百tool call、testをoracleにしたfeature deletion/reimplementationを含める。Fast variantは発表上Standardと同じintelligenceとして扱う。[Composer 2.5](https://cursor.com/blog/composer-2-5)と[Composer model page](https://cursor.com/composer)を根拠とする。
+
+Cursor実装には、固定contract、negative test、scope制限、mainによるdiff検収を必須とする。公称benchmarkの未達成caseと公式記事が報告するreward hackingを、この検収要件へ反映する。
 
 ## 委任判定
 
-Cursor へ委任するかは次の 1 条件だけで決める。
+実行主体を次の全条件で決める。
 
-> 小さく局所的で、write scope を他の作業から明確に分離できる task だけを Cursor へ委任する。
+1. **判断の確定度**: expected behavior、contract、invariant、禁止境界が固定済み、または選択肢とtie-break ruleがboundedである。
+2. **実装の独立性**: task-localなsourceとpromptだけで完結し、mainや他workerとの反復判断を要しない。前後にmain Gateを置けば独立するtaskも含む。
+3. **write scopeの隔離**: allowed pathを排他的に書け、投入中のmain、user、他workerと同じ変更単位を触らない。
+4. **検証oracle**: focused test、fixture、typecheck、build、snapshot、dry-runなどで期待動作を再現可能に判定できる。partialならmainが確認する残りを限定できる。
+5. **副作用と可逆性**: 未commitの局所diffとして棄却・補正できる。共有artifactならexclusive ownershipとrollbackを明記できる。
+6. **参照可能性**: 既存pattern、参照実装、sample、fixture、testのいずれかを直接使える。
 
-これは、allowed path、禁止パス、focused verification を具体的に書け、同時に動く task と write scope が重ならない状態を指す。条件を満たさない task は、種類や難易度を追加判定せず main Codex がそのまま実行する。`contract`、`integration`、`validation`、`UI` などの作業名だけで担当を固定しない。
+complexityは`low`、`medium`、`high`を許容し、prompt量、timeout、verification強度へ反映する。execution routeは上の6条件から決める。
+
+未解決のarchitecture/product/security/data ownership判断、他taskと結合したwrite、弱く再現不能なoracle、production・外部設定・実data・課金・権限などローカルdiffで戻せない変更、最終acceptanceはmain Codexが扱う。
+
+auth、secret、crypto、crash/retry/lease、外部providerなどのrisk modifierには、mainが固定するinvariant、negative case、禁止副作用、real secretやproduction stateを使わないoracle、局所rollbackを必須controlとして設定する。controlを満たす実装はCursor、満たせない実装はmainが所有する。
+
+未解決判断または結合実装を含むtaskは、`main: contract/invariant/oracle固定 → Cursor: 参照駆動の実装shard → main: risk検証/統合`へ分割する。分割で同じsourceの往復編集が増える、またはcontext再構築と検収costが実装costを上回る場合はmainが一貫して所有する。
 
 ## 適用条件
 
-ユーザーが永続的な計画書ではなく、今すぐ実装または調査を進めたい場合に使う。上の条件を満たす委任候補がなければ Cursor CLI を起動せず、main Codex が直接作業する。複数日にまたがる作業や再開可能な計画管理が必要な場合は、適切な永続計画を使う。
+ユーザーが永続的な計画書ではなく、今すぐ実装または調査を進めたい場合に使う。上の条件を満たす独立taskがなければ Cursor CLI を起動せず、main Codex が直接作業する。複数日にまたがる作業や再開可能な計画管理が必要な場合は、適切な永続計画を使う。
 
 複数の停止点を`docs/PLAN`のチェックリストで管理・再開したいが、詳細なtask graphまでは不要な場合は`simple-plan`を使う。shared contract、migration、複数worker/model、非自明な統合順の事前設計が必要な場合は`cursor-agent-delegate`を使う。
 
@@ -95,6 +112,11 @@ Task ID: T20a
 状態:
 目的:
 依存:
+複雑さ: low | medium | high
+判断状態: fixed | bounded | unresolved
+独立性: independent | staged | coupled
+副作用: local_reversible | shared_reversible | external_or_irreversible
+検証 oracle: strong | partial | weak
 並列グループ:
 統合バッチ:
 読み取り範囲:
@@ -106,7 +128,7 @@ worker 検証:
 main 検証:
 ```
 
-担当は最初に `main-codex` と置く。小さく局所的で write scope を明確に分離できる場合だけ `cursor-cli-agent` に変える。task の種類を担当判定に使わず、この skill から Codex subagent への別経路も作らない。
+担当は最初に `main-codex` と置く。委任判定の6条件を満たすtaskを `cursor-cli-agent` に変える。complexityは実行量と検証強度に使い、このskillではCodex subagent経路を作らない。
 
 ### 3. Worker Prompt（委任プロンプト）を作る
 
@@ -128,6 +150,21 @@ Workspace:
 
 Task ID:
 T20a
+
+Complexity:
+low | medium | high
+
+Decision state:
+fixed | bounded
+
+Independence:
+independent | staged
+
+Side-effect scope:
+local_reversible | shared_reversible
+
+Verification oracle:
+strong | partial + mainが確認する限定項目
 
 Goal:
 具体的な task を 1 つだけ書く。
@@ -151,6 +188,8 @@ Constraints:
 - 関係ない既存変更を戻さない。
 - 他の worker またはユーザーが無関係なファイルを変更中かもしれない前提で作業する。
 - repository instructions、TDD、YAGNI、振る舞いベースのテストを守る。
+- 未解決のarchitecture、product、security、data ownership判断が必要になったら、推測せず停止して論点を報告する。
+- production、外部設定、実data、課金、権限などローカルdiffで戻せないstateを変更しない。
 
 Verification:
 - Run: npm test -- <specific test>
@@ -166,7 +205,7 @@ Final report:
 
 ### 4. Cursor CLI task を投入する
 
-依存関係が解決済みで、write scope が重ならない task だけを submit する。同一 `parallel_group` に複数の ready task がある場合は、1 件ずつ monitor で完了待ちせず、すべて連続 submit してから `--monitor-all` する。
+依存関係が解決済みで、委任判定の6条件を満たし、write scopeが重ならないtaskだけをsubmitする。同一 `parallel_group` に複数のready taskがある場合は、1件ずつmonitorで完了待ちせず、すべて連続submitしてから`--monitor-all`する。
 
 Cursor CLI は、この skill を使う環境では既に利用可能な前提で扱う。通常の sprint plan、task graph、投入前 checklist に preflight task を入れない。
 
@@ -261,6 +300,8 @@ git diff -- <allowed paths>
 - final report と実際の diff が一致している。
 - ユーザー視点で必要な振る舞いが完了している。
 - worker verification が成功している。失敗または未実行なら、理由が具体的で受け入れ可能である。
+- workerが未解決判断を追加しておらず、記録したdecision state、independence、side-effect scope、oracleと実diffが一致する。
+- risk modifierがある場合、main固定のinvariantとnegative caseをmainが再実行している。
 
 範囲外変更が見えた場合は、diff を見てから判断する。worker 由来で安全に直せると明確な場合だけ main Codex が修正してよい。ユーザーの変更かもしれない場合は触る前に確認する。
 

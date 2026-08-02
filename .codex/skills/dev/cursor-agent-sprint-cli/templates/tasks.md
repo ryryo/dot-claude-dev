@@ -2,15 +2,15 @@
 
 ## 委任ルール
 
-すべての task は `main-codex` を既定とする。小さく局所的で、write scope を他の作業から明確に分離できる task だけ `cursor-cli-agent` にする。
+すべてのtaskは`main-codex`を既定とする。decisionがfixed/bounded、independenceがindependent/staged、write scopeがisolated、oracleがstrong/限定可能なpartial、side effectがlocal/shared reversibleで、参照sourceを持つtaskを`cursor-cli-agent`にする。complexityはprompt量、timeout、検証強度へ反映する。
 
 ## 状態一覧
 
-| Task | 状態 | 担当 | 依存 | 並列グループ | 受け入れバッチ | メモ |
-| --- | --- | --- | --- | --- | --- | --- |
-| T10 | not_started | main-codex | [] | main | B1 | 分離できない作業があれば main が実行。なければ削除 |
-| T20a | not_started | cursor-cli-agent | [] | P1 | B2 | 小さく局所的で独立した write scope A |
-| T20b | not_started | cursor-cli-agent | [] | P1 | B2 | 小さく局所的で独立した write scope B |
+| Task | 状態 | 担当 | Complexity | Decision | Independence | Side effect | Oracle | 依存 | 並列 | Batch | メモ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T10 | not_started | main-codex | high | unresolved | coupled | local_reversible | partial | [] | main | B1 | 判断・Gate・統合。なければ削除 |
+| T20a | not_started | cursor-cli-agent | high | fixed | independent | local_reversible | strong | [] | P1 | B2 | 参照駆動の独立write scope A |
+| T20b | not_started | cursor-cli-agent | medium | bounded | staged | local_reversible | strong | [T10] | P1 | B2 | Gate後に独立するwrite scope B |
 
 状態値: `not_started`, `ready`, `running`, `needs_review`, `accepted`, `blocked`, `done`, `failed`, `deferred`
 
@@ -24,8 +24,7 @@ flowchart TD
   T20a["T20a Cursor: isolated scope A"]
   T20b["T20b Cursor: isolated scope B"]
 
-  T10 -. "必要な場合だけ依存" .-> T20a
-  T10 -. "必要な場合だけ依存" .-> T20b
+  T10 --> T20b
 ```
 
 ## ファイル依存グラフ
@@ -90,6 +89,11 @@ Cursor CLI 投入ルール:
 owner: main-codex
 status: not_started
 depends_on: []
+complexity: high
+decision_state: unresolved
+independence: coupled
+side_effect_scope: local_reversible
+verification_oracle: partial
 parallel_group: main
 acceptance_batch: B1
 
@@ -119,16 +123,26 @@ verification:
 owner: cursor-cli-agent
 status: not_started
 depends_on: []
+complexity: high
+decision_state: fixed
+independence: independent
+side_effect_scope: local_reversible
+verification_oracle: strong
 parallel_group: P1
 acceptance_batch: B2
 
 purpose:
 
-- <worker に渡す小さく局所的な目的を 1 つだけ書く>
+- <workerが新しい判断を足さず、独立完結できる成果を1つ書く>
 
 read_scope:
 
 - `<absolute path>`
+
+fixed_contract_or_reference:
+
+- `<mainが固定したinvariant / negative case / tie-break rule>`
+- `<existing pattern / reference implementation / fixture / test>`
 
 write_scope:
 
@@ -140,6 +154,11 @@ forbidden_paths:
 - `.codex/skills/**`
 - allowed write scope 外のファイル
 - stage / commit / push / PR / branch 操作
+
+constraints:
+
+- 未解決のarchitecture、product、security、data ownership判断が必要になったら停止して報告する。
+- production、外部設定、実data、課金、権限などローカルdiffで戻せないstateを変更しない。
 
 acceptance:
 
@@ -165,17 +184,27 @@ final_report:
 
 owner: cursor-cli-agent
 status: not_started
-depends_on: []
+depends_on: [T10]
+complexity: medium
+decision_state: bounded
+independence: staged
+side_effect_scope: local_reversible
+verification_oracle: strong
 parallel_group: P1
 acceptance_batch: B2
 
 purpose:
 
-- <worker に渡す小さく局所的な目的を 1 つだけ書く>
+- <workerが新しい判断を足さず、独立完結できる成果を1つ書く>
 
 read_scope:
 
 - `<absolute path>`
+
+fixed_contract_or_reference:
+
+- `<mainが固定したinvariant / negative case / tie-break rule>`
+- `<existing pattern / reference implementation / fixture / test>`
 
 write_scope:
 
@@ -187,6 +216,11 @@ forbidden_paths:
 - `.codex/skills/**`
 - allowed write scope 外のファイル
 - stage / commit / push / PR / branch 操作
+
+constraints:
+
+- 未解決のarchitecture、product、security、data ownership判断が必要になったら停止して報告する。
+- production、外部設定、実data、課金、権限などローカルdiffで戻せないstateを変更しない。
 
 acceptance:
 

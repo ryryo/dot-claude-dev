@@ -32,7 +32,9 @@
 - Worker 種別: `cursor-cli-agent`
 - Cursor CLI model: `composer-2.5-fast` 固定
 - Cursor CLI command: `cursor agent --print --yolo --trust --workspace "$WORKSPACE" --model composer-2.5-fast --output-format json`
-- main Codex を既定とし、小さく局所的で write scope を明確に分離できる task だけ Cursor CLI worker に委任する。
+- main Codexを既定とし、decisionがfixed/bounded、independenceがindependent/staged、write scopeがisolated、oracleがstrong/限定可能なpartial、side effectがlocal/shared reversibleなtaskをCursor CLI workerへ委任する。
+- complexityはprompt量、timeout、検証強度へ反映する。未解決判断または結合実装は、mainのGateと参照駆動の実装shardへ分割する。
+- risk modifierがあるtaskは、mainがinvariantとnegative caseを固定し、real secret/production stateを使わない検証とmain再検証を定める。
 - Cursor CLI preflight は task graph / 投入前 checklist に入れない。submit / monitor が CLI 疎通問題で失敗した場合だけ例外処理として実行する。
 
 ## 最小検証

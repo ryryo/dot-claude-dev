@@ -15,9 +15,13 @@ Model: composer-2.5-fast
 Reasoning effort: fixed
 Routing policy: <policy_id>
 Work kind: implementation
-Difficulty: <low | medium>
+Complexity: <low | medium | high> (prompt量、timeout、検証強度に使用)
+Decision state: <fixed | bounded>
+Independence: <independent | staged>
+Side-effect scope: <local_reversible | shared_reversible>
+Verification oracle: <strong | partial + mainが確認する限定項目>
 Execution route: cursor
-Route reason: <満たしたcursor_required_conditions>
+Route reason: <満たしたcursor_required_conditionsと実行主体の判定根拠>
 Workspace: <absolute path>
 Task ID: <unique id>
 
@@ -33,10 +37,13 @@ Write scope:
 
 Fixed contract / reference:
 - <main Codexが固定した決定、既存pattern、sample>
+- <変更してはならないinvariant、negative case、tie-break rule>
 
 Constraints:
 - 既存の未コミット変更や担当外の変更を戻さない。
 - 設計やshared contractを変更せず、必要になった場合は停止して報告する。
+- 実装中に未解決のarchitecture、product、security、data ownership判断が必要になったら、推測せず停止して論点を報告する。
+- production、外部設定、実data、課金、権限などローカルdiffで戻せないstateを変更しない。
 - <task固有の制約>
 
 Verification:
@@ -104,7 +111,7 @@ Model: <gpt-5.6-sol | gpt-5.5>
 Reasoning effort: high
 Routing policy: <policy_id>
 Work kind: support
-Difficulty: <high | medium>
+Complexity: <high | medium>
 Execution route: <support_subagent_high | support_subagent_medium>
 Route reason: <allowed work type and concrete parallel/context-isolation benefit>
 Workspace: <absolute path>

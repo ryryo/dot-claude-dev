@@ -115,13 +115,13 @@ UI-I時点で未記録の差分は不合格として扱う。事後の追認を�
 
 ## Status board
 
-| Task | Status | Work kind | UI | Difficulty | Execution route | Owner | Model / reasoning | Depends on | Integration batch | Summary |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| UI-F | not_started | design | foundation | high | main | main-codex | inherited | [] | B1 | UI foundation gate |
-| T10 | not_started | design | - | high | main | main-codex | inherited | [] | B1 | <contract or architecture> |
-| T20 | not_started | implementation | surface | medium | cursor | cursor-cli-agent | composer-2.5-fast / fixed | [T10, UI-F] | B2 | <bounded implementation> |
-| UI-I | not_started | integration | integration | high | main | main-codex | inherited | [T20] | B9 | UI design integration gate |
-| T90 | not_started | integration | - | high | main | main-codex | inherited | [T20, UI-I] | B9 | final integration and validation |
+| Task | Status | Work kind | UI | Complexity | Decision | Independence | Side effect | Oracle | Execution route | Owner | Model / reasoning | Depends on | Batch | Summary |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| UI-F | not_started | design | foundation | high | unresolved | coupled | local_reversible | strong | main | main-codex | inherited | [] | B1 | UI foundation gate |
+| T10 | not_started | design | - | high | unresolved | coupled | local_reversible | partial | main | main-codex | inherited | [] | B1 | <contract or architecture> |
+| T20 | not_started | implementation | surface | high | fixed | independent | local_reversible | strong | cursor | cursor-cli-agent | composer-2.5-fast / fixed | [T10, UI-F] | B2 | <independent reference-driven implementation> |
+| UI-I | not_started | integration | integration | high | fixed | coupled | local_reversible | strong | main | main-codex | inherited | [T20] | B9 | UI design integration gate |
+| T90 | not_started | integration | - | high | fixed | coupled | local_reversible | strong | main | main-codex | inherited | [T20, UI-I] | B9 | final integration and validation |
 
 UI: `foundation | surface | integration | -`
 
@@ -130,6 +130,16 @@ UI: `foundation | surface | integration | -`
 Status: `not_started | ready | running | needs_review | done | blocked | deferred`
 
 Work kind: `design | implementation | support | integration | verification`
+
+Complexity: `low | medium | high`（prompt量、timeout、検証強度に使用）
+
+Decision: `fixed | bounded | unresolved`
+
+Independence: `independent | staged | coupled`
+
+Side effect: `local_reversible | shared_reversible | external_or_irreversible`
+
+Oracle: `strong | partial | weak`
 
 subagentが必要な場合だけ`support` taskを追加する。標準taskとして作らない。
 
@@ -160,7 +170,11 @@ flowchart TD
 - Status: `not_started`
 - Work kind: `design`
 - UI: `foundation`
-- Difficulty: `high`
+- Complexity: `high`
+- Decision state: `unresolved`
+- Independence: `coupled`
+- Side-effect scope: `local_reversible`
+- Verification oracle: `strong`
 - Execution route: `main`
 - Route reason: `design system foundation — main ownership`
 - Owner: `main-codex`
@@ -184,7 +198,11 @@ flowchart TD
 - Status: `not_started`
 - Work kind: `integration`
 - UI: `integration`
-- Difficulty: `high`
+- Complexity: `high`
+- Decision state: `fixed`
+- Independence: `coupled`
+- Side-effect scope: `local_reversible`
+- Verification oracle: `strong`
 - Execution route: `main`
 - Route reason: `cross-surface UI integration — main ownership`
 - Owner: `main-codex`
@@ -208,7 +226,11 @@ flowchart TD
 - Status: `not_started`
 - Work kind: `design`
 - UI: `-`
-- Difficulty: `high`
+- Complexity: `high`
+- Decision state: `unresolved`
+- Independence: `coupled`
+- Side-effect scope: `local_reversible`
+- Verification oracle: `partial`
 - Execution route: `main`
 - Route reason: `<main ownership boundary>`
 - Owner: `main-codex`
@@ -230,9 +252,13 @@ flowchart TD
 - Status: `not_started`
 - Work kind: `implementation`
 - UI: `surface | -`
-- Difficulty: `low | medium`
+- Complexity: `low | medium | high`（単独ではroutingを決めない）
+- Decision state: `fixed | bounded`
+- Independence: `independent | staged`
+- Side-effect scope: `local_reversible | shared_reversible`
+- Verification oracle: `strong | partial`
 - Execution route: `cursor`
-- Route reason: `<task type and every satisfied cursor condition>`
+- Route reason: `<全cursor_required_conditionsと実行主体の判定根拠>`
 - Owner: `cursor-cli-agent`
 - Model / reasoning: `composer-2.5-fast / fixed`
 - Mode: `edit`
@@ -241,7 +267,7 @@ flowchart TD
 - Read scope: `<paths>`
 - Write scope: `<separated paths>`
 - Forbidden: `plan更新、commit、branch、remote、scope外変更`
-- Fixed contract / reference: `<main decision / existing pattern / sample>`
+- Fixed contract / reference: `<main decision / invariant / negative case / existing pattern / sample / fixture>`
 - Constraints: <守るcontract>
 - Acceptance: <観測可能な局所完了状態>
 - Worker verification: `<focused command>`
@@ -282,7 +308,11 @@ Final report追記:
 - Status: `not_started`
 - Work kind: `support`
 - UI: `-`
-- Difficulty: `high | medium`
+- Complexity: `high | medium`
+- Decision state: `fixed`
+- Independence: `independent`
+- Side-effect scope: `local_reversible`
+- Verification oracle: `partial | strong`
 - Execution route: `support_subagent_high | support_subagent_medium`
 - Route reason: `<allowed support type and concrete parallel/context-isolation benefit>`
 - Owner: `codex-subagent`

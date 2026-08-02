@@ -1,4 +1,4 @@
 interface:
   display_name: "Cursor Agent Sprint CLI（CLI版）"
-  short_description: "Cursor CLI で軽量 worker sprint を実行"
-  default_prompt: "$cursor-agent-sprint-cli を使って main Codex でこの作業を進め、小さく局所的で write scope を分離できる部分だけ Cursor CLI worker へ委任してください。"
+  short_description: "独立性と検証oracleでCursor CLI委任を実行"
+  default_prompt: "$cursor-agent-sprint-cli を使って、判断がfixedまたはboundedで、独立・検証・局所棄却できるtaskをCursor CLIへ委任してください。"
