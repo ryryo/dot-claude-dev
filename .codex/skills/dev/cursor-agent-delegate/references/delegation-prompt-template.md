@@ -103,7 +103,7 @@ UI final report (追加):
 
 ## Codex subagentの補助workstream
 
-subagent promptには実装を含めず、source writeを禁止する。modelとreasoning effortはplanと起動引数で一致させ、利用できない場合はfallbackせずmainへ返す。
+subagent promptは補助workstreamだけを含み、source writeを禁止する。modelとreasoning effortはplanと起動引数で一致させ、利用できない場合はmainへ返す。
 
 ```text
 Worker: codex-subagent

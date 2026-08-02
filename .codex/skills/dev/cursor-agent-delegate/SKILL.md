@@ -38,7 +38,7 @@ Cursor実装には、固定contract、negative test、scope制限、mainによ�
 3. **Codex subagentによる補助workstream**
    独立したコード調査、複数案・仮説の比較、read-only audit、test/log/障害原因分析、独立レビューだけを扱う。sourceを編集させず、mainが結果を要約・採否判断する。小さな調査や、前後の判断と密結合な分析はmainが直接行う。
 
-subagentは実装taskのfallbackではない。Cursorが利用できない場合も、実装をsubagentへ自動的に振り替えない。
+Cursorが利用できない実装はmainが所有する。Codex subagentの範囲は補助workstreamに維持する。
 
 auth、secret、crypto、crash/retry/lease、外部providerなどのrisk modifierには、mainが固定するinvariant、negative case、禁止副作用、real secretやproduction stateを使わないoracle、局所rollbackを必須controlとして設定する。controlを満たす実装はCursor、満たせない実装はmainが所有する。
 

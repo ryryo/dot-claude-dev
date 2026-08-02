@@ -75,7 +75,7 @@ Input units: env docs update + local setup script update
 
 ### Cursor 委任を決める
 
-taskの種類やcomplexityだけでroutingしない。次をすべて満たすtaskをCursor候補にする。
+次をすべて満たすtaskをCursor候補にする。
 
 - decision stateがfixed、または選択肢とtie-break ruleがbounded。
 - implementation independenceがindependent、またはmain Gateでstagedへ分解済み。

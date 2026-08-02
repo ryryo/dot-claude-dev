@@ -259,7 +259,7 @@
   },
   "availability_policy": {
     "allow_silent_fallback": false,
-    "cursor_unavailable": "main Codexへ戻す。Codex subagentを実装fallbackにしない",
+    "cursor_unavailable": "実装はmain Codexが所有し、Codex subagentは補助workstreamの範囲を維持する",
     "support_subagent_unavailable": "main Codexが補助workstreamを直接行うか、省略可能性を判断する",
     "model_unavailable": "別modelへsilent fallbackせず、main Codexがrouteまたはmodelを再決定してDecision logへ記録する"
   },
