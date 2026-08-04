@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Luna Sprint"
+  short_description: "Luna workerで安全な実装Sprintを実行"
+  default_prompt: "Use $codex-luna-sprint to execute bounded implementation tasks with the Luna worker."
