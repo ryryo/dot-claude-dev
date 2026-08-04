@@ -1,6 +1,6 @@
 ---
 name: codex-luna-sprint
-description: "main Codexが判断・契約・統合・最終検収を保持し、固定済みまたはboundedな軽量実装、純粋ロジック、behavior test、局所UI leaf、read-heavy調査をGPT-5.6 Luna mediumのCustom Agentへ委任する。排他的write scope、再現可能なoracle、可逆なlocal diffを持つtaskを短いSprintとして実行する。Trigger: codex-luna-sprint、Luna worker sprint、Custom Agentで実装、安価なCodex subagentへ委任、Cursor workerをLunaへ置換。"
+description: "main Codexが判断・契約・統合・最終検収を保持し、固定済みまたはboundedな軽量実装、純粋ロジック、behavior test、局所UI leaf、read-heavy調査をGPT-5.6 Luna highのCustom Agentへ委任する。排他的write scope、再現可能なoracle、可逆なlocal diffを持つtaskを短いSprintとして実行する。Trigger: codex-luna-sprint、Luna worker sprint、Custom Agentで実装、安価なCodex subagentへ委任、Cursor workerをLunaへ置換。"
 ---
 
 # Codex Luna Sprint
@@ -22,11 +22,13 @@ architecture、product、security、data ownership、shared schema、auth、secr
 
 ## Custom Agent
 
-既定agentは個人スコープの`~/.codex/agents/luna-sprint-worker.toml`にある`luna_sprint_worker`とする。モデルは`gpt-5.6-luna`、reasoningは`medium`固定。この名前付きCustom Agentをnative subagentとして選択できる環境でだけ委任する。
+既定agentは個人スコープの`~/.codex/agents/luna-sprint-worker.toml`にある`luna_sprint_worker`とする。Custom Agentファイルの`name`がspawn時の識別子であり、ファイル内の`model = "gpt-5.6-luna"`と`model_reasoning_effort = "high"`が親やspawnの既定値より優先される。
 
-task開始前に、現在のcollaboration toolが`luna_sprint_worker`またはCustom Agent profileの選択を公開しているか確認する。選択できない場合は、CLIを別経路で起動せず、そのtaskをmain Codexへ戻すか、新しいsessionでCustom Agentが公開されるまで停止する。Terra、Sol、Cursorへ黙って置換しない。
+`luna_sprint_worker`をagent type／roleとして名前で指定し、spawn時に`model`とreasoningを重ねて指定しない。通常のspawnに表示されるmodel override一覧はCustom Agentの可用性判定に使わない。Lunaがその一覧にないことは、名前付きCustom Agentが使えないことを意味しない。
 
-疎通確認専用のtaskは通常作らない。最初の実taskをspawnし、agent選択自体が失敗した場合だけ追加投入を止めて利用不能として扱う。
+Custom AgentはCodex session開始時に検出される。agentファイルを作成・変更したsessionでは、新しいCodex threadを開始してから最初の実taskを`luna_sprint_worker`へ委任する。変更前にspawn済みのagent threadを再利用しない。疎通専用taskは作らない。
+
+新しいthreadでも名前付きagentのspawnが失敗した場合は追加投入を止め、設定、発見path、Codex version、実際のspawn errorを報告する。taskをmainへ戻さず、Terra、Sol、Cursor、独自CLI runnerへ置換しない。
 
 ## Sprintを初期化する
 
@@ -67,14 +69,11 @@ workerにcommit、push、PR、branch変更、計画更新、外部API実行、�
 
 ## 実行する
 
-現在のcollaboration toolで`luna_sprint_worker`を明示してnative subagentをspawnする。`prompts/Txx.md`の全文をtaskとして渡し、同時実行はwrite scopeが重ならないtaskだけにする。実行中の追跡、interrupt、follow-upはnative subagent機能を使う。
+`luna_sprint_worker`をagent type／roleとして明示し、native subagentをspawnする。`prompts/Txx.md`の全文をtaskとして渡し、同時実行はwrite scopeが重ならないtaskだけにする。実行中の追跡、interrupt、follow-upはnative subagent機能を使う。
 
-agentの選択肢に`luna_sprint_worker`がない、またはspawn時に利用不能と判明した場合は次のいずれかに限定する。
+現在のthreadがCustom Agent作成前から継続している場合は、Codex Appのnativeな新規local threadを`gpt-5.6-luna`／`high`で作り、同じrepositoryで`$codex-luna-sprint`とtask promptを実行する。このthreadは再読込とorchestrationだけを担当し、新thread内で`luna_sprint_worker`を名前指定してspawnさせる。modelを省略して既定のSol／Terra／旧modelを起動せず、この再読込経路をheadless CLI runnerへ置換しない。
 
-1. taskを`main-codex`へ戻してmainが実装する。
-2. 新しいsessionでCustom Agentが公開された後に再開する。
-
-独自runner、headless CLI、background process、model上書きによる代替起動は作らない。mainはagentの報告だけでなく共有workspaceの実diffを検収する。
+spawn後はagent threadのidentity／role表示または実行traceで`luna_sprint_worker`が選ばれたことを確認する。mainはagentの報告だけでなく共有workspaceの実diffを検収する。名前付きagentを確認できない結果はLuna Sprint成功として扱わない。
 
 ## mainが検収する
 
@@ -103,7 +102,7 @@ git diff -- <allowed-paths>
 次だけを短く報告する。
 
 - Sprint directory
-- `luna_sprint_worker`を使ったtaskとmainへ戻したtask
+- `luna_sprint_worker`を使ったtaskとagent identityの確認方法
 - 変更ファイル
 - worker検証とmain再検証
 - 棄却・補正した内容

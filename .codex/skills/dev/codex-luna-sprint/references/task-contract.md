@@ -2,7 +2,7 @@
 
 ## Task routing
 
-`tasks.md`では最初にownerを`main-codex`とする。次を満たし、現在のcollaboration toolで名前付きCustom Agentを選択できるものだけ`luna_sprint_worker`へ変更する。
+`tasks.md`では最初にownerを`main-codex`とする。次を満たすtaskだけ`luna_sprint_worker`へ変更し、agent type／roleを名前で指定してspawnする。spawnのmodel override一覧でrouting可否を判断しない。
 
 ```text
 Task ID: T20
@@ -33,7 +33,7 @@ Main verification:
 Task Summary:
 T20 - <担当領域と成果物を一行で書く>
 
-あなたはGPT-5.6 Luna mediumで動くluna_sprint_workerです。
+あなたはGPT-5.6 Luna highで動くluna_sprint_workerです。
 
 Worker:
 luna_sprint_worker
