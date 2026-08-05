@@ -33,7 +33,7 @@ Main verification:
 Task Summary:
 T20 - <担当領域と成果物を一行で書く>
 
-あなたはGPT-5.6 Luna highで動くluna_sprint_workerです。
+あなたはGPT-5.6 Lunaで動くluna_sprint_workerです。
 
 Worker:
 luna_sprint_worker

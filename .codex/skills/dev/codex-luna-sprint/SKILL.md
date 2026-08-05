@@ -1,6 +1,6 @@
 ---
 name: codex-luna-sprint
-description: "main Codexが判断・契約・統合・最終検収を保持し、固定済みまたはboundedな軽量実装、純粋ロジック、behavior test、局所UI leaf、read-heavy調査をGPT-5.6 Luna highのCustom Agentへ委任する。排他的write scope、再現可能なoracle、可逆なlocal diffを持つtaskを短いSprintとして実行する。Trigger: codex-luna-sprint、Luna worker sprint、Custom Agentで実装、安価なCodex subagentへ委任、Cursor workerをLunaへ置換。"
+description: "main Codexが判断・契約・統合・最終検収を保持し、固定済みまたはboundedな軽量実装、純粋ロジック、behavior test、局所UI leaf、read-heavy調査をGPT-5.6 LunaのCustom Agentへ委任する。排他的write scope、再現可能なoracle、可逆なlocal diffを持つtaskを短いSprintとして実行する。Trigger: codex-luna-sprint、Luna worker sprint、Custom Agentで実装、安価なCodex subagentへ委任、Cursor workerをLunaへ置換。"
 ---
 
 # Codex Luna Sprint
@@ -22,7 +22,7 @@ architecture、product、security、data ownership、shared schema、auth、secr
 
 ## Custom Agent
 
-既定agentは個人スコープの`~/.codex/agents/luna-sprint-worker.toml`にある`luna_sprint_worker`とする。Custom Agentファイルの`name`がspawn時の識別子であり、ファイル内の`model = "gpt-5.6-luna"`と`model_reasoning_effort = "high"`が親やspawnの既定値より優先される。
+既定agentは個人スコープの`~/.codex/agents/luna-sprint-worker.toml`にある`luna_sprint_worker`とする。Custom Agentファイルの`name`がspawn時の識別子であり、ファイル内の`model`と`model_reasoning_effort`が親やspawnの既定値より優先される。
 
 `luna_sprint_worker`をagent type／roleとして名前で指定し、spawn時に`model`とreasoningを重ねて指定しない。通常のspawnに表示されるmodel override一覧はCustom Agentの可用性判定に使わない。Lunaがその一覧にないことは、名前付きCustom Agentが使えないことを意味しない。
 
@@ -71,7 +71,7 @@ workerにcommit、push、PR、branch変更、計画更新、外部API実行、�
 
 `luna_sprint_worker`をagent type／roleとして明示し、native subagentをspawnする。`prompts/Txx.md`の全文をtaskとして渡し、同時実行はwrite scopeが重ならないtaskだけにする。実行中の追跡、interrupt、follow-upはnative subagent機能を使う。
 
-現在のthreadがCustom Agent作成前から継続している場合は、Codex Appのnativeな新規local threadを`gpt-5.6-luna`／`high`で作り、同じrepositoryで`$codex-luna-sprint`とtask promptを実行する。このthreadは再読込とorchestrationだけを担当し、新thread内で`luna_sprint_worker`を名前指定してspawnさせる。modelを省略して既定のSol／Terra／旧modelを起動せず、この再読込経路をheadless CLI runnerへ置換しない。
+現在のthreadがCustom Agent作成前から継続している場合は、Codex Appのnativeな新規local threadを`gpt-5.6-luna`で作り、同じrepositoryで`$codex-luna-sprint`とtask promptを実行する。このthreadは再読込とorchestrationだけを担当し、新thread内で`luna_sprint_worker`を名前指定してspawnさせる。modelを省略して既定のSol／Terra／旧modelを起動せず、この再読込経路をheadless CLI runnerへ置換しない。
 
 spawn後はagent threadのidentity／role表示または実行traceで`luna_sprint_worker`が選ばれたことを確認する。mainはagentの報告だけでなく共有workspaceの実diffを検収する。名前付きagentを確認できない結果はLuna Sprint成功として扱わない。
 
