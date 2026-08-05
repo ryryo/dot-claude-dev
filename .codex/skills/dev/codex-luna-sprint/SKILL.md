@@ -22,7 +22,13 @@ architecture、product、security、data ownership、shared schema、auth、secr
 
 ## Custom Agent
 
-既定agentは個人スコープの`~/.codex/agents/luna-sprint-worker.toml`にある`luna_sprint_worker`とする。Custom Agentファイルの`name`がspawn時の識別子であり、ファイル内の`model`と`model_reasoning_effort`が親やspawnの既定値より優先される。
+正本はリポジトリ内の`agents/luna-sprint-worker.toml`とする。初回セットアップ時は次を実行し、個人スコープの`~/.codex/agents/luna-sprint-worker.toml`へ配置する。
+
+```bash
+"$PWD/.codex/skills/dev/codex-luna-sprint/scripts/install_agent.sh"
+```
+
+Custom Agentファイルの`name`がspawn時の識別子であり、ファイル内の`model`と`model_reasoning_effort`が親やspawnの既定値より優先される。現在の正本では`model_reasoning_effort = "max"`を指定する。
 
 `luna_sprint_worker`をagent type／roleとして名前で指定し、spawn時に`model`とreasoningを重ねて指定しない。通常のspawnに表示されるmodel override一覧はCustom Agentの可用性判定に使わない。Lunaがその一覧にないことは、名前付きCustom Agentが使えないことを意味しない。
 
