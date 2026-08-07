@@ -1,0 +1,4 @@
+interface:
+  display_name: "dev:X投稿調査"
+  short_description: "ログイン済みXから一次情報と反証を再現可能な形で調査する"
+  default_prompt: "$research-x-posts を使って、X上の関連投稿を一次情報として調査し、根拠と限界を整理してください。"
