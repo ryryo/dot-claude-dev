@@ -1,97 +1,88 @@
 # Luna Sprint task contract
 
-## Task routing
+## Routing registry
 
-`tasks.md`では最初にownerを`main-codex`とする。次を満たすtaskだけ`luna_sprint_worker`へ変更し、agent type／roleを名前で指定してspawnする。spawnのmodel override一覧でrouting可否を判断しない。
+全taskを`main-codex`で登録し、Product frameとImplementation planがともに`confirmed`の場合だけLuna routingを検討する。
 
 ```text
-Task ID: T20
+Task ID:
 Owner: main-codex | luna_sprint_worker
-State: not_started | running | worker_done | accepted | blocked
+State: not_started | running | worker_done | accepted | corrected-by-main | rejected | blocked
 Goal:
+Main-owned story/UX trace (registry only; workerへ解釈させない):
+Input provenance:
 Dependencies:
-Complexity: low | medium | high
+Source of truth:
+Fixed decisions:
+Forbidden decisions:
+Plan invalidation conditions:
 Decision state: fixed | bounded | unresolved
 Independence: independent | staged | coupled
 Side effect: local_reversible | shared_reversible | external_or_irreversible
 Verification oracle: strong | partial | weak
-Parallel group:
 Read scope:
-Write scope:
-Forbidden:
+Exclusive write scope:
 Conflicts:
-Acceptance:
+Positive cases:
+Negative cases:
 Worker verification:
 Main verification:
+Delegation benefit:
+Mechanical rejection oracle:
+Acceptance:
 ```
 
-`unresolved`、`coupled`、`external_or_irreversible`、`weak`のいずれかを含むtaskは委任しない。
+Lunaへ委譲できるDecision stateは`fixed`だけとする。`bounded`または`unresolved`を含むtask、`coupled`、`external_or_irreversible`、`weak`を含むtask、user story、UX、UI、文言、accessibility、product/schema/API contract、mutation、状態遷移の判断を含むtask、またはreview負担が実装以上のtaskは委任しない。固定済みAPI adapterは、HTTP method/path、request/response schemaとfield mapping、validation/coercion、auth/authorization/ownership（不要ならmainが`N/A`と明記）、success status、error algebra/body、idempotency、mutation/side-effect semanticsのすべてをmainが完全指定し、workerに残る作業が機械的写像だけの場合に限り候補とする。
 
 ## Worker prompt
 
 ```text
 Task Summary:
-T20 - <担当領域と成果物を一行で書く>
+T20 - <一つの完全固定済み成果物>
 
-あなたはGPT-5.6 Lunaで動くluna_sprint_workerです。
-
-Worker:
-luna_sprint_worker
+あなたはluna_sprint_workerです。確定済みleafを実装し、product・architecture判断はしません。
 
 Workspace:
-<absolute workspace path>
+<absolute path>
 
 Task ID:
 T20
 
-Complexity:
-low | medium | high
+Source of truth — read first:
+- <absolute path and section>
 
-Decision state:
-fixed | bounded
+Fixed contract:
+- <function signature, I/O, error algebra, exact behavior table>
 
-Independence:
-independent | staged
+Forbidden decisions:
+- user story、UX、UI、文言、accessibility、domain/API/schema contract、mutation、state transitionを判断・補完・推測・変更しない
+- user-facing componentを新設・編集しない
+- 未指定のfallback、default、汎用化を追加しない
 
-Side-effect scope:
-local_reversible | shared_reversible
+Positive cases:
+- <normal case>
 
-Verification oracle:
-strong | partial + mainが確認する限定項目
-
-Goal:
-実装taskを一つだけ書く。
-
-Read first:
-- <absolute path>
+Negative cases:
+- <malformed, boundary, overflow, conflict等の機械的case>
 
 Write scope:
-- Allowed:
-  - <path>
-- Forbidden:
-  - docs/PLAN/**
-  - .codex/skills/**
-  - 明示されていない.codex/tmp/**
-  - package lock files
-  - allowed scope外
+- Allowed: <exclusive paths>
+- Forbidden: docs/PLAN/**, .codex/skills/**, lockfiles, allowed scope外
+
+Stop without changes when:
+- source間の矛盾、未解決判断、scope競合、外部副作用、UI/UX/API判断が必要
 
 Constraints:
-- stage、commit、push、PR、branch変更、計画更新をしない。
-- 他agentへ委任しない。
-- 既存の無関係な変更を戻さない。
+- commit、push、PR、branch変更、計画更新、再委任をしない。
+- 無関係な差分を戻さない。
 - TDD、YAGNI、behavior testを守る。
-- 未解決判断が必要なら推測せず停止して報告する。
-- production、外部設定、実data、課金、権限を変更しない。
 
 Verification:
 - Run: <focused command>
 
 Final report:
-- TASK_ID: T20
-- 変更したファイル
-- 変更内容
-- 実行した検証と結果
-- main Codexへ残した作業
+- TASK_ID
+- 変更fileと要約
+- verification command/result
+- 未解決事項とmainへ残した作業
 ```
-
-promptはtask-local contextだけを含める。長い計画全文を貼らず、必要なcontract、参照path、negative case、oracleだけを書く。

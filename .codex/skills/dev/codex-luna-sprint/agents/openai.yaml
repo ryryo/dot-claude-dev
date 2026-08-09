@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Luna Sprint"
-  short_description: "Luna workerで安全な実装Sprintを実行"
-  default_prompt: "Use $codex-luna-sprint to execute bounded implementation tasks with the Luna worker."
+  short_description: "Story/UXはmain所有、機械的leafだけLunaへ委譲"
+  default_prompt: "Use $codex-luna-sprint with main Codex owning all user stories, UX, UI composition, wording, domain/API contracts, and state transitions. Delegate only fully specified mechanical leaves such as pure logic, parsers, serializers, fixtures, table tests, or exact adapters, then have main independently verify the diff and whole user journey."

@@ -36,7 +36,7 @@ if [[ -e "$luna_sprint_dir" ]]; then
   exit 1
 fi
 
-mkdir -p "$luna_sprint_dir/prompts"
+mkdir -p "$luna_sprint_dir/prompts" "$luna_sprint_dir/reviews"
 
 python3 - "$luna_sprint_dir" "$luna_workspace" "$luna_skill_dir" <<'PY'
 from pathlib import Path
@@ -47,54 +47,165 @@ sprint = Path(sys.argv[1])
 workspace = sys.argv[2]
 skill_dir = sys.argv[3]
 
-(sprint / "brief.md").write_text("""# Sprint brief
+(sprint / "product-frame.md").write_text("""# Product frame
 
-## Goal
+## Status
 
-- <one bounded outcome>
+- State: draft
+- Confirmed by main: no
 
-## Repository context
+## Source precedence
 
-- <relevant entrypoints, contracts, tests>
+| Source | Path or evidence | Authority and conflicts |
+| --- | --- | --- |
+| Latest user intent | <record> | <decision> |
+| Foundational workflow | <path and section> | <decision> |
+| User stories / UX | <path and section> | <decision> |
+| Existing plan | <path and section> | <decision> |
+| Lab / prototype / fixture | <path and classification> | <constraint scope> |
 
-## Constraints
+## User and outcome
 
-- Luna handles only fixed or bounded leaf tasks.
-- main Codex owns shared decisions, integration, and final acceptance.
+- User:
+- Starting state:
+- Desired outcome:
+- Completion evidence:
 
-## Minimum verification
+## Journeys
 
-- <focused behavior test>
+### Normal
+
+- <upstream inputs -> user decisions -> result>
+
+### Optional / fallback
+
+- <secondary paths that must not dominate the normal CTA>
+
+### Failure / reload recovery
+
+- <preserved state and recovery action>
+
+## Input provenance
+
+| Value | Inherited from | User may override | Must not be re-entered |
+| --- | --- | --- | --- |
+| <value> | <source> | <when> | <invariant> |
+
+## UX invariants
+
+- Upstream confirmed values are inherited rather than re-entered.
+- Upload and internal settings do not outrank upstream artifact selection.
+- Lab or fixture limits do not become production domain limits.
+- Import or generation success does not auto-approve human decisions.
+- Exceptional controls do not appear as equal-strength normal controls.
+
+## Path classification
+
+| Capability | normal | optional | fallback | technical substrate | Lab-only |
+| --- | --- | --- | --- | --- | --- |
+| <capability> |  |  |  |  |  |
+
+## Unresolved product decisions
+
+- <must be empty before confirmation>
+""", encoding="utf-8")
+
+(sprint / "implementation-plan.md").write_text("""# Implementation plan
+
+## Status
+
+- State: draft
+- Product frame prerequisite: not-confirmed
+
+Do not design architecture until product-frame.md is confirmed.
+
+## Story-to-implementation trace
+
+| Story / invariant | Architecture / UI | API / schema | Acceptance |
+| --- | --- | --- | --- |
+| <source> | <decision> | <contract> | <evidence> |
+
+## Data and state
+
+- <data flow, state transitions, migration, failure, security>
+
+## Technical substrate boundaries
+
+- <what is useful infrastructure but not a finished user journey>
+
+## Verification
+
+- <behavior tests, integration, browser acceptance>
+
+## Unresolved implementation decisions
+
+- <must be empty before task routing>
 """, encoding="utf-8")
 
 (sprint / "tasks.md").write_text("""# Sprint tasks
 
-## Dependency order
+## Prerequisites
 
-- <main contract> -> <Luna leaf> -> <main integration>
+- Product frame: draft
+- Implementation plan: draft
+- Luna routing allowed: no
 
-## Tasks
+## Rule
 
-- <copy the task contract from references/task-contract.md>
+- Register every task as main-codex first.
+- User stories, UX, UI composition, user-facing wording, accessibility, domain/API contracts, and state transitions always remain main-codex.
+- Move only fully specified pure logic, parsers/serializers, fixtures, table tests, mechanical codemods, or exact adapters after both prerequisite reviews are confirmed.
+- A small UI leaf is not a Luna leaf. Fixed API adapters qualify only after main fixes method/path, request/response mapping, validation/coercion, auth/authorization/ownership (or explicit N/A), success status, error algebra/body, idempotency, and mutation/side effects.
 
-## Conflicts
+## Routing registry
 
-- <exclusive write scopes>
+- <copy task fields from references/task-contract.md>
+
+## Dependency order and conflicts
+
+- <main story/UX/contracts -> optional mechanical Luna leaf -> main diff review/integration/journey review>
+""", encoding="utf-8")
+
+(sprint / "reviews" / "product-frame.md").write_text("""# Product frame review
+
+- Decision: draft | confirmed | rework
+- Source conflicts:
+- Normal journey findings:
+- Optional / fallback findings:
+- Recovery findings:
+- Reviewer evidence:
+- Main decision:
+""", encoding="utf-8")
+
+(sprint / "reviews" / "implementation-plan.md").write_text("""# Implementation plan review
+
+- Decision: draft | confirmed | plan-reopened
+- Story / UX trace findings:
+- Shadow state or Lab leakage findings:
+- Contract and migration findings:
+- Main decision:
 """, encoding="utf-8")
 
 (sprint / "review.md").write_text("""# Main review
 
-## Diff review
+## Product and plan reviews
 
-- <allowed scope and worker report comparison>
+- Product frame: <reviews/product-frame.md>
+- Implementation plan: <reviews/implementation-plan.md>
 
-## Verification
+## Task decisions
 
-- <commands and results>
+- <reviews/Txx.md: accepted, corrected-by-main, rejected, or blocked>
 
-## Decision
+## Whole-user-journey verification
 
-- <accepted, corrected, or rejected>
+- Normal journey evidence:
+- Exception / recovery evidence:
+- Regression evidence:
+
+## Final decision
+
+- accepted | rework | plan-reopened
 """, encoding="utf-8")
 
 (sprint / "sprint-env.sh").write_text(
