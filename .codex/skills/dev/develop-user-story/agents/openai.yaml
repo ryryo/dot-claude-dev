@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop User Story"
+  short_description: "ユーザーストーリーを計画・実装・検証・証拠更新まで一貫管理"
+  default_prompt: "Use $develop-user-story to develop and verify one story from the applicable user-story ledger."
