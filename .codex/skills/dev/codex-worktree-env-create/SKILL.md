@@ -1,106 +1,97 @@
 ---
 name: dev:codex-worktree-env-create
 description: |
-  Codex App の Worktree モード用に、対象リポジトリを調査して tracked
-  `.codex/environments/environment.toml`、setup script、Actions、
-  project-specific setup/status/cleanup skill を作成・修復・検証する。
-  Codex Worktree環境作成、local environment作成、setup scriptやActions作成、
-  「環境が見つからない」、Worktree setup失敗、runtime/port/DB/Docker分離の
-  改善を依頼されたときに使用する。
+  Codex AppのWorktreeモード用にrepositoryを調査し、tracked
+  `.codex/environments/environment.toml`、setup／Actions、project skillを
+  作成・修復・実Worktree検証する。Worktree setup、local environment、並行Dev、
+  runtime／port／DB／storage分離、`.worktreeinclude`、shared symlink、依存導入、
+  stale claim、Cleanup安全性の改善を依頼されたときに使用する。
 ---
 
 # codex-worktree-env-create
 
-対象プロジェクト固有の Codex App Local Environment を、実際の Worktree で
-再現可能な状態まで作る。setup helper だけで完了扱いにせず、Codex App が認識する
-manifest、ベースブランチ上の可用性、Actions の実動まで検証する。
+対象project固有のCodex App Local Environmentを、複数Worktreeで安全かつ再現可能な
+状態まで作る。manifestやhelperの存在だけで完了扱いにせず、base上の可用性、並行実行、
+状態分離、異常終了後の復旧、Actionsの実動まで検証する。
 
 ## 必須成果物
 
-対象に既存の別形式がない限り、次を tracked file として作る。
+対象に同等の既存形式がない限り、次をtracked fileとして作る。
 
 - `.codex/environments/environment.toml`
-- `.codex/local-environment/setup.sh` または `.codex/scripts/<helper>.sh`
+- `.codex/local-environment/setup.sh`または`.codex/scripts/<helper>.sh`
 - `.codex/skills/project/worktree-env/SKILL.md`
+- ignored通常fileの継承が必要な場合はrepository rootの`.worktreeinclude`
 
-`environment.toml` は `version = 1`、project `name`、`[setup]`、根拠のある
-`[[actions]]` を含める。setup helper や skill だけを作って
-「App 側で手動登録が必要」として終了しない。
+`environment.toml`は`version = 1`、project `name`、`[setup]`、根拠のある
+`[[actions]]`を含める。helperだけを作ってApp側の手動登録へ委ねない。
 
 ## 実行規約
 
-- 1つのサブエージェントへ
-  [`agents/repository-discovery.md`](agents/repository-discovery.md) を渡し、
-  読み取り専用調査を任せる。利用不能または禁止時はメインが同じTaskを実行する。
-- メインは調査結果を査読し、生成方針、編集、検証を担う。
-- 対象リポジトリの規約、package manager、runtime pin、既存 scripts、
-  container/platform CLI/env管理を優先する。
-- 秘密情報の内容を読んだり生成したりしない。コピーは明示whitelistだけにする。
-- setup は冪等・非破壊にし、deploy、remote migration、volume削除、
-  長時間サービス起動を含めない。
-- cleanup は detached/unborn、primary checkout、main/master/trunkなどの保護branchで停止し、
-  完全に検証したWorktree namespaceだけを扱う。
-- Actionsはlocal-onlyを既定にする。Deploy、remote migration、remote resource変更は
-  ユーザーが明示した別workflowに分離する。
-- ユーザーが指定しない限りcommit、push、base branchへの統合は行わない。
+- 可能なら1つのsubagentへ[`agents/repository-discovery.md`](agents/repository-discovery.md)
+  を渡して読み取り専用調査を任せ、mainが結果を査読する。利用不能ならmainが同じ調査を行う。
+- repository規約、runtime pin、package manager、既存scripts、platform CLIを優先する。
+- secret本文を読んだり生成したりしない。ignored fileとsymlinkは明示whitelistだけを扱う。
+- setupは冪等・非破壊にし、deploy、remote migration、production upload、長時間serviceを含めない。
+- Devまたはmutable local resourceがあるprojectは、parallel-safeを既定の設計目標にする。
+- cleanupはprimary、unborn、保護branch、不正owner／namespaceで停止する。detachedでは破壊的
+  Cleanupを既定拒否し、Codex-managed Worktree削除後のshared claimは安全なstale回収で扱う。
+- Actionsはlocal-onlyを既定にする。remote mutationは確認付きの別workflowへ分離する。
+- ユーザーが指定しない限りcommit、push、base統合を行わない。
 
-## Step 1: 実体とベースブランチを調査する
+## Step 1: repositoryと実行時副作用を調査する
 
-調査Taskに対象絶対パス、ユーザー制約、既知stack、編集禁止、秘密値非表示を渡す。
-返却レポートを次の観点で査読する。
+調査Taskへrepository絶対path、target base、ユーザー制約、既知stack、編集禁止、secret
+非表示を渡す。次を査読する。
 
-1. current checkout の事実と target base branch の事実が分離されている
-2. manifest、setup、Actionsの既存形式と先行例が確認されている
-3. runtime/package manager/dev/test/lint/typecheck/build が根拠付きである
-4. DB、Redis、queue、search、storage、browser storage、port、volumeの分離要否がある
-5. Web server、CLI、library、batch、container、複数appなど実在する構成が判別されている
-6. whitelist候補と、それらに必要な `.gitignore` 規則が整理されている
-7. 危険操作とcleanup対象が具体的に分離されている
-8. 必要fileがtracked/ignored/generated/symlinkのどれか分類されている
+1. current checkout、target base、primary、Codex-managed detached、Permanent Worktreeが区別されている
+2. manifest、setup、Actions、runtime pin、package commandが実在fileを根拠にしている
+3. tracked／ignored通常file／ignored symlink／dependency／cache／bulk seed／mutable state／external resourceが分類されている
+4. server startup時のmigration、job復旧、backfill、cache生成、metadata更新が確認されている
+5. Web、API、worker、DB、queue、storage、browser origin、containerの分離要否がある
+6. `.worktreeinclude`候補とshared symlinkの依存先が秘密本文を読まずに整理されている
+7. filesystemとOSにCOW／reflink能力があるか、非対応時のfallbackが明記されている
+8. cleanup対象、残存し得るshared claim、remote／browser／authなど削除禁止対象が分かれている
 
-現在のdirty branchだけを見て判断しない。新規Worktreeに指定するbase branchで
-各成果物がtrackedかを `git show <base>:<path>` などで確認する。
+dirty checkoutだけでbaseを推測しない。`git show <base>:<path>`、`git ls-tree`などで
+成果物とpinがtarget baseに存在するか確認する。
 
-## Step 2: 成果物を設計する
+## Step 2: isolation matrixとlifecycleを確定する
 
-必ず [`references/artifact-patterns.md`](references/artifact-patterns.md) を読み、
-対象に必要なpatternだけを採用する。
+必ず[`references/artifact-patterns.md`](references/artifact-patterns.md)を読み、対象に必要な
+patternだけを採用する。少なくとも次を明示する。
 
-特に次を明示的に決める。
+- resourceごとの`tracked | include | recreate symlink | shared cache | COW seed | isolated mutable | external namespaced`
+- setupをsourceするか、全Actionをruntime-aware wrapperへ通すか
+- Worktree固有state、port pair、container／DB namespace、browser origin
+- stateのversion、`pending -> ready`、atomic write、operation lock、crash recovery
+- shared claimのowner情報と、Worktreeが消えた後のstale回収条件
+- source checkoutを`CODEX_SOURCE_TREE_PATH`優先で解決し、common Git directoryとprimaryを照合する方法
+- `.env`、local DB、大容量mediaを継承／seedする根拠と残るrisk
 
-- `environment.toml` のsetupとActions
-- setupをsourceしてexportを親shellへ残すか、全Actionをruntime-aware wrapper経由にするか
-- Worktree固有値の保存先、port割当、既存Worktreeとの衝突検査
-- ignored local fileのcopy whitelistと対応する `.gitignore`
-- DB/container/local emulator/browser originなど、実在するresourceのnamespace
-- statusで表示する値とcleanupで削除できる厳密な対象
-- source checkoutの解決方法。`CODEX_SOURCE_TREE_PATH`を優先し、fallbackでは
-  common git dirとprimary checkoutを照合して「最初のworktree」に依存しない
-- secretを含む`.env`やlocal DBを自動copy/migrateするか。既定はopt-inにする
+不明なmutable resourceを共有扱いにしない。共有する場合はread-onlyまたはprocess間安全である
+根拠を記録する。
 
-## Step 3: runtimeを非ログインshell対応にする
+## Step 3: runtimeとdependenciesを非ログインshell対応にする
 
-Codex App setup shellがユーザーのinteractive shellと同じPATHを持つと仮定しない。
+- `.node-version`、`.tool-versions`、mise／asdf／nodenv等のpinからruntime実体を解決する。
+- interactive shellのPATH、alias、shimだけを前提にしない。
+- Actionsも同じruntime-aware wrapperへ通す。
+- `FORCE_COLOR`由来のANSIを数値判定へ混ぜない。
+- dependency directoryはWorktreeごとに作り、package managerのcontent-addressable store／cache
+  だけを共有する。`node_modules`等をcopy／symlinkしない。
+- lockfile固定installを使い、install済みなら再実行しない。
 
-- `.node-version`、`.tool-versions`、mise/asdf/nodenv、Ruby/Python pinを読む。
-- setup時に必要なruntimeを明示的に解決する。
-- setupのexportをActionsで必要とする場合は、manifestからhelperをsourceする。
-- より堅牢にするなら、dev/test/lint/typecheck Actionsを同じruntime-aware wrapperへ通す。
-- `FORCE_COLOR` でANSIが混ざる可能性があるため、数値出力を算術式へ直接渡さない。
-- runtime pin自体がbase branchにtrackedであることを確認する。
+## Step 4: project固有環境を実装する
 
-## Step 4: project variantに合わせて実装する
-
-存在しないサービスやコマンドを作らない。
-
-- repository内のmanifest、config、scripts、CIからapplication typeと
-  local development commandを決める。
-- platform固有CLIやemulatorがある場合だけ、その公式docsとinstalled CLIの
-  `--help`を確認する。特定vendorやhosting方式を前提にしない。
-- containerを使う場合は固有project nameとhost portを使う。重いbuild/upは
-  明示Actionに分ける。
-- browser IndexedDB/localStorageは固有originで分離し、cleanupで削除しない。
-- lint/testなど既存コードの失敗は、環境起動失敗と判定上も分離する。
+- manifest、config、package scripts、CIから実在するDev／Test／Lint／Typecheck／Buildを選ぶ。
+- ignored通常fileは`.worktreeinclude`を優先する。Codexはsource symlinkをcopyしないため、
+  ignored symlinkはsetupで全targetをpreflightしてから不足分だけ再作成する。
+- Web／API／workerの全portを一組でatomic claimし、起動時はstrict portを使う。
+- startup mutationが触る全保存先をWorktreeごとに分離する。
+- 大容量seedは同一filesystemのCOW／reflinkを優先し、staging、anchor確認、atomic renameを使う。
+- DB／container／emulatorが実在するときだけ固有namespaceを導入する。
+- browser storageは固有originで分離し、Cleanupでは削除しない。
 
 ## Step 5: 静的検証する
 
@@ -112,54 +103,47 @@ bash -n <setup-or-helper>
 git diff --check
 ```
 
-さらに以下を確認する。
+さらに次を確認する。
 
-- `environment.toml` がTOMLとしてparseでき、`version/name/setup/actions`を持つ
-- setupとActionが参照するtracked file/package script/binstub/Compose configが存在する
-- runtime pinとignored whitelistがbase branchにも存在する
-- port範囲、namespace、state path、cleanup guardが整合する
-- setup再実行で割当値とtracked状態が変わらない
-- 最小PATHの非ログインshellでも正しいruntimeへ切り替わる
-- JSON/TOMLがparseでき、実行対象scriptにexecute bitがあり、symlink targetが存在する
-- cleanupがdetached/primary/protected branchと不正namespaceを確実に拒否する
+- manifestをTOML parseし、version／name／setup／Actionsを検証する
+- helper、package script、runtime pin、`.worktreeinclude`がtarget baseで利用可能である
+- scriptのexecute bit、最小PATH、対応が必要ならOS標準shellでも成立する
+- ignored fileはGit ignore対象で、secret本文がlogやdiffへ出ていない
+- shared symlinkはtargetが存在し、競合時に上書きせず停止する
+- state／claim schema、port範囲、namespace、realpath／symlink guardが整合する
+- setup再実行でstate、port、seed、symlinkが変化しない
+- cleanupがprimary、保護branch、不正owner／namespace、稼働中listenerを拒否する
 
 ## Step 6: 実WorktreeでE2E検証する
 
-完了前にtarget base branchから一時Worktreeを作る。未commit成果物ならその正確な
-diffと新規fileだけを一時Worktreeへ適用して、Codex App相当のsetupを実行する。
-検証のためにcommitやbase統合を行わず、既存のユーザーWorktreeも破壊的に再利用しない。
+target baseから一時Worktreeを作る。未commit成果物は正確なdiffと新規fileだけをcandidateへ
+反映し、検証commitや既存ユーザーWorktreeへ依存しない。
 
-1. manifestとhelperがWorktree内に存在する
-2. setupが成功し、依存関係と固有stateが作られる
-3. setupを再実行して冪等性を確認する
-4. 登録Actionをrepository typeに応じて実行する
-5. stateがWorktree配下または固有namespaceにだけ作られる
-6. 起動したprocessがあれば正確に停止し、listenerを使う場合は残らない
-7. test/lint/typecheck等があれば実行し、環境不良と既存コード不良を区別する
-8. 検証前後で意図しないtracked差分がない
-9. resource分離が必要なprojectだけ、複数Worktreeと競合時の挙動を検証する
+1. manifestとhelperが存在し、Codex-managed相当のignored file継承を再現できる
+2. setupが最小PATHで成功し、runtime、dependency、symlink、state、seedが揃う
+3. setup再実行でchecksumと割当が不変である
+4. Devがある場合はHTTP／listener／proxyを確認する
+5. Test／Lint／Typecheck／Buildなど登録Actionを実行する
+6. 起動processを停止し、listenerが残らないことを確認する
+7. cleanup guard、symlink競合、破損state等の重要negative caseを確認する
+8. tracked差分、primary data、remote resource、別Worktreeが変化していないことを確認する
 
-Web/APIなどlistenerを持つActionでは割当portへのrequestを確認する。CLI/library/batchでは
-代表commandのexit statusと出力artifact/stateの分離を確認する。
+Dev、listener、startup mutation、mutable stateのいずれかがある場合、2つのWorktreeを同時に
+setup／起動する。固有port、固有origin、一方だけの書込み、片方のCleanup後も他方が動くことを
+確認する。検証後はprocess、candidate Worktree、branch、claimを安全に片付ける。
 
-一時Worktreeは検証後に安全にremoveする。candidate E2Eとbase branch上の可用性は
-分けて報告し、baseへ未統合なら「統合後に新規Worktreeで利用可能」と明示する。
+Codex-managed Worktreeはdetachedであるため、setup／Actionsがdetachedでも動くことを確認する。
+破壊的Cleanupをdetachedで拒否する設計では、owner path不存在・Git worktree未登録・listener
+不在・正しいclaim schemaをすべて満たすstale claimだけを将来setupが回収できることを確認する。
 
 ## 判定と報告
 
-単一の「総合PASS/FAIL」にrepository品質を混ぜない。最低限、次の2判定を出す。
+最低限、次を分ける。
 
-- `Worktree Environment`: manifest認識、setup、runtime、依存関係、分離、Action配線、
-  state containment、cleanupを判定する
-- `Repository Checks`: test/lint/typecheck/buildのコード品質結果を判定する
+- `Worktree Environment`: manifest、setup、runtime、dependency、継承、分離、並行実行、Action配線、cleanup
+- `Repository Checks`: Test／Lint／Typecheck／Buildのコード診断
 
-Actionが正しいcommandを正しいruntimeで起動し、コード診断を返した場合、Action配線は
-PASS、該当Repository CheckはFAILとする。コード診断だけを理由に
-`Worktree Environment: FAIL`へしない。環境判定をFAILにするのは、setup不能、runtime
-不一致、依存不足、resource衝突、誤command、起動不能、state漏洩、cleanup失敗など、
-Worktree環境自身に原因がある場合だけとする。
-
-最終報告では次の形式を使い、必要なら失敗したrepository commandと最小修正案を続ける。
+正しいActionが既存コード診断を返した場合、環境はPASS、Repository ChecksはFAILとする。
 
 ```text
 Worktree Environment: PASS
@@ -168,13 +152,13 @@ Repository Checks: FAIL (lint: existing code diagnostics)
 
 ## 完了条件
 
-- [ ] repository discoveryをメインが査読した
-- [ ] `.codex/environments/environment.toml` がtrackedでApp認識形式になっている
-- [ ] setup/helperとproject skillがbase branch上に存在する
-- [ ] runtime、package manager、ignored whitelistが非ログインshellで機能する
-- [ ] 対象に実在するport/DB/container/emulator/storageの必要な分離が反映されている
-- [ ] cleanupにbranchとnamespace guardがある
-- [ ] setupの冪等性とActionsを実Worktreeで検証した
+- [ ] repository discoveryとisolation matrixをmainが査読した
+- [ ] manifest、helper、project skill、必要な`.worktreeinclude`がtarget baseで利用可能である
+- [ ] runtime、dependencies、ignored file、shared symlinkが最小PATHで成立する
+- [ ] startup mutationを含む全mutable resourceが必要な境界で分離されている
+- [ ] state transaction、operation lock、port claim、stale回収が定義・検証されている
+- [ ] setupの冪等性と登録Actionsを実Worktreeで検証した
+- [ ] 必要なprojectでは2 Worktree同時実行と書込み分離を検証した
 - [ ] Worktree EnvironmentとRepository Checksを別々に判定した
 
 ## Resources
