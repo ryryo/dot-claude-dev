@@ -1,0 +1,4 @@
+interface:
+  display_name: "MiniMax H3 Reel Ads"
+  short_description: "粗い企画からH3向けリール広告の構成・生成・編集指示を設計"
+  default_prompt: "$h3-reel-ad-prompt-writing を使って、人物と商品・店舗の素材からMiniMax H3向けリール広告の構成、生成プロンプト、編集指示を作成し、品質監査してください。"
