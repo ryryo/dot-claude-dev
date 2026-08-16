@@ -38,6 +38,21 @@
 - 広告利用できると確認していないライセンス楽曲を指定していないか。
 - 声や音声信号を、許可された参照範囲を超えて複製していないか。
 
+## 長尺方式監査
+
+- 15秒を超えるだけで`continuous`を選ばず、通常のカット編集、連続時間履歴、混在のどれが目的か説明できるか。
+- `edited`、`continuous`、`hybrid`の選択が画角、場所、人物、商品、参照数と一致するか。
+- `hybrid`でlatentを共有するcontinuation groupと`Independent`生成を混同していないか。
+- `continuous`がFL2VA＋任意のQwen参照画像1枚という前提で成立するか。複数Ref2VA素材を暗黙に渡していないか。
+- 同じcontinuation groupのmodel、Qwen encoder、Video VAE、Audio VAE、解像度、基本sampling設定が一致するか。
+- StartだけにFirst Frameがあり、各Continueが前の完全なAV latent、handover metadata、新しいLast Frameを受け取るか。
+- `context_frames=22`、`auto`、`phase_aligned_extended`が設定され、`actual_head_context_frames`をSaveとStitchへ渡すか。
+- 中間単位が`Stitch Ready`、現在の最終単位だけが`Final Clip`か。
+- `Independent`単位へ`Stitch Ready`または`Final Clip`を誤って付けていないか。
+- 境界付近に重要な台詞、CTA、不可逆な商品動作がないか。
+- 最終完成尺をhandover解析前の確定値として扱っていないか。
+- 必要なカスタムノードの導入を確認できない場合、実行不能と明示しているか。
+
 ## 事実・広告表現監査
 
 次を提供情報なしに追加しない。
