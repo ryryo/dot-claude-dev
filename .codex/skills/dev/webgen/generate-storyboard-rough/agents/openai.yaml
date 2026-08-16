@@ -1,0 +1,4 @@
+interface:
+  display_name: "白黒ラフ絵コンテ生成"
+  short_description: "入力画像を動画制作向けの白黒構造ラフ絵コンテへ変換"
+  default_prompt: "$generate-storyboard-rough を使って、この入力画像を動画絵コンテ用の白黒構造ラフへ変換してください。"
