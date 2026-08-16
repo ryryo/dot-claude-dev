@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Clean Remake"
+  short_description: "AI画像のガビガビを顔・画風・構図を維持してクリーン再生成"
+  default_prompt: "Use $ai-clean-remake to remove crunchy AI artifacts while preserving the original identity, style, composition, and content."
