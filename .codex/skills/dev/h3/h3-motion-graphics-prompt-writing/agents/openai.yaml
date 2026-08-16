@@ -1,0 +1,4 @@
+interface:
+  display_name: "MiniMax H3 Motion Graphics"
+  short_description: "H3向けモーショングラフィックスプロンプトの設計・監査"
+  default_prompt: "$h3-motion-graphics-prompt-writing を使って、この企画をMiniMax H3向けモーショングラフィックスプロンプトにし、出力前に品質監査してください。"
