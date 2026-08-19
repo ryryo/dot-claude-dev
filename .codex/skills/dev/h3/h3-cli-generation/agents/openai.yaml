@@ -1,0 +1,4 @@
+interface:
+  display_name: "MiniMax H3 CLI Generation"
+  short_description: "H3 manifestをCLIで生成・worker監視・復旧"
+  default_prompt: "$h3-cli-generation を使って、このMiniMax H3 manifestキューを検証し、endpointとworkerを監視しながら承認済み条件で逐次生成・保存してください。"

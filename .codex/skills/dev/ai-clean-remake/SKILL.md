@@ -26,6 +26,10 @@ Use for requests such as:
 
 Do not change clothes, pose, expression, background, objects, crop, or style unless the user separately requests those edits.
 
+## Historical research reference
+
+Read [references/initial-research-notes.md](references/initial-research-notes.md) only when revisiting the method design, comparing alternative controls, or investigating why a rule exists. It is a non-normative record of the initial research and includes unverified practitioner reports, provisional parameters, and hypotheses that were later corrected. This `SKILL.md` and the current bundled scripts always take precedence.
+
 ## Candidate routing
 
 Honor an explicitly requested method, but still use the original as Reference 1.
