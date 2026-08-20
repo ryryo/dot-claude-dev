@@ -1,0 +1,4 @@
+interface:
+  display_name: "自然なSNS実写生成"
+  short_description: "参照資料から自然なSNS・UGC実写を生成して確認"
+  default_prompt: "$generate-t2i-natural-photo を使って、参照資料と要件から自然なSNS投稿写真を生成してください。"
