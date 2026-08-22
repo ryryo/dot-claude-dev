@@ -40,7 +40,7 @@
 
 ## 4. 文字を許可リストで守る
 
-- プロンプト冒頭で `Use only the exact on-screen text specified below.` と明示する。
+- H3の固定フィールド名と順序を崩さない。base modeでは`integrated_multimodal_description`の値の冒頭、Ref2VAでは`detailed_description`の値の冒頭へ、`Use only the exact on-screen text specified below.` と、許可文字列を自然文として入れる。I2VA、FL2VA、L2VAでは、その前に必要なキーフレーム整合文を必ず置く。
 - 文字列を英語の二重引用符で囲み、改行や句読点も原文どおりにする。
 - fake dates、prices、names、logos、claims、UI labels、QR codesなど、許可されていない情報を禁止する。
 - 日本語を英語へ置き換えない。漢字、かな、Latin文字を別の文字種へ置換しない。
