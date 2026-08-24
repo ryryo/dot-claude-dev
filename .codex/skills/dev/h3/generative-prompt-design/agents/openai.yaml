@@ -1,0 +1,6 @@
+interface:
+  display_name: "Generative Prompt Design"
+  short_description: "画像・動画Promptを状況から設計・再構築"
+  default_prompt: "$generative-prompt-design を使い、生成サービス固有の形式へ変換する前に、この生成Promptを新規設計または意味から再構築してください。"
+policy:
+  allow_implicit_invocation: true

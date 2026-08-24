@@ -5,12 +5,19 @@ description: Write MiniMax H3 video generation prompts for T2VA, I2VA, FL2VA, L2
 
 # H3 Prompt Writing
 
+## Content Design Prerequisite
+
+This skill compiles an already coherent visual and audiovisual design into MiniMax H3 syntax. When the task creates new generated content or substantively changes camera, composition, pose, location, furniture, background, lighting, subject count, reference roles, action, or shot order, first use the shared sibling `$generative-prompt-design` skill. Bring its completed Design Contract into this workflow; do not use H3 field structure to invent or repair the underlying situation.
+
+Typo fixes, exact dialogue transcription, provider-schema corrections, reference-label formatting, and timestamp edits that leave the generated scene unchanged may proceed directly. A failed generation that requires semantic change is not a formatting-only edit.
+
 ## Workflow
 
 1. Identify the input mode: T2VA, I2VA, FL2VA, L2VA, or full-reference Ref2VA.
 2. For base text/keyframe modes, read `references/base-en.txt` and follow its final prompt structure.
 3. For full-reference mode, read `references/ref-en.txt` and follow its six-section rewrite format.
 4. Preserve the exact field names, section order, labels, and timing notation from the selected guide.
+5. Before handoff, verify the final prompt fits the target interface. The local MiniMax H3 manifest loader accepts at most 8,000 characters; shorten by removing duplication after the Design Contract is complete, never by dropping a required causal or reference relationship.
 
 ## Base Modes
 
