@@ -128,7 +128,26 @@ PLAN内のscopeと権限で安全に解決できる失敗は、原因を調査�
 3. focused testから上位のtypecheck、build、統合テストへ検証範囲を広げる。
 4. 見落とし、反例、状態遷移、失敗時のデータ保持、隠れた外部コストを点検する。
 
-コードと自動テストが成立した段階では`implemented`とする。自動テスト成功だけで`verified`にしない。
+### 5.1 実装後独立レビューGate
+
+PLAN内の実装項目と通常の自動検証が完了した後、`implemented`への更新と最初の実画面Journey・実service検証の前に、実装者、ストーリーレビュー担当、PLANレビュー担当のいずれとも別のエージェントを1名以上立ち上げる。既定ではPLAN全体に対してこのGateを1回行い、PLANが高riskな中間レビューを明示した場合だけ追加する。既存PLANにこのGateがないか、Journey・実service・`implemented`／`verified`更新より後ろに書かれていても、この順序を優先して実装・自動検証の直後へ割り込ませる。レビュー担当は共通規則の新規contextで、レビュー済みledgerとPLAN、実際のcode・test・設定、diff、検証結果を一次情報として三者照合する。
+
+レビュー担当には少なくとも次を反証させる。
+
+- codeとtestが、全受け入れ条件IDと各`例:`の観測可能な振る舞いを満たすか。自動検証では確認できずJourneyまたは実service待ちの条件と、未実装の条件を混同していないか
+- code、test、設定、route、API、server function、background処理、保存先が、PLANの実装責務・制約・対象外・Gateと一致し、checked項目に実証可能な根拠があるか
+- PLANから漏れた受け入れ条件、PLANどおりでも利用者目的を満たさない実装、実装都合の迂回、条件の弱体化、隠れたfallbackがないか
+- normal pathだけでなく、対象となるfailure、reject、cancel、retry、reload、復元、状態遷移、利用者・領域切替がcodeとbehavior testへ反映されているか
+- testが公開interfaceと再発条件を確認し、内部実装や静的文言だけを固定していないか。未確認の実画面・実service結果をtestで代替していないか
+- 計画外の外部副作用、secret・個人情報の露出、不要なdependency、将来機能の先回り、運用・performance costを持ち込んでいないか
+
+既存のledgerとPLANの範囲内で直せる指摘はmain Codexが実装・test・進捗へ反映し、同じ担当へ差分を再確認させる。code、PLAN、ledgerのどれを正とするかで契約判断が必要な不一致は、都合のよい一つへ合わせず4.2の停止条件としてuserへ報告する。全条件を「実装済み」「実装済み・Journey／実service待ち」「未実装」「契約判断待ち」の4つへ根拠付きで分類する。前2分類だけになり、未解決の重大指摘がない場合に限ってGateを通す。`未実装`は`doing`のまま実装を続け、`契約判断待ち`は4.2に従って停止する。
+
+このGateはcode・testと契約の整合を確認するもので、実画面Journey、実service、目視品質、費用を伴う検証の代用ではない。Gate通過後、codeと必要な自動testが成立した状態を`implemented`とする。自動testとレビューの成功だけで`verified`にしない。
+
+Gate通過後に、review対象だった実装成果物または外部構成・状態を変更するか、PLAN／ledgerのGoal、scope、受け入れ条件、実装・検証契約を意味的に変更した場合は、原因を問わず実装後レビューGateを失効させる。実装成果物にはcode、test、設定、schema／migration、dependency、content、prompt、静的・生成asset、deploy済み外部設定を含む。同じ担当による最終差分レビューと影響を受ける自動検証を通してからJourneyを再開し、影響を受けるJourneyも再実行する。最終変更後のレビューを通らないまま`implemented`または`verified`へ進めない。
+
+レビューとJourneyの実結果を契約どおり記録するだけの状態遷移、条件checkbox、検証欄、証拠link、PLANの進捗checkbox・結果ログはGateを失効させない。ただし、未確認結果を完了扱いする変更や、記録に見せかけて契約の意味を変える更新は失効対象とする。
 
 ## 6. Journeyを検証する
 
@@ -151,7 +170,7 @@ UIを含むUSは通常入口から実画面で確認する。外部サービス�
 - 自動テストだけで十分なUSは、その根拠を検証欄へ記録する。
 - 実サービス、目視品質判断、費用、外部job、重要な失敗復旧を扱った場合は、ledgerと同じscopeの`EVIDENCE/_TEMPLATE.md`から証拠を作る。
 - 証拠名は`EVIDENCE/YYMMDD_US-XX_{slug}.md`とし、成果物本体や秘密情報を文書へ埋め込まない。
-- 未確認条件が一つでも残る場合は`implemented`または`blocked`を維持し、検証の`未確認条件`へ条件IDを列挙する。
+- 実装後レビューで`未実装`と分類された条件があれば`doing`を維持する。全実装は成立しJourney／実serviceだけが未確認なら`implemented`、外部条件により進められない場合だけ`blocked`とし、検証の`未確認条件`へ条件IDを列挙する。
 
 最後に次を実行する。
 
