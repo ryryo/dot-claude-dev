@@ -1,17 +1,17 @@
-# 複数worktree向けPLAN設計
+# 並列実行可能なPLAN設計
 
-対象scopeが複数の独立成果へ分かれ、別worktree／sessionで直列・並列に進める場合だけ読む。USは利用者契約、PLANは実行契約、進行PLANは実行graphの正本として分離する。
+対象scopeが複数の独立成果へ分かれ、直列・並列の実行graphが必要な場合だけ読む。USは利用者契約、PLANは成果と実行内容の契約、進行PLANは依存graphの正本として分離する。checkout、branch、worktree、session、agentは着手時に選ぶ実行割当であり、PLANの前提にしない。
 
 ## 1. 分割可否を先に判定する
 
 実行PLANへ分ける候補は、次をすべて満たす場合だけ採用する。
 
-1. 先行Gateまたはbaselineを明示すれば、別sessionが追加の製品判断なしに開始できる。
+1. 先行Gateまたはbaselineを明示すれば、別の実行主体が追加の製品判断なしに開始できる。
 2. 排他的write scopeを持ち、同じsource、generated file、lockfile、台帳、EVIDENCE、外部状態を別laneと同時変更しない。
 3. candidate commit、固定した公開interface、検証結果、外部操作結果など、統合ownerへ渡す成果が明確である。
 4. focused test、typecheck、build、dry-runなど、handoff前にlocalで再現できる強いoracleがある。
 5. merge、shared glue、生成物再生成、上位test、Journey、台帳更新を所有する統合先が一つに決まる。
-6. worktree作成、merge、reviewの追加費用を上回る並行化または責務分離の実益がある。
+6. 調整、merge、reviewの追加費用を上回る並行化または責務分離の実益がある。
 
 条件数、技術layer、画面数、US境界だけで分割しない。同じstateやcommand/historyを連続変更する、同じfileを往復する、統合前に合否を判定できない候補は一つの実行PLANのPhaseにまとめる。
 
@@ -19,14 +19,14 @@
 
 複数PLANが必要なら、一回の計画操作で次を揃える。
 
-- 実行PLAN: 一つのmerge可能な成果を、一つのworktree／sessionでhandoffする契約。
+- 実行PLAN: 一つのmerge可能な成果をhandoffする契約。
 - integration PLAN: 複数candidateのmerge、shared glue、生成物、上位検証、実装後review、Journey、台帳更新に実作業がある場合の実行PLAN。
-- external PLAN: deploy、課金、外部データ変更など、別承認と単一ownerが必要な操作を独立sessionへ分ける場合の実行PLAN。
+- external PLAN: deploy、課金、外部データ変更など、別承認と単一ownerが必要な操作を分ける場合の実行PLAN。
 - 進行PLAN: 上記PLANの依存、状態、割当、統合順を管理するindex。実装は所有しない。
 
-integrationやexternalの作業が小さく独立sessionを要しない場合は、別PLANを増やさず、既存の統合実行PLANへ含める。既存PLANを再編する場合は、検証済みの履歴を失わない。新しい実行入口を進行PLANへ一本化し、旧PLANを残すならarchive／supersededと明示して二重の正本を作らない。
+integrationやexternalの作業が小さく独立成果を要しない場合は、別PLANを増やさず、既存の統合実行PLANへ含める。既存PLANを再編する場合は、検証済みの履歴を失わない。新しい実行入口を進行PLANへ一本化し、旧PLANを残すならarchive／supersededと明示して二重の正本を作らない。
 
-実行PLAN名はUS IDではなく安定した成果名を使う。例: `YYMMDD_wt-editor-shell.md`。worktree名やbranchは実行時に変わり得るため、成果名をfileのidentityとし、実際の割当は進行PLANへ記録する。
+実行PLAN名はUS IDや実行方式ではなく安定した成果名を使う。例: `YYMMDD_editor-shell.md`。成果名をfileのidentityとし、実際の実行割当が必要なら進行PLANへ任意・非契約情報として記録する。割当変更だけではPLANの意味reviewを失効させない。
 
 ## 3. 実行PLANの必須契約
 
@@ -45,7 +45,7 @@ repositoryのPLAN templateを使い、少なくとも次を固定する。
 
 candidateは、自分のcommitとlocal oracleが成立した時点でhandoffする。merge後Gate、実Journey、USの`implemented`／`verified`、台帳、共有進行PLANを更新しない。integrationまたはexternal ownerだけが、同じ統合baselineの実結果から最終状態を更新する。
 
-integration PLANとは別に進行PLANやREADMEがある場合も、integration sessionが自PLANだけで実行順とhandoffを判断できるよう、実行DAGをintegration PLANへ置く。進行PLANの全台帳や個別taskは複製せず、そのintegration PLANが所有・接続するedgeとGateだけを自己完結して示す。
+integration PLANとは別に進行PLANやREADMEがある場合も、integration ownerが自PLANだけで実行順とhandoffを判断できるよう、実行DAGをintegration PLANへ置く。進行PLANの全台帳や個別taskは複製せず、そのintegration PLANが所有・接続するedgeとGateだけを自己完結して示す。
 
 ## 4. 進行PLANの必須契約
 
@@ -55,7 +55,7 @@ integration PLANとは別に進行PLANやREADMEがある場合も、integration 
 2. Mermaid DAG。直列edge、並列lane、merge point、条件付きfallback、外部停止Gate、最終Joinを区別する。文章、一覧表、別fileへのlinkだけでは代替しない。
 3. 次の列を持つPLAN台帳。
 
-| lane | PLAN | role | 対象条件 | depends on | handoff先 | worktree／session | 状態 |
+| lane | PLAN | role | 対象条件 | depends on | handoff先 | 実行割当（任意・非契約） | 状態 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `<stable-id>` | `<path>` | `candidate/integration/external` | `<US-XX-NN>` | `<Gateまたはなし>` | `<lane>` | `<未割当または実値>` | `planned/ready/active/handoff/merged/verified/blocked` |
 
@@ -63,7 +63,9 @@ integration PLANとは別に進行PLANやREADMEがある場合も、integration 
 5. candidateのmerge順、生成物再生成、上位検証、review、Journey、deployの順序。
 6. 現在のready lane、停止理由、再開条件。依存が変わったときだけ更新する。
 
-個別PLANのPhase、command、詳細task、受け入れ条件本文を複製しない。条件IDとlinkで参照する。進行PLANの状態更新はcoordination／integration ownerだけが行い、candidate sessionはhandoff結果を返すだけにする。
+並行実行時は、進行管理側がwrite scope、port、Wrangler state、生成物、外部状態を衝突させない実行contextを選ぶ。worktreeはその選択肢の一つであり必須ではない。同じcheckoutでの直列実行、別agent／session、branch、worktreeなど、状況に合う方法を選ぶ。
+
+個別PLANのPhase、command、詳細task、受け入れ条件本文を複製しない。条件IDとlinkで参照する。進行PLANの状態更新はcoordination／integration ownerだけが行い、candidate ownerはhandoff結果を返すだけにする。
 
 ## 5. plan set review
 
@@ -74,7 +76,7 @@ integration PLANとは別に進行PLANやREADMEがある場合も、integration 
 - Mermaidがrender可能で、図のedge、Gate名、fallback、外部lane、最終Joinが各PLAN本文と一致し、文章側だけ・図側だけに存在する依存がない。
 - 並行laneのwrite scopeと外部状態ownerが排他的である。
 - candidateが単独でUS完了を主張せず、統合baselineで上位test、review、Journeyが再実行される。
-- 実行PLAN単体を新規sessionへ渡しても、開始条件、成果、禁止範囲、handoff先を推測せず実行できる。
+- 実行PLAN単体を新しい実行主体へ渡しても、開始条件、成果、禁止範囲、handoff先を推測せず実行できる。
 - PLANの分割費用に見合う並行化利益があり、同じcodeを複数laneで二度実装しない。
 
 意味変更を反映した場合は、影響する実行PLANだけでなく、依存、owner、条件追跡が変わる進行PLANも同じreviewerへ再確認させる。
