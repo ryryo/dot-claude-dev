@@ -41,15 +41,18 @@ repositoryのPLAN templateを使い、少なくとも次を固定する。
 - integration ownerへ残す作業: merge、shared glue、generated file、lockfile、上位test、Journey、台帳／EVIDENCE更新
 - focused検証とhandoff Gate
 - 契約変更、owner競合、外部承認不足に対する停止条件
+- 複数candidateの開始、merge、外部handoff、最終Joinを所有するintegration PLANでは、本文と同じGate名を使ったMermaid実行DAG。現在baseline、hard dependency、並行lane、merge point、条件付きfallback、external lane、最終Joinを省略しない
 
 candidateは、自分のcommitとlocal oracleが成立した時点でhandoffする。merge後Gate、実Journey、USの`implemented`／`verified`、台帳、共有進行PLANを更新しない。integrationまたはexternal ownerだけが、同じ統合baselineの実結果から最終状態を更新する。
+
+integration PLANとは別に進行PLANやREADMEがある場合も、integration sessionが自PLANだけで実行順とhandoffを判断できるよう、実行DAGをintegration PLANへ置く。進行PLANの全台帳や個別taskは複製せず、そのintegration PLANが所有・接続するedgeとGateだけを自己完結して示す。
 
 ## 4. 進行PLANの必須契約
 
 進行PLAN名は`YYMMDD_{scope}_execution.md`を既定とし、次だけを持つ。
 
 1. 対象scope、開始baseline、全体完了条件、coordination owner。
-2. Mermaid DAGまたは同等の依存graph。直列edge、並列lane、merge point、外部停止Gateを区別する。
+2. Mermaid DAG。直列edge、並列lane、merge point、条件付きfallback、外部停止Gate、最終Joinを区別する。文章、一覧表、別fileへのlinkだけでは代替しない。
 3. 次の列を持つPLAN台帳。
 
 | lane | PLAN | role | 対象条件 | depends on | handoff先 | worktree／session | 状態 |
@@ -68,6 +71,7 @@ candidateは、自分のcommitとlocal oracleが成立した時点でhandoffす�
 
 - 全条件IDに実装ownerと最終確認ownerがあり、重複・空白・未確認の完了扱いがない。
 - graphに閉路、不要な直列待ち、未記載のmerge pointがない。
+- Mermaidがrender可能で、図のedge、Gate名、fallback、外部lane、最終Joinが各PLAN本文と一致し、文章側だけ・図側だけに存在する依存がない。
 - 並行laneのwrite scopeと外部状態ownerが排他的である。
 - candidateが単独でUS完了を主張せず、統合baselineで上位test、review、Journeyが再実行される。
 - 実行PLAN単体を新規sessionへ渡しても、開始条件、成果、禁止範囲、handoff先を推測せず実行できる。

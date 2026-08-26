@@ -93,6 +93,7 @@ PLANが必要な場合は、ledgerと同じproject scopeにあるPLAN template�
 - 分割候補ごとに、明示した開始条件、排他的write scope、handoff成果、localで再現できる検証oracle、統合owner、並行化の実益があるかを確認する。一つでも成立しない候補は、別PLANにせず同じPLANのPhaseへ戻す。条件数が多いことだけを分割理由にしない。
 - 複数PLANが必要と判断した場合は、[複数worktree向けPLAN設計](references/multi-plan-execution.md)を読み、対象scopeの実行PLAN群と進行PLANを一度の計画操作で作る。一枚作るたびに次のUSや次のPLANをuserへ選ばせず、未確定の製品判断だけを質問する。
 - 進行PLANは依存graph、直列／並列lane、各PLANの状態、baseline、worktree割当、merge順、統合・外部状態owner、次に開始可能なPLANを管理する。実装taskやPhaseを個別PLANと重複記載しない。各実行PLANは自分のread／write scope、Goal、条件ID、開始Gate、handoff、focused検証、停止条件だけを自己完結して持つ。
+- 複数の実行PLANの開始、並行lane、merge／Join Gate、外部sessionへのhandoffを所有するintegration／coordination PLANには、Mermaidの実行DAGを必須とする。別のREADMEや進行PLANへのlink、文章だけの順序、PLAN一覧表だけでは代替しない。図には現在baseline、hard dependency、並行可能な分岐、merge point、条件付きfallback、外部停止Gate、最終Joinを示し、本文の開始条件・Gate・ownerと同じ名前で照合できるようにする。
 - 対象USの受け入れ条件が確定してからPLANを作る。PLANの都合で条件を足したり弱めたりしない。
 - 対象USと受け入れ条件をPLANから追跡可能にする。条件IDで参照する。
 - Goal、制約、対象外、Phaseの完了状態、Gate、検証commandを実装前に固定する。
@@ -107,6 +108,7 @@ PLANを実装の入力として固定する前に、ストーリーレビュー�
 - 全条件IDと各`例:`がPhase、Gate、検証へ追跡でき、PLANがストーリーを弱めたり未確認の条件を完了扱いしたりしていないか
 - 開始条件、依存関係、実装順、停止Gate、対象外が実際のrepository状態と整合し、別PLANや将来機能との間に隙間がないか
 - plan setに閉路、不要な直列待ち、同一file／generated file／lockfile／台帳／EVIDENCE／外部状態の複数ownerがなく、各candidateのhandoffを統合ownerが同じbaselineで検証できるか
+- integration／coordination PLANのMermaid DAGがrender可能で、本文と同じbaseline、直列／並列lane、merge／Join Gate、fallback、外部session、最終ownerを表し、図と文章のどちらにも未記載のedgeがないか
 - UI routeだけでなく、API、server function、background処理、session、cache、保存先など、同じ契約を通るsurfaceが保護・検証範囲から漏れていないか
 - normal pathに加え、失敗、拒否、cancel、retry、reload、復元、利用者・領域切替の実装責務と検証oracleがあるか
 - test、typecheck、build、実画面Journey、実service、証拠がリスクに応じて分かれ、mockや静的文字列一致を実検証の代用にしていないか
