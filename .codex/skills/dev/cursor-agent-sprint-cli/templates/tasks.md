@@ -153,7 +153,7 @@ forbidden_paths:
 - `docs/PLAN/**`
 - `.codex/skills/**`
 - allowed write scope 外のファイル
-- stage / commit / push / PR / branch 操作
+- version control / remote 操作
 
 constraints:
 
@@ -215,7 +215,7 @@ forbidden_paths:
 - `docs/PLAN/**`
 - `.codex/skills/**`
 - allowed write scope 外のファイル
-- stage / commit / push / PR / branch 操作
+- version control / remote 操作
 
 constraints:
 

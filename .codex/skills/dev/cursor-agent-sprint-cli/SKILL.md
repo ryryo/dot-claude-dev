@@ -41,7 +41,7 @@ auth、secret、crypto、crash/retry/lease、外部providerなどのrisk modifie
 
 ## 絶対ルール
 
-- worker に commit、push、PR 作成、branch 切替、progress file 更新、最終完了判断を任せない。
+- worker にversion control／remote操作、progress file 更新、最終完了判断を任せない。
 - 実行主体は常に main Codex から考え始め、委任条件を満たす task だけ `cursor-cli-agent` に切り替える。
 - 2 つ以上の worker の write scope を重ねない。
 - ユーザーが明示しない限り、既存の未コミット変更を戻さない。
@@ -91,7 +91,6 @@ script は次の構成を作る。
 
 ```bash
 git status --short
-git branch --show-current
 ```
 
 既存の変更はユーザーまたは先行 agent の作業として扱う。戻さず、上書きせず、必要なら避けて作業する。
@@ -184,7 +183,7 @@ Write scope:
   - allowed write scope 外のファイル
 
 Constraints:
-- stage、commit、push、PR 作成、branch 切替、planning/progress file 更新をしない。
+- version control／remote操作、planning/progress file 更新をしない。
 - 関係ない既存変更を戻さない。
 - 他の worker またはユーザーが無関係なファイルを変更中かもしれない前提で作業する。
 - repository instructions、TDD、YAGNI、振る舞いベースのテストを守る。

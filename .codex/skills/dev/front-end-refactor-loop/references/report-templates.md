@@ -11,7 +11,7 @@ main Codex が loop ごと、最終完了時に使う報告雛形。
 - 対象: <対象範囲>
 - ループ: <番号>
 - 調査結果: <findings summary>
-- コミット: <hash/message または未作成理由>
+- 変更path: <変更したfile／directory>
 - 挙動変更: 意図していない
 
 ### 変更内容
@@ -73,9 +73,9 @@ main Codex が loop ごと、最終完了時に使う報告雛形。
 | <route/component/hook> | <大きな変更点> | <効果と挙動維持理由> |
 
 ### ループ履歴
-| ループ | 調査結果 | 性能計測ゲート | コミット | 検証 |
+| ループ | 調査結果 | 性能計測ゲート | 変更path | 検証 |
 |---|---|---|---|---|
-| 1 | <findings summary> | <実施/省略> | <hash/message> | <passed commands> |
+| 1 | <findings summary> | <実施/省略> | <changed paths> | <passed commands> |
 
 ### パターン適用範囲
 - Container / presentational boundary: <適用箇所 or 該当なし>

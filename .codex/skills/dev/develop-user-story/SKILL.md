@@ -118,12 +118,13 @@ main Codexは`fix-here`だけをledgerへ反映し、後工程へ送る項目は
 
 PLANが必要な場合は、ledgerと同じproject scopeにあるPLAN templateを使う。repository直下台帳では`docs/PLAN/_TEMPLATE.md`、project-local台帳では同階層の`_PLAN_TEMPLATE.md`を優先する。候補が複数または存在しない場合は独自形式を作る前に確認する。
 
-- PLANの単位はUS、受け入れ条件の個数、技術layer、Phase、実行環境ではなく、独立してhandoffできる一つのmerge可能な成果で決める。checkout、branch、worktree、session、agentは実行時の割当であり、PLANの意味契約へ固定しない。
+- PLANの単位はUS、受け入れ条件の個数、技術layer、Phase、実行環境ではなく、独立してhandoffできる一つの成果で決める。実行主体や実行環境の識別子は計画外の管理情報とし、PLANへ記録しない。
 - 一つのUSを複数PLANへ写像してよく、一つのPLANが複数USの条件を扱ってもよい。candidate PLANは担当条件を実装してもUS完了を主張せず、統合・Journey・外部検証を所有するPLANが最終状態を更新する。
 - 分割候補ごとに、明示した開始条件、排他的write scope、handoff成果、localで再現できる検証oracle、統合owner、並行化の実益があるかを確認する。一つでも成立しない候補は、別PLANにせず同じPLANのPhaseへ戻す。条件数が多いことだけを分割理由にしない。
 - 複数PLANが必要と判断した場合は、[並列実行可能なPLAN設計](references/parallel-plan-execution.md)を読み、対象scopeの実行PLAN群と進行PLANを一度の計画操作で作る。一枚作るたびに次のUSや次のPLANをuserへ選ばせず、未確定の製品判断だけを質問する。
-- 進行PLANは依存graph、直列／並列lane、各PLANの状態、baseline、merge順、統合・外部状態owner、次に開始可能なPLANを管理する。実行割当が必要なら任意・非契約の管理情報として記録し、PLANの再review理由にしない。実装taskやPhaseを個別PLANと重複記載しない。各実行PLANは自分のread／write scope、Goal、条件ID、開始Gate、handoff、focused検証、停止条件だけを自己完結して持つ。
-- 複数の実行PLANの開始、並行lane、merge／Join Gate、external成果へのhandoffを所有するintegration／coordination PLANには、Mermaidの実行DAGを必須とする。別のREADMEや進行PLANへのlink、文章だけの順序、PLAN一覧表だけでは代替しない。図には現在baseline、hard dependency、並行可能な分岐、merge point、条件付きfallback、外部停止Gate、最終Joinを示し、本文の開始条件・Gate・ownerと同じ名前で照合できるようにする。
+- 進行PLANは依存graph、直列／並列lane、各PLANの状態、開始Gate、統合順、統合・外部状態owner、次に開始可能なPLANを管理する。実行割当はPLANの外で管理し、実装taskやPhaseを個別PLANと重複記載しない。各実行PLANは自分のread／write scope、Goal、条件ID、開始Gate、handoff、focused検証、停止条件だけを自己完結して持つ。
+- PLAN、進行PLAN、review metadataにはversion controlや実行環境の識別子、content digestを書かない。変更の同一性はpath、先行Gate、公開contract、検証結果で確認する。外部sourceの版・license provenanceが必要な場合は`docs/REFERENCE/`、`docs/EVIDENCE/`、noticeまたはdependency管理へ置き、PLANはそのpathだけを参照する。
+- 複数の実行PLANの開始、並行lane、merge／Join Gate、external成果へのhandoffを所有するintegration／coordination PLANには、Mermaidの実行DAGを必須とする。別のREADMEや進行PLANへのlink、文章だけの順序、PLAN一覧表だけでは代替しない。図には開始Gate、hard dependency、並行可能な分岐、merge point、条件付きfallback、外部停止Gate、最終Joinを示し、本文の開始条件・Gate・ownerと同じ名前で照合できるようにする。
 - 対象USの受け入れ条件が確定してからPLANを作る。PLANの都合で条件を足したり弱めたりしない。
 - 対象USと受け入れ条件をPLANから追跡可能にする。条件IDで参照する。
 - Goal、制約、対象外、Phaseの完了状態、Gate、検証commandを実装前に固定する。
@@ -142,8 +143,8 @@ PLANを実装の入力として固定する前に、ストーリーレビュー�
 
 - 全条件IDと各`例:`がPhase、Gate、検証へ追跡でき、PLANがストーリーを弱めたり未確認の条件を完了扱いしたりしていないか
 - 開始条件、依存関係、実装順、停止Gate、対象外が現在のrepository状態と整合し、実装者が契約判断なしで開始できるか
-- 複数PLANの場合だけ、閉路、不要な直列待ち、同一file／generated file／lockfile／台帳／EVIDENCE／外部状態の複数ownerがなく、handoffを統合ownerが同じbaselineで検証できるか
-- integration／coordination PLANの場合だけ、Mermaid DAGがrender可能で、本文と同じbaseline、依存、並行lane、merge／Join Gate、fallback、外部停止Gate、最終ownerを表すか
+- 複数PLANの場合だけ、閉路、不要な直列待ち、同一file／generated file／lockfile／台帳／EVIDENCE／外部状態の複数ownerがなく、handoffを統合ownerが同じreview済みcontractと開始Gateで検証できるか
+- integration／coordination PLANの場合だけ、Mermaid DAGがrender可能で、本文と同じ開始Gate、依存、並行lane、統合／Join Gate、fallback、外部停止Gate、最終ownerを表すか
 - ledgerまたは既存実装で同じ契約を通ることが確認できたroute、API、server function、background処理、session、cache、保存先が、実装責務と検証から漏れていないか
 - ストーリーで明示されたnormal pathと例外導線について、必要な実装責務と再現可能な検証oracleがあるか
 - test、typecheck、build、実画面Journey、実service、証拠が、適用されたrisk triggerに応じて分かれ、mockや静的文字列一致を実検証の代用にしていないか
@@ -155,7 +156,7 @@ main Codexは`fix-here`だけをPLANへ反映し、全条件を追跡できる�
 
 ### 4.2 PLANを完遂する
 
-userが実行PLANに従った全実装を求めた場合は、そのPLAN全体だけを現在taskのscopeとする。進行PLANは実装scopeにせず、開始可能な実行PLANの選択、依存・状態・handoffの確認に使う。複数PLANを並行実行するときは、各laneのwrite scope、port、生成物、外部状態を衝突させない独立した実行contextへ割り当てる。実行contextには別agent／session、branch、worktreeなどを選べるが、どれもPLANの前提ではない。同じcontextで直列実行できる場合は不要な分離を要求しない。最初の未完了項目から依存順に進め、各PhaseとGate、担当するJourney、証拠、handoffまで、未完了項目がなくなるか次の停止条件に当たるまで継続する。PhaseやGateを一つ終えたこと、作業量が多いこと、通常のテスト失敗や実装上の難しさだけを理由にuserへ返さない。
+userが実行PLANに従った全実装を求めた場合は、そのPLAN全体だけを現在taskのscopeとする。進行PLANは実装scopeにせず、開始可能な実行PLANの選択、依存・状態・handoffの確認に使う。複数PLANを並行実行するときは、各laneのwrite scope、port、生成物、外部状態を衝突させない実行contextを計画外で割り当てる。同じcontextで直列実行できる場合は不要な分離を要求しない。最初の未完了項目から依存順に進め、各PhaseとGate、担当するJourney、証拠、handoffまで、未完了項目がなくなるか次の停止条件に当たるまで継続する。PhaseやGateを一つ終えたこと、作業量が多いこと、通常のテスト失敗や実装上の難しさだけを理由にuserへ返さない。
 
 PLAN内のscopeと権限で安全に解決できる失敗は、原因を調査し、必要な修正と検証を行って続行する。次のいずれかでは、迂回実装や暗黙の契約変更を行う前に停止する。
 

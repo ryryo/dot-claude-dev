@@ -1,6 +1,6 @@
 # プロンプト雛形
 
-Cursor CLI worker に渡す prompt の雛形。実際に使う前に、対象 repository の絶対パス、HEAD、scope、read / write scope、検証コマンドへ置き換える。
+Cursor CLI worker に渡す prompt の雛形。実際に使う前に、対象 repository の絶対パス、scope、read / write scope、許容する既存差分、検証コマンドへ置き換える。
 
 ## 新規監査プロンプト
 
@@ -22,10 +22,10 @@ R01-A1
 Goal:
 指定範囲を read-only で新規監査し、挙動変更なしで直す価値があるフロントエンドリファクタリング対象だけを報告してください。
 
-Expected baseline:
-- `git rev-parse --short HEAD` は `<expected short sha>` であること。
-- `git status --short` は空であること。
-- 一致しない場合は `BLOCKED: baseline mismatch` とだけ報告して停止してください。
+Expected state:
+- `git status --short` は空、またはmainが列挙した既存差分だけであること。
+- 対象pathと参照資料が存在すること。
+- 一致しない場合は `BLOCKED: working state mismatch` とだけ報告して停止してください。
 
 Read first:
 - <absolute workspace path>/.codex/skills/dev/front-end-refactor-loop/references/front-end-design-patterns/decision-matrix.md
@@ -38,7 +38,7 @@ Read scope:
 
 Forbidden:
 - ファイル編集
-- commit、push、PR 作成、branch 切替
+- version control／remote操作
 - このスキル配下以外の既存スキル資産の参照
 - 対象範囲外の一般論だけの報告
 
@@ -98,7 +98,7 @@ Write scope:
 
 Constraints:
 - 機能、UI 仕様、公開 API、データ形式、保存形式、URL、イベント順、外部 API 呼び出しを変えない。
-- stage、commit、push、PR 作成、branch 切替、planning / progress file 更新をしない。
+- version control／remote操作、planning / progress file 更新をしない。
 - 関係ない既存変更を戻さない。
 - 大きな抽象化や依存追加をしない。
 - 対象 repository の既存規約に合わせる。

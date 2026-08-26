@@ -146,7 +146,7 @@ required taskの完了または理由付きdeferred、integration batchのaccept
 
 ## 共通禁止事項
 
-- workerにplan更新、完了判定、commit、push、merge、PR、branch切替を任せない。
+- workerにplan更新、完了判定、version control／remote操作を任せない。
 - write scopeが重なるworkerを並列実行しない。
 - worker reportだけで採否を決めず、既存の未コミット変更を戻さない。
 - Cursor CLI preflightを通常taskにしない。CLI-level errorが起きた場合だけ実行する。

@@ -188,7 +188,7 @@ flowchart TD
 - Constraints: 値はrepositoryを実際に読んで決める。既存の多数派patternを根拠付きで採用する
 - Acceptance: `## UI foundation`のF1〜F7が具体値で埋まり、S1〜S5のcommandがmainの手元で実際に実行できる
 - Worker verification: `none`
-- Main verification: `S1〜S5を現行HEADへ実行し、command自体が動作することと既存件数のbaselineを記録する`
+- Main verification: `S1〜S5を現行作業状態へ実行し、command自体が動作することと既存件数を記録する`
 - Final report: 確定した値、既存baseline件数、意図的な差分として先に認めた項目
 
 ### UI-I: UI design integration gate
@@ -266,7 +266,7 @@ flowchart TD
 - Goal: <このtaskが成立させる状態>
 - Read scope: `<paths>`
 - Write scope: `<separated paths>`
-- Forbidden: `plan更新、commit、branch、remote、scope外変更`
+- Forbidden: `plan更新、version control／remote操作、scope外変更`
 - Fixed contract / reference: `<main decision / invariant / negative case / existing pattern / sample / fixture>`
 - Constraints: <守るcontract>
 - Acceptance: <観測可能な局所完了状態>
@@ -322,7 +322,7 @@ Final report追記:
 - Goal / question: <独立して答えられるbounded question>
 - Read scope: `<paths / logs / sources>`
 - Write scope: `none`
-- Forbidden: `source変更、plan更新、commit、branch、remote、外部state変更`
+- Forbidden: `source変更、plan更新、version control／remote操作、外部state変更`
 - Constraints: <評価基準と前提>
 - Acceptance: `根拠、結論、不確実性、推奨を要約してmainへ返す`
 - Worker verification: `<read-only checks | none>`

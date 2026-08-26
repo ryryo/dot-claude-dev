@@ -2,7 +2,7 @@
 
 大きな実装計画や調査計画を Cursor CLI sprint の実行単位へ分割するための手順。
 
-この option は実装ではなく分割設計を行う。main Codex が計画の source of truth とsprint boundaryを決める。判断が固定済みで独立完結し、write scopeを隔離でき、検証oracleがあり、局所棄却できるtaskをCursor CLI workerへ委任する。Cursor CLI workerの範囲はtask-localなsource writeとverificationとし、計画全体の進行判断、完了判定、計画ファイル更新、commit/pushはmainが所有する。
+この option は実装ではなく分割設計を行う。main Codex が計画の source of truth とsprint boundaryを決める。判断が固定済みで独立完結し、write scopeを隔離でき、検証oracleがあり、局所棄却できるtaskをCursor CLI workerへ委任する。Cursor CLI workerの範囲はtask-localなsource writeとverificationとし、計画全体の進行判断、完了判定、計画ファイル更新、version control／remote操作はmainが所有する。
 
 特定の計画フォーマットを前提にしない。構造化された計画、Markdown の実装メモ、issue、PR description、Linear ticket、設計ドキュメント、手元のチェックリスト、または会話内の指示だけで構成された大きな作業にも同じ考え方で分割する。
 
@@ -180,7 +180,7 @@ sprint-cli に投げる前に確認する。
 - [ ] この sprint は 1 から 3 個程度の統合バッチに収まる。
 - [ ] 各 Cursor CLI task の write scope が重ならない。
 - [ ] worker が触ってよいファイルを絶対パスで書ける。
-- [ ] source-of-truth 計画ファイル、commit、push、進捗更新を worker に任せていない。
+- [ ] source-of-truth 計画ファイル、version control／remote操作、進捗更新を worker に任せていない。
 - [ ] Cursor CLI taskはdecisionがfixed/bounded、independenceがindependent/staged、write scopeがisolated、oracleがstrong/限定可能なpartial、side effectがlocal/shared reversibleである。
 - [ ] execution routeを判断状態、独立性、write scope、oracle、副作用と可逆性から決め、complexityを実行量と検証強度へ反映した。
 - [ ] risk modifierがあるtaskは、main固定invariant、negative case、real secret/production state禁止、main再検証が具体化されている。

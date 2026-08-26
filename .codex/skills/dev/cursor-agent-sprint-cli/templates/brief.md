@@ -14,14 +14,13 @@
 ## Repository Context（確認した前提）
 
 - Workspace: `<absolute workspace path>`
-- Branch: `<branch>`
 - 初期状態: `<git status --short の要約>`
 - 読んだもの:
   - `<path>`: <確認した事実>
 
 ## 制約
 
-- worker に stage / commit / push / PR / branch 切替を任せない。
+- worker にversion controlやremote操作を任せない。
 - write scope が重なる task は並列化しない。
 - 既存の未コミット変更を戻さない。
 - Cursor CLI worker は `--yolo` で動くため、main Codex が diff と write scope を必ず検収する。

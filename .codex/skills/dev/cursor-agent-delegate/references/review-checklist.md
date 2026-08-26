@@ -1,12 +1,12 @@
 # 検収
 
-委任前に`git status --short`と`git branch --show-current`を記録する。既存の変更はユーザーまたは先行workerの作業として扱い、元に戻さない。
+委任前に`git status --short`を確認する。既存の変更はユーザーまたは先行workerの作業として扱い、元に戻さない。
 
 ## 共通
 
 - planの`policy_id`、work kind、complexity、decision state、independence、side-effect scope、verification oracle、execution route、理由、owner、model/reasoningが`task-routing.json`と一致する。
 - worker reportと実際のdiff・command結果・task contractが一致する。
-- planning / progress、branch、remote、未許可のlockfileやgenerated fileを変更していない。
+- planning / progress、version control／remote、未許可のlockfileやgenerated fileを変更していない。
 - main Codexがacceptanceに必要な検証を再実行する。
 
 ## Cursor実装

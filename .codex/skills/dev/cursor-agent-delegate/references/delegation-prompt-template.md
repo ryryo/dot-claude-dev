@@ -33,7 +33,7 @@ Read first:
 
 Write scope:
 - Allowed: <separated paths>
-- Forbidden: allowed scope外、planning / progress、commit、branch、remote、未許可のlockfile / generated file
+- Forbidden: allowed scope外、planning / progress、version control / remote操作、未許可のlockfile / generated file
 
 Fixed contract / reference:
 - <main Codexが固定した決定、既存pattern、sample>
@@ -125,7 +125,7 @@ Read scope:
 
 Write scope:
 - Allowed: none
-- Forbidden: source、plan、progress、commit、branch、remote、external stateの変更
+- Forbidden: source、plan、progress、version control / remote操作、external stateの変更
 
 Evaluation criteria:
 - <比較軸、正確性基準、確認すべき反例>

@@ -1,25 +1,25 @@
 ---
 name: architecture-refactor-loop
 description: |
-  コードベースまたは指定範囲を、main Codex 主導でアーキテクチャ上の満足条件まで段階的にリファクタリングする。フェーズ分け、/tmp/refactor-{projectname}.md の進捗記録、goal file 作成、各 goal ごとの委譲判定、実装、実動作確認、Codex 側レビュー、コミット、再監査を反復する。大規模リファクタ、責務分離、依存方向整理、モジュール境界整理、状態・副作用境界の改善、テスト容易性改善、コードベース全体の architecture cleanup で使う。起動語: architecture-refactor-loop, アーキテクチャリファクタリングループ, コードベースを満足できるまでリファクタ, フェーズ分けしてリファクタ, goal file リファクタ, /tmp/refactor 進捗
+  コードベースまたは指定範囲を、main Codex 主導でアーキテクチャ上の満足条件まで段階的にリファクタリングする。フェーズ分け、/tmp/refactor-{projectname}.md の進捗記録、goal file 作成、各 goal ごとの委譲判定、実装、実動作確認、Codex 側レビュー、再監査を反復する。大規模リファクタ、責務分離、依存方向整理、モジュール境界整理、状態・副作用境界の改善、テスト容易性改善、コードベース全体の architecture cleanup で使う。起動語: architecture-refactor-loop, アーキテクチャリファクタリングループ, コードベースを満足できるまでリファクタ, フェーズ分けしてリファクタ, goal file リファクタ, /tmp/refactor 進捗
 ---
 
 # architecture-refactor-loop
 
-コードベースを一気に書き換えず、現状把握、フェーズ計画、goal file、委譲判定、実装、検証、Codex 側レビュー、コミット、再監査の単位で進める。main Codex が設計判断・採否・統合・レビュー・完了判定を持ち、分離できる局所作業だけを必要に応じて worker に委譲する。
+コードベースを一気に書き換えず、現状把握、フェーズ計画、goal file、委譲判定、実装、検証、Codex 側レビュー、変更結果の記録、再監査の単位で進める。main Codex が設計判断・採否・統合・レビュー・完了判定を持ち、分離できる局所作業だけを必要に応じて worker に委譲する。
 
 ## 絶対ルール
 
-- main Codex がアーキテクチャ方針、委譲判定、統合、レビュー、コミット、完了判定を担当する。
+- main Codex がアーキテクチャ方針、委譲判定、統合、レビュー、完了判定を担当する。
 - Cursor CLI worker は必須ではない。ただし各 goal の実装前に、Cursor CLI worker に委譲するかどうかを必ず明示的に判定し、使わない場合も理由を記録する。
 - 実装前委譲判定記録を書かずにコード編集へ入らない。ログや `PROGRESS_FILE` に `Cursor CLI worker 判定` が出ていない実装は手順違反として扱う。
-- Cursor CLI worker にレビュー、採否判断、完了判断、コミット、push、PR 作成、branch 切替を任せない。
+- Cursor CLI worker にレビュー、採否判断、完了判断、version control／remote操作を任せない。
 - レビューは Codex 側で行う。可能なら Codex subagent に read-only fresh review を依頼し、難しければ main Codex が code-review stance で差分レビューする。
 - 既存挙動、公開 API、保存形式、データ形式、schema、URL、イベント順、error semantics、外部副作用を意図なく変えない。
 - 外部 state、production data、secret、remote migration、課金や権限に関わる操作は明示許可なしに行わない。
-- 既存の未コミット変更を戻さない。関係がある場合は差分を読んで作業し、関係がなければ触らない。
+- 既存のユーザー変更を戻さない。関係がある場合は差分を読んで作業し、関係がなければ触らない。
 - 「好みの整理」だけでは goal にしない。各 goal は具体的な architecture pain、受け入れ条件、検証方法を持つ。
-- `/tmp` の進捗ファイルと goal file は作業管理用であり、ユーザーが明示しない限りコミットしない。
+- `/tmp` の進捗ファイルと goal file は一時的な作業管理用であり、ユーザーが永続化を求めない限り成果物へ含めない。
 
 ## 作業ディレクトリ
 
@@ -33,7 +33,7 @@ GOALS_DIR="$REF_DIR/goals"
 mkdir -p "$GOALS_DIR"
 ```
 
-`PROGRESS_FILE` にはフェーズ、goal、委譲判定、検証、レビュー、コミット、残課題を追記する。`GOALS_DIR` には `G01_<slug>.md` のような goal file を作る。
+`PROGRESS_FILE` にはフェーズ、goal、委譲判定、検証、レビュー、変更path、残課題を追記する。`GOALS_DIR` には `G01_<slug>.md` のような goal file を作る。
 
 `/tmp` が使えない環境では、理由を記録したうえで `.codex/tmp/{YYMMDD}_architecture-refactor-{projectname}/` を使う。
 
@@ -43,7 +43,6 @@ mkdir -p "$GOALS_DIR"
 
 ```bash
 git status --short
-git branch --show-current
 ```
 
 読む対象の目安:
@@ -66,7 +65,7 @@ git branch --show-current
 - 検証コマンド:
 - architecture pain:
 - 守る contract:
-- 既存未コミット変更:
+- 既存のユーザー変更:
 ```
 
 ## Discovery Gate
@@ -130,7 +129,7 @@ Discovery Gate を通すには、全観点で finding または「なし」の�
 - 変更した public contract がない、または明示承認された contract 変更だけである。
 - 重要な goal ごとに実動作確認または代替検証が済んでいる。
 - Codex 側レビューで blocking finding がない。
-- 各 integration batch がコミット済みで、作業ツリーが clean、または unrelated なユーザー変更だけが残っている。
+- 各integration batchの変更pathと検証結果が記録済みで、未確認の対象差分が残っていない。
 
 満足条件は `PROGRESS_FILE` に書く。途中で変更する場合は、理由と変更日を追記する。
 
@@ -213,10 +212,10 @@ phase ごとに goal 候補を作る。大きい goal は分割し、小さす�
 - reviewer: main-codex | codex-subagent-readonly
 - review focus:
 
-## コミット
+## 変更結果
 
-- commit unit:
-- message draft:
+- changed paths:
+- verification result:
 ```
 
 ユーザーが `/goal` 実行を明示した環境では、goal file をそのまま `/goal` の入力単位として扱う。そうでない環境では、main Codex が goal file を読み、その契約に沿って直接実行する。
@@ -240,7 +239,7 @@ phase ごとに goal 候補を作る。大きい goal は分割し、小さす�
 - 実装前停止確認: 記録済み
 ```
 
-`Cursor CLI worker 判定` は、最終 owner が main Codex でも省略しない。使わない場合は、contract 判断を含む、write scope が広い、検証が曖昧、既存未コミット変更に触れる、preflight 不可、などの具体的理由を書く。
+`Cursor CLI worker 判定` は、最終 owner が main Codex でも省略しない。使わない場合は、contract 判断を含む、write scope が広い、検証が曖昧、既存のユーザー変更に触れる、preflight 不可、などの具体的理由を書く。
 
 main Codex が直接担当する:
 
@@ -249,7 +248,7 @@ main Codex が直接担当する:
 - 既存挙動や暗黙 contract の解釈が必要。
 - migration、schema、API、auth、storage、routing、external state に関わる。
 - 失敗時の rollback 判断が難しい。
-- 既存未コミット変更に触れる。
+- 既存のユーザー変更に触れる。
 - 検証方法が曖昧。
 
 Codex subagent に委譲してよい:
@@ -301,7 +300,7 @@ Cursor CLI worker を使う場合は、`WORKSPACE/.codex/skills/dev/cursor-agent
 9. Codex 側レビューを行う。
 10. blocking finding があれば修正し、検証とレビューを繰り返す。
 11. `PROGRESS_FILE` を更新する。
-12. `dev:simple-add` 相当で commit する。ユーザーが commit 不要と明示した場合は commit しない。
+12. 変更pathと検証結果を`PROGRESS_FILE`へ記録する。
 
 検証の優先順:
 
@@ -326,7 +325,7 @@ Cursor CLI worker を使う場合は、`WORKSPACE/.codex/skills/dev/cursor-agent
 - state ownership と副作用境界が明確か。
 - テスト容易性が上がっているか。単に mock が増えただけになっていないか。
 - 変更範囲が goal の write scope に収まっているか。
-- 未コミットのユーザー変更を戻していないか。
+- 既存のユーザー変更を戻していないか。
 - 削除した code が本当に不要か。
 - performance、concurrency、resource lifecycle に新しい risk がないか。
 
@@ -345,7 +344,7 @@ Codex subagent が使える場合は、重要 goal または phase 完了時に 
 
 ## Phase Plan
 
-| Phase | Goal | Owner | Status | Commit | Verification |
+| Phase | Goal | Owner | Status | Changed paths | Verification |
 | ----- | ---- | ----- | ------ | ------ | ------------ |
 
 ## Current Findings
@@ -367,7 +366,7 @@ Codex subagent が使える場合は、重要 goal または phase 完了時に 
 - 変更:
 - 検証:
 - Codex review:
-- commit:
+- changed paths:
 - 残リスク:
 ```
 
@@ -400,7 +399,7 @@ git status --short
 - worker に委譲した task と、その検収結果。
 - Codex 側レビュー結果。
 - 実行した検証と結果。
-- commit 一覧。
+- 変更path一覧。
 - deferred item と残リスク。
 
 長い progress file の全文は貼らず、判断に必要な要約だけを書く。

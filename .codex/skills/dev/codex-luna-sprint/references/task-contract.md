@@ -73,7 +73,7 @@ Stop without changes when:
 - source間の矛盾、未解決判断、scope競合、外部副作用、UI/UX/API判断が必要
 
 Constraints:
-- commit、push、PR、branch変更、計画更新、再委任をしない。
+- version control、remote、計画更新、再委任の操作をしない。
 - 無関係な差分を戻さない。
 - TDD、YAGNI、behavior testを守る。
 
