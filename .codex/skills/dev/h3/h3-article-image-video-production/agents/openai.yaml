@@ -1,0 +1,6 @@
+interface:
+  display_name: "H3 記事画像動画化"
+  short_description: "記事LPの画像動画化を判断し、素材設計から生成後の改善まで導く"
+  default_prompt: "$h3-article-image-video-production を使い、記事内の対象箇所を調査して、適切なH3動画カットの判断・制作・改善を進めてください。"
+policy:
+  allow_implicit_invocation: true
