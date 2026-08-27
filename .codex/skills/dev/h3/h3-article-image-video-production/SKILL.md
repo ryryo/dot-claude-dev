@@ -27,7 +27,7 @@ description: 記事LPの画像や既存動画について、動画化の必要�
 - 既存素材で足りるか、追加画像や参照フレームが必要か、H3モードを決めるときは [source-frame-and-reference-strategy.md](references/source-frame-and-reference-strategy.md) を読む。
 - モーショングラフィックス、文字、記号、追従効果の要否を決めるときは [visual-language-and-motion-strategy.md](references/visual-language-and-motion-strategy.md) を読む。
 - 候補をレビューし、局所修正・再設計・再生成・採否を決めるときは [diagnosis-and-refinement-loop.md](references/diagnosis-and-refinement-loop.md) を読む。
-- 過去のやり取りに近い状況を照合するときは [thread-evidence-and-scenario-fixtures.md](references/thread-evidence-and-scenario-fixtures.md) を読む。事例の表面をコピーせず、一般化した原則と適用限界を使う。
+- スキル自体を更新・回帰検証するときだけ [behavioral-fixtures.md](references/behavioral-fixtures.md) を読む。通常の記事動画制作では読み込まない。
 
 ## ワークフロー
 
