@@ -2,23 +2,70 @@
 
 ## 目的
 
-MiniMax H3向けプロンプトで、モーショングラフィックスの語彙を「エフェクト名の羅列」ではなく、観測可能な演出設計へ変換するための共通リファレンス。
+MiniMax H3向けプロンプトで、After Effects／モーショングラフィックスの頻出語彙を意味アンカーとして選び、用語だけでは決まらない情報だけを補って、短く観測可能な演出設計へ変換するための共通リファレンス。
 
 ```text
-伝達目的 → 主カテゴリ → 具体語彙 → 観測可能な動作文
+伝達目的 → 主カテゴリ → 意味アンカー → 未決定パラメータ → 完成状態
 ```
 
-語彙を全投入しない。各ビートでは主動作を1つ、補助語彙を必要最小限だけ選ぶ。`dynamic`、`cinematic`、`professional` のような抽象語を、方向、距離、順序、着地、保持状態を表す具体語で置き換える。この資料は演出語彙が未確定、抽象的、または組み合わせ提案が必要な場合に使い、利用者が具体的な動きを固定している場合はその指定を優先する。
+語彙を全投入しない。各ビートでは主動作を1つ、補助語彙を必要最小限だけ選ぶ。標準語彙を一般語へ言い換えて消さず、意味アンカーとしてプロンプトに残す。`dynamic`、`cinematic`、`professional` のような抽象語は、方向、順序、着地、保持状態を表す具体語へ置き換える。この資料は演出語彙が未確定、抽象的、語彙の組み合わせ提案、既存用語の変換または監査が必要な場合に使い、利用者が具体的な動きと用語を固定している場合はその指定を優先する。
 
 ## 出典と扱い
 
-以下のXスレッド内に掲載されたEffect Dictionary、頻出50語、8レイヤー、18カテゴリを、H3プロンプト向けに再構成したもの。
+最初の3件に掲載されたEffect Dictionary、頻出50語、8レイヤー、18カテゴリを、H3プロンプト向けに再構成した。後半3件は、標準語彙を意味アンカーとして残し、未決定パラメータだけを補ったMiniMax H3の公開作例として参照した。
 
 - https://x.com/ponzponz15/status/2089224411736100980
 - https://x.com/ponzponz15/status/2089152588935803100
 - https://x.com/ponzponz15/status/2089152585869722077
+- https://x.com/onofumi_AI/status/2092528740475785520
+- https://x.com/onofumi_AI/status/2092529049436606600
+- https://x.com/onofumi_AI/status/2092529117912858993
 
 ★の多さは投稿者の優先度・頻出度の目安であり、測定済みの市場統計やH3の成功率ではない。◆は特徴的・検索価値の高い表現を示す編集上の印である。モデルの再現性を保証する資料として扱わない。
+
+## Core meaning anchors
+
+次は、広告、UI、タイポグラフィ、タイトルシーケンスで再利用しやすく、視覚的な含意が比較的明確な語彙である。中央列は用語を置いた時点で既に指定される意味、右列は必要な場合だけ補う未決定情報を示す。右列をすべて埋める必要はない。
+
+| 意味アンカー | 語彙が既定で含意すること | 必要な場合だけ補うこと |
+| --- | --- | --- |
+| `trim paths` | ベクターパスに沿った線の段階的な描画 | 対象、開始位置、方向、outline後にfillするか |
+| `animated stroke / draw-on` | 線または輪郭が経路に沿って現れる | stroke owner、描画順、完成後の状態 |
+| `offset paths` | 輪郭を内側または外側へ複製・拡張する | 個数、間隔、内向き／外向き、最終形状 |
+| `repeater animation` | 同じ図形を規則的に複製する | 個数、間隔、回転／スケール差、時間差 |
+| `mask reveal` | マスク境界の移動で対象を露出する | mask owner、起点、方向、露出対象 |
+| `track matte` | 別レイヤーの形状または輝度で表示を制御する | matte owner、alpha／luma、対象レイヤー |
+| `travelling matte` | 動くマットの通過領域が連続的に露出する | 起点、方向、経路、通過後の完成状態 |
+| `iris wipe` | 円形開口が拡大または縮小して画面を切り替える | 中心点、拡大／縮小、次状態 |
+| `shape / color-block wipe` | 図形または色面が画面を覆って次へ渡す | wipe owner、方向、次配色、完了時刻 |
+| `card flip` | 平面が軸回転し、薄いedge状態を経て表裏を切り替える | 水平／垂直軸、回転方向、裏面または次画面 |
+| `column / strip shear` | 画面を帯へ分割し、帯ごとにずらすまたは傾斜移動する | 分割数、縦／横、方向、stagger、露出色 |
+| `stagger / cascade` | 複数要素が時間差で同じ動作を行う | 対象順、時間差、進行方向、最後の着地 |
+| `elastic overshoot` | 目標値を一度越え、反動して収束する | 対象プロパティ、振幅、収束時間 |
+| `text / letterform morph` | 文字形状が別の文字形状へ連続変形する | 元文字、先文字、対応関係、完成時刻 |
+| `shape morph` | 形状の輪郭やトポロジーが別形状へ連続変形する | source、target、変形中の体積／輪郭、着地 |
+| `fragment and reassemble` | 要素が破片へ分解し、再集合して形を作る | fragment owner、破片方向、再構築対象 |
+| `liquid wipe / liquid matte` | 液体的な境界が画面を通過して次状態を露出する | 液体の起点、流向、粘性、次状態 |
+| `match cut / match move` | 共通する形、位置、方向、運動量でショットを接続する | 対応するsource／target、接続フレーム |
+| `speed ramp / time remapping` | 動作速度を区間内で変化させる | 加減速点、ピーク速度、通常速度への復帰 |
+| `frame hold / hit stop` | 一瞬停止して衝撃や情報を強調する | 停止対象、開始時刻、保持時間、解除後の動き |
+| `2.5D parallax` | 深度レイヤー間に相対移動を作る | レイヤー順、カメラ方向、移動量、終了構図 |
+| `microinteraction / button press` | UI入力に対して短い状態フィードバックを返す | trigger、押下変形、状態更新、確認音 |
+
+### 意味アンカーの書式
+
+```text
+[OWNER] performs [MEANING ANCHOR]. Add only the unresolved [ORIGIN/AXIS],
+[DIRECTION], [SEQUENCE], [NEXT STATE], and [COMPLETED STATE].
+```
+
+数値は分割数、順序、タイミング、収束など、生成結果の判定条件になる場合だけ使う。公開作例の値を別案件へ流用せず、精密に見せるためだけの任意値を発明しない。
+
+```text
+語彙だけ: card flip
+無駄な重複: card flip that flips like a card
+有効な補足: card flip around the vertical center axis; the outgoing frame compresses to a thin edge, then reveals the blush-pink next state
+```
 
 ## 18カテゴリの最上位分類
 
@@ -84,7 +131,7 @@ MiniMax H3向けプロンプトで、モーショングラフィックスの語�
 ### 変換テンプレート
 
 ```text
-Required: [OBJECT] performs one [PRIMARY ACTION] with [TIMING], then settles into [COMPLETED STATE] and holds.
+Required: [OBJECT] performs one [MEANING ANCHOR] with [TIMING], then settles into [COMPLETED STATE] and holds.
 Optional Dynamics: The action uses [DYNAMICS] and fully settles before the hold.
 Optional Transition: The completed owner becomes [TRANSITION] into the next beat.
 Optional Finish: Preserve [TEXTURE] under [CAMERA], synchronized to [RHYTHM].
@@ -95,7 +142,7 @@ Optional Finish: Preserve [TEXTURE] under [CAMERA], synchronized to [RHYTHM].
 ```text
 弱い: kinetic typography, motion graphics, energetic
 
-強い: The Japanese headline enters one word at a time from below with a fast vertical mask reveal. Each word briefly overshoots its final scale, settles with a restrained spring, and holds fully readable before the entire text block becomes a shape-wipe into the next scene.
+強い: The Japanese headline uses a word-by-word vertical mask reveal from below. Each word uses one restrained elastic overshoot, settles fully readable, then the completed text block becomes a shape wipe into the next scene.
 ```
 
 ## 1ビートへの適用ルール
@@ -151,6 +198,8 @@ Optional Finish: Preserve [TEXTURE] under [CAMERA], synchronized to [RHYTHM].
 - 選択した主分類と語彙の主従が一致している。
 - 1ビートあたりの主動作カテゴリが1つである。
 - `OBJECT + MOTION + TIMING`が観測可能な文になっている。
+- 標準語彙を意味アンカーとして残し、一般語への長い言い換えで消していない。
+- 意味アンカーの後ろが同義反復ではなく、owner、起点／軸、方向、順序、次状態、完成状態のいずれかを追加している。
 - `TRANSFORMATION`と`TRANSITION`を混同していない。
 - Texture、Light、Distortionを目的なく重ねていない。
 - 「全部のカテゴリを使う」構成になっていない。
