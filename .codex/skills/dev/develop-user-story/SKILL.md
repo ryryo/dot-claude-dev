@@ -118,6 +118,17 @@ main Codexは`fix-here`だけをledgerへ反映し、後工程へ送る項目は
 
 PLANが必要な場合は、ledgerと同じproject scopeにあるPLAN templateを使う。repository直下台帳では`docs/PLAN/_TEMPLATE.md`、project-local台帳では同階層の`_PLAN_TEMPLATE.md`を優先する。候補が複数または存在しない場合は独自形式を作る前に確認する。
 
+### 4.0 既存資産・参照実装の再利用判定
+
+適用先の指示、ledger、template、REFERENCE、dependency管理、または現行repositoryが再利用候補を示す場合は、実装方式を固定する前に次を行う。REFERENCEや比較表は候補探索の入口であり、その要約だけを実source調査の代用にしない。materialize前に、利用者成果とoracle、license、platform／runtime、現在scopeから候補を絞ってよいが、sourceが現在読めないこと自体を調査対象外理由にしない。
+
+- 同一repository内の合理的候補は、current path、baseline、owner、公開contract、関連testを現行treeで確認する。外部の合理的候補は、provenance記録にある固定revisionまたは解決済みversionを実際に読める状態へmaterializeし、記録された版との一致を確認する。外部sourceの取得や展開が現在の権限・環境でできなければ、要約だけで採否を確定したり再実装へ逃げたりせず停止する。未materializeで除外できるのは、license非互換、platform／runtime不適合、現在scopeに対応capabilityがない等、source可用性と独立した理由を先に記録できる候補だけとする。
+- 利用者成果と検証oracleに対応する最小capabilityへ範囲を絞り、名称が一致するprimitiveだけで終えず、存在する範囲で`primitive／domain -> consumer／adapter -> route／UI／job等の統合点 -> behavior test`を辿る。存在しないlayerはその事実を記録する。
+- 同一repository内再利用、固定dependency、無改変／改変snapshot copy、契約・algorithm参照による再実装、不採用のうち適用可能な方式を比較する。製品全体、巨大engine、root dependencyを不採用にしても、現在のoracleを満たす狭いmoduleやpatternの部分移植まで同じ理由で棄却しない。
+- 同一repository内候補はcurrent path、baseline、owner、公開contract、回帰oracleを記録する。外部候補はprovenance記録のpathとmaterializeしたsource pathを記録する。どちらも、実際に確認したconsumer／testまたは探索範囲付きの不存在、最小採用単位、現在のcontractへ接続する差分、持ち込まない依存・状態・機能、parity／negative oracleをPLANまたはその参照先へ記録する。外部sourceのrevision／version自体とlicense／provenanceはREFERENCE、EVIDENCE、noticeまたはdependency管理を正本とし、PLANには重複させない。
+
+全候補やsource tree全体の一律精読は求めない。適用先が候補を示さず、現行実装と受け入れ条件からも再利用可能性がない場合は、その根拠を短く記録すればよい。
+
 - PLANの単位はUS、受け入れ条件の個数、技術layer、Phase、実行環境ではなく、独立してhandoffできる一つの成果で決める。実行主体や実行環境の識別子は計画外の管理情報とし、PLANへ記録しない。
 - 一つのUSを複数PLANへ写像してよく、一つのPLANが複数USの条件を扱ってもよい。candidate PLANは担当条件を実装してもUS完了を主張せず、統合・Journey・外部検証を所有するPLANが最終状態を更新する。
 - 分割候補ごとに、明示した開始条件、排他的write scope、handoff成果、localで再現できる検証oracle、統合owner、並行化の実益があるかを確認する。一つでも成立しない候補は、別PLANにせず同じPLANのPhaseへ戻す。条件数が多いことだけを分割理由にしない。
@@ -135,7 +146,7 @@ PLANが必要な場合は、ledgerと同じproject scopeにあるPLAN template�
 
 ### 4.1 PLAN独立レビューGate
 
-PLANを実装の入力として固定する前に、ストーリーレビュー担当とも作成者とも別のエージェントを1名以上立ち上げ、共通規則に従ってreviewする。このGateの判定質問は「別の実装者が利用者契約を変えずに実装し、完了を再現可能に検証できるか」とする。レビュー担当にはレビュー済みledger、PLAN template、PLAN、関連実装・テスト・設計資料を一次情報として渡す。
+PLANを実装の入力として固定する前に、ストーリーレビュー担当とも作成者とも別のエージェントを1名以上立ち上げ、共通規則に従ってreviewする。このGateの判定質問は「別の実装者が利用者契約を変えずに実装し、完了を再現可能に検証できるか」とする。レビュー担当にはレビュー済みledger、PLAN template、PLAN、関連実装・テスト・設計資料に加え、再利用判定に使ったmaterialize済みsourceの採用候補、consumer／統合点、関連test、調査対象外候補とsource可用性に依存しない除外理由を一次情報として渡す。要約資料や作成者が選んだ単一fileだけへ入力を狭めず、作成者の採否結論を前提にしない。consumerが存在する選定capabilityは検証oracleから連鎖を少なくとも1本独立に辿り、存在しないcapabilityは探索範囲・検索結果・適用先側oracleを独立に確認する。
 
 複数PLANを同時作成・再編した場合は、進行PLANと全実行PLANを一つのplan setとして同じreviewerが横断reviewする。ファイルごとに別Gateを繰り返さず、依存graphとhandoffを含むplan set全体が固定された時点で一回通す。
 
@@ -146,17 +157,22 @@ PLANを実装の入力として固定する前に、ストーリーレビュー�
 - 複数PLANの場合だけ、閉路、不要な直列待ち、同一file／generated file／lockfile／台帳／EVIDENCE／外部状態の複数ownerがなく、handoffを統合ownerが同じreview済みcontractと開始Gateで検証できるか
 - integration／coordination PLANの場合だけ、Mermaid DAGがrender可能で、本文と同じ開始Gate、依存、並行lane、統合／Join Gate、fallback、外部停止Gate、最終ownerを表すか
 - ledgerまたは既存実装で同じ契約を通ることが確認できたroute、API、server function、background処理、session、cache、保存先が、実装責務と検証から漏れていないか
+- projectが再利用候補を示す場合だけ、合理的候補の固定sourceがmaterializeされ、存在する最小capabilityのconsumer／統合点／testまたは探索範囲付きの不存在まで確認され、直接利用・部分copy・再実装の比較からより狭く契約適合する採用単位を落としていないか。未materializeの除外候補がsource可用性を理由にしていないか
 - ストーリーで明示されたnormal pathと例外導線について、必要な実装責務と再現可能な検証oracleがあるか
 - test、typecheck、build、実画面Journey、実service、証拠が、適用されたrisk triggerに応じて分かれ、mockや静的文字列一致を実検証の代用にしていないか
 - 現在の導線が実際に外部変更、課金、secret、個人情報、破壊的変更を扱う場合、その直前Gate、承認、停止条件、rollbackまたは安全な失敗状態があるか
 
-このGateの`fix-here`は、条件追跡漏れ、現在のrepositoryでは実行不能な開始条件、owner衝突、未承認の外部作用、検証oracleの欠落、本文とDAGの契約矛盾に限る。関数構造、内部error分類、一般的なhardening、将来のscale、現在の導線から到達しない障害、別USの改善は`implementation-risk`または`deferred`へ送る。PLAN reviewerは新しい受け入れ条件を作らず、PLANで現在のストーリーを実現できない場合だけ`契約判断待ち`として返す。
+このGateの`fix-here`は、条件追跡漏れ、現在のrepositoryでは実行不能な開始条件、owner衝突、未承認の外部作用、検証oracleの欠落、採否根拠にするsource未materialize、存在するとされたconsumer／testを読めない状態、本文とDAGの契約矛盾に限る。consumer／testが存在しない候補は、探索範囲と不存在を記録し、適用先側のparity／negative oracleをPLAN化できれば未確認扱いにしない。関数構造、内部error分類、一般的なhardening、将来のscale、現在の導線から到達しない障害、別USの改善は`implementation-risk`または`deferred`へ送る。PLAN reviewerは新しい受け入れ条件を作らず、PLANで現在のストーリーを実現できない場合だけ`契約判断待ち`として返す。
 
 main Codexは`fix-here`だけをPLANへ反映し、全条件を追跡できることを確認して共通規則に従ってGateを閉じる。ストーリーレビュー担当とPLANレビュー担当を兼任させない。
 
 ### 4.2 PLANを完遂する
 
 userが実行PLANに従った全実装を求めた場合は、そのPLAN全体だけを現在taskのscopeとする。進行PLANは実装scopeにせず、開始可能な実行PLANの選択、依存・状態・handoffの確認に使う。複数PLANを並行実行するときは、各laneのwrite scope、port、生成物、外部状態を衝突させない実行contextを計画外で割り当てる。同じcontextで直列実行できる場合は不要な分離を要求しない。最初の未完了項目から依存順に進め、各PhaseとGate、担当するJourney、証拠、handoffまで、未完了項目がなくなるか次の停止条件に当たるまで継続する。PhaseやGateを一つ終えたこと、作業量が多いこと、通常のテスト失敗や実装上の難しさだけを理由にuserへ返さない。
+
+最初のtestまたはproduction codeを編集する前に、同一repository内候補はcurrent path、baseline、公開contract、関連testを、外部候補は参照sourceのpathとprovenance記録にある固定revision／versionとの一致を現在contextで一度確認する。どちらも存在すると記録したconsumer／testを辿り、再利用分類の前提が現行repositoryと一致することを確認する。consumer／testが存在しないと記録した候補では、その探索範囲と適用先側oracleを確認する。通常の実装不具合ごとに探索を繰り返さない。ただし、実画面・実service・実media等の観測が選定時のplatform／runtime前提を反証した場合、またはPLANにないclock、scheduler、queue、retry、resource lifecycle、serialization等の仕組みを独自実装しないと修正できないと判明した場合は、次の局所patch前に4.0の該当capabilityだけを再確認する。
+
+再確認で再利用分類、source、採用単位、依存閉包、license／provenance、実装・検証責務を意味的に変える場合は、コードだけで切り替えずPLANを更新し、4.1を影響範囲について再度通す。既定PLAN内の予測済み実装で解消できる通常のdefectは再分類を発生させない。
 
 PLAN内のscopeと権限で安全に解決できる失敗は、原因を調査し、必要な修正と検証を行って続行する。次のいずれかでは、迂回実装や暗黙の契約変更を行う前に停止する。
 
