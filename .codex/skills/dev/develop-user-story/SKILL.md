@@ -1,6 +1,6 @@
 ---
 name: develop-user-story
-description: repository直下またはproject-localのユーザーストーリー台帳を製品契約の正本として、ストーリーの追加・精緻化、関連PLANの作成・実行、TDD実装、Journey検証、証拠記録、状態更新を一貫して行う。Use when adding or refining a user story, planning or implementing work identified by a US ID, resuming its development, or verifying whether its acceptance criteria are genuinely complete.
+description: repository直下またはproject-localのユーザーストーリー台帳を製品契約の正本として、ストーリーの追加・精緻化、関連PLANの作成・実行、TDD実装、PR／Gateレビュー、Journey検証、証拠記録、状態更新を一貫して行う。Use when adding or refining a user story, planning, implementing, or reviewing work identified by a US ID or Gate, resuming its development, or verifying whether its acceptance criteria are genuinely complete.
 ---
 
 # Develop User Story
@@ -24,15 +24,16 @@ description: repository直下またはproject-localのユーザーストーリ�
 - **追加・精緻化**: 利用者の成果、通常導線、例外・復旧、観測可能な受け入れ条件を確定する。
 - **計画**: 受け入れ条件を、独立してhandoffできる成果へ写像する。単一成果なら通常PLAN、複数の独立成果へ分かれるなら実行PLAN群と進行PLANを作る。
 - **実装**: 対象USとPLANの未完了項目を固定し、TDDで必要十分な縦切りを実装する。
+- **レビュー**: PR内の担当Story／Gateごとに判定質問を分け、affected closureを探索して採否とroutingを決める。意味変更された別Story／PLANは同じGateへ混ぜず、別Gateとして判定する。
 - **検証**: 受け入れ条件ごとに自動テスト、実画面、外部サービス、復旧・再読込の必要性を判定して確認する。
 
 ストーリーの追加・実装・検証で対象USが指定されていない場合は、依頼内容と台帳の優先度から一件に絞る。複数USを同じ実装scopeに入れるのは、一つの利用者成果として分離不能な場合だけにする。ただし、残scope全体のPLAN化、実行順の整理、並列可能なPLAN設計を求められた計画操作では、複数USを計画入力としてよい。この場合もUSを結合せず、条件ID単位の追跡を維持する。
 
-ストーリーを新規作成または利用者から見える契約を意味的に変える精緻化（例: タイトル、`きっかけ`、活動、目的、scope、導線、受け入れ条件）をした場合は3.1、PLANまたはplan setの実装・検証契約を作成または意味的に変更した場合は4.1の独立レビューを、次工程へ進む前に通す。進捗、実行担当、session、証拠link、結果記録、誤字、formatだけの更新は新しいGateを発生させない。意味変更時も、変更した条件ID、surface、依存、Gateとその直接影響だけをreview対象にする。
+ストーリーを新規作成または利用者から見える契約を意味的に変える精緻化（例: タイトル、`きっかけ`、活動、目的、scope、導線、受け入れ条件）をした場合は3.1、PLANまたはplan setの実装・検証契約を作成または意味的に変更した場合は4.1の独立レビューを、次工程へ進む前に通す。進捗、実行担当、session、証拠link、結果記録、誤字、formatだけの更新は新しいGateを発生させない。意味変更時は、担当Story／Gateについて、変更した条件ID、surface、依存から成立可否が変わり得るaffected closureをreview対象にする。別Storyや後続Gateへは広げない。
 
 ## 独立レビュー共通規則
 
-各Gateはartifactを広く改善する工程ではなく、次工程へ渡せるかを一つの判定質問で決める工程とする。reviewerへ依頼する前にmain Codexが一時的なReview Briefを作り、次だけを渡す。
+各Gateはartifactを広く改善する工程ではなく、次工程へ渡せるかを一つの判定質問で決める工程とする。review scopeの正本は、担当User Storyの利用者成果・受け入れ条件と、現在のPhase／Gateが所有する成果・判定質問である。Discoveryはその成立に必要なaffected closureを網羅し、diffや技術領域だけで狭めない。一方、同じStory／Gateを破る到達scenarioを示せない候補は、技術的に実在しても現在作業では過剰reviewであり、finding、修正、後続taskへ昇格させない。reviewerへ依頼する前にmain Codexが一時的なReview Briefを作り、次だけを渡す。
 
 - Gate固有の判定質問
 - 対象artifactと変更箇所
@@ -45,13 +46,13 @@ Review Briefを恒久fileにしない。レビュー担当は作成過程を継�
 
 reviewerは共有fileを編集せず、最初にGateの各監査項目を次へ分類する。
 
-- **適用**: 現在のscopeと到達可能な導線に該当し、このGateが判定する
-- **後工程**: 現在の成果には関係するが、別artifactまたは後のGateが所有する
-- **非適用**: 現在のscopeと導線には存在しない
+- **適用**: 担当Storyの成立に必要で、現在のGateが所有する到達可能な導線に該当する
+- **後工程**: 同じ担当Storyの成立に必要だが、別artifactまたは明示済みの後続Gateが所有する
+- **非適用**: 担当Storyと現在Gateの成立には不要である。技術的に実在してもfinding、risk、deferred、taskへ昇格させない
 
 列挙されたfailure、cancel、retry、reload、権限、privacy、複数利用者などは適用性を考える候補であり、存在しない状態や操作まで網羅する要求ではない。適用とした項目だけを監査する。
 
-指摘は`fix-here`、`plan-input`、`implementation-risk`、`journey-risk`、`deferred`のいずれかへroutingする。現在のGateを止めるblockerは、次をすべて満たすものだけとする。
+`適用`または`後工程`と判定した候補だけを、`fix-here`、`plan-input`、`implementation-risk`、`journey-risk`のいずれかへroutingする。`非適用`はroutingしない。現在のGateを止めるblockerは、次をすべて満たすものだけとする。
 
 1. 現在のGateとartifactが責任を持つ。
 2. 固定済みの通常導線または明示された例外導線から到達できる。
@@ -59,11 +60,11 @@ reviewerは共有fileを編集せず、最初にGateの各監査項目を次へ�
 4. 一次情報と破綻する具体的scenarioで根拠を示せる。
 5. 最小修正が新しい利用者成果、scope、製品判断を追加しない。
 
-blockerには、破る契約、根拠、到達scenario、最小修正案を付ける。5を満たさない指摘は現在のartifactへ追加せず、契約が実現不能なら`契約判断待ち`、それ以外は適切な後工程または`deferred`へ送る。後工程の設計事項や一般的な堅牢化を、受け入れ条件へ引き上げてGateを閉じない。
+blockerには、破る契約、根拠、到達scenario、最小修正案を付ける。5を満たさない候補は現在のartifactへ追加しない。同じ担当Storyの成立に必要で、明示済みの別artifact／後続Gateが所有する場合だけそこへroutingし、契約自体が実現不能なら`契約判断待ち`とする。それ以外は`非適用`として、後続作業や受け入れ条件へ昇格させない。
 
 main Codexは指摘を重大度だけで一括採用せず、blocker条件とroutingを確認して、`fix-here`だけを現在のartifactへ反映する。blockerを棄却する場合は根拠を同じ担当へ一度だけ確認させ、担当が維持し、かつblocker条件を満たす場合だけuser判断までGateを保留する。
 
-意味変更後の再確認は、採用したblockerの解消と、変更箇所が固定済み契約へ与える直接回帰だけを対象とする。初回と同じ探索を再開せず、変更と無関係な新規論点は、直ちに秘密露出、無承認の不可逆操作、データ破壊を起こす具体的なcritical defectを除き、後工程または`deferred`へ送る。同一Gateへの自動follow-upは、この差分確認または不足回答の補完のどちらか一度までとする。それでもblockerが残る場合はGateを通さずuserへ判断を求める。
+意味変更後は既知blockerと直接回帰を先に確認し、固定した最終treeについて、同じ担当Story／Gateの成立に必要なaffected closureを再reviewする。既知指摘や変更行だけに狭めず、初回の見逃しか修正由来かにかかわらず、同じStory／Gateを破る到達scenarioがあれば採用する。別Story、後続Gate、一般的なhardeningへは広げず、採用findingを揃えてから一括で修正へ戻す。同じ根本原因の指摘が分割して続く場合は局所patchを止め、状態遷移または設計境界をまとめて見直す。
 
 適用項目の判断、blocker、後工程へ送るrisk、残余riskを返し、未解決blockerがなくGate固有の判定質問へYesと答えられた時点で終了する。「問題なし」だけの回答はGate通過に使わない。独立エージェントを利用できない場合は自己レビューで代替せず、その事実をuserへ伝え、次工程へ進む前に判断を求める。レビュー報告用の恒久fileは、userが求めた場合だけ作る。
 
@@ -110,7 +111,7 @@ validatorが条件を追跡できるよう、条件行を`- [ ] \`US-XX-01\` ...
 - 権限、privacy、外部状態、費用が利用者の操作結果を変える場合、その境界が観測可能な条件になっているか
 - 関連ストーリーとの重複、矛盾、順序依存、責務の隙間、対象外へ追い出した必須成果がないか
 
-このGateの`fix-here`は、成果の混在、scopeの矛盾、観測不能な条件、明示された導線の欠落、関連ストーリーとの契約衝突に限る。API方式、保存方式、account固定、idempotency、upload手順、TOCTOU、内部retry、細かな障害分類などの実装機構は、既存の利用者成果を成立させられない根拠がない限り`plan-input`または`implementation-risk`へ送る。技術riskを理由に利用者成果を増やしたり、別ストーリーへ分割したりしない。
+このGateの`fix-here`は、成果の混在、scopeの矛盾、観測不能な条件、明示された導線の欠落、関連ストーリーとの契約衝突に限る。API方式、保存方式、account固定、idempotency、upload手順、TOCTOU、内部retry、細かな障害分類などの実装機構は、固定した利用者成果と到達可能なrisk triggerを成立させるために次artifactで判断が必要な場合だけ`plan-input`または`implementation-risk`へ送る。それ以外は`非適用`とする。技術riskを理由に利用者成果を増やしたり、別ストーリーへ分割したりしない。
 
 main Codexは`fix-here`だけをledgerへ反映し、後工程へ送る項目は受け入れ条件に追加せずReview BriefまたはPLAN作成時の入力として引き継ぎ、共通規則に従ってGateを閉じる。
 
@@ -163,7 +164,7 @@ PLANを実装の入力として固定する前に、ストーリーレビュー�
 - test、typecheck、build、実画面Journey、実service、証拠が、適用されたrisk triggerに応じて分かれ、mockや静的文字列一致を実検証の代用にしていないか
 - 現在の導線が実際に外部変更、課金、secret、個人情報、破壊的変更を扱う場合、その直前Gate、承認、停止条件、rollbackまたは安全な失敗状態があるか
 
-このGateの`fix-here`は、条件追跡漏れ、現在のrepositoryでは実行不能な開始条件、owner衝突、未承認の外部作用、検証oracleの欠落、採否根拠にするsource未materialize、存在するとされたconsumer／testを読めない状態、本文とDAGの契約矛盾に限る。consumer／testが存在しない候補は、探索範囲と不存在を記録し、適用先側のparity／negative oracleをPLAN化できれば未確認扱いにしない。関数構造、内部error分類、一般的なhardening、将来のscale、現在の導線から到達しない障害、別USの改善は`implementation-risk`または`deferred`へ送る。PLAN reviewerは新しい受け入れ条件を作らず、PLANで現在のストーリーを実現できない場合だけ`契約判断待ち`として返す。
+このGateの`fix-here`は、条件追跡漏れ、現在のrepositoryでは実行不能な開始条件、owner衝突、未承認の外部作用、検証oracleの欠落、採否根拠にするsource未materialize、存在するとされたconsumer／testを読めない状態、本文とDAGの契約矛盾に限る。consumer／testが存在しない候補は、探索範囲と不存在を記録し、適用先側のparity／negative oracleをPLAN化できれば未確認扱いにしない。関数構造、内部error分類、一般的なhardening、将来のscale、現在の導線から到達しない障害、別USの改善は現在のPLAN reviewのfindingや追加作業にしない。PLAN reviewerは新しい受け入れ条件を作らず、PLANで現在のストーリーを実現できない場合だけ`契約判断待ち`として返す。
 
 main Codexは`fix-here`だけをPLANへ反映し、全条件を追跡できることを確認して共通規則に従ってGateを閉じる。ストーリーレビュー担当とPLANレビュー担当を兼任させない。
 
@@ -218,13 +219,13 @@ PLAN内の実装項目と通常の自動検証が完了した後、`implemented`
 - testが公開interfaceと再発条件を確認し、内部実装や静的文言だけを固定せず、未確認の実画面・実service結果を代替していないか
 - diffから直接到達する計画外の外部副作用、無承認の費用、secret・個人情報の露出、不要なdependency、既存契約のperformance退行がないか
 
-このGateの`fix-here`は、再現可能な契約違反、条件または実装責務の欠落、誤った完了主張、現在のdiffから直接生じる副作用・secret露出・回帰に限る。新しい受け入れ条件、別のarchitecture、一般的なhardening、将来scale、現在の導線から到達しない障害は要求せず、`deferred`へ送る。PLANに記載がなくても現在の契約を明白に破る場合はblockerにできるが、より良い設計という理由だけでは止めない。
+このGateの`fix-here`は、担当条件または現在Gateを破る再現可能な契約違反、実装責務の欠落、誤った完了主張、到達可能な副作用・secret露出・回帰に限る。diffで変更された行やpriorityはscopeの条件にしない。新しい受け入れ条件、別のarchitecture、一般的なhardening、将来scale、現在の導線から到達しない障害は、技術的に実在しても現在のreviewのfindingや追加作業にしない。PLANに記載がなくても現在の契約を明白に破る場合はblockerにできるが、より良い設計という理由だけでは止めない。
 
 既存のledgerとPLANの範囲内で直せる`fix-here`はmain Codexが実装・test・進捗へ反映し、共通規則の差分確認を同じ担当へ一度だけ依頼する。code、PLAN、ledgerのどれを正とするかで契約判断が必要な不一致は、都合のよい一つへ合わせず4.2の停止条件としてuserへ報告する。全条件を「実装済み」「実装済み・Journey／実service待ち」「未実装」「契約判断待ち」の4つへ根拠付きで分類する。前2分類だけになり、未解決blockerがない場合に限ってGateを通す。`未実装`は`doing`のまま実装を続け、`契約判断待ち`は4.2に従って停止する。
 
 このGateはcode・testと契約の整合を確認するもので、実画面Journey、実service、目視品質、費用を伴う検証の代用ではない。Gate通過後、codeと必要な自動testが成立した状態を`implemented`とする。自動testとレビューの成功だけで`verified`にしない。
 
-Gate通過後に、review対象だった実装成果物、外部構成・状態、PLAN／ledgerの契約を意味的に変更した場合は、変更した条件ID、surface、設定、外部状態とその直接依存だけについてGateを失効させる。実装成果物にはcode、test、設定、schema／migration、dependency、content、prompt、静的・生成asset、deploy済み外部設定を含む。影響集合をReview Briefへ明示し、同じ担当による最終差分レビューと影響を受ける自動検証を通してから、その集合に関係するJourneyだけを再開・再実行する。変更していない条件やsurfaceまで全面reviewへ戻さない。影響部分の最終変更後レビューを通らないまま`implemented`または`verified`へ進めない。
+Gate通過後に、review対象だった実装成果物、外部構成・状態、PLAN／ledgerの契約を意味的に変更した場合は、担当Story／Gateについて、その変更から成立可否が変わり得るaffected closureのGateを失効させる。実装成果物にはcode、test、設定、schema／migration、dependency、content、prompt、静的・生成asset、deploy済み外部設定を含む。Review Briefには変更箇所とaffected closureを明示し、同じ担当による固定した最終treeの総合レビューと影響を受ける自動検証を通してから、そのclosureに関係するJourneyだけを再開・再実行する。既知指摘や変更行だけに確認を狭めず、別Storyや後続Gateまで全面reviewへ戻さない。最終変更後レビューを通らないまま`implemented`または`verified`へ進めない。
 
 レビューとJourneyの実結果を契約どおり記録するだけの状態遷移、条件checkbox、検証欄、証拠link、PLANの進捗checkbox・結果ログはGateを失効させない。ただし、未確認結果を完了扱いする変更や、記録に見せかけて契約の意味を変える更新は失効対象とする。
 
@@ -242,7 +243,7 @@ Journeyは新しい要件や改善案を探索するreviewではなく、固定�
 
 UIを含むUSは通常入口から実画面で確認する。外部サービスや課金が受け入れ条件に含まれる場合は、利用者の明示承認後に実行する。未実施の検証をmockやfixtureで代替して完了扱いにしない。
 
-Journeyでは固定した条件IDと`例:`ごとに、開始状態、操作、実際の観測結果、成功／失敗、未実施理由だけを判定する。固定した条件と異なる結果はその条件の失敗として扱う。途中で見つけた改善案、現在の条件から到達しない例外、別の利用者成果は現在のJourneyへ追加せず、`deferred`な候補として報告する。実結果から既存契約が実現不能と判明した場合だけ4.2の`契約判断待ち`へ戻す。
+Journeyでは固定した条件IDと`例:`ごとに、開始状態、操作、実際の観測結果、成功／失敗、未実施理由だけを判定する。固定した条件と異なる結果はその条件の失敗として扱う。途中で見つけた改善案、現在の条件から到達しない例外、別の利用者成果は現在のJourneyや後続taskへ追加しない。実結果から既存契約が実現不能と判明した場合だけ4.2の`契約判断待ち`へ戻す。
 
 ## 7. 状態と証拠を更新する
 
