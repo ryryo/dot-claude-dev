@@ -52,6 +52,8 @@ description: |
 6. `.worktreeinclude`候補とshared symlinkの依存先が秘密本文を読まずに整理されている
 7. filesystemとOSにCOW／reflink能力があるか、非対応時のfallbackが明記されている
 8. cleanup対象、残存し得るshared claim、remote／browser／authなど削除禁止対象が分かれている
+9. submodule／reference repositoryがある場合、探索可用性、gitlink、object store、working files、
+   revision、通常Git lifecycleを別々に評価している
 
 dirty checkoutだけでbaseを推測しない。`git show <base>:<path>`、`git ls-tree`などで
 成果物とpinがtarget baseに存在するか確認する。
@@ -68,6 +70,8 @@ patternだけを採用する。少なくとも次を明示する。
 - shared claimのowner情報と、Worktreeが消えた後のstale回収条件
 - source checkoutを`CODEX_SOURCE_TREE_PATH`優先で解決し、common Git directoryとprimaryを照合する方法
 - `.env`、local DB、大容量mediaを継承／seedする根拠と残るrisk
+- 参照codeをagent探索から常時見せるか明示materializeするか、その存在をsource未取得だけで
+  見落とさない仕組み
 
 不明なmutable resourceを共有扱いにしない。共有する場合はread-onlyまたはprocess間安全である
 根拠を記録する。
@@ -89,7 +93,9 @@ patternだけを採用する。少なくとも次を明示する。
   ignored symlinkはsetupで全targetをpreflightしてから不足分だけ再作成する。
 - Web／API／workerの全portを一組でatomic claimし、起動時はstrict portを使う。
 - startup mutationが触る全保存先をWorktreeごとに分離する。
-- 大容量seedは同一filesystemのCOW／reflinkを優先し、staging、anchor確認、atomic renameを使う。
+- Git-managed reference submodule以外の大容量seedは同一filesystemのCOW／reflinkを優先し、staging、anchor確認、atomic renameを使う。reference submoduleは標準Git lifecycleと後述の検証を優先する。
+- reference submoduleをsymlinkで置換しない。全参照を常時見せる必要がある場合は、標準submodule
+  lifecycleを保ったlocal cloneのimmutable Git object hardlinkと、独立working filesのCOWを検討する。
 - DB／container／emulatorが実在するときだけ固有namespaceを導入する。
 - browser storageは固有originで分離し、Cleanupでは削除しない。
 
@@ -110,6 +116,8 @@ git diff --check
 - scriptのexecute bit、最小PATH、対応が必要ならOS標準shellでも成立する
 - ignored fileはGit ignore対象で、secret本文がlogやdiffへ出ていない
 - shared symlinkはtargetが存在し、競合時に上書きせず停止する
+- reference submoduleはtracked SHA、inner／superproject clean status、origin、alternates不在、通常の
+  recursive update／checkout、sourceへのwrite非伝播を確認する
 - state／claim schema、port範囲、namespace、realpath／symlink guardが整合する
 - setup再実行でstate、port、seed、symlinkが変化しない
 - cleanupがprimary、保護branch、不正owner／namespace、稼働中listenerを拒否する

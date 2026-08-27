@@ -166,7 +166,12 @@ bulk mediaやfixtureは、初期参照と変更後の保存境界を分けて考
 - macOS／APFS: 同一filesystemで`cp -c`
 - Linux: filesystem対応を確認して`cp --reflink=always`
 - 非対応: full copy、empty seed、shared read-onlyから明示選択
-- hardlink: 上書きが共有されるため既定禁止
+- mutable working fileのhardlink: 上書きが共有されるため禁止
+- Git objectのhardlink: Git自身の同一filesystem local cloneがimmutable objectへ作る場合だけ候補。
+  working files、HEAD、index、configはWorktreeごとに分離し、alternatesで代用しない
+
+次のstaging／atomic rename契約はapp-ownedのbulk seedに適用する。Git-managed reference submoduleは
+標準checkout pathを保ち、後述のReference submodules契約で検証する。
 
 COW／reflink seedは次を満たす。
 
@@ -180,6 +185,29 @@ COW／reflink seedは次を満たす。
 
 directory cloneはvolume snapshotと同じ一括時点保証を持たない。primaryが書込み中なら、atomic file
 write、immutable blob、server停止、revision付きexport等から整合性根拠を決めて記録する。
+
+### Reference submodules
+
+参照codeをgitlinkで保持し、agentが通常のcodebase探索で読むprojectでは、容量だけを理由に参照を
+不可視にしない。全参照を常時materializeするか、tracked catalogと強制materialize Gateを置くかを、
+探索漏れのriskから選ぶ。
+
+- 参照rootがhidden directoryなら、materialize済みでも素の`rg`／`rg --files`は省き得る。全agentが読む
+  project指示へ参照pathと明示探索方法を置き、全体検索の不一致をsource不存在の根拠にさせない。
+- gitlink pathまたはそのparentを別checkoutへのsymlinkへ置換しない。Gitはsubmodule pathのsymlinkを
+  拒否し、書込みも参照先へ伝播する。
+- object容量を減らす場合、検証済みlocal sourceをcommand限定URLにした標準submodule cloneを優先する。
+  Gitのlocal cloneが作るobject hardlinkはdirectory entryが独立し、sourceの通常削除／repack後もclone側を
+  残せる。clone後はoriginをtracked canonical URLへ戻し、source変更raceをlockと最終connectivityで検査する。
+- `--reference`／alternatesはsource pruneへのlifetime依存を持つ。専用cacheの寿命、GC、repairを契約化
+  できない場合は使わない。`--dissociate`は安全だがobjectを複製することを容量見積りへ含める。
+- working filesはhardlinkせず、exact revisionでcleanなread-only sourceからCOW／reflink seedする。
+  sourceのHEAD、dirty／untracked／ignored、nested submodule、deviceをpreflightし、前後状態、代表anchor、
+  destination clean statusを検証する。条件を満たさなければ通常checkoutへfallbackして可用性を守る。
+- manualなsubmodule repositoryのlinked worktreeは、recursive checkout等の通常submodule lifecycleとの
+  互換を実証できる場合だけ使う。
+- `du`はhardlink／COW extentをpathごとに重複計上し得る。apparent sizeと、同一volumeのfree block差で
+  測る実消費を分けて報告する。
 
 ## DB, containers, and external resources
 
