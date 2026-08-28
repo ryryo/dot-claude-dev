@@ -1,83 +1,187 @@
 # Review Gate manifest
 
-Gateレビューでは、通常は次の一時JSONを使って状態遷移を検証する。探索中に`applicable`を再分類する場合だけ、再分類直前のobservation checkpointを追加する。
+manifestは、細かな反例を総当たりする台帳ではない。現在Gateを別の根本原因から壊し得る少数の独立観点を固定し、全観点を一巡したことを確認するための一時JSONである。
 
-1. 正本から固定するReview Input
-2. Review Inputから固定するReview Brief
+レビュー中は、次のファイルだけを保持する。
+
+1. 正本から固定した最小Review Input
+2. 探索前に固定したReview Brief
 3. 適用範囲Gateを通過したscope baseline
-4. 全確認単位の探索を終えたdiscovery baseline
-5. 候補分類を終えた最終manifest
+4. 探索完了Gateを通過したdiscovery baseline
+5. 指摘採用Gateで使うcandidate manifest
 
-これらはレビュー中だけ保持し、Story、PLAN、EVIDENCEへ保存しない。`review_id`はレビュー内の論理IDである。branch、commit SHA、worktreeやsessionの識別子を入れない。content digestの例外は、Review Inputの`previous_brief_digest`とvalidator成功出力だけである。すべてのJSONで、IDと集合に入る文字列の前後空白を許さない。
+これらはStory、PLAN、EVIDENCEへ保存しない。branch、commit SHA、worktree、sessionの識別子も入れない。IDは前後空白のない文字列とし、同じ配列内で重複させない。
 
-## Review Input
+## 最小Review Input
 
-Review InputはReview Briefより先に、依頼本文、Story、PLANなどの正本から作る。Briefへ書いた内容から逆算しない。
+Review Inputは、依頼、Story、PLANなどの正本とBriefの間に置く小さな照合面である。caseやseedの台帳は作らない。
 
-- `review_id`: 非空の文字列
-- `condition_ids`: 対象条件IDの重複のない配列。条件IDを持たないGateでは空でよい
-- `current_contracts`: 現在成立させる名前付き契約の重複のない非空配列
-- `handoffs`: 事前に決まっているhandoffの全件
-- `scope_seeds`: 条件、変更surface、全体不変条件、handoffから導いたseedと確認caseの全件
-- `previous_brief_digest`: revision 1は`null`。revision 2以降は実際の直前Briefのcanonical JSON SHA-256
+```json
+{
+  "review_id": "review-us05-gate-d",
+  "condition_ids": ["US-05-01"],
+  "current_contracts": ["candidate-state", "renderer-handoff"],
+  "handoffs": [
+    {
+      "id": "handoff-journey",
+      "gate": "Journey",
+      "owner": "integration",
+      "contract": "renderer-handoff"
+    }
+  ]
+}
+```
 
-handoffは`id`、`gate`、`owner`、`contract`を持つ。seedは`id`、`kind`、`source`、`contract`、`coverage_obligation`、`review_case_ids`を持つ。condition seedには`condition_id`、handoff seedには`handoff_id`も付ける。すべてのIDと集合値は、前後に空白のない非空文字列とする。
+- `review_id`: このGateレビューの論理ID
+- `condition_ids`: 対象Storyの条件ID。条件IDを持たないGateでは空配列でよい
+- `current_contracts`: 現在成立させる名前付き契約。1件以上必要
+- `handoffs`: 現在Gateから既存の後工程へ渡す境界
 
-Review Inputの各条件IDをcondition seedがちょうど1回覆い、確認case IDは全seedを通じて一意にする。すべての現在契約とhandoffにseedが必要である。coverage obligationは次を使う。
+Briefの`review_id`、契約集合、handoff集合と意味fieldはReview Inputに完全一致させる。Briefの`kind: condition` surfaceでは`source`に条件IDを入れ、その集合を`condition_ids`と完全一致させる。
 
-- `must-applicable`: conditionとinvariantに使う
-- `classify-only`: changed-surfaceに使う
-- `handoff-pair`: handoffに使う
-
-改善案、将来用途、一般的なbest practiceは契約、handoff、seed、caseへ追加しない。main CodexはReview Inputを固定する前に、正本の条件、契約、handoff、seed、caseと全件照合する。validatorはこの意味上の忠実性を判定できない。Review Inputは全stageで`--review-input`に渡す。
+validatorはこの対応を検査するが、Review Input自体が正本へ意味上忠実かはmain Codexが確認する。
 
 ## Review Brief
 
-Review Briefはreviewerへ渡す前にmain Codexが固定し、reviewerに書き換えさせない。
+main CodexがReview Input、差分、参照実装などから観点を固定し、次の形でBriefへ記録する。reviewerの指摘や改善案から逆算しない。
 
-- `review_id`: Review Inputと同じ論理ID
-- `revision`: 1から始まる正の整数
-- `target`: 対象成果と確認時点の状態
-- `gate_question`: 現在のGate質問
-- `current_contracts`: Review Inputと集合が完全に一致する契約
-- `handoffs`: Review InputとID集合と各意味fieldが完全に一致するhandoff
-- `scope_seeds`: Review InputとID集合、case集合、各意味fieldが完全に一致するseed
-- `review_case_migrations`: revisionの間で確認caseを対応付ける配列
+```json
+{
+  "review_id": "review-us05-gate-d",
+  "review_cycle": "initial",
+  "target": "US-05の現在成果",
+  "gate_question": "Candidate Gate Dを次工程へ渡してよいか",
+  "current_contracts": ["candidate-state", "renderer-handoff"],
+  "handoffs": [
+    {
+      "id": "handoff-journey",
+      "gate": "Journey",
+      "owner": "integration",
+      "contract": "renderer-handoff"
+    }
+  ],
+  "target_surfaces": [
+    {
+      "id": "surface-condition",
+      "kind": "condition",
+      "source": "US-05-01",
+      "contract": "candidate-state"
+    },
+    {
+      "id": "surface-adapter",
+      "kind": "changed-surface",
+      "source": "candidate adapter",
+      "contract": "candidate-state"
+    },
+    {
+      "id": "surface-journey-handoff",
+      "kind": "handoff",
+      "source": "Gate DからJourneyへ渡す値",
+      "contract": "renderer-handoff",
+      "handoff_id": "handoff-journey"
+    }
+  ],
+  "review_dimensions": [
+    {
+      "id": "dimension-state-transition",
+      "contract": "candidate-state",
+      "surface_ids": ["surface-condition", "surface-adapter"],
+      "causal_path": "入力からadapterを経て公開状態へ届く経路",
+      "stop_boundary": "shared rendererへ渡す直前まで",
+      "probe": {
+        "kind": "counterexample",
+        "description": "失敗後の再試行で旧状態が混ざる操作列"
+      }
+    },
+    {
+      "id": "dimension-render-handoff",
+      "contract": "renderer-handoff",
+      "surface_ids": ["surface-journey-handoff"],
+      "causal_path": "session receiptからrenderer handoffへ届く経路",
+      "stop_boundary": "実ブラウザJourneyは後続Gate",
+      "probe": {
+        "kind": "direct-evidence",
+        "description": "handoff payloadと現在契約を照合する"
+      }
+    }
+  ]
+}
+```
 
-ここでいう意味fieldは、handoffの`gate`、`owner`、`contract`と、seedの`kind`、`source`、`contract`、`coverage_obligation`、`condition_id`、`handoff_id`、`review_case_ids`を指す。Brief側で追加、削除、改名、owner変更、契約変更をしない。reviewerにも変更させない。`coverage_obligation`の詳細は次のとおり。
+### handoffs
 
-- `must-applicable`: 少なくとも一つの`applicable`候補が必要。`condition`と`invariant`に使う
-- `classify-only`: 到達経路の有無を分類すればよい。`changed-surface`に使う。変更箇所というだけで適用を強制しない
-- `handoff-pair`: 同じseed、handoff、経路に`applicable`と`downstream`の両方が必要。`handoff`に使う
+後工程へ既に存在する引き渡しだけを書く。各項目は`id`、`gate`、`owner`、`contract`を持ち、`contract`は`current_contracts`に含める。宣言した各handoffには、対応する`kind: handoff` surfaceと、そのsurfaceを参照する観点を少なくとも一つ作る。
 
-revision 1ではReview Inputの`previous_brief_digest`を`null`、Briefの`review_case_migrations`を必ず`[]`とし、`--previous-brief`は渡さない。
+### target_surfaces
 
-revision 2以降では、同じ`review_id`を持ち、`revision`がちょうど1小さい実際の直前Briefを全stageで`--previous-brief`に渡す。Review Inputの`previous_brief_digest`は、そのBriefに対してvalidatorが成功時に出力したcanonical JSON SHA-256と一致させる。形式は`sha256:<64桁の小文字16進数>`とする。成功出力のdigestは次のrevisionでだけ使う。
+レビュー対象を構成する条件、全体不変条件、変更面、handoff境界を書く。
 
-各migration rowは`previous_review_case_ids`、`current_review_case_ids`、`reason`を使う。各ID配列内に重複を持たせず、両方を同時に空にしない。直前Briefの全caseと現Briefの全caseは、それぞれ全rowを通じてちょうど1回現れる必要がある。
+- `id`: surface ID
+- `kind`: `condition`、`invariant`、`changed-surface`、`handoff`のいずれか
+- `source`: Story、PLAN、実装面など、根拠となる一次情報
+- `contract`: このsurfaceが守る現在契約
+- `handoff_id`: `kind: handoff`だけで必須。`handoffs`にあるIDを使う
 
-- 同じIDと同じownerを維持する場合だけ、`reason`を省略できる
-- 改名、分割、統合は、旧新IDの対応と理由を残す
-- 追加は`previous_review_case_ids: []`、廃止は`current_review_case_ids: []`とし、理由を残す
-- 同じcase IDでもownerの意味fieldが一つでも変わる場合は、owner変更の理由を残す。ownerはseedの`id`、`kind`、`source`、`contract`、`coverage_obligation`、`condition_id`、`handoff_id`と、handoff seedに紐づくhandoffの`gate`、`owner`、`contract`で判定する
+対象Storyの条件、変更経路が影響し得る全体不変条件、実際の変更面、既存handoffを正本と照合する。validatorはIDの対応を検査できるが、実差分のsurfaceをmain Codexが漏らさず列挙したかまでは判定できない。
 
-このmigrationは、旧caseが黙って消えることと、関係ないcaseが理由なく増えることの両方を防ぐ。
+### review_dimensions
 
-migrationのvalidator errorで修正するのは、保持した直前Briefではなく、現Briefの`review_case_migrations`である。
+一つの観点は、一つの独立した根本原因を調べる単位である。入力値、時刻、file、browser、event順の違いだけで観点を分割しない。
+
+- `id`: 観点ID
+- `contract`: この観点が答える現在契約
+- `surface_ids`: 因果経路の入口となるsurface ID。1件以上必要
+- `causal_path`: 契約から生成側、状態や外部作用、利用側、観測結果までの経路
+- `stop_boundary`: 現在Gateで探索を止める境界
+- `probe.kind`: `counterexample`または`direct-evidence`
+- `probe.description`: 観点を判定できる代表反例または直接証拠
+
+各surfaceと各current contractは、少なくとも一つの観点から参照する。異なる契約のsurfaceを同じ観点へ混ぜない。
+
+`review_cycle`は初回を`initial`、同じ論理レビューの再確認を`rereview`とする。
+
+Review Briefの意味を変更するのは、`target`、`gate_question`、契約、対象surface、因果経路、停止境界、観点集合、handoffが変わる場合である。意味不変の文言修正ではBriefを書き換えず、固定済みbaselineをそのまま再利用する。Gate質問や対象成果そのものが別物になる場合は、新しい`review_id`で`initial`レビューを開始する。
+
+## 共通manifest
+
+scope、discovery、candidateは、次のfieldを共通で持つ。
+
+```json
+{
+  "review_id": "review-us05-gate-d",
+  "review_mode": "full",
+  "change_impacts": [],
+  "state": "scope-fixed",
+  "dimension_scopes": [
+    {
+      "dimension_id": "dimension-state-transition",
+      "classification": "applicable",
+      "evidence": "現在の編集導線から公開状態まで到達する"
+    },
+    {
+      "dimension_id": "dimension-render-handoff",
+      "classification": "applicable",
+      "evidence": "現在Gateがrenderer向けpayloadを生成する"
+    }
+  ]
+}
+```
+
+- `review_id`: Briefと完全一致させる
+- `review_mode`: 初回または全面探索は`full`、局所的な再確認は`incremental`
+- `change_impacts`: 再確認する観点と理由。`full`では必ず空配列
+- `state`: stageごとの状態
+- `dimension_scopes`: Briefの全観点をちょうど1回分類する
+
+`dimension_scopes.classification`は`applicable`または`not-applicable`とする。どちらにも直接根拠を`evidence`へ書く。`not-applicable`には`reason`も必要である。
+
+条件、全体不変条件、handoffを含む観点は`not-applicable`にできない。`changed-surface`だけを参照する観点は、現在導線から到達しない直接根拠がある場合に限り`not-applicable`にできる。少なくとも一つの観点を`applicable`にする。
+
+incrementalでは、直前scope baselineの`dimension_id`、`classification`、`evidence`、`reason`をそのまま使う。到達根拠を差し替えない。
 
 ## 適用範囲Gate
 
-scope、discovery、candidateの全manifest、およびobservation checkpointには、Briefと完全に一致する`review_id`と`brief_revision`を持たせる。
-
-`scope_candidates`には、すべてのseedを対応付ける。各候補は一つの`seed_id`を持つ。
-
-- `applicable`: `contract`、`reachable_path`、`path_id`、`boundary`、Review Brief由来の`review_case_ids`が必要
-- `downstream`: Review Briefの`handoff_id`と一致するGate、owner、handoff契約が必要。handoff面を確認する`applicable`候補も参照する
-- `not-applicable`: `reason`と`boundary`が必要
-
-handoff seedには、現在Gateがhandoff面を生成する`applicable`候補と、後工程を示す`downstream`候補の両方を作る。`applicable`候補を1件以上持つseedでは、そのseedの各確認case IDを`applicable`候補全体でちょうど1回使う。`not-applicable`だけのchanged-surface seedではcaseを候補へ割り当てない。異なる到達経路を確認する場合は、Review InputとBrief revisionを更新し、経路ごとに別のcase IDを追加する。`path_id`も前後空白のないIDとする。
-
-`scope_gate`を`passed`、`state`を`scope-fixed`にし、main Codexが固定したReview InputとBriefと一緒に検証する。main Codexはcommand実行前に、Review Inputが正本の全件と意味上一致することを自身で確認する。validator成功はこの正本照合の代わりにならない。成功したmanifestはscope baselineとして保持する。
+scope manifestは`state: scope-fixed`とする。`dimension_results`、`reviewers`、`finding_candidates`はまだ置かない。
 
 ```bash
 python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
@@ -87,47 +191,56 @@ python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
   /tmp/review-scope.json
 ```
 
-Brief revision 2以降では、digestと一致する実際の直前Briefも渡す。これはdiscoveryとcandidateでも必須である。
-
-```bash
-python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
-  --stage scope \
-  --review-input /tmp/review-input.json \
-  --brief /tmp/review-brief-v2.json \
-  --previous-brief /tmp/review-brief-v1.json \
-  /tmp/review-scope-r2.json
-```
-
-scope stageには`review_units`、`reviewers`、`finding_candidates`、`discovery_gate`、`candidate_gate`を置かない。探索中に新しい候補または再分類が必要になった場合は、直前baselineを保持したままscope Gateへ戻る。
-
-```bash
-python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
-  --stage scope \
-  --review-input /tmp/review-input.json \
-  --brief /tmp/review-brief.json \
-  --previous-scope-baseline /tmp/review-scope-v1.json \
-  --observation-checkpoint /tmp/review-observation.json \
-  /tmp/review-scope-v2.json
-```
-
-この`--previous-scope-baseline`は、Review InputとBriefが同じrevisionのままで行うscope再確定に限る。Brief revisionを更新した場合は、`--previous-brief`でdigestとcase migrationを検証し、scope baselineを新規に作る。前revisionのscope baselineは渡さない。新経路に新caseが必要な場合も、同revisionの候補追加ではなくBrief revisionを更新する。
-
-Review Inputのseedとcaseを変えず、既存の`applicable`を再分類しない新候補の追加だけなら、`--observation-checkpoint`は不要である。新候補には`added_during_discovery: true`と`addition_reason`を付ける。
-
-`applicable`を再分類する場合は、main Codexが再分類前のscope、確認単位、担当、状態、証拠を`state: discovery-in-progress`のobservation checkpointとして先に固定し、上のcommandで渡す。再分類するscopeの全確認caseをcheckpointへ一度ずつ含める。`scope_tombstones`へ、`id`、`scope_candidate_id`、`origin_review_unit_id`、`origin_review_case_id`、`previous_classification`、`status`、`evidence_mode`、`evidence`、`guarantee`、`reviewer_id`を残し、checkpointにある全単位を移す。validatorは両方向を照合する。candidate stageへscope候補を直接追加・変更しない。
+成功したJSONをscope baselineとして保持する。探索中に別の根本原因を調べる必要が分かった場合は、candidateへ直接足さず、Briefの観点を更新して`full`のscope Gateからやり直す。
 
 ## 探索完了Gate
 
-scope baselineを複製し、次を追加する。
+discovery manifestはscope baselineをそのまま保ち、`state: discovery-complete`、`dimension_results`、`reviewers`を加える。
 
-- `review_units`: 各単位は一つの`applicable`候補と、scope Gateで固定した一つの`review_case_id`だけを参照し、同じ`contract`と`path_id`を持つ
-- `reviewers`: `completed`、またはmanifest内のcompleted担当へ移譲した`reassigned`
-- `discovery_gate: passed`
-- `state: discovery-complete`
+```json
+{
+  "dimension_results": [
+    {
+      "dimension_id": "dimension-state-transition",
+      "status": "satisfied",
+      "evidence_mode": "executed",
+      "result_source": "fresh",
+      "probe_result": "代表反例では公開状態が分裂しなかった",
+      "evidence": "対象testと実装経路を確認した",
+      "guarantee": "現在のadapterからsession stateまで",
+      "reviewer_id": "reviewer-main"
+    },
+    {
+      "dimension_id": "dimension-render-handoff",
+      "status": "satisfied",
+      "evidence_mode": "static",
+      "result_source": "fresh",
+      "probe_result": "handoff payloadが現在契約と一致した",
+      "evidence": "producer、consumer、契約testを照合した",
+      "guarantee": "現在Gateが所有するhandoff境界まで",
+      "reviewer_id": "reviewer-main"
+    }
+  ],
+  "reviewers": [
+    {
+      "id": "reviewer-main",
+      "status": "completed"
+    }
+  ]
+}
+```
 
-確認単位には`reviewer_id`を付ける。`status`は`satisfied`、`violated`、`unverified`、`evidence_mode`は`executed`、`static`、`existing`のいずれかとする。scope Gateで固定した各確認caseに、`review_units`全体でちょうど1件の確認単位があり、全単位をcompleted担当が確認していなければ通らない。自由記述の空白や言い換えで同じcaseを複製しても、`review_case_id`の重複として拒否する。
+各`applicable`観点に結果をちょうど1件作る。`not-applicable`観点には結果を作らない。一件目が`violated`でも、残りの観点をすべて記録するまでこのGateは通らない。
 
-discovery stageには`finding_candidates`と`candidate_gate`を置かない。
+- `status`: `satisfied`、`violated`、`unverified`
+- `evidence_mode`: `executed`、`static`、`existing`
+- `result_source`: 初回確認は`fresh`。再確認で影響のない観点は`carried-forward`
+- `probe_result`: Briefの代表確認で観測した結果
+- `evidence`: 直接確認した内容
+- `guarantee`: 証拠が保証する範囲
+- `reviewer_id`: `completed` reviewerのID
+
+続行できないreviewerは`status: reassigned`と`transferred_to`を持たせ、`transferred_to`は`completed` reviewerを指す。`unverified`は探索結果として残せるが、合否に必要な証拠が不足しているためcandidate GateはHOLDになる。`unverified`をfindingのroutingへ変換しない。
 
 ```bash
 python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
@@ -138,24 +251,18 @@ python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
   /tmp/review-discovery.json
 ```
 
-成功したmanifestはdiscovery baselineとして保持する。
-
 ## 指摘採用Gate
 
-discovery baselineを複製して、候補の振り分けだけを追加する。
+candidate manifestはdiscovery baselineの`review_id`、`review_mode`、`change_impacts`、`dimension_scopes`、`dimension_results`、`reviewers`を変更せず、`state: candidate-sorted`と`finding_candidates`だけを加える。
 
-- `finding_candidates`: 候補がなければ空配列
-- `candidate_gate: passed`
-- `state: candidate-sorted`
+各候補は`id`、`routing`、`dimension_ids`、`reason`を持つ。routingは次の4種だけである。
 
-候補の`routing`は次を使う。
+- `fix-here`: `violated`観点を参照する。現在契約を増やさずに直す範囲を`minimal_fix_boundary`へ書く
+- `later-gate`: `satisfied`観点を参照し、Briefにある`handoff_id`を持つ。そのhandoff surfaceを確認する観点を少なくとも一つ参照する
+- `contract-decision`: `violated`観点を参照する。`conflicting_contracts`に2件以上の現在契約を指定し、各契約の観点と`reachable_scenario`を持つ
+- `not-applicable`: `satisfied`観点を参照し、現在の指摘や修正へ採用しない理由を残す
 
-- `fix-here`: `validity: valid`かつ`gate_effect: blocks`。`violated`の確認単位を参照する
-- `later-gate`: `validity: valid`かつ`gate_effect: does-not-block`。事前に固定したdownstream候補とhandoff面の確認単位を参照する
-- `contract-decision`: `validity: valid`かつ`gate_effect: blocks`。同じ`path_id`上の確認単位と、異なる既存契約を2件以上参照する
-- `not-applicable`: `validity: invalid`かつ`gate_effect: does-not-block`
-
-scope baselineとdiscovery baselineから、scope候補、tombstone、確認単位、状態、証拠、担当を追加・削除・変更しない。`violated`と`unverified`の確認単位は一つの`fix-here`または`contract-decision`へ統合する。同じ後工程候補、scope-outした違反、同じ確認単位と振り分けを重複登録しない。
+すべての`violated`観点を、`fix-here`または`contract-decision`の候補へちょうど1回まとめる。同じ観点とroutingの候補を重複させない。
 
 ```bash
 python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
@@ -164,104 +271,76 @@ python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
   --brief /tmp/review-brief.json \
   --scope-baseline /tmp/review-scope.json \
   --discovery-baseline /tmp/review-discovery.json \
-  /tmp/review-final.json
+  /tmp/review-candidate.json
 ```
 
-最終manifestだけは標準入力から渡してもよい。Brief revision 2以降では、discoveryとcandidateにもdigestと一致する`--previous-brief /tmp/review-brief-v1.json`を追加する。validatorの成功は、JSONの構造、Review InputとBriefの一致、caseの一意性、revisionとdigest、baseline間の不変性だけを保証する。Review Inputが正本の全件を正しい意味で表すかは保証しない。main Codexが正本照合Gateで確認する。この確認とvalidator成功の両方がなければ完全性を主張しない。
+## 修正後の局所再確認
 
-## 最小例
+契約、surface、handoff、観点、scope分類が変わらない修正後レビューは`review_mode: incremental`にする。実際に影響を受ける観点だけを`change_impacts`で再開する。
 
-Review Input:
+現在Briefは`review_cycle: rereview`とする。直前Briefは書き換えずに保持する。
 
 ```json
 {
-  "review_id": "review-example",
-  "condition_ids": ["US-01-01"],
-  "current_contracts": ["契約A"],
-  "handoffs": [],
-  "scope_seeds": [
+  "review_mode": "incremental",
+  "change_impacts": [
     {
-      "id": "SC1",
-      "kind": "condition",
-      "condition_id": "US-01-01",
-      "source": "US-01-01",
-      "contract": "契約A",
-      "coverage_obligation": "must-applicable",
-      "review_case_ids": ["C1-normal"]
-    }
-  ],
-  "previous_brief_digest": null
-}
-```
-
-Review Brief:
-
-```json
-{
-  "review_id": "review-example",
-  "revision": 1,
-  "target": "対象成果と確認時点の状態",
-  "gate_question": "現在のGate質問",
-  "current_contracts": ["契約A"],
-  "handoffs": [],
-  "review_case_migrations": [],
-  "scope_seeds": [
-    {
-      "id": "SC1",
-      "kind": "condition",
-      "condition_id": "US-01-01",
-      "source": "US-01-01",
-      "contract": "契約A",
-      "coverage_obligation": "must-applicable",
-      "review_case_ids": ["C1-normal"]
+      "id": "impact-adapter-fix",
+      "cause": "target-change",
+      "reason": "adapter修正がsession stateまでの経路を変えた",
+      "surface_ids": ["surface-adapter"],
+      "dimension_ids": ["dimension-state-transition"]
     }
   ]
 }
 ```
 
-最終manifest:
+`cause`は次の2種である。
 
-```json
-{
-  "review_id": "review-example",
-  "brief_revision": 1,
-  "target": "対象成果と確認時点の状態",
-  "gate_question": "現在のGate質問",
-  "current_contracts": ["契約A"],
-  "scope_gate": "passed",
-  "discovery_gate": "passed",
-  "candidate_gate": "passed",
-  "state": "candidate-sorted",
-  "scope_candidates": [
-    {
-      "id": "S1",
-      "seed_id": "SC1",
-      "classification": "applicable",
-      "contract": "契約A",
-      "reachable_path": "入力から観測結果までの経路",
-      "path_id": "P1",
-      "boundary": "現在の利用側まで",
-      "review_case_ids": ["C1-normal"]
-    }
-  ],
-  "review_units": [
-    {
-      "id": "R1",
-      "scope_candidate_ids": ["S1"],
-      "contract": "契約A",
-      "reachable_path": "入力から観測結果までの経路",
-      "path_id": "P1",
-      "review_case_id": "C1-normal",
-      "boundary": "現在の利用側まで",
-      "status": "satisfied",
-      "evidence_mode": "static",
-      "evidence": "確認した一次情報",
-      "guarantee": "この証拠が保証する範囲",
-      "reviewer_id": "reviewer-1"
-    }
-  ],
-  "reviewers": [{"id": "reviewer-1", "status": "completed"}],
-  "scope_tombstones": [],
-  "finding_candidates": []
-}
+- `target-change`: 実装や成果の変更がsurfaceへ届く。`surface_ids`を1件以上、実際に影響する観点を`dimension_ids`へ書く。同じsurfaceを参照していても影響しない観点は、`unaffected_dimensions`へ`dimension_id`と`unaffected_reason`を書いて再開しない
+- `review-gap`: 前回の観点内に探索不足が見つかった。再開する既存観点を`dimension_ids`へ書く。新しい観点が必要なら`full`へ戻る
+
+同じsurfaceまたは影響観点を複数のimpactへ重複させない。一つの観点を、別impactで影響ありと非影響、または`target-change`と`review-gap`の両方に分類しない。複数の変更理由が同じ観点へ届く場合は一つのimpactへまとめる。
+
+文言、証拠記録、validator、schemaだけの変更ではレビューを再開せず、固定済みのBriefとbaselineをそのまま保持する。その変更を表す`change_impacts`は作らない。
+
+影響観点の`dimension_results`は`result_source: fresh`で作り直す。影響のない観点は、直前discoveryのstatus、証拠、保証範囲、担当を変えずに`result_source: carried-forward`と`carry_forward_reason`を加える。
+
+incrementalでは全stageに、同じ`review_id`の直前Briefと直前discovery baselineを渡す。
+
+```bash
+python3 .codex/skills/dev/review-gate/scripts/validate_review_manifest.py \
+  --stage discovery \
+  --review-input /tmp/review-input-current.json \
+  --brief /tmp/review-brief-current.json \
+  --scope-baseline /tmp/review-scope-current.json \
+  --previous-brief /tmp/review-brief-previous.json \
+  --previous-discovery-baseline /tmp/review-discovery-previous.json \
+  /tmp/review-discovery-current.json
 ```
+
+incremental candidateで、`result_source: fresh`の観点から新しいfindingを採用する場合は、修正前にも存在した見逃しか、修正が生んだ回帰かを区別する。
+
+- `origin: prior-review-miss`: 該当観点が`cause: review-gap`で再開されている
+- `origin: change-regression`: 該当観点が`cause: target-change`で再開されている
+- `origin_evidence`: 修正前の成果との比較根拠
+
+初回`full`のfindingには`origin`と`origin_evidence`を付けない。
+
+`carried-forward`の`violated`観点にある未修正findingは新規findingではないため、`origin`と`origin_evidence`を付けず、そのまま分類する。
+
+契約、target、gate question、target surface、handoff、因果経路、停止境界、観点集合、scope分類のいずれかが変わる場合は`full`へ戻る。同じ論理レビューの全面再探索では`review_cycle: rereview`、非空の`full_review_reason`をBriefへ書き、全stageで直前Briefと直前discovery baselineを渡す。validatorはcatalogまたはscopeが実際に変わっていることも確認する。別のGate質問や別の対象成果へ移る場合は、新しい`review_id`で`initial`の`full`を開始する。
+
+## validatorが保証しないこと
+
+validatorが保証するのは、宣言済みの観点が各Gateで欠けず、局所再確認とcandidate分類が許可された状態遷移だけを行うことである。次はmain Codexが一次情報で判断する。
+
+- Briefが正本の条件、契約、変更surface、handoffを意味上すべて含むか
+- 観点が本当に異なる根本原因であり、細かなcaseの分割ではないか
+- 因果経路、停止境界、証拠が事実か
+- 言い換えではなく対象成果やGate質問の意味が変わっていないか
+- `minimal_fix_boundary`が過剰実装を避ける実際の最小範囲か
+
+validator成功だけをGOの根拠にしない。
+
+廃止した`scope_seeds`、`review_case_migrations`、`scope_candidates`、`review_units`、`scope_tombstones`などのcase／migration fieldは追加しない。validatorもこれらを拒否する。

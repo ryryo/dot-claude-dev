@@ -48,7 +48,7 @@ PLANまたはplan setの実装・検証契約を作成した場合や、その�
 
 ## 独立レビューの共通基盤
 
-Story、PLAN、実装成果の独立レビューでは`$review-gate`を使う。確認範囲の作成、指摘を探索から隔離する方法、探索終了の証明、候補の採否、修正後の再確認、GO／NO-GOは同skillを正本とし、ここへ重複記載しない。
+Story、PLAN、実装成果の独立レビューでは`$review-gate`を使う。見逃し、過剰レビュー、過剰実装の定義、確認範囲の作成、指摘を探索から隔離する方法、探索終了の証明、候補の採否、修正後の再確認、GO／NO-GOは同skillを正本とし、ここへ重複記載しない。
 
 このskillが所有するのは、各Gateについて次を渡し、結果を開発状態へ反映することである。
 
@@ -62,7 +62,7 @@ Story、PLAN、実装成果の独立レビューでは`$review-gate`を使う。
 
 `契約判断待ち`にできるのは、現在のGateに適用される既存契約同士が衝突し、どちらを正とするか決めないとGate質問へ答えられない場合だけである。名前付きの後工程、owner、handoff契約を示せない将来用途、改善案、一般的なhardeningは`非適用`とし、曖昧な後続作業やblockerへ送らない。
 
-`$review-gate`は、レビュー確認一覧、指摘候補、再確認する単位を決める。このskillは、その結果から失効するStory／PLAN／実装Gateと、再通過する順序、Journey、状態を決める。
+`$review-gate`は、レビュー観点、指摘候補、修正後に再確認する観点を決める。このskillは、その結果から失効するStory／PLAN／実装Gateと、再通過する順序、Journey、状態を決める。
 
 main Codexは、Review Briefより先にReview Inputを作る。`condition_ids`はBriefから逆算せず、次の順で決める。
 
@@ -71,21 +71,17 @@ main Codexは、Review Briefより先にReview Inputを作る。`condition_ids`�
 3. PLANを対象とする場合は、対象PLAN setが宣言する条件IDも別に抽出し、台帳に存在するか照合する。candidate PLANならその担当ID、Story完了を所有する統合PLANなら台帳の対象ID全件が正確な集合になる。
 4. Story Gateでは台帳から抽出した対象ID、PLAN／実装Gateでは上の照合で確定したPLAN担当IDを、Review Inputの`condition_ids`に過不足なく渡す。
 
-`current_contracts`、`handoffs`、`scope_seeds`も、依頼、台帳、PLAN、Gate質問からBriefとは独立に固定する。handoffには`id`、`gate`、`owner`、`contract`を持たせる。seedには`id`、`kind`、`source`、`contract`、`coverage_obligation`、`review_case_ids`を持たせ、condition seedには`condition_id`、handoff seedには`handoff_id`も付ける。
+`current_contracts`、変更したsurface、全体不変条件、`handoffs`も、依頼、台帳、PLAN、Gate質問からBriefとは独立に固定する。handoffには`id`、`gate`、`owner`、`contract`を持たせる。
 
-各対象条件IDはcondition seedで1回だけ所有させ、確認case IDは全seedを通じて一意にする。異なる到達経路は別のcase IDに分ける。Review BriefはReview Inputの契約、handoff、seed、caseのID集合と意味fieldをそのまま持ち、Brief側で追加、削除、改名、owner変更をしない。
+Review Inputから、同じ成果を異なる根本原因で壊し得るレビュー観点を導く。条件ID、入力値、file、browser、操作順ごとにcaseを増やさない。正常例や反例は、観点を確認する代表例として扱う。
 
 main CodexはReview Briefを作る前に、Review Inputの全fieldを一次情報と照合する。これを正本照合Gateとする。validatorはReview InputとBriefの構造上の一致を確認できるが、Review Inputが台帳やPLANに意味上忠実かは判定できない。正本照合Gateとvalidator成功の両方がなければ、Review Inputが完全とは主張しない。
 
-reviewerが不足を見つけた場合は自分で追加させず、mainが一次情報からReview InputとBriefを再固定する。revision 1ではReview Inputの`previous_brief_digest`を`null`、Briefの`review_case_migrations`を必ず`[]`とする。
+reviewerが観点の不足を見つけた場合は、指摘を確定する前にmainへ返す。mainは、現在契約と到達経路に適用するか、既存観点と異なる根本原因かを確認し、必要な場合だけ観点一覧へ加える。
 
-Briefの意味を変える場合はrevisionを更新する。直前Briefを保持し、validatorが成功時に出力したそのcanonical JSON SHA-256をReview Inputの`previous_brief_digest`へ入れる。さらに、直前Briefの全caseを改名、分割、統合、追加、廃止、owner変更の理由付きで新Briefへ完全に対応付ける。ownerにはseedのID、kind、source、contract、coverage obligation、condition ID、handoff IDと、handoff seedに紐づくGate、owner、contractを含む。旧caseを黙って消さない。
+main Codexは`$review-gate`の適用範囲Gate、探索完了Gate、指摘採用Gateとvalidatorを自身で確認する。一件のblockerでNO-GO見込みになっても、適用する全観点が閉じるまで修正指示や最終報告を出さない。reviewerの自己申告やvalidator成功だけを完全性の根拠にしない。
 
-同じBrief revisionでのscope再確定だけ、直前のscope baselineと必要な観測checkpointを使う。新経路に新caseが必要な場合は、同revisionでcaseを複製せずBrief revisionを更新する。Brief revisionを変えた場合は、scope、discovery、candidateを作り直し、前revisionの探索状態や証拠を再利用しない。candidate stageへscopeや探索結果を直接追加・変更しない。
-
-main Codexは同じReview Inputを`--review-input`でscope／discovery／candidateの全validatorへ渡し、validatorを自身で実行する。Brief revision 2以降では、`previous_brief_digest`と一致する実際の直前Briefも全stageへ渡す。`$review-gate`の適用範囲Gate、探索完了Gate、指摘採用Gateの完了証明と三stageの成功が揃わないレビュー結果を受理しない。reviewerの自己申告やvalidator成功は、mainの正本照合Gateの代わりにしない。不足する結果は`HOLD`として扱い、指摘、修正、後工程、状態更新へ使わない。一件のblockerでNO-GO見込みになっても、探索完了Gateが通るまで修正指示や最終報告を出さない。
-
-Review Input、Brief、manifest、checkpoint、digestは一時成果物とし、台帳、PLAN、EVIDENCEへ保存しない。branch、commit SHA、worktreeやsessionの識別子も入れない。恒久レビュー報告は依頼者が求めた場合だけ作るが、`previous_brief_digest`を永続文書へ移さない。
+Review Input、Brief、manifestは一時成果物とし、台帳、PLAN、EVIDENCEへ保存しない。branch、commit SHA、worktreeやsessionの識別子も入れない。
 
 ## 3. ストーリーを追加・更新する
 
@@ -280,7 +276,7 @@ PLAN内の実装項目と通常の自動検証が完了したら、実装後独�
 - コード、テスト、設定、実際に変更または利用した公開インターフェースは、PLANの実装責務、制約、対象外、Gateと一致しているか。完了済みの項目には、実証できる根拠があるか
 - PLANから漏れた受け入れ条件、実装都合の迂回、条件の弱体化、未確認の結果を成功扱いするfallbackがないか
 - ストーリーとPLANに適用される通常導線、失敗、拒否、取消、再試行、再読込、復元、状態遷移、利用者・領域切替が、該当するコードと振る舞いのテストへ反映されているか
-- `$review-gate`のレビュー確認一覧と、変更の性質に応じて選んだ確認方法に未確認の対象がないか。外部から渡された処理や共有リソースへの作用を含め、生成側と利用側の契約がfield単位で一致しているか
+- `$review-gate`のレビュー観点一覧と、変更の性質に応じて選んだ確認方法に未確認がないか。外部から渡された処理や共有リソースへの作用を含め、生成側と利用側の契約がfield単位で一致しているか
 - テストは、公開インターフェースと再発条件を確認しているか。内部実装や静的文言だけを固定したり、未確認の実画面・実サービス結果を代用したりしていないか
 - 現在の変更から到達できる範囲に、PLANにない外部副作用、未承認の費用、秘密情報・個人情報の露出、不要な依存、既存契約を破る性能退行がないか
 
@@ -296,11 +292,11 @@ Gateを判定する前に、全条件を「実装済み」「実装済み・Jour
 
 このGateで確認するのは、コード・テストと契約の整合である。実画面Journey、実サービス、目視品質、費用を伴う検証の代わりにはならない。Gate通過後、コードと必要な自動テストが成立した状態を`implemented`とする。自動テストとレビューが成功しただけでは`verified`にしない。
 
-Gate通過後に、レビュー対象だった実装成果物、外部構成・状態、PLANまたはストーリー台帳の契約を意味的に変更した場合は、その変更の影響範囲にあるGateを失効させる。実装成果物には、コード、テスト、設定、schema／migration、依存、コンテンツ、prompt、静的・生成アセット、デプロイ済みの外部設定を含む。
+Gate通過後に、レビュー対象だった実装成果物、外部構成・状態、PLANまたはストーリー台帳の契約を意味的に変更した場合は、その変更が影響するレビュー観点とGateだけを失効させる。実装成果物には、コード、テスト、設定、schema／migration、依存、コンテンツ、prompt、静的・生成アセット、デプロイ済みの外部設定を含む。
 
-変更後は、まず台帳とPLANからReview Inputの条件ID、現在契約、handoff、seed、caseを再導出し、正本照合Gateを再実行する。保持した直前Briefに対するvalidator出力のdigestをReview Inputへ入れ、同じ`review_id`のBrief revisionを更新する。直前Briefの全caseを新Briefへ完全に対応付けた後、scope、discovery、candidateを新Briefから作り直す。前revisionの状態、証拠、reviewer完了を引き継がない。
+変更後は、何の公開状態、出力、外部作用が変わり、どの因果経路と観点へ影響したかを先に整理する。影響した観点だけを再確認し、影響しない観点は、契約、境界、証拠の前提が不変である根拠を添えて前回結果を引き継ぐ。Gate質問、現在契約、対象surface、因果経路、独立した観点の集合が変わった場合だけ、適用範囲から全面的に作り直す。
 
-再レビュー後は、関係するJourneyだけを再開する。別のStoryや後続Gateまで、全面的な再レビューの対象にはしない。ただし、最終変更後のレビューを通らないまま`implemented`または`verified`へ進めてはならない。
+再レビュー後は、関係するJourneyだけを再開する。別のStoryや後続Gateまで全面的に再確認しない。ただし、影響した観点を確認しないまま`implemented`または`verified`へ進めてはならない。
 
 レビューとJourneyの実結果を契約どおり記録するだけなら、Gateは失効しない。これには、状態の更新、条件のチェック欄、検証欄、証拠へのlink、PLANの進捗チェック欄、結果ログが含まれる。ただし、未確認の結果を完了扱いする変更や、記録に見せかけて契約の意味を変える更新は、失効対象とする。
 
@@ -319,6 +315,8 @@ Journeyは新しい要件や改善案を探索するreviewではなく、固定�
 UIを含むUSは通常入口から実画面で確認する。外部サービスや課金が受け入れ条件に含まれる場合は、利用者の明示承認後に実行する。未実施の検証をmockやfixtureで代替して完了扱いにしない。
 
 Journeyでは固定した条件IDと`例:`ごとに、開始状態、操作、実際の観測結果、成功／失敗、未実施理由だけを判定する。固定した条件と異なる結果はその条件の失敗として扱う。途中で見つけた改善案、現在の条件から到達しない例外、別の利用者成果は現在のJourneyや後続taskへ追加しない。実結果から既存契約が実現不能と判明した場合だけ4.2の`契約判断待ち`へ戻す。
+
+Journeyまたはrelease確認で条件を満たさない場合は、その場で新しい製品挙動を考案・実装せず、原因のownerへ戻す。固定済み実装が契約を破るなら実装Gate、oracle、activation、rollbackなど現在条件を確かめる手順だけが不足するなら該当PLANの検証Gate、既存契約同士が衝突するなら4.2の`契約判断待ち`へ戻す。検証Gateでは同じ条件を判定する最小手順だけを直し、新しい条件や製品挙動を追加しない。同じ仮説の外部変更、deploy、実Journeyを繰り返しても新しい証拠が得られない場合は、安全な状態へ戻して停止する。
 
 ## 7. 状態と証拠を更新する
 
