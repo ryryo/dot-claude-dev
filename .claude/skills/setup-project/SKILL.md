@@ -56,9 +56,9 @@ Step 3 以降は必要に応じて確認として実行する。ただし `scrip
 cd "{PROJECT_PATH}" && bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/scripts/setup-claude.sh"
 ```
 
-`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{skills/dev, hooks/dev}` にシンボリックリンクを作成し、`.gitignore` と Codex hooks 設定も差分反映する。
+`setup-claude.sh` は `.claude/{rules/workflow, skills/dev, commands/dev, hooks/dev}` と `.codex/{skills/dev, hooks/dev}` にシンボリックリンクを作成し、`.gitignore` を差分反映する。また、過去のセットアップで登録された Codex `commit-check` Stop hook があれば解除する。
 
-`.codex/hooks/dev` が正しくリンクされている既存プロジェクトでは、共有側の `commit-check.sh` と補助スクリプト更新がそのまま反映される。
+`.codex/hooks/dev` のスクリプトは再登録しやすいよう共有リンクとして保持するが、通常のセットアップでは実行フックに登録しない。
 
 実行後、リンクが正しく作成されたか再確認:
 
@@ -85,17 +85,13 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 
 `setup-claude.sh` 内でも実行される。ここでは再確認として idempotent に実行する。
 
-## Step 5: Codex hooks 設定の確認
+## Step 5: 旧 Codex Stop hook 登録の解除確認
 
 ```bash
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/create-codex-hooks.sh" "{PROJECT_PATH}"
 ```
 
-`setup-claude.sh` 内でも実行される。ここでは再確認として idempotent に実行する。
-
-この設定により Codex Stop hook で `.codex/hooks/dev/commit-check.sh` が実行される。`commit-check.sh` はコミット促し判定の前に、未コミットの `docs/PLAN/*/tasks.json` を検出して `.codex/skills/dev/spec-codex-run/scripts/sync.sh` を呼ぶ。
-
-既存の `.codex/hooks.json` がある場合も、`jq` が使える環境では Stop hook の登録・timeout/statusMessage 更新を差分適用する。`jq` がない場合は手動確認が必要な旨を出力する。
+`setup-claude.sh` 内でも実行される。新しい hooks 設定は作成せず、既存の `.codex/hooks.json` に旧 `.codex/hooks/dev/commit-check.sh` の登録がある場合だけ削除する。ほかの hooks は維持する。
 
 ## Step 6: settings.json の作成
 
@@ -103,7 +99,7 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/scripts/create-settings-json.sh" "{PROJECT_PATH}"
 ```
 
-既存の `settings.json` がある場合はスクリプトがスキップし、手動確認が必要な旨を出力する。
+新規の `settings.json` には commit-check Stop hook を含めない。既存設定に旧 `.claude/hooks/dev/commit-check.sh` の登録がある場合は、その登録だけ削除してほかの hooks を維持する。
 
 ## Step 7: 結果サマリー表示
 
@@ -117,6 +113,6 @@ bash "${CLAUDE_SHARED_DIR:-$HOME/dot-claude-dev}/.claude/skills/setup-project/sc
 | scripts/setup-claude-remote.sh | ✓ |
 | scripts/setup-local.sh | ✓ |
 | .gitignore 更新 | ✓ |
-| .claude/settings.json | ✓ 新規作成 / ⚠️ 既存（要確認） |
-| .codex/config.toml / hooks.json | ✓ 新規作成・更新 / ⚠️ 既存（要確認） |
+| .claude/settings.json | ✓ 新規作成・旧 Stop hook 解除 |
+| .codex/hooks.json | ✓ 旧 Stop hook 未登録・解除済み |
 ```

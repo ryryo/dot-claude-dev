@@ -119,14 +119,14 @@ fi
 
 # setup-claude.sh の再実行だけで既存プロジェクトへ差分反映できるようにする
 UPDATE_GITIGNORE="$SHARED_DIR/.claude/skills/setup-project/scripts/update-gitignore.sh"
-CREATE_CODEX_HOOKS="$SHARED_DIR/.claude/skills/setup-project/scripts/create-codex-hooks.sh"
+UPDATE_CODEX_HOOKS="$SHARED_DIR/.claude/skills/setup-project/scripts/create-codex-hooks.sh"
 
 if [ -f "$UPDATE_GITIGNORE" ]; then
   bash "$UPDATE_GITIGNORE" "$PROJECT_DIR"
 fi
 
-if [ -f "$CREATE_CODEX_HOOKS" ]; then
-  bash "$CREATE_CODEX_HOOKS" "$PROJECT_DIR"
+if [ -f "$UPDATE_CODEX_HOOKS" ]; then
+  bash "$UPDATE_CODEX_HOOKS" "$PROJECT_DIR"
 fi
 
 echo ""
@@ -149,7 +149,7 @@ echo "# Codex CLI - shared configuration (symlinks only)"
 echo ".codex/skills/dev"
 echo ".codex/hooks/dev"
 echo ""
-echo "# Codex CLI - project hooks"
+echo "# Codex CLI - optional project configuration"
 echo ".codex/config.toml"
 echo ".codex/hooks.json"
 echo ""

@@ -42,6 +42,7 @@ repositoryのPLAN templateを使い、少なくとも次を固定する。
 - focused検証とhandoff Gate
 - 契約変更、owner競合、外部承認不足に対する停止条件
 - 複数candidateの開始、merge、外部handoff、最終Joinを所有するintegration PLANでは、本文と同じGate名を使ったMermaid実行DAG。開始Gate、hard dependency、並行lane、merge point、条件付きfallback、external lane、最終Joinを省略しない
+- 複数実行PLANを接続するintegration／coordination PLANでは、全lane、write scope、外部状態、依存edge、最早waveを持つParallelization Topology Gate manifest
 
 candidateは、自分の変更pathとlocal oracleが成立した時点でhandoffする。統合後Gate、実Journey、USの`implemented`／`verified`、台帳、共有進行PLANを更新しない。integrationまたはexternal ownerだけが、review済みcontractへ統合した実結果から最終状態を更新する。
 
@@ -67,20 +68,133 @@ integration PLANとは別に進行PLANやREADMEがある場合も、integration 
 
 個別PLANのPhase、command、詳細task、受け入れ条件本文を複製しない。条件IDとlinkで参照する。進行PLANの状態更新はcoordination／integration ownerだけが行い、candidate ownerはhandoff結果を返すだけにする。
 
-## 5. plan set review
+## 5. Parallelization Topology Gate
+
+### 5.1 直列化より先に境界を見直す
+
+同じfile、generated file、lockfile、台帳、EVIDENCE、外部状態を複数成果が必要とする場合、その事実だけで成果全体を直列化しない。次の順で、現在の利用者契約を変えずに分離できるかを確認する。
+
+1. 各成果のwrite scopeを、実際に必要なrelative pathまで狭める。
+2. 両成果が必要とする最小の公開contractだけを、先行するshared seam成果として固定する。
+3. shared file、generated file、台帳、EVIDENCEの更新を、候補実装後のJoinだけへ移す。
+4. 上流成果がなければ下流成果を実装・検証できない真のhard dependencyだけをedgeにする。
+5. それでも同じwriterを複数段階で必要とする場合だけ、serialized exceptionとしてcritical pathへの影響と1〜3を採用しない理由を残す。
+
+shared seamは並列化のためだけに抽象化を増やす免罪符ではない。現在scopeで独立したcontract、handoff、local oracleがなく、追加調整費が並行化利益を上回るなら作らない。その場合も、直列化edgeを暗黙にせずmanifestで審査する。
+
+### 5.2 機械可読manifest
+
+複数実行PLANを接続するintegration／coordination PLANに、次のmarkerでJSONを1個だけ置く。Mermaidは人が読む実行図、manifestは衝突と最早waveを検査する正本であり、両方を本文のGate名・ownerへ一致させる。
+
+````markdown
+<!-- parallelization-topology:start -->
+```json
+{
+  "schemaVersion": 1,
+  "gate": "parallelization-topology",
+  "integrationPlan": "docs/PLAN/YYMMDD_integration.md",
+  "lanes": [
+    {
+      "id": "shared-seam",
+      "plan": "docs/PLAN/YYMMDD_shared-seam.md",
+      "section": "Phase A",
+      "execution": "local",
+      "writeScopes": ["apps/web/src/shared/**"],
+      "externalStates": []
+    },
+    {
+      "id": "candidate-a",
+      "plan": "docs/PLAN/YYMMDD_candidate-a.md",
+      "section": "Phase B",
+      "execution": "local",
+      "writeScopes": ["apps/web/src/feature-a/**"],
+      "externalStates": []
+    },
+    {
+      "id": "candidate-b",
+      "plan": "docs/PLAN/YYMMDD_candidate-b.md",
+      "section": "Phase B",
+      "execution": "local",
+      "writeScopes": ["apps/web/src/feature-b/**"],
+      "externalStates": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "shared-seam",
+      "to": "candidate-a",
+      "classification": "shared-seam",
+      "reason": "consumerは公開contract固定後に開始する",
+      "evidence": "Gate Pのhandoff条件",
+      "handoff": "review済みpublic interface"
+    },
+    {
+      "from": "shared-seam",
+      "to": "candidate-b",
+      "classification": "shared-seam",
+      "reason": "consumerは公開contract固定後に開始する",
+      "evidence": "Gate Pのhandoff条件",
+      "handoff": "review済みpublic interface"
+    }
+  ],
+  "waves": [
+    {"id": "wave-1", "lanes": ["shared-seam"]},
+    {"id": "wave-2", "lanes": ["candidate-a", "candidate-b"]}
+  ]
+}
+```
+<!-- parallelization-topology:end -->
+````
+
+- `lanes`: 現在のplan setで実行する成果またはintegration Phaseを漏れなく列挙する。同じPLAN内の別Phaseは異なるlane IDと`section`で表せる。`plan`はrepository root内に実在し、`section`はそのPLAN本文の見出しと一致させる。fenced example内の見出しは契約に数えず、同じresolved PLAN／sectionを複数laneで所有しない。
+- `execution`: `local`または`external`。外部laneは操作対象を`externalStates`へ1件以上書く。
+- `writeScopes`: repository relativeのfile path、または末尾`/**`だけをwildcardとするdirectory scopeを使う。`*`を途中に含む曖昧なglob、絶対path、`..`は禁止する。sourceだけでなく、自PLAN、generated file、lockfile、台帳、EVIDENCEも実際に更新するlaneへ含める。
+- `edges`: `hard-dependency`、`shared-seam`、`join`、`external-stop`、`serialized-exception`のいずれかへ分類し、`reason`、確認した`evidence`、渡す`handoff`を必須にする。
+- `waves`: edgeから計算される最早waveを記録する。人員数や実行context都合で空いているlaneを後ろへ送らない。各laneは1 waveだけに置く。
+
+writer重複をedgeで直列化する場合、そのedgeの`classification`は`serialized-exception`とし、次を追加する。
+
+```json
+{
+  "resources": ["apps/web/src/shared/file.ts"],
+  "criticalPathImpact": "candidate-bはcandidate-a完了まで開始できない",
+  "alternatives": {
+    "narrow-scope": "採用しない具体的理由",
+    "shared-seam": "採用しない具体的理由",
+    "join-only": "採用しない具体的理由"
+  }
+}
+```
+
+### 5.3 Gateの実行と判定
+
+repository rootから次を実行する。
+
+```bash
+python3 .codex/skills/dev/develop-user-story/scripts/validate_plan_topology.py <integration-or-coordination-plan>
+```
+
+validatorは、manifestが1個だけであること、検証対象integration PLANとmanifest pathの一致、参照する各PLANとsection見出しの実在、symlink解決後もrepository root内にあること、lane／edge ID、relative write scope、DAGの閉路、最早waveとの一致、同一waveのwriter／外部状態衝突、writer重複を残す例外の代替案を検査する。成功出力にはlane数、local最大同時数、serialized exception数が出る。
+
+これは意味的な合否判定を代替しない。4.1の独立reviewerは、全実行PLANがmanifestに含まれること、edgeが現行source／contract上で本当に必要なこと、shared seamが過不足ないこと、Mermaid・本文・owner表と一致することを確認する。validator成功と独立reviewの両方が揃うまでGateをPASSにしない。
+
+lane、write scope、外部状態、edge、shared contract、ownerを意味的に変えた場合、または実装中に未記載の共有writerが判明した場合は、production code編集を止めて本Gateとplan set reviewを再開する。進捗状態や実行contextだけの変更では再開しない。
+
+## 6. plan set review
 
 4.1の独立レビューは、進行PLANと全実行PLANを一つのartifactとして行う。通常はreviewer一名・Gate一回でよい。次を反証する。
 
 - 全条件IDに実装ownerと最終確認ownerがあり、重複・空白・未確認の完了扱いがない。
-- graphに閉路、不要な直列待ち、未記載のmerge pointがない。
+- Parallelization Topology Gateのvalidatorが成功し、全実行laneがmanifestにあり、graphに閉路、不要な直列待ち、未記載のmerge pointがない。
 - Mermaidがrender可能で、図のedge、Gate名、fallback、外部lane、最終Joinが各PLAN本文と一致し、文章側だけ・図側だけに存在する依存がない。
 - 並行laneのwrite scopeと外部状態ownerが排他的である。
+- 直列edgeごとにsource／contract上の依存、handoff、evidenceがあり、writer重複を残す例外はscope縮小、shared seam、Join-onlyを具体的に棄却している。
 - candidateが単独でUS完了を主張せず、review済みcontractへ統合した状態で上位test、review、Journeyが再実行される。
 - 実行PLAN単体を新しい実行主体へ渡しても、開始条件、成果、禁止範囲、handoff先を推測せず実行できる。
 - PLANの分割費用に見合う並行化利益があり、同じcodeを複数laneで二度実装しない。
 
 意味変更を反映した場合は、影響する実行PLANだけでなく、依存、owner、条件追跡が変わる進行PLANも同じreviewerへ再確認させる。
 
-## 6. 計画に置かない識別子
+## 7. 計画に置かない識別子
 
 PLAN、進行PLAN、handoff、review metadataにはversion controlや実行環境の識別子、content digestを書かない。これらは実行時の管理情報とし、計画の開始条件、完了条件、再review条件にはしない。外部sourceの版・license provenanceが必要な場合はREFERENCE、EVIDENCE、noticeまたはdependency管理へ置き、PLANはそのpathを参照する。
