@@ -64,9 +64,28 @@ Story、PLAN、実装成果の独立レビューでは`$review-gate`を使う。
 
 `$review-gate`は、レビュー確認一覧、指摘候補、再確認する単位を決める。このskillは、その結果から失効するStory／PLAN／実装Gateと、再通過する順序、Journey、状態を決める。
 
-main Codexは、独立reviewerを開始する前に、Gate固有の契約、coverage obligationと確認case IDを持つseed、handoffをReview Briefへ固定する。reviewerが不足を見つけた場合は自分で追加させず、mainが一次情報から再固定する。scope stageとdiscovery stageで成功したmanifestはmainが別々のbaselineとして保持し、candidate stageで照合する。探索中にscopeが変わる場合はscope stageを再通過し、再分類時は直前の観測checkpointも照合する。candidate stageへscopeや探索結果を直接追加・変更しない。
+main Codexは、Review Briefより先にReview Inputを作る。`condition_ids`はBriefから逆算せず、次の順で決める。
 
-main Codexはscope／discovery／candidateのvalidatorを自身で実行し、`$review-gate`の適用範囲Gate、探索完了Gate、指摘採用Gateの完了証明と三stageの成功が揃わないレビュー結果を受理しない。reviewerの自己申告はvalidator成功の代わりにしない。不足する結果は`HOLD`として扱い、指摘、修正、後工程、状態更新へ使わない。一件のblockerでNO-GO見込みになっても、探索完了Gateが通るまで修正指示や最終報告を出さない。レビュー報告用の恒久ファイルは、依頼者が求めた場合だけ作る。
+1. 依頼本文から、対象Story／Gate／PLAN setを固定する。
+2. 解決した`docs/USER_STORIES.md`から、対象Storyの条件IDを直接抽出する。
+3. PLANを対象とする場合は、対象PLAN setが宣言する条件IDも別に抽出し、台帳に存在するか照合する。candidate PLANならその担当ID、Story完了を所有する統合PLANなら台帳の対象ID全件が正確な集合になる。
+4. Story Gateでは台帳から抽出した対象ID、PLAN／実装Gateでは上の照合で確定したPLAN担当IDを、Review Inputの`condition_ids`に過不足なく渡す。
+
+`current_contracts`、`handoffs`、`scope_seeds`も、依頼、台帳、PLAN、Gate質問からBriefとは独立に固定する。handoffには`id`、`gate`、`owner`、`contract`を持たせる。seedには`id`、`kind`、`source`、`contract`、`coverage_obligation`、`review_case_ids`を持たせ、condition seedには`condition_id`、handoff seedには`handoff_id`も付ける。
+
+各対象条件IDはcondition seedで1回だけ所有させ、確認case IDは全seedを通じて一意にする。異なる到達経路は別のcase IDに分ける。Review BriefはReview Inputの契約、handoff、seed、caseのID集合と意味fieldをそのまま持ち、Brief側で追加、削除、改名、owner変更をしない。
+
+main CodexはReview Briefを作る前に、Review Inputの全fieldを一次情報と照合する。これを正本照合Gateとする。validatorはReview InputとBriefの構造上の一致を確認できるが、Review Inputが台帳やPLANに意味上忠実かは判定できない。正本照合Gateとvalidator成功の両方がなければ、Review Inputが完全とは主張しない。
+
+reviewerが不足を見つけた場合は自分で追加させず、mainが一次情報からReview InputとBriefを再固定する。revision 1ではReview Inputの`previous_brief_digest`を`null`、Briefの`review_case_migrations`を必ず`[]`とする。
+
+Briefの意味を変える場合はrevisionを更新する。直前Briefを保持し、validatorが成功時に出力したそのcanonical JSON SHA-256をReview Inputの`previous_brief_digest`へ入れる。さらに、直前Briefの全caseを改名、分割、統合、追加、廃止、owner変更の理由付きで新Briefへ完全に対応付ける。ownerにはseedのID、kind、source、contract、coverage obligation、condition ID、handoff IDと、handoff seedに紐づくGate、owner、contractを含む。旧caseを黙って消さない。
+
+同じBrief revisionでのscope再確定だけ、直前のscope baselineと必要な観測checkpointを使う。新経路に新caseが必要な場合は、同revisionでcaseを複製せずBrief revisionを更新する。Brief revisionを変えた場合は、scope、discovery、candidateを作り直し、前revisionの探索状態や証拠を再利用しない。candidate stageへscopeや探索結果を直接追加・変更しない。
+
+main Codexは同じReview Inputを`--review-input`でscope／discovery／candidateの全validatorへ渡し、validatorを自身で実行する。Brief revision 2以降では、`previous_brief_digest`と一致する実際の直前Briefも全stageへ渡す。`$review-gate`の適用範囲Gate、探索完了Gate、指摘採用Gateの完了証明と三stageの成功が揃わないレビュー結果を受理しない。reviewerの自己申告やvalidator成功は、mainの正本照合Gateの代わりにしない。不足する結果は`HOLD`として扱い、指摘、修正、後工程、状態更新へ使わない。一件のblockerでNO-GO見込みになっても、探索完了Gateが通るまで修正指示や最終報告を出さない。
+
+Review Input、Brief、manifest、checkpoint、digestは一時成果物とし、台帳、PLAN、EVIDENCEへ保存しない。branch、commit SHA、worktreeやsessionの識別子も入れない。恒久レビュー報告は依頼者が求めた場合だけ作るが、`previous_brief_digest`を永続文書へ移さない。
 
 ## 3. ストーリーを追加・更新する
 
@@ -279,7 +298,9 @@ Gateを判定する前に、全条件を「実装済み」「実装済み・Jour
 
 Gate通過後に、レビュー対象だった実装成果物、外部構成・状態、PLANまたはストーリー台帳の契約を意味的に変更した場合は、その変更の影響範囲にあるGateを失効させる。実装成果物には、コード、テスト、設定、schema／migration、依存、コンテンツ、prompt、静的・生成アセット、デプロイ済みの外部設定を含む。
 
-変更箇所と影響範囲をReview Briefに反映し、`$review-gate`の再開条件に従って影響する確認単位を開き直す。その後、関係するJourneyだけを再開する。別のStoryや後続Gateまで、全面的な再レビューの対象にはしない。ただし、最終変更後のレビューを通らないまま`implemented`または`verified`へ進めてはならない。
+変更後は、まず台帳とPLANからReview Inputの条件ID、現在契約、handoff、seed、caseを再導出し、正本照合Gateを再実行する。保持した直前Briefに対するvalidator出力のdigestをReview Inputへ入れ、同じ`review_id`のBrief revisionを更新する。直前Briefの全caseを新Briefへ完全に対応付けた後、scope、discovery、candidateを新Briefから作り直す。前revisionの状態、証拠、reviewer完了を引き継がない。
+
+再レビュー後は、関係するJourneyだけを再開する。別のStoryや後続Gateまで、全面的な再レビューの対象にはしない。ただし、最終変更後のレビューを通らないまま`implemented`または`verified`へ進めてはならない。
 
 レビューとJourneyの実結果を契約どおり記録するだけなら、Gateは失効しない。これには、状態の更新、条件のチェック欄、検証欄、証拠へのlink、PLANの進捗チェック欄、結果ログが含まれる。ただし、未確認の結果を完了扱いする変更や、記録に見せかけて契約の意味を変える更新は、失効対象とする。
 

@@ -15,9 +15,24 @@ description: PR、User Story、PLAN、実装成果を、現在の契約と到達
 
 独立レビューまたはGateレビューでは、作成・実装過程の結論、既知の指摘、想定修正を引き継がない新しい文脈の担当を使う。独立した担当を利用できない場合は、その事実を報告し、独立Gateを通過したことにしない。
 
-## 1. レビュー契約を固定する
+## 1. 一次情報からレビュー契約を固定する
 
-深い探索を始める前に、一時的なReview Briefへ次を記載する。
+深い探索やReview Briefの作成より前に、依頼本文、Story、PLANなどの正本から一時的なReview Inputを作る。Review Inputには次を持たせる。
+
+- `review_id`: 一連のレビューを識別する論理ID
+- `condition_ids`: 現在のGateが担当する条件IDの重複のない正確な集合。条件IDを持たない成果では空配列とする
+- `current_contracts`: 現在成立させる名前付き契約の重複のない非空集合
+- `handoffs`: 正本に既存の後工程を、`id`、`gate`、`owner`、`contract`で固定した全件
+- `scope_seeds`: 条件、変更surface、全体不変条件、handoffから導いたseedと確認caseの全件
+- `previous_brief_digest`: revision 1では`null`。revision 2以降では、実際の直前Briefのcanonical JSON SHA-256
+
+Review Inputの各seedは`id`、`kind`、`source`、`contract`、`coverage_obligation`、`review_case_ids`を持つ。condition seedには`condition_id`、handoff seedには`handoff_id`も持たせる。各条件IDはcondition seedがちょうど1回覆い、確認case IDは全seedを通じて一意にする。
+
+Review InputをReview Briefやreviewerの指摘から逆算しない。main Codexが正本を読み、条件、契約、handoff、seed、caseを全件照合する。これをReview Inputの正本照合Gateとする。validatorが確認できるのはJSON同士の整合性であり、Review Inputが正本に意味上忠実かは判定できない。このGateをmain Codexが通していない場合は`HOLD（Review Input未確定）`とし、validator成功だけで完全性を主張しない。
+
+改善案、将来用途、一般的なbest practiceを契約やseedとして追加しない。これにより、正本の全件を覆いながら、レビュー中の判断で範囲を広げることを防ぐ。
+
+次に、Review Inputから一時的なReview Briefを作る。Briefには`review_id`と正の整数の`revision`を持たせ、さらに次を記載する。
 
 - Yes／Noで答えるGate固有の判定質問
 - 対象成果と、実行時に確認した同一の成果状態
@@ -25,12 +40,22 @@ description: PR、User Story、PLAN、実装成果を、現在の契約と到達
 - 対象範囲、対象外、通常導線、明示済みの例外導線
 - 意味を変更した箇所と、変更された公開状態・出力・外部作用
 - 適用される指示、一次情報、関連成果物
+- Review Inputと同一の`current_contracts`、`handoffs`、`scope_seeds`
 - 後工程が所有する責務と、現在のGateが渡す名前付きのhandoff契約
-- 条件ID、意味を変更したsurface、影響し得る全体不変条件、handoffから導いたcoverage seed。各seedには、`must-applicable`、`classify-only`、`handoff-pair`のcoverage obligationと、一次情報から導いた確認case IDを付ける
 
-Review Briefとcoverage seedは、main Codexが独立reviewerへ渡す前に固定する。reviewerは契約、seed、handoffを自分で追加・削除しない。不足を見つけた場合は`HOLD（Review Brief再固定待ち）`としてmainへ返す。mainが一次情報から再固定した後に、適用範囲Gateを最初から通す。
+BriefはReview Inputの契約、handoff、seed、caseのID集合と意味fieldを完全に一致させる。Brief側で追加、削除、改名、owner変更、契約変更をしない。
 
-Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜない。対象の同一性はレビュー中に確認するが、PLANやStoryへbranch、SHA、content digestを記録しない。
+main Codexは、coverage seedを含むReview Inputを先に固定し、その後にReview Briefを固定して独立reviewerへ渡す。reviewerは契約、seed、handoffを自分で追加・削除しない。不足を見つけた場合は`HOLD（Review Input・Brief再固定待ち）`としてmainへ返す。mainが一次情報から再固定した後に、適用範囲Gateを最初から通す。
+
+revision 1ではReview Inputの`previous_brief_digest`を`null`、Briefの`review_case_migrations`を必ず`[]`とする。
+
+Briefの契約、条件、seed、case、handoff、対象成果の意味を変える場合は、同じ`review_id`の`revision`を1増やす。Review Inputの`previous_brief_digest`には、保持した実際の直前Briefに対してvalidatorが成功時に出力した`sha256:<64桁の小文字16進数>`を入れる。この値は次のrevisionでだけ使い、全stageで実際の`--previous-brief`と照合する。
+
+新Briefの`review_case_migrations`で、直前Briefの全caseと新Briefの全caseをちょうど1回ずつ対応付ける。理由を省略できるのは、case IDとownerの意味がすべて不変の場合だけである。ownerにはseedのID、kind、source、contract、coverage obligation、condition ID、handoff IDと、handoff seedに紐づくGate、owner、contractを含む。それ以外の改名、分割、統合、追加、廃止、owner変更は理由を必ず残す。旧caseを黙って消さない。migrationのvalidator errorは、渡した直前Briefの編集指示ではなく、現Briefの`review_case_migrations`を修正する指示と読む。
+
+Brief revisionを更新したら、scope、discovery、candidateを新Briefからすべて作り直す。前revisionのdiscovery状態、証拠、reviewer完了報告を再利用しない。一方、Briefの意味を変えず、探索中に新しい入口候補や再分類が必要になった場合は、同じrevisionのscope再確定として扱う。
+
+Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜない。Review Input、Brief、manifest、checkpointは一時成果物とし、Story、PLAN、EVIDENCEへ保存しない。`review_id`はレビュー内の論理IDであり、version controlや実行環境の識別子にしない。branch、commit SHA、worktreeやsessionの識別子も記録しない。content digestの例外は、一時的なReview Inputの`previous_brief_digest`とvalidatorの成功出力だけとする。
 
 ## 2. 適用範囲Gateを通す
 
@@ -61,13 +86,16 @@ Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜな�
 - Review Briefのcoverage seedがすべて入口候補へ対応している
 - 各seedがReview Briefで固定したcoverage obligationを満たしている。条件と全体不変条件は`must-applicable`、意味を変更したsurfaceは適用を決め打ちしない`classify-only`、handoffは同じseed・handoff・経路に`適用`と`明示済み後工程`を持つ`handoff-pair`とする
 - すべての`適用`候補に、起点となる契約、到達可能な因果経路、探索を止める境界、探索前に固定した確認case IDがある
+- `適用`候補を1件以上持つseedでは、そのseedの全確認case IDが`適用`候補全体でちょうど1回だけ現れる。一つのcase IDを複数の経路へ共有しない
 - すべての`明示済み後工程`候補に、Review Briefで事前に固定したGate、owner、handoff契約がある
 - すべての`明示済み後工程`候補に、現在Gateのhandoff面を確認する`適用`候補がある
 - すべての`非適用`候補に、現在の契約または到達経路へ入らない根拠がある
 
 一つでも満たさない場合は`HOLD（適用範囲未確定）`とし、`探索中`へ進まない。通過時に、各分類の候補IDと根拠を「適用範囲Gate完了証明」として固定する。
 
-限定レビューを除くGateレビューでは、[Review Gate manifest](references/manifest-schema.md)を作る。main Codex自身が、固定したReview Briefとともにvalidatorを`--stage scope`で実行する。reviewerの成功報告だけを証明にしない。終了codeが0でない場合は`適用範囲確定済み`へ進まない。成功したscope manifestはbaselineとして保持する。いずれも一時成果物とし、PLANやStoryへ保存しない。
+限定レビューを除くGateレビューでは、[Review Gate manifest](references/manifest-schema.md)を作る。main CodexがReview Inputの正本照合Gateを先に通し、固定したReview InputとReview Briefを渡してvalidatorを`--stage scope`で実行する。すべてのmanifestにBriefと一致する`review_id`と`brief_revision`を持たせる。revision 2以降では、digestと一致する実際の直前Briefも渡す。
+
+validatorの成功は、Review Input、Brief、manifestの構造と対応関係の成立だけを示す。正本の全件がReview Inputに正しい意味で入っている証明にはならない。reviewerの成功報告とvalidatorの成功のどちらか一方だけを通過証明にしない。終了codeが0でない場合は`適用範囲確定済み`へ進まない。成功したscope manifestはbaselineとして保持する。
 
 適用範囲Gateの`適用`候補だけから、一時的な「レビュー確認一覧」を作る。表、箇条書き、構造化データのどれでもよい。形式ではなく、各確認単位を識別できることを必須とする。
 
@@ -82,7 +110,9 @@ Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜな�
 - 合否を観測する方法、証拠の取得方法、その証拠が保証する範囲
 - 状態。開始時は`未着手`とする
 
-レビュー確認一覧は探索開始時に固定し、その後は黙って削らない。探索中に新しい入口候補を見つけた場合は、その候補を深掘りせず適用範囲Gateへ戻す。直前のscope baselineを`--previous-scope-baseline`へ渡してscope stageを再実行し、成功した新baselineへ置き換えてから探索を再開する。`適用`を再分類する場合は、main Codexが直前の確認単位、状態、証拠、担当をobservation checkpointとして先に固定し、`--observation-checkpoint`で照合する。再分類するscopeの全確認caseをcheckpointへ一度ずつ残し、取得済みの全単位をtombstoneへ移す。candidate stageへ候補を直接追加しない。`適用`なら理由とともに確認単位を追加し、それ以外なら境界で止める。広さを有限にできない場合は、独立して判定できる縦の範囲へ分割する。範囲を決められないままGOにしない。
+レビュー確認一覧は探索開始時に固定し、その後は黙って削らない。探索中に新しい入口候補を見つけた場合は、その候補を深掘りせず適用範囲Gateへ戻す。Briefが同じrevisionのときだけ、直前のscope baselineを`--previous-scope-baseline`へ渡してscope stageを再実行する。成功した新baselineへ置き換えてから探索を再開する。`適用`を再分類する場合は、main Codexが直前の確認単位、状態、証拠、担当をobservation checkpointとして先に固定し、`--observation-checkpoint`で照合する。再分類するscopeの全確認caseをcheckpointへ一度ずつ残し、取得済みの全単位をtombstoneへ移す。candidate stageへ候補を直接追加しない。
+
+新しい経路を確認するのに新caseが必要な場合は、既存case IDを複製しない。Review InputとBrief revisionを更新し、理由付きで新case IDを追加する。同じrevisionでの再確定は、seedとcaseを変えずに候補を再分類できる場合に限る。異なる経路は別のcase IDで確認する。広さを有限にできない場合は、独立して判定できる縦の範囲へ分割する。範囲を決められないままGOにしない。
 
 変更の性質に応じた確認方法が必要な場合は、[確認方法の選び方](references/technique-routing.md)を読む。そこで選んだ確認事項も、探索前にレビュー確認一覧へ追加する。
 
@@ -115,7 +145,7 @@ Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜな�
 
 次をすべて満たすまで、探索完了と報告しない。
 
-- 適用範囲Gateで固定したすべての確認caseに、ちょうど一つの確認単位があり、`未着手`が0件である
+- 適用範囲Gateで固定したすべての確認caseに、レビュー確認一覧全体でちょうど1件の確認単位があり、`未着手`が0件である
 - すべての単位に、`成立`、`違反`、`未確認`のいずれかと根拠がある
 - 上流方向と下流方向の探索が、根拠のある境界で閉じている
 - 適用された追加確認方法を実施している
@@ -126,7 +156,7 @@ Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜな�
 
 ここでいう`未確認`は有効な最終状態だが、GOの根拠にはならない。必要な一次情報を取得できない、対象が変わった、権限や外部状態が必要である、といった実際の停止理由を報告する。
 
-これらを満たしたら、scope baselineから探索結果manifestを作り、validatorを`--stage discovery`で実行する。終了codeが0でない場合は`探索完了済み`へ進まない。成功したmanifestをdiscovery baselineとして固定し、指摘採用中に確認単位、状態、証拠、担当、scope履歴を変更しない。
+これらを満たしたら、scope baselineから探索結果manifestを作り、同じReview InputとBriefを渡してvalidatorを`--stage discovery`で実行する。revision 2以降では直前Briefも渡す。終了codeが0でない場合は`探索完了済み`へ進まない。成功したmanifestをdiscovery baselineとして固定し、指摘採用中に確認単位、状態、証拠、担当、scope履歴を変更しない。
 
 この「探索完了Gate」が、一件目の指摘で止まることを機械的に防ぐ。コードのblockerが一件見つかった時点でGateはNO-GO見込みになるが、それだけでは探索完了にならない。**Gate判定が既知でも、レビュー確認一覧が閉じるまでレビューを続ける。**
 
@@ -153,13 +183,13 @@ Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜな�
 
 指摘採用Gateは、すべての候補に確認単位ID、三つの判定、振り分けと根拠があり、未分類が0件の場合だけ通過する。`later-gate`は適用範囲Gateのhandoff候補と照合し、`契約判断待ち`は既存契約の衝突を示す。これらを満たした場合だけ`候補整理済み`へ進む。
 
-Gateレビューではdiscovery baselineから最終manifestを作り、mainが固定したReview Brief、scope baseline、discovery baselineを別入力としてvalidatorを`--stage candidate`で実行する。candidate stageで追加できるのは候補の振り分けだけであり、scope、確認単位、状態、証拠、担当、scope履歴は変更できない。終了codeが0でない場合は指摘採用Gateを通過させない。validatorは構造上の欠落だけを検査するため、main Codexは契約、到達経路、探索境界、再分類、証拠の内容も一次情報で確認する。
+Gateレビューではdiscovery baselineから最終manifestを作り、Review Input、Review Brief、scope baseline、discovery baselineを別入力としてvalidatorを`--stage candidate`で実行する。revision 2以降では直前Briefも渡す。candidate stageで追加できるのは候補の振り分けだけであり、scope、確認単位、状態、証拠、担当、scope履歴は変更できない。終了codeが0でない場合は指摘採用Gateを通過させない。validatorは構造上の欠落だけを検査するため、main Codexは契約、到達経路、探索境界、再分類、証拠の内容も一次情報で確認する。
 
 候補整理の完了時に、適用範囲Gate、探索完了Gate、指摘採用Gateの完了証明、対象成果、確認単位の全ID、各単位の状態・証拠の取得方法・保証範囲・探索境界、レビュー担当の状態、候補の採否と振り分けを一つの完了証明として固定する。件数の内訳は照合用であり、各単位の根拠を代用しない。三つのGateがすべて通っていない結果を、修正担当へ送らない。
 
 ## 6. 修正後の最終成果を確認する
 
-探索後に成果の意味が変わった場合は、Review Briefを更新し、条件側から上流へ、変更側から下流へ、確認単位を再び導く。既知の単位だけを開き直さず、新しい利用側、状態、外部作用が増えていないか確認する。Gate質問または契約集合が変わった場合は、レビュー確認一覧全体を作り直す。意味が変わっていない場合は、同じレビューを繰り返さない。
+探索後に成果の意味が変わった場合は、まず正本からReview Inputの条件、契約、handoff、seed、caseを再導出し、正本照合Gateを再実行する。保持した直前Briefに対するvalidator出力のdigestをReview Inputへ入れ、Brief revisionを更新して全caseのmigrationを固定する。条件側から上流へ、変更側から下流へ、scopeと確認単位を新規に導く。既知の単位だけを開き直さず、新しい利用側、状態、外部作用が増えていないか確認する。前revisionのscope baseline、discovery evidence、candidate分類は引き継がない。意味が変わっていない場合は、同じレビューを繰り返さない。
 
 次の場合だけ、閉じた確認単位を再び開く。
 
@@ -170,17 +200,19 @@ Gateレビューではdiscovery baselineから最終manifestを作り、mainが�
 
 単なる改善案、別Story、後続Gate、将来の一般的な堅牢化では再開しない。同じ確認の次元から指摘が小分けで続く場合は、局所修正を止め、確認単位の切り方、状態遷移、公開契約、設計境界を見直す。
 
-同じ対象成果から最終報告後に新しい適用内の指摘が見つかった場合は、追加指摘だけを追送しない。完了証明が不完全だったものとして失効させ、Review Briefと二方向の確認範囲を再導出する。欠けていた確認単位を追加し、影響する単位の探索と候補統合をやり直してから一つの報告へまとめる。
+同じ対象成果から最終報告後に新しい適用内の指摘が見つかった場合は、追加指摘だけを追送しない。完了証明が不完全だったものとして失効させ、Brief revisionを更新する。旧caseから新caseへのmigrationを固定し、二方向の確認範囲を新規に導出する。scopeから候補統合までをやり直してから、一つの報告へまとめる。
 
 ## 7. Gateを判定する
 
 最終報告は、次の順で短くまとめる。
 
 1. Gate固有の質問へのGO／NO-GO
-2. 適用範囲Gate、探索完了Gate、指摘採用Gateの通過結果
-3. 採用した指摘。なければ「なし」
-4. 適用性判定一覧とレビュー確認一覧の件数・内訳
-5. 明示済み後工程が所有するhandoff責務
-6. 合否に必要だが未確認の事項と、同じ範囲に残るリスク
+2. Review Inputの正本照合Gateと、条件、契約、handoff、seed、caseの全件一致
+3. Brief revision、直前Brief digest、case migrationの検証結果
+4. 適用範囲Gate、探索完了Gate、指摘採用Gateの通過結果
+5. 採用した指摘。なければ「なし」
+6. 適用性判定一覧とレビュー確認一覧の件数・内訳
+7. 明示済み後工程が所有するhandoff責務
+8. 合否に必要だが未確認の事項と、同じ範囲に残るリスク
 
 GOにできるのは、最終成果について未解決のblockerと合否に必要な`未確認`がなく、Gate質問へ根拠付きでYesと答えられる場合だけである。「問題なし」やテスト成功だけをGate通過の根拠にしない。
