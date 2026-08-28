@@ -66,7 +66,7 @@ Story、PLAN、実装成果の独立レビューでは`$review-gate`を使う。
 
 main Codexは、独立reviewerを開始する前に、Gate固有の契約、coverage obligationと確認case IDを持つseed、handoffをReview Briefへ固定する。reviewerが不足を見つけた場合は自分で追加させず、mainが一次情報から再固定する。scope stageとdiscovery stageで成功したmanifestはmainが別々のbaselineとして保持し、candidate stageで照合する。探索中にscopeが変わる場合はscope stageを再通過し、再分類時は直前の観測checkpointも照合する。candidate stageへscopeや探索結果を直接追加・変更しない。
 
-main Codexは、`$review-gate`の適用範囲Gate、探索完了Gate、指摘採用Gateの完了証明と、scope／discovery／candidateの三stageのvalidator成功が揃わないレビュー結果を受理しない。不足する結果は`HOLD`として扱い、指摘、修正、後工程、状態更新へ使わない。一件のblockerでNO-GO見込みになっても、探索完了Gateが通るまで修正指示や最終報告を出さない。レビュー報告用の恒久ファイルは、依頼者が求めた場合だけ作る。
+main Codexはscope／discovery／candidateのvalidatorを自身で実行し、`$review-gate`の適用範囲Gate、探索完了Gate、指摘採用Gateの完了証明と三stageの成功が揃わないレビュー結果を受理しない。reviewerの自己申告はvalidator成功の代わりにしない。不足する結果は`HOLD`として扱い、指摘、修正、後工程、状態更新へ使わない。一件のblockerでNO-GO見込みになっても、探索完了Gateが通るまで修正指示や最終報告を出さない。レビュー報告用の恒久ファイルは、依頼者が求めた場合だけ作る。
 
 ## 3. ストーリーを追加・更新する
 

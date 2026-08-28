@@ -1,6 +1,6 @@
 # Review Gate manifest
 
-Gateレビューでは、一時的なJSONを四つ使って状態遷移を検証する。
+Gateレビューでは、通常は一時的なJSONを四つ使って状態遷移を検証する。探索中に`applicable`を再分類する場合だけ、再分類直前のobservation checkpointを一つ追加する。
 
 1. main Codexが探索前に固定するReview Brief
 2. 適用範囲Gateを通過したscope baseline

@@ -67,7 +67,7 @@ Review Briefへ作成者の結論、既知の指摘、望む修正を混ぜな�
 
 一つでも満たさない場合は`HOLD（適用範囲未確定）`とし、`探索中`へ進まない。通過時に、各分類の候補IDと根拠を「適用範囲Gate完了証明」として固定する。
 
-限定レビューを除くGateレビューでは、[Review Gate manifest](references/manifest-schema.md)を作り、mainが固定したReview Briefとともにvalidatorを`--stage scope`で実行する。終了codeが0でない場合は`適用範囲確定済み`へ進まない。成功したscope manifestはbaselineとして保持する。いずれも一時成果物とし、PLANやStoryへ保存しない。
+限定レビューを除くGateレビューでは、[Review Gate manifest](references/manifest-schema.md)を作る。main Codex自身が、固定したReview Briefとともにvalidatorを`--stage scope`で実行する。reviewerの成功報告だけを証明にしない。終了codeが0でない場合は`適用範囲確定済み`へ進まない。成功したscope manifestはbaselineとして保持する。いずれも一時成果物とし、PLANやStoryへ保存しない。
 
 適用範囲Gateの`適用`候補だけから、一時的な「レビュー確認一覧」を作る。表、箇条書き、構造化データのどれでもよい。形式ではなく、各確認単位を識別できることを必須とする。
 
