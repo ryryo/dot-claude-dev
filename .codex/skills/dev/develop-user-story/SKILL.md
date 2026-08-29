@@ -136,6 +136,15 @@ main Codexは、`fix-here`だけをストーリー台帳へ反映する。後工
 
 PLANが必要な場合は、ledgerと同じproject scopeにあるPLAN templateを使う。repository直下台帳では`docs/PLAN/_TEMPLATE.md`、project-local台帳では同階層の`_PLAN_TEMPLATE.md`を優先する。候補が複数または存在しない場合は独自形式を作る前に確認する。
 
+PLANを新規作成する場合、または既存PLANの実行責務を意味的に変更する場合は、[PLANの推奨実行設定](references/plan-execution-settings.md)を読む。通常PLAN、candidate／integration／external PLAN、進行PLANを含む各PLAN fileのタイトル直下へ、次を記載する。
+
+- `推奨モデル`: 実行環境で利用可能な正確なmodel ID
+- `推奨推論レベル`: そのmodelが対応する`low`、`medium`、`high`、`xhigh`、`max`のいずれか
+- `選定理由`: 残る判断負荷、失敗時の影響、検証oracleに結び付く一文
+- `設定見直し条件`: scope、risk、PLAN role、model可用性のうち、再選定が必要になる具体的な変化
+
+推奨設定は実行開始時の助言であり、受け入れ条件、Gate、承認境界、検証水準を弱めない。model名を`latest`等の可変aliasだけで書かず、利用可能性が不明または作成時から変わった場合は、実行前に現在の実行環境とOpenAI公式資料を確認して更新する。設定だけの更新はPLANの実装・検証契約を変えず、4.1を失効させない。
+
 ### 4.0 既存資産・参照実装の再利用判定
 
 適用先の指示、ledger、template、REFERENCE、dependency管理、または現行repositoryが再利用候補を示す場合は、実装方式を固定する前に次を行う。REFERENCEや比較表は候補探索の入口であり、その要約だけを実source調査の代用にしない。materialize前に、利用者成果とoracle、license、platform／runtime、現在scopeから候補を絞ってよいが、sourceが現在読めないこと自体を調査対象外理由にしない。
@@ -199,6 +208,7 @@ PLANを実装の入力として固定する前に、作成者ともストーリ�
 次の項目の適用性を判定し、適用されたものだけを監査する。
 
 - 全条件IDと各`例:`を、Phase、Gate、検証まで追跡できるか。PLANがストーリーを弱めたり、未確認の条件を完了扱いしたりしていないか
+- 新規作成または実行責務を意味的に変更した各PLANの冒頭に、現在の実行環境で選べる推奨modelと対応推論レベル、PLAN自身の判断負荷・失敗影響・oracleに基づく選定理由、具体的な設定見直し条件があるか。plan setの全fileへ最も高い設定を一律に複製していないか
 - 開始条件、依存関係、実装順、停止Gate、対象外が、現在のリポジトリ状態と整合しているか。実装者が新たな契約判断をせずに開始できるか
 - 複数PLANの場合は、Topology Gate validatorが成功しているか。manifestに全laneがあり、閉路や不要な直列待ちがないか。同じファイル、generated file、lockfile、台帳、EVIDENCE、外部状態に同一waveの複数writerがいないか。各直列edgeは現在のsource／contract上のhard dependencyか。writer重複を残す例外はscope縮小、shared seam、Join-onlyを具体的に反証しているか。handoffを受ける統合担当が、同じレビュー済み契約と開始Gateで成果を検証できるか
 - integration／coordination PLANの場合は、Mermaid DAGをrenderできるか。DAGが本文と同じ開始Gate、依存、並行lane、統合／Join Gate、fallback、外部停止Gate、最終担当を表しているか
@@ -212,6 +222,7 @@ PLANを実装の入力として固定する前に、作成者ともストーリ�
 このGateで`fix-here`にできるのは、次の問題に限る。
 
 - 条件の追跡漏れ
+- 推奨実行設定の欠落、modelと推論レベルの非対応、またはPLANが所有する作業と結び付かない選定
 - 現在のリポジトリでは実行できない開始条件
 - 担当の衝突
 - 未承認の外部作用

@@ -32,6 +32,7 @@ integrationやexternalの作業が小さく独立成果を要しない場合は�
 
 repositoryのPLAN templateを使い、少なくとも次を固定する。
 
+- `SKILL.md`から[PLANの推奨実行設定](plan-execution-settings.md)を読み、その実行PLAN自身の責務に対する推奨model、推論レベル、選定理由、設定見直し条件
 - role: `candidate`、`integration`、`external`のいずれか
 - 対象USと条件ID。partial実装と最終確認のownerを区別する
 - 開始Gateと必要な状態
@@ -50,7 +51,7 @@ integration PLANとは別に進行PLANやREADMEがある場合も、integration 
 
 ## 4. 進行PLANの必須契約
 
-進行PLAN名は`YYMMDD_{scope}_execution.md`を既定とし、次だけを持つ。
+進行PLAN名は`YYMMDD_{scope}_execution.md`を既定とし、タイトル直下へ進行・coordination責務そのものに対する推奨model、推論レベル、選定理由、設定見直し条件を置く。各laneの設定はその実行PLANに記載し、全laneの最大値を進行PLANへ一律に写さない。その上で次だけを持つ。
 
 1. 対象scope、開始Gate、全体完了条件、coordination owner。
 2. Mermaid DAG。直列edge、並列lane、統合point、条件付きfallback、外部停止Gate、最終Joinを区別する。文章、一覧表、別fileへのlinkだけでは代替しない。
