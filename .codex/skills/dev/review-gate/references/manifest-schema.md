@@ -12,6 +12,8 @@ manifestは、細かな反例を総当たりする台帳ではない。現在Gat
 
 これらはStory、PLAN、EVIDENCEへ保存しない。branch、commit SHA、worktree、sessionの識別子も入れない。IDは前後空白のない文字列とし、同じ配列内で重複させない。
 
+このschema導入前にscope／discovery baselineを固定済みの論理レビューは、旧形式のまま増分再確認を完了できる。新しく始める`initial`レビューでは、以下の成果物分類と`coverage point`を省略できない。schema更新だけを理由に進行中レビューを全面再開しない。
+
 ## 最小Review Input
 
 Review Inputは、依頼、Story、PLANなどの正本とBriefの間に置く小さな照合面である。caseやseedの台帳は作らない。
@@ -21,6 +23,16 @@ Review Inputは、依頼、Story、PLANなどの正本とBriefの間に置く小
   "review_id": "review-us05-gate-d",
   "condition_ids": ["US-05-01"],
   "current_contracts": ["candidate-state", "renderer-handoff"],
+  "target_artifacts": [
+    {
+      "id": "artifact-candidate",
+      "source": "candidate implementation and tests"
+    },
+    {
+      "id": "artifact-story",
+      "source": "docs/USER_STORIES.md"
+    }
+  ],
   "handoffs": [
     {
       "id": "handoff-journey",
@@ -35,6 +47,7 @@ Review Inputは、依頼、Story、PLANなどの正本とBriefの間に置く小
 - `review_id`: このGateレビューの論理ID
 - `condition_ids`: 対象Storyの条件ID。条件IDを持たないGateでは空配列でよい
 - `current_contracts`: 現在成立させる名前付き契約。1件以上必要
+- `target_artifacts`: 判定対象となる成果物。PRでは実差分の全file、PR以外では実装、文書、外部状態などを重複なく列挙する
 - `handoffs`: 現在Gateから既存の後工程へ渡す境界
 
 Briefの`review_id`、契約集合、handoff集合と意味fieldはReview Inputに完全一致させる。Briefの`kind: condition` surfaceでは`source`に条件IDを入れ、その集合を`condition_ids`と完全一致させる。
@@ -60,6 +73,23 @@ main CodexがReview Input、差分、参照実装などから観点を固定し�
       "contract": "renderer-handoff"
     }
   ],
+  "artifact_coverage": [
+    {
+      "artifact_id": "artifact-candidate",
+      "classification": "surface",
+      "surface_ids": ["surface-adapter"]
+    },
+    {
+      "artifact_id": "artifact-story",
+      "classification": "surface",
+      "surface_ids": ["surface-condition", "surface-journey-handoff"]
+    }
+  ],
+  "catalog_check": {
+    "upstream_trace": "条件と観測結果からadapter producerまで遡った",
+    "downstream_trace": "変更surfaceからsession stateとhandoff consumerまで辿った",
+    "independent_root_check": "state transitionとhandoff以外の独立原因がないか探索前に見直した"
+  },
   "target_surfaces": [
     {
       "id": "surface-condition",
@@ -91,7 +121,24 @@ main CodexがReview Input、差分、参照実装などから観点を固定し�
       "probe": {
         "kind": "counterexample",
         "description": "失敗後の再試行で旧状態が混ざる操作列"
-      }
+      },
+      "coverage_points": [
+        {
+          "id": "point-state-origin",
+          "role": "origin",
+          "description": "失敗後の再試行入力とcandidate-state契約"
+        },
+        {
+          "id": "point-state-mechanism",
+          "role": "mechanism",
+          "description": "adapterが所有する現行stateと旧処理の退役"
+        },
+        {
+          "id": "point-state-observation",
+          "role": "observation",
+          "description": "公開session stateに旧値が混ざらないこと"
+        }
+      ]
     },
     {
       "id": "dimension-render-handoff",
@@ -102,7 +149,24 @@ main CodexがReview Input、差分、参照実装などから観点を固定し�
       "probe": {
         "kind": "direct-evidence",
         "description": "handoff payloadと現在契約を照合する"
-      }
+      },
+      "coverage_points": [
+        {
+          "id": "point-handoff-origin",
+          "role": "origin",
+          "description": "renderer-handoff契約とsession receipt"
+        },
+        {
+          "id": "point-handoff-mechanism",
+          "role": "mechanism",
+          "description": "handoff payload生成"
+        },
+        {
+          "id": "point-handoff-observation",
+          "role": "observation",
+          "description": "後工程へ渡す公開payload"
+        }
+      ]
     }
   ]
 }
@@ -124,6 +188,19 @@ main CodexがReview Input、差分、参照実装などから観点を固定し�
 
 対象Storyの条件、変更経路が影響し得る全体不変条件、実際の変更面、既存handoffを正本と照合する。validatorはIDの対応を検査できるが、実差分のsurfaceをmain Codexが漏らさず列挙したかまでは判定できない。
 
+### artifact_coverage
+
+Review Inputの`target_artifacts`を一つずつ分類する。
+
+- `surface`: 現在契約へ届く。対応する`surface_ids`を1件以上指定する
+- `excluded`: 現在契約や到達経路へ入らない。`reason`を必須とし、`surface_ids`は空にする
+
+全成果物をちょうど1回分類する。分類の目的はfileごとのcase表を作ることではなく、未確認の差分を暗黙に落とさないことである。
+
+### catalog_check
+
+深い探索より前に、条件からproducerへ遡る確認、変更surfaceからconsumerへ進む確認、別の根本原因が欠けていないかの確認を一度ずつ記録する。具体的な指摘や修正案はここへ書かない。
+
 ### review_dimensions
 
 一つの観点は、一つの独立した根本原因を調べる単位である。入力値、時刻、file、browser、event順の違いだけで観点を分割しない。
@@ -135,8 +212,11 @@ main CodexがReview Input、差分、参照実装などから観点を固定し�
 - `stop_boundary`: 現在Gateで探索を止める境界
 - `probe.kind`: `counterexample`または`direct-evidence`
 - `probe.description`: 観点を判定できる代表反例または直接証拠
+- `coverage_points`: 因果経路を構成する入口`origin`、仕組み`mechanism`、出口`observation`
 
 各surfaceと各current contractは、少なくとも一つの観点から参照する。異なる契約のsurfaceを同じ観点へ混ぜない。
+
+各観点には3種類のroleを最低1件ずつ置く。同じownerと同じ開始・前進・失敗・退役経路を持つ仕組みはまとめてよい。ownerまたは退役経路が異なるstate、resource、非同期処理は別の`mechanism`にする。入力値、時刻、操作順などのcase差は`coverage point`にしない。
 
 `review_cycle`は初回を`initial`、同じ論理レビューの再確認を`rereview`とする。
 
@@ -208,7 +288,24 @@ discovery manifestはscope baselineをそのまま保ち、`state: discovery-com
       "probe_result": "代表反例では公開状態が分裂しなかった",
       "evidence": "対象testと実装経路を確認した",
       "guarantee": "現在のadapterからsession stateまで",
-      "reviewer_id": "reviewer-main"
+      "reviewer_id": "reviewer-main",
+      "coverage_results": [
+        {
+          "point_id": "point-state-origin",
+          "status": "satisfied",
+          "evidence": "再試行入力と契約を照合した"
+        },
+        {
+          "point_id": "point-state-mechanism",
+          "status": "satisfied",
+          "evidence": "現行stateの更新と旧処理の退役を確認した"
+        },
+        {
+          "point_id": "point-state-observation",
+          "status": "satisfied",
+          "evidence": "公開stateに旧値が残らないことを実行確認した"
+        }
+      ]
     },
     {
       "dimension_id": "dimension-render-handoff",
@@ -218,7 +315,24 @@ discovery manifestはscope baselineをそのまま保ち、`state: discovery-com
       "probe_result": "handoff payloadが現在契約と一致した",
       "evidence": "producer、consumer、契約testを照合した",
       "guarantee": "現在Gateが所有するhandoff境界まで",
-      "reviewer_id": "reviewer-main"
+      "reviewer_id": "reviewer-main",
+      "coverage_results": [
+        {
+          "point_id": "point-handoff-origin",
+          "status": "satisfied",
+          "evidence": "session receiptを確認した"
+        },
+        {
+          "point_id": "point-handoff-mechanism",
+          "status": "satisfied",
+          "evidence": "payload生成を静的に確認した"
+        },
+        {
+          "point_id": "point-handoff-observation",
+          "status": "satisfied",
+          "evidence": "handoff出力を契約testで確認した"
+        }
+      ]
     }
   ],
   "reviewers": [
@@ -239,6 +353,9 @@ discovery manifestはscope baselineをそのまま保ち、`state: discovery-com
 - `evidence`: 直接確認した内容
 - `guarantee`: 証拠が保証する範囲
 - `reviewer_id`: `completed` reviewerのID
+- `coverage_results`: Briefで固定した全`coverage point`の結果。`point_id`、`status`、直接根拠`evidence`を持つ
+
+各観点の全`coverage point`を過不足なく確認する。一つでも`violated`なら観点も`violated`、`violated`がなく`unverified`が残れば観点も`unverified`、すべて`satisfied`の場合だけ観点を`satisfied`にする。これにより、代表例が一つ通っただけで同じ観点の別owner／別退役経路まで成立扱いにすることを防ぐ。
 
 続行できないreviewerは`status: reassigned`と`transferred_to`を持たせ、`transferred_to`は`completed` reviewerを指す。`unverified`は探索結果として残せるが、合否に必要な証拠が不足しているためcandidate GateはHOLDになる。`unverified`をfindingのroutingへ変換しない。
 
@@ -336,7 +453,9 @@ incremental candidateで、`result_source: fresh`の観点から新しいfinding
 validatorが保証するのは、宣言済みの観点が各Gateで欠けず、局所再確認とcandidate分類が許可された状態遷移だけを行うことである。次はmain Codexが一次情報で判断する。
 
 - Briefが正本の条件、契約、変更surface、handoffを意味上すべて含むか
+- Review Inputの`target_artifacts`が実差分または実際の判定対象を過不足なく含むか
 - 観点が本当に異なる根本原因であり、細かなcaseの分割ではないか
+- `coverage point`が因果経路の実在する構成要素を覆い、異なるowner／退役経路を誤って一つへまとめていないか
 - 因果経路、停止境界、証拠が事実か
 - 言い換えではなく対象成果やGate質問の意味が変わっていないか
 - `minimal_fix_boundary`が過剰実装を避ける実際の最小範囲か

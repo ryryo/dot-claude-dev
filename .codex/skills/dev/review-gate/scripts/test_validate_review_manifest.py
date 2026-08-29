@@ -16,6 +16,26 @@ from typing import Any
 SCRIPT = Path(__file__).with_name("validate_review_manifest.py")
 
 
+def coverage_points(dimension_id: str) -> list[dict[str, str]]:
+    return [
+        {
+            "id": f"{dimension_id}-origin",
+            "role": "origin",
+            "description": f"{dimension_id}の契約と入口",
+        },
+        {
+            "id": f"{dimension_id}-mechanism",
+            "role": "mechanism",
+            "description": f"{dimension_id}の状態・resource・処理",
+        },
+        {
+            "id": f"{dimension_id}-observation",
+            "role": "observation",
+            "description": f"{dimension_id}の利用側と観測結果",
+        },
+    ]
+
+
 def valid_brief() -> dict[str, Any]:
     return {
         "review_id": "review-1",
@@ -31,6 +51,23 @@ def valid_brief() -> dict[str, Any]:
                 "contract": "C-render",
             }
         ],
+        "artifact_coverage": [
+            {
+                "artifact_id": "A-implementation",
+                "classification": "surface",
+                "surface_ids": ["S-change"],
+            },
+            {
+                "artifact_id": "A-story",
+                "classification": "surface",
+                "surface_ids": ["S-condition", "S-handoff"],
+            },
+        ],
+        "catalog_check": {
+            "upstream_trace": "利用者条件からproducerまで遡った",
+            "downstream_trace": "変更surfaceから観測結果まで辿った",
+            "independent_root_check": "異なる根本原因の不足を探索前に見直した",
+        },
         "target_surfaces": [
             {
                 "id": "S-condition",
@@ -63,6 +100,7 @@ def valid_brief() -> dict[str, Any]:
                     "kind": "counterexample",
                     "description": "detach失敗後に旧状態が残る操作列",
                 },
+                "coverage_points": coverage_points("D-session"),
             },
             {
                 "id": "D-render",
@@ -74,6 +112,7 @@ def valid_brief() -> dict[str, Any]:
                     "kind": "direct-evidence",
                     "description": "handoff payloadと契約テストを照合する",
                 },
+                "coverage_points": coverage_points("D-render"),
             },
         ],
     }
@@ -90,6 +129,10 @@ def valid_input(brief: dict[str, Any] | None = None) -> dict[str, Any]:
         ],
         "current_contracts": copy.deepcopy(brief["current_contracts"]),
         "handoffs": copy.deepcopy(brief["handoffs"]),
+        "target_artifacts": [
+            {"id": "A-implementation", "source": "apps/web/src/session-adapter.ts"},
+            {"id": "A-story", "source": "docs/USER_STORIES.md"},
+        ],
     }
 
 
@@ -97,6 +140,21 @@ def rereview_brief() -> dict[str, Any]:
     brief = valid_brief()
     brief["review_cycle"] = "rereview"
     return brief
+
+
+def legacy_brief(*, rereview: bool = False) -> dict[str, Any]:
+    brief = valid_brief()
+    brief["review_cycle"] = "rereview" if rereview else "initial"
+    brief.pop("artifact_coverage")
+    brief.pop("catalog_check")
+    for dimension in brief["review_dimensions"]:
+        dimension.pop("coverage_points")
+    return brief
+
+
+def remove_coverage_results(manifest: dict[str, Any]) -> None:
+    for item in manifest.get("dimension_results", []):
+        item.pop("coverage_results", None)
 
 
 def full_scope(brief: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -133,10 +191,24 @@ def result(
         "evidence": f"evidence {dimension_id} {suffix}",
         "guarantee": f"guarantee {dimension_id} {suffix}",
         "reviewer_id": "reviewer-1",
+        "coverage_results": [
+            {
+                "point_id": point["id"],
+                "status": status,
+                "evidence": f"{point['id']} {suffix}を確認した",
+            }
+            for point in coverage_points(dimension_id)
+        ],
     }
     if source == "carried-forward":
         value["carry_forward_reason"] = "この観点へ届く変更がない"
     return value
+
+
+def set_result_status(value: dict[str, Any], status: str) -> None:
+    value["status"] = status
+    for point in value["coverage_results"]:
+        point["status"] = status
 
 
 def discovery_from_scope(scope: dict[str, Any]) -> dict[str, Any]:
@@ -267,6 +339,89 @@ class ValidatorTest(unittest.TestCase):
                     self.run_validator("scope", full_scope(brief), brief=brief)
                 )
 
+    def test_initial_catalog_requires_every_target_artifact_classified_once(self) -> None:
+        brief = valid_brief()
+        review_input = valid_input(brief)
+        brief["artifact_coverage"].pop()
+        self.assert_fails(
+            self.run_validator(
+                "scope",
+                full_scope(brief),
+                brief=brief,
+                review_input=review_input,
+            )
+        )
+
+        brief = valid_brief()
+        brief["artifact_coverage"][0] = {
+            "artifact_id": "A-implementation",
+            "classification": "excluded",
+            "surface_ids": [],
+        }
+        self.assert_fails(
+            self.run_validator("scope", full_scope(brief), brief=brief)
+        )
+
+    def test_initial_catalog_requires_two_direction_and_independent_root_check(self) -> None:
+        for field in ("upstream_trace", "downstream_trace", "independent_root_check"):
+            with self.subTest(field=field):
+                brief = valid_brief()
+                brief["catalog_check"][field] = ""
+                self.assert_fails(
+                    self.run_validator("scope", full_scope(brief), brief=brief)
+                )
+
+    def test_dimension_requires_origin_mechanism_and_observation_points(self) -> None:
+        for role in ("origin", "mechanism", "observation"):
+            with self.subTest(role=role):
+                brief = valid_brief()
+                brief["review_dimensions"][0]["coverage_points"] = [
+                    point
+                    for point in brief["review_dimensions"][0]["coverage_points"]
+                    if point["role"] != role
+                ]
+                self.assert_fails(
+                    self.run_validator("scope", full_scope(brief), brief=brief)
+                )
+
+    def test_discovery_cannot_skip_an_independently_owned_mechanism(self) -> None:
+        brief = valid_brief()
+        brief["review_dimensions"][0]["coverage_points"].append(
+            {
+                "id": "D-session-secondary-resource",
+                "role": "mechanism",
+                "description": "別ownerのdecode resourceと退役経路",
+            }
+        )
+        scope = full_scope(brief)
+        discovery = discovery_from_scope(scope)
+        self.assert_fails(
+            self.run_validator("discovery", discovery, brief=brief, scope=scope)
+        )
+        discovery["dimension_results"][0]["coverage_results"].append(
+            {
+                "point_id": "D-session-secondary-resource",
+                "status": "satisfied",
+                "evidence": "decode resourceの開始と退役を確認した",
+            }
+        )
+        self.assert_passes(
+            self.run_validator("discovery", discovery, brief=brief, scope=scope)
+        )
+
+    def test_dimension_status_must_aggregate_all_coverage_points(self) -> None:
+        brief = valid_brief()
+        scope = full_scope(brief)
+        discovery = discovery_from_scope(scope)
+        discovery["dimension_results"][0]["coverage_results"][1]["status"] = "violated"
+        self.assert_fails(
+            self.run_validator("discovery", discovery, brief=brief, scope=scope)
+        )
+        discovery["dimension_results"][0]["status"] = "violated"
+        self.assert_passes(
+            self.run_validator("discovery", discovery, brief=brief, scope=scope)
+        )
+
     def test_brief_rejects_duplicate_and_whitespace_ids(self) -> None:
         for mutate in ("duplicate", "whitespace"):
             with self.subTest(mutate=mutate):
@@ -365,6 +520,7 @@ class ValidatorTest(unittest.TestCase):
                     "kind": "direct-evidence",
                     "description": "全consumerを列挙する",
                 },
+                "coverage_points": coverage_points("D-change"),
             }
         )
         scope = full_scope(brief)
@@ -409,7 +565,7 @@ class ValidatorTest(unittest.TestCase):
     def test_discovery_requires_every_dimension_even_after_a_violation(self) -> None:
         scope = full_scope()
         discovery = discovery_from_scope(scope)
-        discovery["dimension_results"][0]["status"] = "violated"
+        set_result_status(discovery["dimension_results"][0], "violated")
         discovery["dimension_results"].pop()
         self.assert_fails(self.run_validator("discovery", discovery, scope=scope))
 
@@ -424,6 +580,7 @@ class ValidatorTest(unittest.TestCase):
                 "causal_path": "helper only",
                 "stop_boundary": "consumer",
                 "probe": {"kind": "direct-evidence", "description": "import scan"},
+                "coverage_points": coverage_points("D-change"),
             }
         )
         scope = full_scope(brief)
@@ -466,7 +623,7 @@ class ValidatorTest(unittest.TestCase):
     def test_unverified_holds_candidate_without_a_finding_route(self) -> None:
         scope = full_scope()
         discovery = discovery_from_scope(scope)
-        discovery["dimension_results"][0]["status"] = "unverified"
+        set_result_status(discovery["dimension_results"][0], "unverified")
         self.assert_passes(self.run_validator("discovery", discovery, scope=scope))
         candidate = candidate_from_discovery(discovery)
         self.assert_fails(
@@ -478,7 +635,7 @@ class ValidatorTest(unittest.TestCase):
     def test_candidate_routes_every_violation_exactly_once(self) -> None:
         scope = full_scope()
         discovery = discovery_from_scope(scope)
-        discovery["dimension_results"][0]["status"] = "violated"
+        set_result_status(discovery["dimension_results"][0], "violated")
         self.assert_fails(
             self.run_validator(
                 "candidate",
@@ -515,7 +672,7 @@ class ValidatorTest(unittest.TestCase):
     def test_fix_here_requires_minimal_fix_boundary(self) -> None:
         scope = full_scope()
         discovery = discovery_from_scope(scope)
-        discovery["dimension_results"][0]["status"] = "violated"
+        set_result_status(discovery["dimension_results"][0], "violated")
         finding = {
             "id": "F-1",
             "routing": "fix-here",
@@ -596,7 +753,7 @@ class ValidatorTest(unittest.TestCase):
         scope = full_scope()
         discovery = discovery_from_scope(scope)
         for item in discovery["dimension_results"]:
-            item["status"] = "violated"
+            set_result_status(item, "violated")
         finding = {
             "id": "F-contract",
             "routing": "contract-decision",
@@ -661,6 +818,41 @@ class ValidatorTest(unittest.TestCase):
             self.run_validator(
                 "scope", scope, brief=brief, previous_discovery=previous
             )
+        )
+
+    def test_existing_legacy_review_can_finish_without_restarting(self) -> None:
+        previous_brief = legacy_brief()
+        previous = discovery_from_scope(full_scope(previous_brief))
+        remove_coverage_results(previous)
+        brief = legacy_brief(rereview=True)
+        scope = full_scope(brief)
+        scope["review_mode"] = "incremental"
+        scope["change_impacts"] = [
+            {
+                "id": "I-legacy",
+                "cause": "review-gap",
+                "reason": "固定済み旧reviewの探索不足だけを再確認する",
+                "surface_ids": [],
+                "dimension_ids": ["D-session"],
+            }
+        ]
+        discovery = discovery_from_scope(scope)
+        discovery["dimension_results"] = [
+            result("D-session", suffix="legacy-v2"),
+            result("D-render", source="carried-forward"),
+        ]
+        remove_coverage_results(discovery)
+        review_input = valid_input(brief)
+        review_input.pop("target_artifacts")
+        common = {
+            "brief": brief,
+            "previous_brief": previous_brief,
+            "previous_discovery": previous,
+            "review_input": review_input,
+        }
+        self.assert_passes(self.run_validator("scope", scope, **common))
+        self.assert_passes(
+            self.run_validator("discovery", discovery, scope=scope, **common)
         )
 
     def test_incremental_requires_a_semantic_change_impact(self) -> None:
@@ -778,6 +970,7 @@ class ValidatorTest(unittest.TestCase):
                     "kind": "counterexample",
                     "description": "retry後の二重適用",
                 },
+                "coverage_points": coverage_points("D-second-path"),
             }
         )
         previous = discovery_from_scope(full_scope(previous_brief))
@@ -987,7 +1180,7 @@ class ValidatorTest(unittest.TestCase):
         brief = rereview_brief()
         previous_brief = valid_brief()
         previous, scope, discovery = incremental_state()
-        discovery["dimension_results"][0]["status"] = "violated"
+        set_result_status(discovery["dimension_results"][0], "violated")
         base = {
             "id": "F-1",
             "routing": "fix-here",
@@ -1016,8 +1209,8 @@ class ValidatorTest(unittest.TestCase):
         brief = rereview_brief()
         previous_brief = valid_brief()
         previous, scope, discovery = incremental_state()
-        previous["dimension_results"][1]["status"] = "violated"
-        discovery["dimension_results"][1]["status"] = "violated"
+        set_result_status(previous["dimension_results"][1], "violated")
+        set_result_status(discovery["dimension_results"][1], "violated")
         finding = {
             "id": "F-carried",
             "routing": "fix-here",
@@ -1092,7 +1285,7 @@ class ValidatorTest(unittest.TestCase):
         brief = rereview_brief()
         previous_brief = valid_brief()
         previous, scope, discovery = incremental_state(cause="review-gap")
-        discovery["dimension_results"][0]["status"] = "violated"
+        set_result_status(discovery["dimension_results"][0], "violated")
         finding = {
             "id": "F-gap",
             "routing": "fix-here",
@@ -1117,7 +1310,7 @@ class ValidatorTest(unittest.TestCase):
     def test_initial_full_finding_does_not_take_incremental_origin(self) -> None:
         scope = full_scope()
         discovery = discovery_from_scope(scope)
-        discovery["dimension_results"][0]["status"] = "violated"
+        set_result_status(discovery["dimension_results"][0], "violated")
         finding = {
             "id": "F-1",
             "routing": "fix-here",

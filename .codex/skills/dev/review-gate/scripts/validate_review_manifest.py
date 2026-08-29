@@ -17,6 +17,8 @@ from typing import Any
 
 SURFACE_KINDS = {"condition", "invariant", "changed-surface", "handoff"}
 PROBE_KINDS = {"counterexample", "direct-evidence"}
+COVERAGE_ROLES = {"origin", "mechanism", "observation"}
+ARTIFACT_CLASSES = {"surface", "excluded"}
 SCOPE_CLASSES = {"applicable", "not-applicable"}
 REVIEW_MODES = {"full", "incremental"}
 REVIEW_CYCLES = {"initial", "rereview"}
@@ -204,6 +206,15 @@ def dimension_core(item: dict[str, Any]) -> dict[str, Any]:
             "kind": probe.get("kind"),
             "description": probe.get("description"),
         },
+        "coverage_points": [
+            {
+                "id": point.get("id"),
+                "role": point.get("role"),
+                "description": point.get("description"),
+            }
+            for point in item.get("coverage_points", [])
+            if isinstance(point, dict)
+        ],
     }
 
 
@@ -220,6 +231,8 @@ def catalog_signature(catalog: dict[str, Any]) -> dict[str, Any]:
             item_id: surface_core(item)
             for item_id, item in sorted(catalog["target_surfaces"].items())
         },
+        "artifact_coverage": catalog["artifact_coverage"],
+        "catalog_check": catalog["catalog_check"],
         "review_dimensions": {
             item_id: dimension_core(item)
             for item_id, item in sorted(catalog["review_dimensions"].items())
@@ -227,8 +240,22 @@ def catalog_signature(catalog: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def has_initial_coverage_catalog(brief: dict[str, Any]) -> bool:
+    if any(field in brief for field in ("artifact_coverage", "catalog_check")):
+        return True
+    dimensions = brief.get("review_dimensions")
+    return isinstance(dimensions, list) and any(
+        isinstance(dimension, dict) and "coverage_points" in dimension
+        for dimension in dimensions
+    )
+
+
 def validate_review_input(
-    review_input: dict[str, Any], where: str, errors: list[str]
+    review_input: dict[str, Any],
+    where: str,
+    errors: list[str],
+    *,
+    require_initial_coverage: bool,
 ) -> dict[str, Any]:
     reject_fields(review_input, LEGACY_FIELDS, where, errors)
     require_identifier(review_input, "review_id", where, errors)
@@ -249,6 +276,22 @@ def validate_review_input(
     handoffs = unique_objects(
         review_input.get("handoffs"), f"{where}.handoffs", errors
     )
+    artifacts: dict[str, dict[str, Any]] = {}
+    if require_initial_coverage or "target_artifacts" in review_input:
+        artifacts = unique_objects(
+            review_input.get("target_artifacts"), f"{where}.target_artifacts", errors
+        )
+    if require_initial_coverage and not artifacts:
+        errors.append(f"{where}.target_artifacts: 1件以上必要です")
+    artifact_sources: set[str] = set()
+    for artifact_id, artifact in artifacts.items():
+        location = f"{where}.target_artifacts[{artifact_id}]"
+        require_text(artifact, "source", location, errors)
+        source = artifact.get("source")
+        if text_value(source):
+            if source in artifact_sources:
+                errors.append(f"{location}.source: 対象成果が重複しています")
+            artifact_sources.add(source)
     for handoff_id, handoff in handoffs.items():
         location = f"{where}.handoffs[{handoff_id}]"
         require_text(handoff, "gate", location, errors)
@@ -261,6 +304,7 @@ def validate_review_input(
         "condition_ids": condition_ids,
         "current_contracts": contracts,
         "handoffs": handoffs,
+        "target_artifacts": artifacts,
     }
 
 
@@ -269,6 +313,8 @@ def validate_brief(
     where: str,
     errors: list[str],
     review_input: dict[str, Any] | None = None,
+    *,
+    require_initial_coverage: bool,
 ) -> dict[str, Any]:
     reject_fields(brief, LEGACY_FIELDS, where, errors)
     require_identifier(brief, "review_id", where, errors)
@@ -324,11 +370,60 @@ def validate_brief(
         elif "handoff_id" in surface:
             errors.append(f"{location}.handoff_id: handoff surface以外には指定できません")
 
+    artifact_coverage: dict[str, dict[str, Any]] = {}
+    raw_artifact_coverage = brief.get("artifact_coverage", [])
+    if not isinstance(raw_artifact_coverage, list):
+        errors.append(f"{where}.artifact_coverage: 配列が必要です")
+        raw_artifact_coverage = []
+    for index, item in enumerate(raw_artifact_coverage):
+        location = f"{where}.artifact_coverage[{index}]"
+        if not isinstance(item, dict):
+            errors.append(f"{location}: objectが必要です")
+            continue
+        require_identifier(item, "artifact_id", location, errors)
+        artifact_id = item.get("artifact_id")
+        if not identifier_value(artifact_id):
+            continue
+        if artifact_id in artifact_coverage:
+            errors.append(f"{location}.artifact_id: 重複しています")
+            continue
+        artifact_coverage[artifact_id] = item
+        classification = item.get("classification")
+        if classification not in ARTIFACT_CLASSES:
+            errors.append(f"{location}.classification: surfaceまたはexcludedが必要です")
+        surface_ids = unique_texts(
+            item.get("surface_ids", []),
+            f"{location}.surface_ids",
+            errors,
+            allow_empty=True,
+        )
+        unknown_surfaces = set(surface_ids) - set(surfaces)
+        if unknown_surfaces:
+            errors.append(f"{location}.surface_ids: 不明なsurfaceです")
+        if classification == "surface":
+            if not surface_ids:
+                errors.append(f"{location}.surface_ids: surface分類では1件以上必要です")
+            if "reason" in item:
+                errors.append(f"{location}.reason: surface分類には指定しません")
+        elif classification == "excluded":
+            if surface_ids:
+                errors.append(f"{location}.surface_ids: excluded分類では空にしてください")
+            require_text(item, "reason", location, errors)
+
+    catalog_check = brief.get("catalog_check", {})
+    if not isinstance(catalog_check, dict):
+        errors.append(f"{where}.catalog_check: objectが必要です")
+        catalog_check = {}
+    if require_initial_coverage or "catalog_check" in brief:
+        for field in ("upstream_trace", "downstream_trace", "independent_root_check"):
+            require_text(catalog_check, field, f"{where}.catalog_check", errors)
+
     dimensions = unique_objects(
         brief.get("review_dimensions"), f"{where}.review_dimensions", errors
     )
     surface_coverage = {surface_id: 0 for surface_id in surfaces}
     contract_coverage = {contract: 0 for contract in contracts}
+    coverage_point_ids: set[str] = set()
     for dimension_id, dimension in dimensions.items():
         location = f"{where}.review_dimensions[{dimension_id}]"
         require_identifier(dimension, "contract", location, errors)
@@ -363,6 +458,35 @@ def validate_brief(
             if probe.get("kind") not in PROBE_KINDS:
                 errors.append(f"{location}.probe.kind: 不明な確認方法です")
             require_text(probe, "description", f"{location}.probe", errors)
+        coverage_points = dimension.get("coverage_points", [])
+        if not isinstance(coverage_points, list):
+            errors.append(f"{location}.coverage_points: 配列が必要です")
+            coverage_points = []
+        roles: set[str] = set()
+        local_point_ids: set[str] = set()
+        for point_index, point in enumerate(coverage_points):
+            point_location = f"{location}.coverage_points[{point_index}]"
+            if not isinstance(point, dict):
+                errors.append(f"{point_location}: objectが必要です")
+                continue
+            require_identifier(point, "id", point_location, errors)
+            point_id = point.get("id")
+            if identifier_value(point_id):
+                if point_id in local_point_ids or point_id in coverage_point_ids:
+                    errors.append(f"{point_location}.id: review内で重複しています")
+                local_point_ids.add(point_id)
+                coverage_point_ids.add(point_id)
+            role = point.get("role")
+            if role not in COVERAGE_ROLES:
+                errors.append(f"{point_location}.role: origin／mechanism／observationが必要です")
+            else:
+                roles.add(role)
+            require_text(point, "description", point_location, errors)
+        missing_roles = COVERAGE_ROLES - roles
+        if (require_initial_coverage or "coverage_points" in dimension) and missing_roles:
+            errors.append(
+                f"{location}.coverage_points: 因果経路の役割が不足しています: {sorted(missing_roles)}"
+            )
 
     if not dimensions:
         errors.append(f"{where}.review_dimensions: 1件以上必要です")
@@ -389,6 +513,11 @@ def validate_brief(
             errors.append(f"{where}.handoffs: Review Inputと一致しません")
         if sorted(condition_sources) != sorted(review_input.get("condition_ids", [])):
             errors.append(f"{where}.target_surfaces: condition_idsと一致しません")
+        if require_initial_coverage or "target_artifacts" in review_input:
+            expected_artifacts = set(review_input.get("target_artifacts", {}))
+            actual_artifacts = set(artifact_coverage)
+            if actual_artifacts != expected_artifacts:
+                errors.append(f"{where}.artifact_coverage: target_artifactsを過不足なく分類してください")
 
     return {
         "review_id": brief.get("review_id"),
@@ -399,6 +528,19 @@ def validate_brief(
         "current_contracts": contracts,
         "handoffs": handoffs,
         "target_surfaces": surfaces,
+        "artifact_coverage": {
+            artifact_id: {
+                "classification": item.get("classification"),
+                "surface_ids": sorted(identifier_set(item.get("surface_ids"))),
+                "reason": item.get("reason"),
+            }
+            for artifact_id, item in sorted(artifact_coverage.items())
+        },
+        "catalog_check": {
+            "upstream_trace": catalog_check.get("upstream_trace"),
+            "downstream_trace": catalog_check.get("downstream_trace"),
+            "independent_root_check": catalog_check.get("independent_root_check"),
+        },
         "review_dimensions": dimensions,
     }
 
@@ -659,11 +801,13 @@ def result_core(result: dict[str, Any]) -> dict[str, Any]:
         "evidence": result.get("evidence"),
         "guarantee": result.get("guarantee"),
         "reviewer_id": result.get("reviewer_id"),
+        "coverage_results": result.get("coverage_results"),
     }
 
 
 def validate_results_base(
     manifest: dict[str, Any],
+    catalog: dict[str, Any],
     scope: dict[str, Any],
     where: str,
     errors: list[str],
@@ -701,6 +845,53 @@ def validate_results_base(
         require_identifier(result, "reviewer_id", location, errors)
         if result.get("reviewer_id") not in completed:
             errors.append(f"{location}.reviewer_id: completed担当が必要です")
+        dimension = catalog["review_dimensions"].get(dimension_id, {})
+        expected_points = {
+            point.get("id")
+            for point in dimension.get("coverage_points", [])
+            if isinstance(point, dict) and identifier_value(point.get("id"))
+        }
+        raw_coverage_results = result.get("coverage_results", [])
+        if not isinstance(raw_coverage_results, list):
+            errors.append(f"{location}.coverage_results: 配列が必要です")
+            raw_coverage_results = []
+        coverage_results: dict[str, dict[str, Any]] = {}
+        for coverage_index, coverage in enumerate(raw_coverage_results):
+            coverage_location = f"{location}.coverage_results[{coverage_index}]"
+            if not isinstance(coverage, dict):
+                errors.append(f"{coverage_location}: objectが必要です")
+                continue
+            require_identifier(coverage, "point_id", coverage_location, errors)
+            point_id = coverage.get("point_id")
+            if not identifier_value(point_id):
+                continue
+            if point_id in coverage_results:
+                errors.append(f"{coverage_location}.point_id: 重複しています")
+                continue
+            coverage_results[point_id] = coverage
+            if coverage.get("status") not in RESULT_STATES:
+                errors.append(f"{coverage_location}.status: 不明な状態です")
+            require_text(coverage, "evidence", coverage_location, errors)
+        if (expected_points or "coverage_results" in result) and set(
+            coverage_results
+        ) != expected_points:
+            errors.append(
+                f"{location}.coverage_results: coverage pointを過不足なく確認してください"
+            )
+        point_statuses = {
+            coverage.get("status") for coverage in coverage_results.values()
+        }
+        expected_status = (
+            "violated"
+            if "violated" in point_statuses
+            else "unverified"
+            if "unverified" in point_statuses
+            else "satisfied"
+        )
+        if coverage_results and result.get("status") != expected_status:
+            errors.append(
+                f"{location}.status: coverage_resultsの集約結果は{expected_status}です"
+            )
     for dimension_id in scope["applicable"]:
         if dimension_id not in results:
             errors.append(f"{where}.dimension_results: 未確認の観点です: {dimension_id}")
@@ -709,6 +900,7 @@ def validate_results_base(
 
 def validate_discovery_shape(
     manifest: dict[str, Any],
+    catalog: dict[str, Any],
     scope: dict[str, Any],
     mode: str | None,
     impacted: set[str],
@@ -724,7 +916,9 @@ def validate_discovery_shape(
         errors.append(f"{where}.state: {expected_state}が必要です")
     if not candidate_stage and "finding_candidates" in manifest:
         errors.append(f"{where}.finding_candidates: discovery stageには置けません")
-    results, reviewers = validate_results_base(manifest, scope, where, errors)
+    results, reviewers = validate_results_base(
+        manifest, catalog, scope, where, errors
+    )
     if mode == "full":
         for dimension_id, result in results.items():
             if result.get("result_source") != "fresh":
@@ -764,6 +958,7 @@ def validate_previous_discovery(
     )
     results, _ = validate_discovery_shape(
         previous,
+        previous_catalog,
         scope,
         mode,
         impacted,
@@ -807,7 +1002,12 @@ def validate_review_relation(
         return None, False
 
     previous_errors: list[str] = []
-    previous_catalog = validate_brief(previous_brief, "previous brief", previous_errors)
+    previous_catalog = validate_brief(
+        previous_brief,
+        "previous brief",
+        previous_errors,
+        require_initial_coverage=has_initial_coverage_catalog(previous_brief),
+    )
     previous_scope, previous_results = validate_previous_discovery(
         previous_discovery, previous_catalog, previous_errors
     )
@@ -1020,8 +1220,23 @@ def main() -> int:
         return 2
 
     errors: list[str] = []
-    input_catalog = validate_review_input(review_input, "review input", errors)
-    catalog = validate_brief(brief, "brief", errors, input_catalog)
+    require_initial_coverage = (
+        brief.get("review_cycle") == "initial"
+        or has_initial_coverage_catalog(brief)
+    )
+    input_catalog = validate_review_input(
+        review_input,
+        "review input",
+        errors,
+        require_initial_coverage=require_initial_coverage,
+    )
+    catalog = validate_brief(
+        brief,
+        "brief",
+        errors,
+        input_catalog,
+        require_initial_coverage=require_initial_coverage,
+    )
     validate_manifest_identity(manifest, catalog, "manifest", errors)
     mode, impacts, impacted = validate_review_meta(
         manifest, catalog, "manifest", errors
@@ -1079,6 +1294,7 @@ def main() -> int:
         )
         results, reviewers = validate_discovery_shape(
             manifest,
+            catalog,
             scope,
             mode,
             impacted,
@@ -1120,6 +1336,7 @@ def main() -> int:
                 )
                 validate_discovery_shape(
                     discovery_baseline,
+                    catalog,
                     discovery_scope,
                     discovery_mode,
                     discovery_impacted,
