@@ -1,0 +1,4 @@
+interface:
+  display_name: "リファクタ品質ゲート"
+  short_description: "一括監査・goal凍結・差分再reviewで安全にリファクタ"
+  default_prompt: "$refactor-quality-gate を使って、指定範囲を挙動変更なしで一括監査し、goal凍結、実装batch、独立review、変更影響再reviewまで完了してください。"
