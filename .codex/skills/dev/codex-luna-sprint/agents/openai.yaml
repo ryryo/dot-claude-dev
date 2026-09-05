@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Luna Sprint"
-  short_description: "Story/UXはmain所有、機械的leafだけLunaへ委譲"
-  default_prompt: "Use $codex-luna-sprint with main Codex owning all user stories, UX, UI composition, wording, domain/API contracts, and state transitions. Delegate only fully specified mechanical leaves such as pure logic, parsers, serializers, fixtures, table tests, or exact adapters, then have main independently verify the diff and whole user journey."
+  short_description: "計画・taskを持つSprintをAstra／Solが主導"
+  default_prompt: "Use $codex-luna-sprint for a Sprint with persistent planning and task artifacts, reusing authoritative Story/PLAN contracts and matching reviews. Main Codex (Astra or Sol) owns all user stories, UX, UI composition, wording, domain/API contracts, and state transitions. Delegate only fully specified mechanical leaves such as pure logic, parsers, serializers, fixtures, table tests, or exact adapters, then have main independently verify the diff and applicable whole user journey through the real UI, public interface, or actual artifact required by the contract."

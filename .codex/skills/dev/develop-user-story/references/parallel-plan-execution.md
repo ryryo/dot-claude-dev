@@ -22,7 +22,7 @@
 - 実行PLAN: 一つのmerge可能な成果をhandoffする契約。
 - integration PLAN: 複数candidateのmerge、shared glue、生成物、上位検証、実装後review、Journey、台帳更新に実作業がある場合の実行PLAN。
 - external PLAN: deploy、課金、外部データ変更など、別承認と単一ownerが必要な操作を分ける場合の実行PLAN。
-- 進行PLAN: 上記PLANの依存、状態、割当、統合順を管理するindex。実装は所有しない。
+- 進行PLAN: 上記PLANの依存、状態、統合順を管理するindex。実行割当は計画外で管理し、進行PLANは実装を所有しない。
 
 integrationやexternalの作業が小さく独立成果を要しない場合は、別PLANを増やさず、既存の統合実行PLANへ含める。既存PLANを再編する場合は、検証済みの履歴を失わない。新しい実行入口を進行PLANへ一本化し、旧PLANを残すならarchive／supersededと明示して二重の正本を作らない。
 
@@ -30,24 +30,13 @@ integrationやexternalの作業が小さく独立成果を要しない場合は�
 
 ## 3. 実行PLANの必須契約
 
-repositoryのPLAN templateを使い、少なくとも次を固定する。
+[PLAN作成の共通契約](plan-workflow.md#成果と実装契約を固定する)に加え、複数PLANではroleを`candidate`、`integration`、`external`のいずれかにし、次の分担を明示する。
 
-- `SKILL.md`から[PLANの推奨実行設定](plan-execution-settings.md)を読み、その実行PLAN自身の責務に対する推奨model、推論レベル、選定理由、設定見直し条件
-- role: `candidate`、`integration`、`external`のいずれか
-- 対象USと条件ID。partial実装と最終確認のownerを区別する
-- 開始Gateと必要な状態
-- read scope、排他的write scope、write禁止
-- Goalとhandoff先
-- handoff成果: 変更path、公開interface、検証結果、未解決事項
-- integration ownerへ残す作業: merge、shared glue、generated file、lockfile、上位test、Journey、台帳／EVIDENCE更新
-- focused検証とhandoff Gate
-- 契約変更、owner競合、外部承認不足に対する停止条件
-- 複数candidateの開始、merge、外部handoff、最終Joinを所有するintegration PLANでは、本文と同じGate名を使ったMermaid実行DAG。開始Gate、hard dependency、並行lane、merge point、条件付きfallback、external lane、最終Joinを省略しない
-- 複数実行PLANを接続するintegration／coordination PLANでは、全lane、write scope、外部状態、依存edge、最早waveを持つParallelization Topology Gate manifest
+- 各実行PLANは担当条件ID、排他的write scope、開始Gate、handoff成果、受け取り先、focused検証、停止条件を自己完結して持つ。
+- candidateは担当成果とlocal oracleの成立までを所有し、統合後Gate、実Journey、USの最終状態、共有進行PLANを更新しない。
+- integration／external ownerは、必要なmerge、shared glue、生成物、lockfile、上位検証、Journey、台帳・EVIDENCE更新を引き受ける。review済み契約へ統合した結果から最終状態を更新する。
 
-candidateは、自分の変更pathとlocal oracleが成立した時点でhandoffする。統合後Gate、実Journey、USの`implemented`／`verified`、台帳、共有進行PLANを更新しない。integrationまたはexternal ownerだけが、review済みcontractへ統合した実結果から最終状態を更新する。
-
-integration PLANとは別に進行PLANやREADMEがある場合も、integration ownerが自PLANだけで実行順とhandoffを判断できるよう、実行DAGをintegration PLANへ置く。進行PLANの全台帳や個別taskは複製せず、そのintegration PLANが所有・接続するedgeとGateだけを自己完結して示す。
+複数candidateの開始、merge、外部handoff、最終Joinを所有するintegration PLANは、自分が接続するedgeとGateをMermaidで示す。進行PLANへのlinkだけで代替せず、個別taskや台帳全体も複製しない。複数実行PLANを接続するintegration／coordination PLANには、次節以降のParallelization Topology Gate manifestも置く。
 
 ## 4. 進行PLANの必須契約
 
@@ -63,7 +52,7 @@ integration PLANとは別に進行PLANやREADMEがある場合も、integration 
 
 4. source、generated file、lockfile、PLAN、台帳、EVIDENCE、外部状態のowner表。
 5. candidateのmerge順、生成物再生成、上位検証、review、Journey、deployの順序。
-6. 現在のready lane、停止理由、再開条件。依存が変わったときだけ更新する。
+6. 現在のready lane、停止理由、再開条件。進捗に応じて更新し、依存graphは依存契約が変わった場合だけ更新する。
 
 並行実行時は、進行管理側がwrite scope、port、Wrangler state、生成物、外部状態を衝突させない実行contextを計画外で選ぶ。PLANには実行contextの方式や識別子を書かない。
 
@@ -177,13 +166,13 @@ python3 .codex/skills/dev/develop-user-story/scripts/validate_plan_topology.py <
 
 validatorは、manifestが1個だけであること、検証対象integration PLANとmanifest pathの一致、参照する各PLANとsection見出しの実在、symlink解決後もrepository root内にあること、lane／edge ID、relative write scope、DAGの閉路、最早waveとの一致、同一waveのwriter／外部状態衝突、writer重複を残す例外の代替案を検査する。成功出力にはlane数、local最大同時数、serialized exception数が出る。
 
-これは意味的な合否判定を代替しない。4.1の独立reviewerは、全実行PLANがmanifestに含まれること、edgeが現行source／contract上で本当に必要なこと、shared seamが過不足ないこと、Mermaid・本文・owner表と一致することを確認する。validator成功と独立reviewの両方が揃うまでGateをPASSにしない。
+validator成功に加え、次節のplan set reviewで全lane・依存・ownerの意味を確認できた場合だけGateをPASSにする。FAILまたは未確認なら実装を開始しない。
 
 lane、write scope、外部状態、edge、shared contract、ownerを意味的に変えた場合、または実装中に未記載の共有writerが判明した場合は、production code編集を止めて本Gateとplan set reviewを再開する。進捗状態や実行contextだけの変更では再開しない。
 
 ## 6. plan set review
 
-4.1の独立レビューは、進行PLANと全実行PLANを一つのartifactとして行う。通常はreviewer一名・Gate一回でよい。次を反証する。
+[PLAN独立レビューGate](plan-workflow.md#plan独立レビューgate)の役割分離に従い、同じreviewerが進行PLANと全実行PLANを一つのplan setとして確認する。共通契約に加え、次を反証する。
 
 - 全条件IDに実装ownerと最終確認ownerがあり、重複・空白・未確認の完了扱いがない。
 - Parallelization Topology Gateのvalidatorが成功し、全実行laneがmanifestにあり、graphに閉路、不要な直列待ち、未記載のmerge pointがない。
@@ -195,7 +184,3 @@ lane、write scope、外部状態、edge、shared contract、ownerを意味的�
 - PLANの分割費用に見合う並行化利益があり、同じcodeを複数laneで二度実装しない。
 
 意味変更を反映した場合は、影響する実行PLANだけでなく、依存、owner、条件追跡が変わる進行PLANも同じreviewerへ再確認させる。
-
-## 7. 計画に置かない識別子
-
-PLAN、進行PLAN、handoff、review metadataにはversion controlや実行環境の識別子、content digestを書かない。これらは実行時の管理情報とし、計画の開始条件、完了条件、再review条件にはしない。外部sourceの版・license provenanceが必要な場合はREFERENCE、EVIDENCE、noticeまたはdependency管理へ置き、PLANはそのpathを参照する。

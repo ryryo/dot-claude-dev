@@ -1,9 +1,11 @@
 # Main review contract
 
+各段階で必要な節だけ読む。既存レビューの再利用は[SKILL.md](../SKILL.md)の「適用と正本」に従い、正本、対象成果、判定質問、証拠、役割分離の対応を確認する。再利用できない不足や変更だけをレビューする。
+
 ## 1. Product frame review
 
 Product frameを実装案から独立して検査する。
-このreviewのownerと最終判断者は常にmainである。subagentへ委譲できるのは正本探索と事実収集だけで、story、UX、通常導線、画面構成の判断は委譲しない。
+このreviewのownerと最終採否判断者はmainである。補助調査のsubagentには正本探索と事実収集を依頼する。適用先やdevelop-user-storyが要求する独立reviewerは契約の成立を検査し、mainが指摘の採否と修正を判断する。StoryやUXの設計責任をworkerへ移さない。
 
 | 観点 | 必須確認 |
 | --- | --- |
@@ -14,7 +16,7 @@ Product frameを実装案から独立して検査する。
 | Human decision | import、生成成功、selection、approvalが必要な箇所で分離される |
 | Recovery | failure、cancel、reload、staleで既存成果を失わず復帰できる |
 
-normal、exception、recoveryの3 scenarioで反証する。未解決decision、source矛盾、通常導線の欠落があれば`draft`を維持する。
+normalと、契約に存在するexception、recoveryの代表scenarioで反証する。表の観点も適用するものだけを確認し、存在しない承認・永続状態・復旧機能を要求しない。未解決decision、source矛盾、通常導線の欠落があれば`draft`を維持する。
 
 ## 2. Implementation plan review
 
@@ -30,7 +32,7 @@ Product frameと矛盾したら局所修正で隠さず、全体判定を`plan-r
 - `git status --short`、`git diff --name-only`、allowed pathの実diffを確認する。
 - report、排他的scope、既存変更の保持を照合する。
 - hardcode、fixture専用分岐、不要なfallback、過剰抽象化、未解決判断の混入を探す。
-- worker commandをmainが再実行し、異なるnegative caseを少なくとも1件確認する。
+- worker commandをmainが再実行し、異なるnegative caseを少なくとも1件確認する。以後は新しい変更・失敗・未確認の根拠がある範囲だけ検証する。
 - user-facing UI、文言、UX判断、API/domain/state contractがdiffへ混入した場合は、たとえtestが通っても原則`rejected`とする。
 
 ```text
@@ -45,13 +47,13 @@ Residual risk:
 
 ## 4. Whole-user-journey review
 
-task-local test成功だけで合格にしない。実dataと実画面で次を確認する。
+task-local test成功だけで合格にしない。対象契約に存在する次の観点だけを、通常入口から確認する。UIは実画面、メディアや生成物は実成果物、それ以外は公開interfaceで確認する。適用外の理由は短く示し、必要な実検証をmockや静的文字列で代用しない。
 
-- 通常CTAが上流成果物から始まり、fallbackやuploadより強い。
+- 継承する上流成果物がある場合、通常CTAがその利用から始まり、不要な再uploadを要求しない。手元素材の取り込みが利用者の目的ならuploadが通常CTAでよい。
 - 継承値、override、例外操作がproduct frameどおりに区別される。
 - loading、empty、blocked、running、failed、stale、completedから復帰できる。
-- reload後もselection、artifact、job、review、Gateが復元される。
-- keyboard、focus、読み上げ、狭幅、複数media再生制御が成立する。
+- 永続化が契約にある場合、対象のselection、artifact、job、review、Gateがreload後に復元される。
+- UIでは対象のkeyboard、focus、読み上げ、狭幅を確認し、複数mediaを扱う導線では再生制御を確認する。
 
 ```text
 Overall decision: accepted | rework | plan-reopened

@@ -32,9 +32,13 @@ Mechanical rejection oracle:
 Acceptance:
 ```
 
-Lunaへ委譲できるDecision stateは`fixed`だけとする。`bounded`または`unresolved`を含むtask、`coupled`、`external_or_irreversible`、`weak`を含むtask、user story、UX、UI、文言、accessibility、product/schema/API contract、mutation、状態遷移の判断を含むtask、またはreview負担が実装以上のtaskは委任しない。固定済みAPI adapterは、HTTP method/path、request/response schemaとfield mapping、validation/coercion、auth/authorization/ownership（不要ならmainが`N/A`と明記）、success status、error algebra/body、idempotency、mutation/side-effect semanticsのすべてをmainが完全指定し、workerに残る作業が機械的写像だけの場合に限り候補とする。
+Lunaへ委譲できるDecision stateは`fixed`だけとする。`bounded`または`unresolved`を含むtask、`coupled`、未完了の`staged`、`shared_reversible`／`external_or_irreversible`、`partial`／`weak`を含むtask、user story、UX、UI、文言、accessibility、product/schema/API contract、mutation、状態遷移の判断を含むtask、またはreview負担が実装以上のtaskは委任しない。固定済みAPI adapterは、HTTP method/path、request/response schemaとfield mapping、validation/coercion、auth/authorization/ownership（不要ならmainが`N/A`と明記）、success status、error algebra/body、idempotency、mutation/side-effect semanticsのすべてをmainが完全指定し、workerに残る作業が機械的写像だけの場合に限り候補とする。
+
+worker自身の禁止範囲は固定contractでも解除しない。利用可能な`luna_sprint_worker`がない場合はmain-onlyとする。
 
 ## Worker prompt
+
+実際にLunaへ委譲する場合だけ使う。
 
 ```text
 Task Summary:

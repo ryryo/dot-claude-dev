@@ -54,6 +54,12 @@ skill_dir = sys.argv[3]
 - State: draft
 - Confirmed by main: no
 
+## Existing contracts
+
+- Authoritative Story / PLAN paths and sections:
+- This frame references existing contracts; it does not duplicate or replace them.
+- Existing review evidence may be reused only when the artifact, contract, question, evidence, and required reviewer separation still match.
+
 ## Source precedence
 
 | Source | Path or evidence | Authority and conflicts |
@@ -83,7 +89,7 @@ skill_dir = sys.argv[3]
 
 ### Failure / reload recovery
 
-- <preserved state and recovery action>
+- <preserved state and recovery action, only where required by the contract>
 
 ## Input provenance
 
@@ -93,11 +99,11 @@ skill_dir = sys.argv[3]
 
 ## UX invariants
 
-- Upstream confirmed values are inherited rather than re-entered.
-- Upload and internal settings do not outrank upstream artifact selection.
+- Apply only invariants supported by the current user contract.
+- When upstream artifacts exist, inherit their confirmed values without unnecessary re-entry or re-upload. Upload may be the normal entry for editing local media.
 - Lab or fixture limits do not become production domain limits.
-- Import or generation success does not auto-approve human decisions.
-- Exceptional controls do not appear as equal-strength normal controls.
+- Where human approval is required, import or generation success does not replace it.
+- Where exceptional controls exist, distinguish their priority from normal controls.
 
 ## Path classification
 
@@ -117,7 +123,13 @@ skill_dir = sys.argv[3]
 - State: draft
 - Product frame prerequisite: not-confirmed
 
-Do not design architecture until product-frame.md is confirmed.
+Do not design architecture or confirm this plan until product-frame.md is confirmed. This generated draft is only a template.
+
+## Existing contracts
+
+- Authoritative PLAN path and sections:
+- Reference already confirmed decisions instead of maintaining a second contract or progress ledger.
+- Existing review evidence and unchanged contract / question / reviewer separation:
 
 ## Story-to-implementation trace
 
@@ -135,7 +147,7 @@ Do not design architecture until product-frame.md is confirmed.
 
 ## Verification
 
-- <behavior tests, integration, browser acceptance>
+- <behavior tests and integration as required by risk; real browser acceptance for UI, public interfaces or actual artifacts otherwise>
 
 ## Unresolved implementation decisions
 
@@ -152,9 +164,9 @@ Do not design architecture until product-frame.md is confirmed.
 
 ## Rule
 
-- Register every task as main-codex first.
+- Register every task as main-codex first; Astra and Sol use the same ownership rules.
 - User stories, UX, UI composition, user-facing wording, accessibility, domain/API contracts, and state transitions always remain main-codex.
-- Move only fully specified pure logic, parsers/serializers, fixtures, table tests, mechanical codemods, or exact adapters after both prerequisite reviews are confirmed.
+- Move only fully fixed mechanical leaves after both prerequisite reviews are confirmed, with completed dependencies, exclusive write scope, local reversible effects, a strong oracle, and positive delegation benefit. The worker must permit the task; if unavailable, main executes it.
 - A small UI leaf is not a Luna leaf. Fixed API adapters qualify only after main fixes method/path, request/response mapping, validation/coercion, auth/authorization/ownership (or explicit N/A), success status, error algebra/body, idempotency, and mutation/side effects.
 
 ## Routing registry
@@ -164,7 +176,7 @@ Do not design architecture until product-frame.md is confirmed.
 ## Dependency order and conflicts
 
 - <main story/UX/contracts -> optional mechanical Luna leaf -> main diff review/integration/journey review>
-""", encoding="utf-8")
+""".replace("references/task-contract.md", str(Path(skill_dir) / "references/task-contract.md")), encoding="utf-8")
 
 (sprint / "reviews" / "product-frame.md").write_text("""# Product frame review
 
@@ -173,7 +185,7 @@ Do not design architecture until product-frame.md is confirmed.
 - Normal journey findings:
 - Optional / fallback findings:
 - Recovery findings:
-- Reviewer evidence:
+- Existing review correspondence or fresh evidence:
 - Main decision:
 """, encoding="utf-8")
 
@@ -183,6 +195,7 @@ Do not design architecture until product-frame.md is confirmed.
 - Story / UX trace findings:
 - Shadow state or Lab leakage findings:
 - Contract and migration findings:
+- Existing review correspondence or fresh evidence:
 - Main decision:
 """, encoding="utf-8")
 
@@ -198,6 +211,8 @@ Do not design architecture until product-frame.md is confirmed.
 - <reviews/Txx.md: accepted, corrected-by-main, rejected, or blocked>
 
 ## Whole-user-journey verification
+
+Confirm the contract from its normal entry. Use the real screen for UI and public interfaces or actual artifacts otherwise. Do not invent UI or recovery requirements for verification.
 
 - Normal journey evidence:
 - Exception / recovery evidence:
