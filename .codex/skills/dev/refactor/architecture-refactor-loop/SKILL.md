@@ -1,7 +1,7 @@
 ---
 name: architecture-refactor-loop
 description: |
-  コードベースまたは指定範囲を、main Codex 主導でアーキテクチャ上の満足条件まで段階的にリファクタリングする。フェーズ分け、/tmp/refactor-{projectname}.md の進捗記録、goal file 作成、各 goal ごとの委譲判定、実装、実動作確認、Codex 側レビュー、再監査を反復する。大規模リファクタ、責務分離、依存方向整理、モジュール境界整理、状態・副作用境界の改善、テスト容易性改善、コードベース全体の architecture cleanup で使う。起動語: architecture-refactor-loop, アーキテクチャリファクタリングループ, コードベースを満足できるまでリファクタ, フェーズ分けしてリファクタ, goal file リファクタ, /tmp/refactor 進捗
+  コードベースまたは指定範囲を、main Codex 主導でアーキテクチャ上の満足条件まで段階的にリファクタリングする。独立エージェント向けのread-only audit modeでは、実装や進捗fileを作らずarchitecture mapとfindingを返す。大規模リファクタ、責務分離、依存方向、状態・副作用境界、テスト容易性の監査と改善で使う。起動語: architecture-refactor-loop, アーキテクチャリファクタリングループ, architecture audit, read-only architecture audit
 ---
 
 # architecture-refactor-loop
@@ -20,6 +20,27 @@ description: |
 - 既存のユーザー変更を戻さない。関係がある場合は差分を読んで作業し、関係がなければ触らない。
 - 「好みの整理」だけでは goal にしない。各 goal は具体的な architecture pain、受け入れ条件、検証方法を持つ。
 - `/tmp` の進捗ファイルと goal file は一時的な作業管理用であり、ユーザーが永続化を求めない限り成果物へ含めない。
+
+## Read-only audit mode
+
+利用者または呼出元スキルが`read-only audit mode`を指定した場合、この節を通常の作業ディレクトリ、goal file、委譲判定、実装ループ、再監査より優先する。
+
+- repositoryと指定scopeをfreshに読み、編集、進捗file作成、テスト／build実行、Cursor CLI、version control、外部作用を行わない。
+- 許容された既存差分を`git status --short`で確認し、baselineと現在差分の両方を監査する。
+- 実行入口、データフロー、state owner、副作用／resource、public contract、module境界、依存方向、test seamをmapにする。
+- 責務境界、依存方向、state ownership、副作用、contract保護、test seam、runtime riskを一件目で止めずに一巡する。
+- 行数、命名、好み、到達不能な推測だけをfindingへ昇格させない。
+- audit agentは採否、goal化、実装、完了判定をせず、一回のfresh reportを返して停止する。
+
+出力には次を含める。
+
+1. 実際に確認したscopeとpath
+2. architecture map
+3. 全観点のfinding sweep
+4. findingごとのseverity、path／line、到達する因果経路、破られるcontractまたはarchitecture pain、最小修正境界、既存oracle
+5. 既に差分で直っている問題、却下／deferした候補と理由
+
+追加のP0／P1／P2がなければ`NO_FINDINGS`とする。read-only audit modeはここで終了する。
 
 ## 作業ディレクトリ
 

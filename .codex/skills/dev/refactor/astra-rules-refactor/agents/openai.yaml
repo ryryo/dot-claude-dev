@@ -1,0 +1,4 @@
+interface:
+  display_name: "Astra向けルール整理"
+  short_description: "AGENTS.mdとスキルの契約を保ち、Astra向けに整理する"
+  default_prompt: "$astra-rules-refactor を使って、指定したAGENTS.mdとスキルをAstra向けに整理し、修正と検証まで行ってください。"

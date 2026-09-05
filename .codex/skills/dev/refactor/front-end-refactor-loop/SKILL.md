@@ -1,7 +1,7 @@
 ---
 name: front-end-refactor-loop
 description: |
-  指定されたフロントエンド範囲に対して、同梱の front-end-design-patterns 参照を使った新規監査、Cursor CLI sprint への安全な局所委譲、main Codex による採否判定・修正・検証・必要時の性能計測を NO_FINDINGS まで反復する。機能変更なしの React / Vue / JavaScript リファクタリング、描画ホットパス整理、依存安定化、派生 state 整理、component 境界分離、bundle / lazy loading 改善、サブエージェント調査つきフロントエンドリファクタリングで使う。起動語: front-end-refactor-loop, フロントエンドリファクタリングループ, Reactリファクタリングループ, Vueリファクタリングループ, NO_FINDINGSまでリファクタ, Cursor CLIでフロントエンドリファクタ
+  指定されたフロントエンド範囲に対して、同梱のfront-end-design-patternsを使って監査・リファクタリングする。独立エージェント向けのread-only audit modeでは、必要なreferenceだけを選び、実装やSprintを開始せずfindingを返す。React／Vue／JavaScriptのcomponent境界、state、render、bundle、loading、性能の監査と改善で使う。起動語: front-end-refactor-loop, フロントエンドリファクタリングループ, front-end audit, read-only front-end audit
 ---
 
 # front-end-refactor-loop
@@ -30,6 +30,26 @@ description: |
 - ループ報告雛形: `references/report-templates.md`
 
 `decision-matrix.md` で候補を 1 から 4 件に絞り、必要な個別 reference の `Original Skill Metadata` と `original-skill-body` を読む。
+
+## Read-only audit mode
+
+利用者または呼出元スキルが`read-only audit mode`を指定した場合、この節をSprint初期化、Cursor preflight、実装委譲、修正loopより優先する。
+
+- repositoryと指定scopeをfreshに読み、編集、Sprint／進捗file作成、テスト／build実行、Cursor CLI、version control、外部作用を行わない。
+- 許容された既存差分を`git status --short`で確認し、baselineと現在差分の両方を監査する。
+- `decision-matrix.md`から現在の症状に必要なreferenceを1〜4件だけ選び、選んだ個別referenceを読む。
+- component／composition、hook／effect、context／selector／state、render／canvas／list、bundle／loading、accessibility、SSRのうちscopeへ適用する観点を一件目で止めずに一巡する。
+- blanket memoization、行数だけの分割、未計測の性能主張、UI仕様変更、新dependencyをfindingへ昇格させない。
+- audit agentは採否、goal化、実装、完了判定をせず、一回のfresh reportを返して停止する。
+
+出力には次を含める。
+
+1. 実際に確認したscopeとpath
+2. 選択したpattern referenceと適用理由
+3. findingごとのseverity、path／line、到達するrender／interaction経路、影響、最小修正境界、既存oracle、性能計測要否
+4. 既に差分で直っている問題、却下／deferした候補と理由
+
+追加のP0／P1／P2がなければ`NO_FINDINGS`とする。read-only audit modeはここで終了する。
 
 ## 起動前確認
 
