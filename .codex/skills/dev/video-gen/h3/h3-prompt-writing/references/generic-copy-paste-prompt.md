@@ -126,5 +126,5 @@ non_diegetic_music: Gentle orchestral strings at a slow tempo with sparse harp a
 ## 参照
 
 - 正本フォーマット: `h3-prompt-writing/references/base-en.txt`
-- 設計契約: `generative-prompt-design/references/design-contract.md`
+- 設計契約: [generative-prompt-designの設計契約](../../../generative-prompt-design/references/design-contract.md)
 - 参照素材あり: `h3-prompt-writing/references/ref-en.txt`（Ref2VA は別形式の6セクション）

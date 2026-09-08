@@ -7,7 +7,7 @@ description: Write MiniMax H3 video generation prompts for T2VA, I2VA, FL2VA, L2
 
 ## Content Design Prerequisite
 
-This skill compiles an already coherent visual and audiovisual design into MiniMax H3 syntax. When the task creates new generated content or substantively changes camera, composition, pose, location, furniture, background, lighting, subject count, reference roles, action, or shot order, first use the shared sibling `$generative-prompt-design` skill. Bring its completed Design Contract into this workflow; do not use H3 field structure to invent or repair the underlying situation.
+This skill compiles an already coherent visual and audiovisual design into MiniMax H3 syntax. When the task creates new generated content or substantively changes camera, composition, pose, location, furniture, background, lighting, subject count, reference roles, action, or shot order, first use the shared [generative-prompt-design](../../generative-prompt-design/SKILL.md) skill. Bring its completed Design Contract into this workflow; do not use H3 field structure to invent or repair the underlying situation.
 
 Typo fixes, exact dialogue transcription, provider-schema corrections, reference-label formatting, and timestamp edits that leave the generated scene unchanged may proceed directly. A failed generation that requires semantic change is not a formatting-only edit.
 

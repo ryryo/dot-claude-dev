@@ -97,7 +97,7 @@ LP全体がすでに担う導入、説明、CTAまで一カットへ詰め込ま
 - 画像生成の保存・候補・review規約: `imagegen-core` と `imagegen`
 - 自然な人物・生活写真: `generate-t2i-natural-photo`
 - 構図や物理関係の構造ラフ: `generate-storyboard-rough`
-- 失敗promptを意味設計から組み直す: `generative-prompt-design`
+- 失敗promptを意味設計から組み直す: [generative-prompt-design](../../generative-prompt-design/SKILL.md)
 - H3のモード別構文: `h3-prompt-writing`
 - 文字、図形、追従効果、画面転換: `h3-motion-graphics-prompt-writing`
 - 標準H3 CLIのdoctor、validate、run、resume: `h3-cli-generation`
@@ -107,6 +107,8 @@ LP全体がすでに担う導入、説明、CTAまで一カットへ詰め込ま
 promptはProduction Decisionの翻訳物として作る。promptの都合で記事内役割や固定条件を変えない。
 
 ### 5. 実配置でレビューし、次の一手を決める
+
+生成映像の意図・構図・形状・動作の成立は [review-generated-video](../../review-generated-video/SKILL.md) で確認する。以下では記事の実配置と編集判断を扱う。
 
 生成物単体の技術検査に加え、記事の実サイズと前後文脈で確認する。問題を「なんとなく悪い」で終わらせず、原因層と戻り先を特定する。
 

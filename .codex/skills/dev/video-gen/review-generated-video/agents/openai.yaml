@@ -1,0 +1,4 @@
+interface:
+  display_name: "生成動画レビュー"
+  short_description: "プロンプトの意図と構図・形状・動作を照合し、根拠付きで採否と修正を判断"
+  default_prompt: "$review-generated-video を使って、この生成動画を元プロンプトと参照素材に照らしてレビューし、問題の時刻・根拠・修正方針と未確認事項を報告してください。"

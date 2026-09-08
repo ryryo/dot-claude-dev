@@ -1,0 +1,4 @@
+interface:
+  display_name: "動画の画像解析"
+  short_description: "全フレームの数値解析から代表画像と必要な連続画像を取得し、視覚分析する"
+  default_prompt: "$video-analysis-core を使って、この動画の代表画像を実際に確認し、不明箇所と未確認の変化だけを追加して分析してください。"
