@@ -1,0 +1,4 @@
+interface:
+  display_name: "リファレンス削減監査"
+  short_description: "参照資料を精査し、判断根拠の価値と維持コストから削除・統合候補を列挙する"
+  default_prompt: "$reference-pruning-audit を使って、参照資料をすべて精査し、削除・統合・縮約できる候補を根拠付きで列挙してください。削除すると失う判断根拠と維持・読み込みコストを比較してください。"
