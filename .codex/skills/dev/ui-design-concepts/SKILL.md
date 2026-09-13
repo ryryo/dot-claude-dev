@@ -1,6 +1,6 @@
 ---
 name: ui-design-concepts
-description: Create project UI concept proposals as generated bitmap mockups under docs/DESIGN. Use when the user asks to make UI案, design concepts, existing UI brush-ups, Eagle-like UI explorations, or multiple visual directions with prompts saved alongside the images.
+description: "UI案や既存画面の改善方向を、生成画像のモックアップとして比較・提案する。画像と使用プロンプトをdocs/DESIGNへ保存する。"
 ---
 
 # UI Design Concepts
@@ -59,7 +59,7 @@ description: Create project UI concept proposals as generated bitmap mockups und
 
 8. 検証して報告する。
    - `ls -lh docs/DESIGN/{folder}` で決めた枚数の画像と `prompts.md` があることを確認する。
-   - 必要なら `view_image` で画像が破損していないことを確認する。
+   - 各生成画像を実際に開き、要件、操作の主従、可読性、参照からの意図した変更を確認する。生成成功やファイルの存在だけで完成とせず、目的を妨げる不備は修正する。
    - 最終報告ではフォルダ、各画像、`prompts.md` の絶対パスを示す。
 
 ## Context Rules

@@ -1,6 +1,6 @@
 ---
 name: ai-clean-remake
-description: Remove AI-generated crunchiness, jagged or doubled edges, noisy micro-detail, repeated-edit residue, and degraded textures by freshly rebuilding the same image while preserving the original face or character, style, composition, pose, framing, clothing, objects, and lighting. Use when the user asks to clean, de-crunch, or remake a degraded AI image without redesigning it. Always retain the original image as the semantic and style reference, and optionally add Superpixel, Depth, coarse-structure, or 30-color controls. Do not use for style transfer, content changes, ordinary retouching, or simple sharpening/upscaling.
+description: "Rebuild a degraded AI image to remove crunchy textures and repeated-edit artifacts while preserving identity, style, and composition. Use for clean remakes, not ordinary retouching or upscaling."
 ---
 
 # AI Clean Remake

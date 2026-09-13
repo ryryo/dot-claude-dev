@@ -28,7 +28,7 @@ Expected state:
 - 一致しない場合は `BLOCKED: working state mismatch` とだけ報告して停止してください。
 
 Read first:
-- <absolute workspace path>/.codex/skills/dev/front-end-refactor-loop/references/front-end-design-patterns/decision-matrix.md
+- <absolute workspace path>/.codex/skills/dev/refactor/front-end-refactor-loop/references/front-end-design-patterns/decision-matrix.md
 - <必要な個別 reference>
 - <対象ファイルまたはディレクトリ>
 
@@ -38,8 +38,8 @@ Read scope:
 
 Forbidden:
 - ファイル編集
-- version control／remote操作
-- このスキル配下以外の既存スキル資産の参照
+- Gitの状態変更／remote操作
+- 同梱設計パターンと適用先契約に無関係な資料の読み込み
 - 対象範囲外の一般論だけの報告
 
 監査観点:
@@ -81,7 +81,7 @@ Goal:
 main Codex が採用済みの finding だけを、挙動変更なしで実装してください。
 
 Read first:
-- <absolute workspace path>/.codex/skills/dev/front-end-refactor-loop/references/front-end-design-patterns/decision-matrix.md
+- <absolute workspace path>/.codex/skills/dev/refactor/front-end-refactor-loop/references/front-end-design-patterns/decision-matrix.md
 - <必要な個別 reference>
 - <対象ファイル>
 - <関連 test>
@@ -98,7 +98,7 @@ Write scope:
 
 Constraints:
 - 機能、UI 仕様、公開 API、データ形式、保存形式、URL、イベント順、外部 API 呼び出しを変えない。
-- version control／remote操作、planning / progress file 更新をしない。
+- Gitの状態変更／remote操作、planning / progress file 更新をしない。
 - 関係ない既存変更を戻さない。
 - 大きな抽象化や依存追加をしない。
 - 対象 repository の既存規約に合わせる。

@@ -1,6 +1,6 @@
 ---
 name: generate-i2v-web-loop
-description: 生成済み静止画からWeb掲載用のimage-to-video動画を生成し、固定カメラ、レイアウト維持、ループ、無音化、品質検査、複数モデル比較HTMLまで一貫して処理する。既定ではKamui MCPを使う。ユーザーがMagnific、Kling 3.0 Omni、このサイトで動画生成、Magnific画面での実行を明示した場合はmagnific-i2v-coreを併用してブラウザUIで実行する。Webサイト用のループ動画、静止画への微細な動き付け、固定構図の短尺動画、複数i2vモデル比較に使用する。動画化する元画像がない場合はgenerate-t2i-web-isometricなど目的に合う画像作成スキルを先に使用する。
+description: "静止画から、構図を保った無音のWeb用ループ動画を生成・検査・配信用に加工する。既定はKamui、Magnific指定時は専用coreを使う。"
 ---
 
 # Web向けi2vループ動画生成
@@ -15,9 +15,9 @@ description: 生成済み静止画からWeb掲載用のimage-to-video動画を�
 - 生成providerは、ユーザー指定がなければKamui MCPにする。ユーザーがMagnific利用を明示した場合だけMagnificへ切り替える。
 - Kamuiでユーザーがモデルを指定しない場合は、カタログ上で有効なモデルのうち、最低解像度で推定単価が最も安いモデルを1件だけ選ぶ。
 
-Kamui MCPのモデル選択、MCP設定、逐次生成、再開、音声除去、検査、比較HTML、基本出力契約は [kamui-i2v-core](../kamui-i2v-core/SKILL.md) を読む。モデル名、MCP URL、ツール名、価格、解像度は [models.json](../kamui-i2v-core/references/models.json) だけで管理する。モデル更新時にこのスキルのスクリプトへ値を直接追加しない。
+Kamuiを使う場合、モデル選択、MCP設定、逐次生成、再開、音声除去、検査、比較HTML、基本出力契約は [kamui-i2v-core](../kamui-i2v-core/SKILL.md) を読む。モデル名、MCP URL、ツール名、価格、解像度は [models.json](../kamui-i2v-core/references/models.json) だけで管理する。モデル更新時にこのスキルのスクリプトへ値を直接追加しない。
 
-Magnificを使う場合は [magnific-i2v-core](../magnific-i2v-core/SKILL.md) を読み、Browser skillでMagnificの動画生成UIを操作する。MagnificはブラウザUI依存なので、`scripts/generate.py`へ無理に渡さない。
+Magnificを使う場合だけ [magnific-i2v-core](../magnific-i2v-core/SKILL.md) を読み、専用のAPIスクリプトで実行する。APIで扱えない条件や明示された画面操作はcoreのUI fallbackに従う。Kamui用`scripts/generate.py`へMagnificを渡さない。
 
 ## 実行手順
 
@@ -38,9 +38,9 @@ Magnificを使う場合は [magnific-i2v-core](../magnific-i2v-core/SKILL.md) �
 まずproviderを決める。
 
 - 指定なし: Kamui MCP。
-- `Magnific`、`Kling 3.0 Omni`、`このサイトで動画生成`などの指定あり: Magnific。
+- `Magnific`の明示指定、または選択されたサイトがMagnificであることを確認できる場合: Magnific。モデル名だけでproviderを推測せず、指定モデルを既定経路で扱えるか確認する。
 
-Kamuiの場合、ユーザー指定がなければ、モデルを指定せず実行する。現在の既定値はSeedance 2.0 Miniの最低解像度だが、必ず共通JSONカタログから動的に選択させる。`<skill>/scripts/generate.py`はKamui互換ラッパーで、内部では `../kamui-i2v-core/scripts/generate.py --mode loop` を実行する。
+Kamuiの場合、ユーザー指定がなければ、モデルを指定せず実行する。共通JSONカタログから動的に選択させ、モデル名をこの本文へ固定しない。`<skill>/scripts/generate.py`はKamui互換ラッパーで、内部では `../kamui-i2v-core/scripts/generate.py --mode loop` を実行する。
 
 ```bash
 python3 <skill>/scripts/generate.py INPUT_IMAGE \
@@ -66,7 +66,7 @@ python3 <skill>/scripts/generate.py INPUT_IMAGE \
 python3 <skill>/scripts/generate.py --list-models
 ```
 
-Magnificの場合は、`../magnific-i2v-core/references/models.json`と実際のUI表示を見てモデル、解像度、秒数、比率、消費表示を確認する。ユーザー指定がない限り、UIで確認できる最安・最低解像度を選ぶ。入力画像や終了画像の設定で比率がUI側に固定される場合は、実際の比率を記録して報告する。
+Magnificのモデル、秒数、解像度、比率、費用確認は専用coreのカタログと`--dry-run`を使う。UI経路を使う場合だけ画面の設定・消費表示を確認する。要求条件と許可済み費用に収まることを確かめ、高価なモデルや比較候補を無断追加しない。
 
 ### 3. プロンプトを作る
 
@@ -92,7 +92,7 @@ python3 <skill>/scripts/setup_mcp.py --project PROJECT_ROOT --model MODEL_SLUG
 
 詳細は [mcp-setup.md](../kamui-i2v-core/references/mcp-setup.md) を読む。
 
-Magnificの場合、MCP設定は不要。Browser skillを読み、[magnific-i2v-core](../magnific-i2v-core/SKILL.md) の手順でMagnificの動画生成UIを操作する。
+Magnificの場合、MCP設定は不要。専用coreのAPI経路、または条件に合うUI fallbackを使う。
 
 ### 5. 逐次生成する
 
@@ -111,7 +111,7 @@ Kamuiの場合、`generate.py`へ複数モデルを渡しても、内部では�
 
 課金前の計画確認には`--dry-run`を使う。
 
-Magnificの場合も1件ずつ実行する。ループ用途では開始画像と終了画像に同じ画像を入れるか、UIが終了画像を受け付けない場合はプロンプトで開始末尾の一致を強く指定する。完了後は詳細画面からMP4本体をダウンロードし、`ffprobe`で確認してから出力契約に合わせて保存する。
+Magnificも専用coreで1件ずつ実行・保存する。終了画像を扱えるAPIモデルまたはUIでは開始と終了に同じ画像を指定する。未対応の場合はプロンプトで一致を指定し、制御上の制限を記録する。出力を`ffprobe`とループ再生で確認する。
 
 ### 6. 検査する
 
@@ -170,7 +170,7 @@ Web配信用の後処理を行った場合だけ、タスク出力ディレク�
 ## 必要環境
 
 - Python 3.9以上。外部Pythonパッケージは不要。
-- Kamui Code Pass Key。
+- 選択providerの認証情報。KamuiならKamui Code Pass Key、Magnificなら専用coreの認証条件。
 - `ffmpeg`と`ffprobe`。無音化と検査に使う。
 - インターネット接続。
 

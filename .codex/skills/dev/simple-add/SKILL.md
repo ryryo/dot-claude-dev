@@ -1,11 +1,6 @@
 ---
 name: dev:simple-add
-description: |
-  Git commit automation for Codex. Use when the user asks for simple-add,
-  a lightweight commit, or committing the current work with an optional push.
-
-  Trigger:
-  simple-add, simple commit, 軽量コミット, 変更をコミット, コミットして, -p で push
+description: "現在の変更を軽量にコミットする。simple-add、コミット依頼、任意のpush指定に使う。"
 user-invocable: true
 ---
 

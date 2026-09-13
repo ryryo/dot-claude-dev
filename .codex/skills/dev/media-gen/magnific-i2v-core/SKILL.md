@@ -1,6 +1,6 @@
 ---
 name: magnific-i2v-core
-description: Magnific APIを使ってimage-to-video生成を行う共通手順。ユーザーがMagnific、Kling 3.0、Magnific APIでのi2v実行を明示したときに使用する。APIキー、開始画像アップロード、プロンプト投入、非同期ポーリング、MP4保存、技術検査までのprovider固有運用を定義する。APIが使えない場合だけMagnificブラウザUIをfallbackとして扱う。
+description: "Magnificでのi2v生成を明示された場合に、APIで生成・保存・検査する。APIで扱えない場合や画面操作の指定時はUIを使う。"
 ---
 
 # Magnific i2v共通基盤
@@ -64,11 +64,11 @@ PROJECT_ROOT/output/<task>/
 モデル一覧を表示する:
 
 ```bash
-python3 .codex/skills/dev/webgen/magnific-i2v-core/scripts/generate_api.py --list-models
+python3 .codex/skills/dev/media-gen/magnific-i2v-core/scripts/generate_api.py --list-models
 ```
 
 ```bash
-python3 .codex/skills/dev/webgen/magnific-i2v-core/scripts/generate_api.py \
+python3 .codex/skills/dev/media-gen/magnific-i2v-core/scripts/generate_api.py \
   PROJECT_ROOT TASK_NAME /abs/path/to/source-image.png \
   --prompt-file /abs/path/to/prompt.txt \
   --model magnific-kling-v3-omni-std \
@@ -105,6 +105,8 @@ python3 .codex/skills/dev/webgen/magnific-i2v-core/scripts/generate_api.py \
 - output_url
 - 出力パス
 
+送信後のtimeoutや状態不明で生成スクリプト全体を再実行すると、新規Jobを作る可能性がある。既知のtask_idをpoll endpointで確認し、既存Jobの保存・復旧を優先する。新規送信と課金が必要な再生成は、許可済み条件を確認してから行う。
+
 ### 5. 検査する
 
 MP4本体を技術検査する。共通検査スクリプトが使える場合は使ってよいが、用途固有の採否判断は呼び出し側スキルへ返す。
@@ -116,7 +118,7 @@ python3 <kamui-i2v-core>/scripts/inspect_videos.py PROJECT_ROOT/output/TASK_NAME
 確認する項目:
 
 - MP4本体である
-- 音声ストリームが0件
+- 無音指定なら音声ストリームが0件。音声指定がある場合は要求した音声の有無を確認する
 - 要求秒数に近い
 - 比率が意図と合う
 - 生成モデルが新しい文字、ロゴ、UI、デバイスを追加していない
@@ -125,9 +127,9 @@ python3 <kamui-i2v-core>/scripts/inspect_videos.py PROJECT_ROOT/output/TASK_NAME
 
 ## Browser UI fallback
 
-APIキーがない、APIアクセスが有効化されていない、API未対応のモデルやUI固有設定が必要、またはユーザーが明示的にMagnific画面での操作を求めた場合だけBrowser skillを読む。
+APIキーがない、APIアクセスが有効化されていない、API未対応のモデルやUI固有設定が必要、またはユーザーが明示的にMagnific画面での操作を求めた場合だけ、利用可能なブラウザツールと適用される操作スキルを使う。
 
-Browser skillに従い、既存タブがあればclaimし、なければ次を開く。
+ブラウザツールの現行手順に従い、既存の対象タブを取得するか次を開く。
 
 ```text
 https://www.magnific.com/jp/app/ai-video-generator

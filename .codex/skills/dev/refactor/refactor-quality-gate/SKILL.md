@@ -1,6 +1,6 @@
 ---
 name: refactor-quality-gate
-description: "製品挙動を変えない中〜大規模refactorで、scope固定、architecture／front-end専門スキルによる独立read-only監査、finding採否、goal freeze、依存順実装、性能確認、最終reviewを統合する。単一修正、機能追加、review-only、一般的hardeningには使わない。"
+description: "製品挙動を保つ中〜大規模リファクタで、独立した専門監査・実装・最終レビューを統合する。単一修正、機能追加、レビューのみには使わない。"
 ---
 
 # Refactor Quality Gate
@@ -88,7 +88,7 @@ main Codexは別にtest portfolioを確認する。削除／統合候補は、�
 
 ## 4. 依存順に実装する
 
-goalごとに必要なcharacterization testを先に置き、依存順に小さなbatchで実装する。main Codexはshared contract、state owner、resource lifecycle、routing、integration判断を持つ。別workerへ渡せるのは、判断が固定済みで独立し、write scopeが狭く、localで可逆、strong oracleがあるleafだけである。
+既存検証では守る挙動を観測できないgoalにだけcharacterization testを追加し、依存順に小さなbatchで実装する。main Codexはshared contract、state owner、resource lifecycle、routing、integration判断を持つ。別workerへ渡せるのは、判断が固定済みで独立し、write scopeが狭く、localで可逆、strong oracleがあるleafだけである。
 
 各batch後にmain Codexがdiff、write scope、behavior oracle、focused検証を確認する。これは実装上の安全確認であり、新しい監査や最終reviewではない。
 
@@ -102,7 +102,7 @@ render、context、canvas、list、scheduler、queue、serialization、resource 
 
 全goalの実装と必要な性能確認後、固定scope、全goal、実diff、維持するcontract、対象外、検証結果をfreshな別reviewerへ渡し、`review-gate`で全適用観点を一度にreviewする。
 
-`fix_here`は根本原因単位にまとめて修正し、既報findingと修正差分が届く観点だけを再reviewする。contract、surface、因果経路、観点集合が変わった場合は差分reviewを続けずscopeを再固定する。修正前からの見逃しが判明した場合は、同じ探索不足が残した候補を一度だけfreshな専門監査で回復確認する。再び見逃しが出たら自動loopせずHOLDする。
+`fix_here`は根本原因単位にまとめて修正し、既報findingと修正差分が届く観点だけを再reviewする。contract、surface、因果経路、観点集合が変わった場合は差分reviewを続けずscopeを再固定する。修正前からの見逃しが判明した場合は、同じ探索不足が残した候補を一度だけfreshな専門監査で回復確認する。再び見逃しが出たら原因と影響範囲を確認する。固定契約内で根拠と修正方法が揃う問題は修正・検証を続け、契約判断や取得不能な必須証拠が必要な場合だけHOLDする。新しい根拠なしに全面監査を繰り返さない。
 
 ## 完了条件
 

@@ -1,6 +1,6 @@
 ---
 name: generate-storyboard-rough
-description: 入力画像1枚を、動画のカメラ、構図、人物配置、ポーズ、主要な小物と背景面を保った白黒の構造ラフ絵コンテへ変換し、Codex ImageGenで実生成、目視確認、必要な修正まで行う。実写フレーム、動画から切り出した静止画、既存の完成画像から、白黒ラフ、絵コンテ、rough storyboard、rough name sketch、動画生成用の構図設計図を作るときに使う。
+description: "入力画像を、カメラ・構図・人物配置を保った白黒ラフ絵コンテへ変換する。動画制作の構図資料を画像から作る場合に使う。"
 ---
 
 # 白黒ラフ絵コンテ生成
@@ -35,7 +35,7 @@ description: 入力画像1枚を、動画のカメラ、構図、人物配置、
 
 ### 出力
 
-`imagegen-core`の規約で、採用画像を`output/<task>/<model>.<ext>`へ保存する。このスキルで組み込みCodex ImageGenの実行profileしか識別できない場合は、安定IDとして`image-generation-v1`を使い、`request.json`にも`execution_profile: "image-generation-v1"`を記録する。生成結果が実モデルIDを返す場合は、そのIDを優先する。
+採用画像とメタデータは`imagegen-core`の規約へ従う。実モデルIDが公開されない場合の実行profileと記録方法も、共通coreを正本とする。
 
 ## Workflow
 

@@ -1,6 +1,6 @@
 ---
 name: h3-cli-generation
-description: MiniMax H3のmanifest queueをBrowser操作なしで診断、事前検証、明示承認後の逐次生成、endpoint・worker監視、output保存、動画検査、再開、取消、warm終了までCLIで安全に実行する。openreel-storyboardでH3動画を生成する、複数manifestを流す、既存runをresume/status/cancelする、GPU割り当てやCLI生成障害を復旧する依頼に使う。
+description: "openreel-storyboardのMiniMax H3 queueをCLIで検証・生成・監視・復旧する。既存runのstatus、resume、cancelにも使う。"
 ---
 
 # MiniMax H3 CLI Generation
@@ -11,7 +11,7 @@ description: MiniMax H3のmanifest queueをBrowser操作なしで診断、事前
 
 1. repositoryへ移動し、`pnpm h3 doctor`を実行する。gateway、Cloudflare認証、warm管理、`output/`、ffprobe、ffmpegの結果を確認する。続けて`pnpm h3 warm status --runtime <runtime>`でendpoint `min/max`、worker数、Job数、準備stage、無進展時間、再配置回数を確認する。これらは生成Jobを作らない。
 2. `pnpm h3 validate --queue <absolute-or-repository-relative-path>`を実行する。順序、runtime、mode、比率、尺、profile、seed、参照数、保存先をユーザー依頼と照合する。これは生成Jobを作らない。
-3. 課金前に、対象queue、Job数、runtime、profile、尺、保存先、分かる範囲の最大費用をユーザーへ提示する。対象と条件を含む明示承認がなければ止める。
+3. 課金前に、対象queue、Job数、runtime、profile、尺、保存先、分かる範囲の最大費用をユーザーへ提示する。対象と条件を含む明示承認がなければ止める。同じqueueと条件への承認が会話内に既にあれば再確認せず進む。
 4. 承認済みの場合だけ`pnpm h3 run --queue <path> --yes`を実行する。CLIを終了せず、warm準備、Job ID、進捗、保存、H.264／解像度／尺／全frame decode、warm終了まで監視する。
 5. 完了した各MP4の絶対pathを随時報告する。全件完了時はrun stateとwarm `off`を確認する。
 

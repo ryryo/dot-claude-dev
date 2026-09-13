@@ -1,6 +1,6 @@
 ---
 name: kamui-i2v-core
-description: Kamui MCPの画像から動画生成に使う共通実行基盤。Kamui CodeパスキーでMCP設定をマージし、models.jsonからi2vモデルを選択し、submit/status/resultを逐次実行し、動画ダウンロード、音声除去、再開、検査、比較HTML作成を行う。Webループ動画、人物メッセージ動画、その他Kamui MCP i2vスキルが共通処理を必要とするときに使用する。
+description: "Kamui MCPでのi2v生成に共通するモデル選択・逐次実行・再開・保存・検査を行う。用途別i2vスキルの実行基盤として使う。"
 ---
 
 # Kamui i2v共通基盤
@@ -105,7 +105,7 @@ MCP設定の挙動を変更する前に[mcp-setup.md](references/mcp-setup.md)�
 上位のi2vスキルでは、この`SKILL.md`を読んだうえで、このスキルのスクリプトを直接実行する:
 
 ```bash
-python3 .codex/skills/dev/webgen/kamui-i2v-core/scripts/generate.py ...
+python3 .codex/skills/dev/media-gen/kamui-i2v-core/scripts/generate.py ...
 ```
 
 後方互換のコマンドが必要な場合は、呼び出し側スキルに薄いラッパーだけを残し、`../kamui-i2v-core/scripts/<script>.py`を解決して引数を転送する。モデルカタログ、MCP設定コード、ポーリング処理、検査コード、比較テンプレートを呼び出し側スキルへコピーしない。

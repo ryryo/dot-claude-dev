@@ -1,6 +1,6 @@
 ---
 name: imagegen-core
-description: Image Genツールを使う画像生成スキルの共通実行規約。生成前のtaskとmodel決定、output配下への採用画像保存、候補画像、prompt/request/reviewメタデータ、目視確認、採用画像の扱いを統一する。generate-t2i系スキルやその他Image Gen前提のスキルが共通出力契約を必要とするときに使用する。
+description: "Image Genを使う用途別スキルから、採用画像・候補・生成メタデータの共通保存契約が必要なときに読む。"
 ---
 
 # Image Gen Core
@@ -21,7 +21,7 @@ Image Genそのものの共通契約だけを扱う。用途固有の構図、�
 ## Naming
 
 - `<task>`: 今回の目的を表す小文字英数字とハイフンの名前。80文字以内を目安にする。
-- `<model>`: 実際に使う画像生成モデルの安定したfilesystem-safeなID。生成前に決め、`unknown`や`imagegen`で代用しない。
+- `<model>`: 実モデルIDを確認できる場合は、そのfilesystem-safeなIDを使う。組み込みImage Genが実モデルIDを公開しない場合は、保存用の実行profile IDとして`image-generation-v1`を使う。内部モデル名を推測したり、その確認だけで生成を止めたりしない。
 - `<ext>`: 実際の画像形式。PNGで保存できる場合はPNGを優先する。
 
 ## Output Contract
@@ -44,7 +44,7 @@ output/<task>/
 
 `prompt.txt`には最終生成プロンプトを保存する。
 
-`request.json`には少なくとも次を保存する。
+`request.json`には少なくとも次を保存する。実行profileで保存した場合は`execution_profile: "image-generation-v1"`と`model: null`を記録し、profileを実モデル名として報告しない。生成結果で実モデルIDが確認できた場合は、その値を記録する。
 
 ```json
 {

@@ -1,6 +1,6 @@
 ---
 name: h3-reel-ad-prompt-writing
-description: 粗い商品・サービス・店舗情報と人物、商品、店舗などの参照素材から、MiniMax H3向け縦型リール広告の企画、Aロール／Bロール構成、T2VA・I2VA・FL2VA・L2VA・Ref2VAプロンプト、15秒超のedited・AV latent continuous・hybrid長尺方式、編集テロップ、音声設計、結合指示を作成または監査する。ECの商品販売、サロン・飲食・小売・教室などの予約・来店・問い合わせ広告、UGC風広告、商品実演、体験レポート、募集・限定告知に使う。細かな絵コンテではなく、ざっくりした入力から広告構成も考える必要があるときに使う。動画生成の実行や広告配信には使わない。
+description: "商品・店舗情報と参照素材から、MiniMax H3用の縦型リール広告を企画し、生成プロンプトと編集設計を作成・監査する。生成や広告配信は行わない。"
 ---
 
 # MiniMax H3 リール広告プロンプト
@@ -9,16 +9,13 @@ description: 粗い商品・サービス・店舗情報と人物、商品、店�
 
 ## 必ず読む資料
 
-作業前に次を読む。
+作業段階に応じて必要な資料を読む。同じモード・契約の資料を読み直す必要はない。
 
-1. `../h3-prompt-writing/SKILL.md`
-2. 選んだH3モードに対応する `../h3-prompt-writing/references/base-en.txt` または `../h3-prompt-writing/references/ref-en.txt`
-3. `../h3-motion-graphics-prompt-writing/SKILL.md`
-4. `../h3-motion-graphics-prompt-writing/references/motion-graphics-core.md`
-5. `references/reel-ad-core.md`
-6. `references/reel-creative-patterns.md`
-7. `references/h3-reel-assembly.md`
-8. `references/reel-ad-audit.md`
+- 企画とAロール／Bロール構成を決める: `references/reel-ad-core.md` と `references/reel-creative-patterns.md`。
+- H3本文を書く: `../h3-prompt-writing/SKILL.md` と、選んだモードの `base-en.txt` または `ref-en.txt`。
+- 複数生成単位を結合する、または編集レイヤーを設計する: `references/h3-reel-assembly.md`。
+- H3内で文字・図形の動きを生成する: `../h3-motion-graphics-prompt-writing/SKILL.md` と、その案内先の共通文法・該当作風。会話字幕を後編集へ出すだけなら不要。
+- 完成案の監査: `references/reel-ad-audit.md` の適用項目。
 
 `long_form_strategy` が `continuous` または `hybrid` の場合だけ `references/h3-latent-continuation.md` を追加で読む。
 

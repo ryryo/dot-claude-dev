@@ -1,11 +1,6 @@
 ---
 name: dev:codex-worktree-env-create
-description: |
-  Codex AppのWorktreeモード用にrepositoryを調査し、tracked
-  `.codex/environments/environment.toml`、setup／Actions、project skillを
-  作成・修復・実Worktree検証する。Worktree setup、local environment、並行Dev、
-  runtime／port／DB／storage分離、`.worktreeinclude`、shared symlink、依存導入、
-  stale claim、Cleanup安全性の改善を依頼されたときに使用する。
+description: "Codex AppのWorktree用local environmentを作成・修復し、setup、Actions、並行実行時の状態分離を実Worktreeで検証する。"
 ---
 
 # codex-worktree-env-create

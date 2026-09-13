@@ -1,6 +1,6 @@
 ---
 name: generate-i2v-character-message
-description: 生成済みの人物メッセージ静止画を、Web掲載用の固定カメラ短尺image-to-videoメッセージ動画として生成する。既定ではKamui MCPを使い、MCP設定、入力画像準備、逐次モデル実行、無音化、品質検査、比較HTML、任意の日本語テロップ焼き込みまで行う。ユーザーがMagnific、Kling 3.0 Omni、このサイトで動画生成、Magnific画面での実行を明示した場合はmagnific-i2v-coreを併用してブラウザUIで実行する。人物が商品や資料を見せる動画、うなずき、まばたき、サムズアップ、CTA付近の短尺人物動画、SeedanceやKlingなど複数i2vモデル比較に使用する。動画化する元画像がない場合はgenerate-t2i-web-character-messageを先に使用する。
+description: "人物静止画から、固定カメラの短尺・無音メッセージ動画を生成・検査する。既定はKamui、Magnific指定時は専用coreを使う。"
 ---
 
 # 人物メッセージi2v動画生成
@@ -17,9 +17,9 @@ description: 生成済みの人物メッセージ静止画を、Web掲載用の�
 - Kamuiでユーザーがモデルを指定しない場合は、`../kamui-i2v-core/references/models.json`で有効なモデルのうち推定単価が最も安い最低解像度のモデルを1件だけ選ぶ。
 - 高価なモデルや複数モデルを、ユーザーの指定なしに追加実行しない。
 
-Kamui MCPのモデル選択、MCP設定、逐次生成、再開、音声除去、検査、比較HTML、基本出力契約は [kamui-i2v-core](../kamui-i2v-core/SKILL.md) を読む。モデル名、MCP URL、ツール名、価格、解像度は [models.json](../kamui-i2v-core/references/models.json) だけで管理する。モデル更新時にこのスキルのスクリプトへ値を直接追加しない。
+Kamuiを使う場合、モデル選択、MCP設定、逐次生成、再開、音声除去、検査、比較HTML、基本出力契約は [kamui-i2v-core](../kamui-i2v-core/SKILL.md) を読む。モデル名、MCP URL、ツール名、価格、解像度は [models.json](../kamui-i2v-core/references/models.json) だけで管理する。モデル更新時にこのスキルのスクリプトへ値を直接追加しない。
 
-Magnificを使う場合は [magnific-i2v-core](../magnific-i2v-core/SKILL.md) を読み、Browser skillでMagnificの動画生成UIを操作する。MagnificはブラウザUI依存なので、`scripts/generate.py`へ無理に渡さない。
+Magnificを使う場合だけ [magnific-i2v-core](../magnific-i2v-core/SKILL.md) を読み、専用のAPIスクリプトで実行する。APIで扱えない条件や明示された画面操作はcoreのUI fallbackに従う。Kamui用`scripts/generate.py`へMagnificを渡さない。
 
 ## 実行手順
 
@@ -50,7 +50,7 @@ python3 <skill>/scripts/prepare_source.py INPUT_IMAGE \
 まずproviderを決める。
 
 - 指定なし: Kamui MCP。
-- `Magnific`、`Kling 3.0 Omni`、`このサイトで動画生成`などの指定あり: Magnific。
+- `Magnific`の明示指定、または選択されたサイトがMagnificであることを確認できる場合: Magnific。モデル名だけでproviderを推測せず、指定モデルを既定経路で扱えるか確認する。
 
 Kamuiの場合、ユーザー指定がなければモデルを指定せず実行する。既定では共通カタログ上の最安モデルが選ばれる。`<skill>/scripts/generate.py`はKamui互換ラッパーで、内部では `../kamui-i2v-core/scripts/generate.py --mode message` を実行する。
 
@@ -80,9 +80,9 @@ python3 <skill>/scripts/generate.py SOURCE_IMAGE \
 python3 <skill>/scripts/generate.py --list-models
 ```
 
-人物写真風の入力ではSeedance系が肖像・私的情報検証で拒否される場合がある。`content_policy_violation`や`partner_validation_failed`が出た場合は同じ入力でSeedance系へ再送せず、共通カタログ上のKling O3 StandardまたはKling V3 Standardへ切り替える。
+providerの拒否や入力検証エラーでは、返された理由を確認して入力・要件の修正可否を判断する。拒否を回避するために別モデルへ自動再送しない。通常の技術障害で代替モデルが必要な場合も、許可済みのモデル・費用範囲を維持する。
 
-Magnificの場合は、`../magnific-i2v-core/references/models.json`と実際のUI表示を見てモデル、解像度、秒数、比率、消費表示を確認する。ユーザー指定がない限り、UIで確認できる最安・最低解像度を選ぶ。今回のように開始画像を設定すると比率が入力画像へ固定される場合があるため、実際の比率を記録して報告する。
+Magnificのモデル、秒数、解像度、比率、費用確認は専用coreのカタログと`--dry-run`を使う。UI経路を使う場合だけ画面の設定・消費表示を確認する。要求条件と許可済み費用に収まることを確かめ、高価なモデルや比較候補を無断追加しない。
 
 ### 4. プロンプトを作る
 
@@ -106,7 +106,7 @@ Kamuiの場合、MCP設定は [kamui-i2v-core](../kamui-i2v-core/SKILL.md) の�
 
 課金前の計画確認には`--dry-run`を使う。
 
-Magnificの場合、[magnific-i2v-core](../magnific-i2v-core/SKILL.md) の手順でBrowserから実行する。開始画像スロットへ反映されたこと、生成ボタンが有効なこと、詳細画面からMP4本体をダウンロードしたことを確認する。カード一覧のダウンロードはサムネイル画像を落とすことがあるため、必ず`ffprobe`でMP4本体を検証する。
+Magnificの場合は専用coreのAPI手順で実行する。UI fallbackを使う場合だけ、開始画像の反映、生成設定、詳細画面からのMP4取得を確認する。どちらの経路でも`ffprobe`でMP4本体を検証する。
 
 ### 6. 検査する
 
@@ -162,7 +162,7 @@ python3 <skill>/scripts/burn_telop.py output/TASK_NAME/MODEL.mp4 \
 ## 必要環境
 
 - Python 3.9以上。外部Pythonパッケージは不要。
-- Kamui Code Pass Key。
+- 選択providerの認証情報。KamuiならKamui Code Pass Key、Magnificなら専用coreの認証条件。
 - `ffmpeg`と`ffprobe`。画像準備、無音化、検査、テロップ焼き込みに使う。
 - インターネット接続。
 

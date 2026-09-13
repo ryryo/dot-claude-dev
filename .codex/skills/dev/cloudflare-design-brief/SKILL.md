@@ -1,6 +1,6 @@
 ---
 name: cloudflare-design-brief
-description: Cloudflare ベースの新規アプリ設計、または既存アプリを Cloudflare 構成へ大きく移行する前に、短い設計メモを作る。Workers、Agents SDK、Durable Objects、D1、KV、R2、Wrangler、Workers 上の Hono などの構成判断を実装前に整理するときに使う。通常の Cloudflare コード修正だけなら、公式 Cloudflare 実装系 skill を使う。
+description: "Cloudflareでの新規アプリ設計や大規模移行に先立ち、構成の選定理由と制約を短い設計メモにまとめる。通常のコード修正には使わない。"
 ---
 
 # Cloudflare 設計メモ
@@ -11,7 +11,7 @@ description: Cloudflare ベースの新規アプリ設計、または既存ア�
 
 1. 依頼内容とリポジトリ文脈から、対象が Cloudflare ベースの新規アプリ、または Cloudflare への大きな移行か確認する。通常の Cloudflare 実装修正だけなら、該当する Cloudflare 実装系 skill を使う。
 2. アーキテクチャを提案する前に、必ず `https://skills.yusuke.run/start.md` を読む。
-3. `start.md` を yusukebe skill catalog の正とする。ローカルに固定した skill 名リストへ置き換えず、その時点の `start.md` に列挙された skill リンクをすべて読む。各 skill 内で設計判断に影響する公式 docs、関連 skill、canonical repo への誘導があれば、それも辿って確認する。
+3. `start.md` を yusukebe skill catalog の正とする。ローカルに固定した skill 名リストへ置き換えず、その説明から今回の構成判断に必要な skill だけを選んで読む。公式 docs、関連 skill、canonical repo は、選定理由や制約を確認するために必要な参照だけを辿る。catalogを取得できない場合は未確認と明記し、利用可能な公式資料で根拠を確認できる設計を進める。
 4. 読んだ yusukebe skill のうち、今回の Cloudflare 設計に関係するものだけを設計メモへ反映する。関係しないものは判断材料に含めない。
 5. Cloudflare 固有の判断では、公式のローカル skill を優先して読む。
    - `cloudflare`: 製品選定とプラットフォーム横断のトレードオフ。

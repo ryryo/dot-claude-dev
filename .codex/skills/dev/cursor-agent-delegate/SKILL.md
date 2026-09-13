@@ -1,7 +1,6 @@
 ---
 name: cursor-agent-delegate
-description: |
-  事前設計が必要な中〜大規模作業についてrepositoryを調査し、依存関係・設計境界・複雑さ・判断の確定度・実装の独立性・副作用・検証oracle・実行主体・UI/UX契約・統合順・完了条件を持つsingle-md計画を `docs/PLAN/{YYMMDD}_{slug}.md` に作成して実行する。fixedまたはboundedな判断、独立した実装、排他的write scope、再現可能なoracle、可逆な副作用を備えた実装をheadless Cursor CLIへ委任する。Codex subagentは独立した調査・比較・監査・障害分析・レビューに限定する。Trigger: cursor-agent-delegate、Cursorで計画、worker委任計画、依存関係やUI受け入れを設計して実装
+description: "事前設計が必要な複数段階のCursor委任作業で、依存関係・担当・検収条件を持つ永続PLANを作成・実行する。"
 ---
 
 # cursor-agent-delegate
@@ -10,7 +9,9 @@ main Codexが計画、設計判断、worker選定、進捗管理、統合、最�
 
 ## 適用範囲
 
-複数moduleやstageが絡み、実装前に依存関係、shared contract、統合順を固定する必要がある作業に使う。短期の局所作業には`cursor-agent-sprint-cli`、owner/modelやtask graphまで不要な永続チェックリストには`simple-plan`を使う。
+複数moduleやstageが絡み、実装前に依存関係、shared contract、統合順を固定する必要がある作業に使う。短期の局所作業には`cursor-agent-sprint-cli`、owner/modelやtask graphまで不要な永続チェックリストは、プロジェクトの既存計画形式で扱う。
+
+計画作成だけの依頼では、実行前レビューで計画の整合を確認して終了する。実装・実行まで依頼されている場合は、計画を作っただけで止めず、検収・統合まで進める。
 
 ## 参照先
 
@@ -52,30 +53,11 @@ auth、secret、crypto、crash/retry/lease、外部providerなどのrisk modifie
 
 ## UI / UX契約
 
-まずplanの`Planning policy`で`UI / UX contract`を`required`か`not_applicable`に判定する。UI変更が1つも無いplanは`not_applicable`とし、以下と[ui-contract.md](references/ui-contract.md)を適用しない。planのUI節も削除する。
+UI影響を`Planning policy`で`required`または`not_applicable`にする。UI変更がなければUI節を削除し、詳細を読まない。
 
-`required`の場合、UI品質を任意の記述欄に置かない。**任意欄は実行圧力で落ちる。** 実際に、旧構成で作られた30 taskのplanでは`- UI / UX:`欄の残存が0/30だった一方、workerの起動に必須な欄（Write scope、Forbidden、Verificationなど）は30/30残った。したがってUI規約は次の3箇所だけへ載せる。
+`required`なら[UI契約](references/ui-contract.md)を読み、main所有の`UI-F → surface実装 → UI-I`をtask graphへ組み込む。UI-Fでcomponent、token、共通surface owner、label、i18n、layoutと検証commandを具体化し、固定blockをworker契約へ転記する。UI-Iは横断の見た目・操作・同時表示・対応環境を検収する。
 
-1. **task graph上のgate task**（Status boardに出るため省略できない）
-2. **task contractの`Forbidden`**（worker promptへ必ず転記される）
-3. **task contractの`Worker verification` / `Main verification`**（実行可能なcommandとして残る）
-
-`Read scope`へdesign systemのpathを入れても義務にはならない。読んでよい、と読み替えられる。
-
-UI実装taskが1つでもあるplanは、次の3段をtask graphへ必ず入れる。詳細と各gateの中身は[ui-contract.md](references/ui-contract.md)に従う。
-
-```
-UI-F (UI Foundation Gate, main所有)
-  └─> 各UI実装task (surface)
-        └─> UI-I (UI Design Integration Gate, main所有)
-```
-
-- **UI-F**は全UI実装taskの前段。component mapping、token allowlist、共通surfaceのowner、label方針、i18n方針、layout/theme/density、そして**repository固有のstatic scan command**を具体値で確定し、planの`## UI foundation`節へ書き切る。これが未完了のUI実装taskを起動しない。
-- **各UI実装task**は、ui-contract.mdの固定blockを`Forbidden`と`Worker verification`へliteralで転記する。要約・言い換えをしない。
-- **UI-I**は全UI実装taskの後段。surfaceを個別に見るのではなく、**全surfaceを1つの比較表へ並置して差分を見る**。同一意味のaction・error・success・loading・empty・disabled・承認surface・密度・配置が一致するかを横断で確認する。目視の前にUI-Fが定めたstatic scanを変更範囲全体へ再実行する。
-- UI-Iは`deferred`にできない。`done`か`blocked`のみ。検出済みの違反を後追いtaskへ移してplanを`done`にしない。
-
-UI-FとUI-Iはmain所有で、Cursorにもsubagentにも委任しない。Cursorへ委任できるのはUI-Fが値を確定した後、product判断を増やさず独立したwrite scopeとvisual/behavior oracleを持つsurface実装である。subagentはUI調査、比較、audit、独立レビューのread-onlyに限る。参照UIがある場合、参照traceは`## Reference UI trace`へ分けて書き、`## UI foundation`のdesign system規約を置き換えない。viewport、theme、evidence形式はrepository固有の要件を優先する。
+UI-FとUI-Iは委譲せず、検出済み違反を後追いtaskへ移して完了にしない。Cursorへ渡せるのは、UI-F完了後の判断を増やさない独立surface実装だけである。参照UIのtraceとdesign system契約は区別する。
 
 ## 実行フロー
 
