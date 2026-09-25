@@ -1,0 +1,4 @@
+interface:
+  display_name: "カンプから素材・レスポンシブ実装"
+  short_description: "カンプの素材を分解・生成し、レスポンシブ実装と実画面検証まで進める"
+  default_prompt: "$ui-mock-to-responsive を使って、このカンプに必要な素材を作成し、既存アプリへレスポンシブ実装してください。"
