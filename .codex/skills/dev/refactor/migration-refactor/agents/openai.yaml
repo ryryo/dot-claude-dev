@@ -1,0 +1,4 @@
+interface:
+  display_name: "リファクタリングを先に設計する移植"
+  short_description: "移植前に構造を設計し、機能・UI・保存・復旧の欠落を防ぐ"
+  default_prompt: "$migration-refactor を使って、指定範囲の既存動作と構造を調べ、データ・処理・状態・責務の全体構成を実装前に再設計してから、移植・リファクタリング・検証を完了してください。"
