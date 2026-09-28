@@ -1,0 +1,4 @@
+interface:
+  display_name: "セミナー動画の分析・資料化"
+  short_description: "動画をローカル文字起こしし、内容を画像・動画付きの学習資料に整理する"
+  default_prompt: "$analyze-seminar-video を使って、この動画の内容を分析し、必要な画像と動画を切り抜いた資料を作ってください。"
