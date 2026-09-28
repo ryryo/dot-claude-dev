@@ -1,92 +1,60 @@
-# Luna Sprint task contract
+# Lunaチャットの依頼と報告
 
-## Routing registry
+判断境界は[共通作業契約](../../codex-luna-task-split/references/luna-work-contract.md)、チャット操作は[codex-luna-task-split](../../codex-luna-task-split/SKILL.md)を使う。ここは受け渡しの雛形であり、Astraが新しい詳細設計書を作るための項目表ではない。
 
-全taskを`main-codex`で登録し、Product frameとImplementation planがともに`confirmed`の場合だけLuna routingを検討する。
+## 起動メッセージ
+
+- 原依頼の必要部分を引用するか、既存Story／PLANの絶対パス・該当節を渡す。目的・受入条件・製品契約を別欄へ書き直さない。完了条件を元の依頼から読み取れない場合だけ、期待する挙動を短く補う。
+- Astraが決めるのは任せる成果と排他的な担当境界。編集範囲は担当ディレクトリ・責務で指定でき、変更ファイルや実装手順の事前列挙は不要。調査・局所設計・検証方法はLunaが決める。
+- 補足は引き継がないと失われる事実だけにする。既知の再現条件、他担当との境界、保護すべき差分、依存、今回固有の制約など、あるものだけを渡す。欄を埋めるための追加調査や新しい設計・テスト一覧を作らない。
+- 作業ID、workspace、指示元ID・host、共通契約パスは確認した値を転記する。既存台帳のIDを優先し、依頼回は初回1、具体的な修正・再開ごとに増やす。許可記録は実際の利用者の明示依頼を根拠にし、下記の文で許可を捏造しない。
 
 ```text
-Task ID:
-Owner: main-codex | luna_sprint_worker
-State: not_started | running | worker_done | accepted | corrected-by-main | rejected | blocked
-Goal:
-Main-owned story/UX trace (registry only; workerへ解釈させない):
-Input provenance:
-Dependencies:
-Source of truth:
-Fixed decisions:
-Forbidden decisions:
-Plan invalidation conditions:
-Decision state: fixed | bounded | unresolved
-Independence: independent | staged | coupled
-Side effect: local_reversible | shared_reversible | external_or_irreversible
-Verification oracle: strong | partial | weak
-Read scope:
-Exclusive write scope:
-Conflicts:
-Positive cases:
-Negative cases:
-Worker verification:
-Main verification:
-Delegation benefit:
-Mechanical rejection oracle:
-Acceptance:
+作業: <ID> / 依頼回: 1
+依頼: <原依頼の該当部分、または正本の絶対パスと該当節>
+編集範囲: <担当するディレクトリ・責務。範囲内の新規ファイルも可>
+補足: <引き継ぐ必要のある事実・制約だけ。不要なら行ごと省略>
+workspace: <指示元と同じ実体の絶対パス>
+報告先: <指示元の正式thread ID / host>
+共通作業契約: <実在する絶対パス>/luna-work-contract.md
+利用者の許可: <実際の明示的なスキル呼出し・委譲依頼の短い引用または要約>。
+許可範囲は本作業のLunaチャット作成と指示元との依頼・判断の差し戻し・完了報告・修正依頼です。
+
+共通作業契約を読み、担当範囲の調査・局所設計・実装・検証・失敗修正まで進めてください。
+作業終了または判断待ちになったら、同契約に従い上記の報告先へsend_message_to_threadで報告してください。
 ```
 
-Lunaへ委譲できるDecision stateは`fixed`だけとする。`bounded`または`unresolved`を含むtask、`coupled`、未完了の`staged`、`shared_reversible`／`external_or_irreversible`、`partial`／`weak`を含むtask、user story、UX、UI、文言、accessibility、product/schema/API contract、mutation、状態遷移の判断を含むtask、またはreview負担が実装以上のtaskは委任しない。固定済みAPI adapterは、HTTP method/path、request/response schemaとfield mapping、validation/coercion、auth/authorization/ownership（不要ならmainが`N/A`と明記）、success status、error algebra/body、idempotency、mutation/side-effect semanticsのすべてをmainが完全指定し、workerに残る作業が機械的写像だけの場合に限り候補とする。
+例えば「再読み込みすると選択中のTakeが外れる。選択を維持してほしい」という原依頼と担当範囲だけで、原因が不明の修正を渡せる。合意済みUIも該当仕様への参照で渡せ、component分割・イベント処理・全テストケースの事前設計は要らない。製品挙動そのものが未決なら、その判断だけAstraが持つ。
 
-worker自身の禁止範囲は固定contractでも解除しない。利用可能な`luna_sprint_worker`がない場合はmain-onlyとする。
+## 担当記録
 
-## Worker prompt
+通常は会話と作成先チャットを記録にする。Sprintは`tasks.md`に作業ID、担当境界・依存、Lunaの正式ID・host・返されたタイトル、依頼回・状態、依頼と検収への参照だけを残す。目的・受入条件・既知の事実は起動メッセージや既存正本を参照し、二重記入しない。
 
-実際にLunaへ委譲する場合だけ使う。
+状態は`not_started → starting → running → review_ready → accepted`を基本に、`rework`、`blocked`、`corrected-by-main`、`rejected`を必要時だけ使う。作成保留中は正式IDを空け、`clientThreadId`を区別して控える。別に正本の進捗台帳があれば重複させない。
+
+## Lunaからの報告
+
+`send_message_to_thread`で起動メッセージの報告先ID・hostへ送る。指示元のmodel／thinkingは上書きしない。検収に必要な結果と根拠を渡し、探索履歴・全ログは送らない。重要な判断や判断待ちの欄は該当時だけ使う。
 
 ```text
-Task Summary:
-T20 - <一つの完全固定済み成果物>
+Luna報告: <作業ID> / 依頼回: <回数> / review_ready または blocked
+送信元: codex://threads/<自分の正式thread ID> / workspace: <実際の絶対パス>
+成果: <変更要約・変更ファイル。重要な判断があれば理由も短く>
+検証: <実行コマンド・結果・対象環境。詳細証拠はパスで参照>
+未確認・判断待ち: <未確認事項。判断が必要なら事実・影響・推奨案>
+編集状態: <終了／判断に依存する編集を停止>
 
-あなたはluna_sprint_workerです。確定済みleafを実装し、product・architecture判断はしません。
+元の委譲依頼に基づき、検収または必要な判断をお願いします。
+具体的な修正・再開指示が必要なら、この送信元チャットへまとめて返してください。
+```
 
-Workspace:
-<absolute path>
+## 修正依頼
 
-Task ID:
-T20
+同じLunaチャットID・hostへ`send_message_to_thread`で送り、`model: "gpt-6-luna"`、`thinking: "max"`を明示する。元の依頼を再作成せず、指摘と変わった条件だけを渡す。単なる受領・採用通知には返信を求めない。
 
-Source of truth — read first:
-- <absolute path and section>
-
-Fixed contract:
-- <function signature, I/O, error algebra, exact behavior table>
-
-Forbidden decisions:
-- user story、UX、UI、文言、accessibility、domain/API/schema contract、mutation、state transitionを判断・補完・推測・変更しない
-- user-facing componentを新設・編集しない
-- 未指定のfallback、default、汎用化を追加しない
-
-Positive cases:
-- <normal case>
-
-Negative cases:
-- <malformed, boundary, overflow, conflict等の機械的case>
-
-Write scope:
-- Allowed: <exclusive paths>
-- Forbidden: docs/PLAN/**, .codex/skills/**, lockfiles, allowed scope外
-
-Stop without changes when:
-- source間の矛盾、未解決判断、scope競合、外部副作用、UI/UX/API判断が必要
-
-Constraints:
-- version control、remote、計画更新、再委任の操作をしない。
-- 無関係な差分を戻さない。
-- TDD、YAGNI、behavior testを守る。
-
-Verification:
-- Run: <focused command>
-
-Final report:
-- TASK_ID
-- 変更fileと要約
-- verification command/result
-- 未解決事項とmainへ残した作業
+```text
+Luna修正・再開: <同じ作業ID> / 依頼回: <前回+1>
+修正点・判断への回答: <不足している挙動と根拠をまとめる>
+前回からの条件変更: <担当範囲・正本等が変わった場合だけ>
+元の依頼と共通作業契約に従って修正・検証し、今回の依頼回で同じ指示元へ報告してください。
 ```

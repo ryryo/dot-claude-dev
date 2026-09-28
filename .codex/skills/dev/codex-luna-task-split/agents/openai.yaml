@@ -1,6 +1,6 @@
 interface:
   display_name: "Codex Luna Task Split"
-  short_description: "Astra／Solの判断とLunaの固定leaf実行を分担"
-  default_prompt: "Use $codex-luna-task-split to split mixed work by decision state, independence, side effects, verification strength, and review benefit without creating Sprint artifacts."
+  short_description: "Astraから独立Lunaチャットへ調査・実装・検証を委譲"
+  default_prompt: "Use $codex-luna-task-split to create GPT-6 Luna max task chats for bounded outcomes, receive reports in this chat, and review or request corrections without adding Sprint artifacts."
 policy:
   allow_implicit_invocation: true

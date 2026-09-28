@@ -1,64 +1,33 @@
-# Main review contract
+# Astraの検収契約
 
-各段階で必要な節だけ読む。既存レビューの再利用は[SKILL.md](../SKILL.md)の「適用と正本」に従い、正本、対象成果、判定質問、証拠、役割分離の対応を確認する。再利用できない不足や変更だけをレビューする。
+通常の分担とSprintで共用する。Lunaの報告は主張として扱い、実差分と受入条件で採否を判断する。Astraが設計・実装を最初からやり直す工程にはしない。
 
-## 1. Product frame review
+## 報告の受領
 
-Product frameを実装案から独立して検査する。
-このreviewのownerと最終採否判断者はmainである。補助調査のsubagentには正本探索と事実収集を依頼する。適用先やdevelop-user-storyが要求する独立reviewerは契約の成立を検査し、mainが指摘の採否と修正を判断する。StoryやUXの設計責任をworkerへ移さない。
+- 元の依頼と作業ID・依頼回・送信元チャット・workspaceを照合する。古い依頼回や既に処理した報告で、修正依頼・進捗更新を重複させない。
+- `review_ready`は検収待ち。Lunaの編集終了を確認し、同じファイルを編集中なら検収中の追加編集を調整する。
+- `blocked`なら事実・影響・推奨案から必要な判断だけを行い、同じLunaチャットへ回答する。無関係な新taskを起動しない。
+- 中断や未報告を完了とみなさない。必要時は`wait_threads`の状態や限定した`read_thread`で確認し、履歴全体や全ログを毎回読み込まない。
 
-| 観点 | 必須確認 |
-| --- | --- |
-| Source precedence | 最新要求、foundational workflow、user story、UX、計画、Lab/fixtureの関係と矛盾が解決済み |
-| Normal journey | 利用者、開始状態、上流入力、判断、完了状態が一続き |
-| Provenance | 上流で確定した値を再入力・複製・黙った既定値で置換しない |
-| Path class | normal、optional、fallback、technical substrate、Lab-onlyを混同しない |
-| Human decision | import、生成成功、selection、approvalが必要な箇所で分離される |
-| Recovery | failure、cancel、reload、staleで既存成果を失わず復帰できる |
+## 実差分と証拠を確認する
 
-normalと、契約に存在するexception、recoveryの代表scenarioで反証する。表の観点も適用するものだけを確認し、存在しない承認・永続状態・復旧機能を要求しない。未解決decision、source矛盾、通常導線の欠落があれば`draft`を維持する。
+1. 作業開始時の既存差分を基準に、変更ファイル、scope、重要な実差分を確認する。`git diff`全体をLunaの成果と決めつけず、他担当の変更と区別する。
+2. 原依頼・既存正本の完了条件、利用側との境界、回帰しやすい経路を照合する。検収のためだけに別の受入条件表を作らない。UIや状態処理を含むこと自体は棄却理由にしない。
+3. Lunaの検証コマンド・結果・対象環境と実差分が対応するかを確認する。必要な証拠を見て、報告だけで合格にしない。差分変更後の古い結果、確認不能な結果、mockだけでは保証できない実動作は再利用しない。
+4. 再利用できる検証は繰り返さず、不足・疑義・統合・重要な失敗条件だけを追加確認する。全テスト再実行やtaskごとの追加negative caseを一律必須にしない。
 
-## 2. Implementation plan review
+適用先のCIや独立Gateが明示的に要求する検証は守る。新しい変更・失敗・未確認事項がなければ同じ検収を反復しない。
 
-- 各schema field、API mutation、state transition、主要UIをstory/invariantへtraceする。
-- 実装都合だけのshadow state、再入力form、Lab/fixture制約、暗黙default、自動approvalを探す。
-- technical substrateを完成UXとして扱っていないか確認する。
-- migration、ownership、security、failure、browser acceptanceが通常journeyを保つか確認する。
+## 修正と採否
 
-Product frameと矛盾したら局所修正で隠さず、全体判定を`plan-reopened`にする。
+不足は再現条件・根拠・必要な挙動をまとめ、同じLunaチャットへ修正依頼する。Lunaに任せられる内部設計をAstraが毎回書き直さない。同じ問題の再発や契約変更が必要なら、Astraが引き取るか分担を見直す。編集の引き取りはLunaの編集終了後に行う。
 
-## 3. Task diff review
+判定は`accepted`、`rework`、`corrected-by-main`、`rejected`、`blocked`とする。通常は会話に、Sprintは既存の検収欄へ、判断・根拠・必要な残件だけを記録する。採否と共有進捗の完了判定はAstraが行う。
 
-- `git status --short`、`git diff --name-only`、allowed pathの実diffを確認する。
-- report、排他的scope、既存変更の保持を照合する。
-- hardcode、fixture専用分岐、不要なfallback、過剰抽象化、未解決判断の混入を探す。
-- worker commandをmainが再実行し、異なるnegative caseを少なくとも1件確認する。以後は新しい変更・失敗・未確認の根拠がある範囲だけ検証する。
-- user-facing UI、文言、UX判断、API/domain/state contractがdiffへ混入した場合は、たとえtestが通っても原則`rejected`とする。
+## 統合と利用動作
 
-```text
-Task ID:
-Decision: accepted | corrected-by-main | rejected | blocked
-Story / UX findings:
-Diff integrity:
-Independent verification:
-Main corrections:
-Residual risk:
-```
+taskごとの成功だけで全体を完了にしない。変更範囲に対応する通常導線と、契約にある失敗・復旧を確認する。UIは実画面、その他は公開interfaceや実成果物を使い、検証のための不要なUI・復旧要件を追加しない。Lunaが取得した現行成果の証拠は使え、全操作をAstraが再演することを必須にしない。
 
-## 4. Whole-user-journey review
+既存Story／PLANの独立レビューは、対象・契約・判定質問・証拠・役割分離が一致すれば再利用し、変わった部分だけを適用先の規則に従って再開する。Sprint専用のProduct frame／Implementation planレビューを常設Gateとして追加しない。
 
-task-local test成功だけで合格にしない。対象契約に存在する次の観点だけを、通常入口から確認する。UIは実画面、メディアや生成物は実成果物、それ以外は公開interfaceで確認する。適用外の理由は短く示し、必要な実検証をmockや静的文字列で代用しない。
-
-- 継承する上流成果物がある場合、通常CTAがその利用から始まり、不要な再uploadを要求しない。手元素材の取り込みが利用者の目的ならuploadが通常CTAでよい。
-- 継承値、override、例外操作がproduct frameどおりに区別される。
-- loading、empty、blocked、running、failed、stale、completedから復帰できる。
-- 永続化が契約にある場合、対象のselection、artifact、job、review、Gateがreload後に復元される。
-- UIでは対象のkeyboard、focus、読み上げ、狭幅を確認し、複数mediaを扱う導線では再生制御を確認する。
-
-```text
-Overall decision: accepted | rework | plan-reopened
-Normal journey evidence:
-Exception / recovery evidence:
-Regression evidence:
-Residual risk:
-```
+初回の実作業では、成果の品質に加え、Astraがどこまで事前設計したか、判断の差し戻し、レビュー・手直しの量を短く残す。取得可能なモデル別使用量以外から削減率を作らない。

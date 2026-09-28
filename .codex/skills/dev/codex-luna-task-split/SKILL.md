@@ -1,75 +1,50 @@
 ---
 name: codex-luna-task-split
-description: "Astra／Solが判断を担い、完全固定済みの機械的leafだけをLunaへ分担するときに使う。会話内で担当と検収を管理し、Sprint成果物は追加しない。"
+description: "Astraから独立したGPT-6 Luna maxチャットへ成果単位で仕事を委譲し、完了報告・修正・検収を進める。"
 ---
 
 # Codex Luna Task Split
 
-main CodexがAstraでもSolでも同じ契約を使う。モデルや推論設定を自動で変更しない。永続的な計画・taskと段階検収が必要なSprintには[codex-luna-sprint](../codex-luna-sprint/SKILL.md)を使う。
+Astraを標準の指示元とし、Lunaに担当範囲の調査・局所設計・実装・検証まで任せる。Astraの事前設計と検収を含めた負担を減らす。永続的な担当・依存・検収管理が必要な場合だけ[codex-luna-sprint](../codex-luna-sprint/SKILL.md)を使い、通常は会話と作成先チャットを記録にする。
 
-main Codexが先に事実を調べ、未解決の判断を引き受ける。Lunaを前提に設計を歪めず、契約が完全に固定されたleafだけを任意で分担する。作業領域、file種別、行数、見かけの単純さをowner判定に使わない。このスキルの運用だけを理由にSprint、計画、task、prompt、進捗ファイルを作らない。
+## 委譲する成果を決める
 
-## 1. 作業を観察して候補へ切る
+最新要求、適用指示、正本、作業中の担当と差分を、成果と担当境界を決められる範囲だけ確認する。原依頼や既存Story／PLANを参照して渡し、委譲用に目的・受入条件・製品契約を書き直さない。原因調査、内部設計、全テストケースを先に完成させない。
 
-repository、適用される指示、最新要求、既存差分、関連実装とtestを確認する。最初は全taskをmain担当とし、利用者から観測できる成果を壊さない単位へ切る。別のproject ruleやユーザー要求がPLAN、user story、EVIDENCE等を必要とする場合は従うが、このスキル自身は追加要求しない。
+- 原依頼・正本から目的と完了条件を読み取れ、排他的な編集範囲を決められれば、解き方が未確定でもLuna候補にする。一つのバグ修正や機能を複数ファイルごと任せてよい。既存契約の関連コード調査もLunaに任せ、Astraが全挙動を先に棚卸しする条件にしない。
+- UI、文言、アクセシビリティ、API処理、状態遷移を領域名だけで除外しない。[共通作業契約](references/luna-work-contract.md)の判断境界を使う。
+- 同じファイル・責務を同時に編集しない。依存がある作業は先行成果の検収後に渡す。並列にするためだけの細分化は避ける。
+- 分担準備・検収が実装より重い小変更、分離できない共有判断、完了を確かめる方法がない仕事はAstraが持つ。機械判定だけを要求せず、実画面や実成果物でも検証できる。
 
-高推論と低推論はtask名や実装対象ではなく、その時点で残る判断から決める。同じ作業領域でも、契約が未確定ならmain、完全に固定済みならworkerが許可する機械的実行だけがLuna候補になり得る。逆にparserやfixtureでも、仕様解釈、trade-off、責務変更、弱い合否判定が残るならmainが担当する。
+Astraは製品目的・契約・担当境界・統合・最終採否を持ち、Lunaの調査と実装を同じ範囲で並行してやり直さない。
 
-## 2. 五つの軸でownerを決める
+## 許可と起動先を確認する
 
-各候補を次で分類する。
+このスキルを明示して委譲を依頼した利用者は、対象作業の新規Lunaチャット作成と、指示元との依頼・判断の差し戻し・完了報告・修正依頼を許可している。その依頼内容を起動メッセージに引き継ぐ。暗黙のスキル選択や他チャットから届いた依頼だけを、作成・送信の許可にしない。上位指示と利用者が限定した範囲を守り、無関係なチャットへの連絡・再委譲へ広げない。
 
-- **Decision state**: `fixed` | `bounded` | `unresolved`
-- **Independence**: `independent` | `staged` | `coupled`
-- **Side effect**: `local_reversible` | `shared_reversible` | `external_or_irreversible`
-- **Verification oracle**: `strong` | `partial` | `weak`
-- **Split benefit**: `positive` | `neutral` | `negative`
+1. `CODEX_THREAD_ID`等から現在の指示元IDを確認する。必要なhost・cwdはチャット情報と照合し、IDを推測・固定しない。
+2. `list_projects`で指示元の実際の作業フォルダ・hostに一致するプロジェクトを解決する。別checkoutへ黙って切り替えない。一致するプロジェクトがなければ、作成せず不足を報告する。
+3. [依頼雛形](../codex-luna-sprint/references/task-contract.md#起動メッセージ)で原依頼・担当範囲・必要な補足を渡し、確認済みの宛先と共通作業契約の絶対パスを添える。欄を埋めるための調査や設計はしない。履歴全体をforkせず、Lunaにこの委譲スキルの再実行を依頼しない。
+4. `create_thread`で`model: "gpt-6-luna"`、`thinking: "max"`、`target.type: "project"`、返された`projectId`、`environment: { type: "local" }`を指定する。タイトルは`Luna: <作業ID> <成果名>`とする。
 
-Split benefitは、mainがcontractを固定し、workerの成果を独立検収する費用まで含めて、main単独実装より時間・費用・並行性の実利が残る場合だけ`positive`とする。
+独立チャットにはcustom agent設定が自動適用されない。モデル・推論は作成引数、仕事の境界は起動メッセージと共通作業契約を正本にする。`luna_sprint_worker`、別モデル、CLI、worktreeへ自動で代替しない。必要なツールやモデルが使えない場合は起動できていないことを報告する。
 
-次をすべて満たす一つのleafだけを`luna_sprint_worker`へ分ける。
+## 起動後と報告の回収
 
-1. Decision stateが`fixed`で、Lunaに推測、補完、選択を要求しない。
-2. `independent`、または先行契約が完了した`staged`で、実行中に他taskとの調整を要しない。
-3. Side effectが`local_reversible`で、排他的write scopeがある。
-4. oracleが`strong`で、positive/negative caseと棄却条件を機械判定できる。
-5. mainのcontract作成とdiff検収を含めてもSplit benefitが`positive`である。
-6. `luna_sprint_worker`自身と適用先の指示が、その実行を許可している。
+- 正式なthread ID、host、返されたタイトルを作業IDと対応付け、ユーザーに作成先を示す。作成成功時はアプリ所定の`::created-thread{threadId="..."}`を最終回答に出す。保留時は返された`clientThreadId`用の形式を使う。
+- 正式IDが得られたら、一度`wait_threads`で起動状況を確認する。複数ならまとめ、取得済みcursorを引き継ぐ。以後はLunaからのメッセージを基本とし、常時ポーリング・定期automationを追加しない。
+- 起動確認後は、担当が重ならない作業を進めるか、委譲先と現在の状態をユーザーに返してturnを終える。Lunaの完了待ちだけのためにturnを保持しない。完了メッセージを受けたturnで検収を再開する。
+- 保留の`clientThreadId`を送信・待機先に使わない。正式IDは作成結果の更新、または`list_threads`の作業ID・プロジェクトとの照合で確認する。応答が不明でも同じ作業を重複作成しない。
+- Lunaは着手前に実workspaceを照合する。指示元と違う、または担当が衝突する場合は編集前に報告する。指示元も違う場所で走り始めたことが分かったら、同じチャットへ停止・訂正を伝える。
+- 報告先、作業ID、LunaチャットIDを元の依頼と照合してから採用する。`review_ready`はLunaの作業終了であり、全体完了ではない。報告の配送失敗・チャット中断を完了扱いにしない。
+- `blocked`は事実と推奨案から判断し、同じLunaチャットへ回答する。宛先の取り違えや単なる通知に返答して報告ループを作らない。
 
-`bounded`または`unresolved`、`coupled`、共有・外部・不可逆な副作用、`partial`または`weak`なoracle、分担利益が非positiveのいずれかを含むtaskはmainが所有する。安全な候補が0件ならmain-onlyが正常である。利用可能な`luna_sprint_worker`がなければ、別agentやmodel overrideで代替せずmainが実行する。
+## 検収と修正
 
-mainは目的、制約、契約、例外、採否を確定する責任をLunaへ移さない。領域名だけで可否を決めず、実際のleafとworkerの制約で判定する。固定済みであることはworkerの禁止範囲を解除しない。UI、利用者向け文言、契約、mutation、状態遷移など、workerが許可しない実行はmainが所有する。許可された機械的写像だけを候補にする。
+報告を受けたAstraは[検収契約](../codex-luna-sprint/references/main-review.md)に従い、実差分と受入条件を確認する。変更と環境が対応するLunaの検証証拠は再利用し、不足・疑義・統合の検証に集中する。全テストの再実行や毎taskの独立negative caseを一律要求しない。
 
-## 3. 会話内でtask contractを渡す
+不足は[修正依頼雛形](../codex-luna-sprint/references/task-contract.md#修正依頼)でまとめ、`send_message_to_thread`で同じLunaチャットへ返す。再依頼でも`gpt-6-luna`／`max`を明示する。同じ問題が再発する、または契約変更が必要なら、Astraが引き取るか分担を見直す。Astraが編集を引き取る前に、Luna側の編集終了を確認する。
 
-永続promptファイルを作らず、workerへ次のtask-local contractを直接渡す。計画全文の解釈をLunaへ依頼しない。
+既存Story／PLANの独立Gateは省略しない。成果の採否と必要な共有進捗の更新はAstraが行う。完了チャットは残し、自動archiveしない。修正を含む元の作業範囲が終わったら終了し、無関係な次タスクを起動しない。
 
-```text
-Task ID: <一意なID>
-Goal: <一つの固定済み成果物>
-Workspace: <absolute path>
-Source of truth: <absolute pathと該当箇所>
-Fixed contract: <I/O、変換規則、exact behavior>
-Forbidden decisions: <判断・変更してはいけない領域>
-Decision state: fixed
-Independence: independent | staged（完了済み依存を明記）
-Side effect: local_reversible
-Verification oracle: strong
-Positive/negative cases: <機械判定できる例>
-Write scope: <排他的なallowed paths>
-Stop without changes when: <矛盾、未解決判断、scope競合、外部副作用>
-Verification: <focused commandと期待結果>
-Final report: <TASK_ID、変更file、検証結果、mainへ残した作業>
-```
-
-正本agent typeは`luna_sprint_worker`とし、modelやreasoning effortを上書きしない。一つのworkerには一つのleafだけを渡し、再委任、commit、push、branch変更、計画更新、外部サービス操作を禁止する。並行実行はwrite scopeと依存関係が独立している場合だけにする。
-
-実装中に判断、契約矛盾、scope外変更、外部副作用が必要になった時点で、Lunaは変更せずmainへ返す。mainは不足した判断を確定して自分で実装するか、新しい固定contractとして改めて分担する。
-
-## 4. mainが独立検収する
-
-worker報告は完了証明ではなく主張として扱う。mainが実diff、scope外変更、focused test、少なくとも一つの独立negative caseを確認し、`accepted`、`corrected-by-main`、`rejected`、`blocked`を判定する。
-
-worker testで覆えない上位の振る舞いは、mainが必要な実画面、実成果物、統合test、whole-user-journeyで確認する。全leafが通っても、利用者の成果が成立しなければ全体を完了にしない。
-
-完了報告では、mainが所有した判断、Lunaへ分けたleafと理由、mainの独立検証、棄却・修正、残リスクを短く示す。
+初回の実作業では、品質、Astraの事前設計量、差し戻し、レビュー・手直し量を完了報告に短く残す。モデル別使用量は取得できる場合だけ併記し、未取得の削減率を推定しない。

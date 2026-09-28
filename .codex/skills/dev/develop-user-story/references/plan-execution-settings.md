@@ -24,15 +24,15 @@ PLANの新規作成・実行責務の意味変更時に読む。推奨設定は�
 | `gpt-6-astra` | 複数段階の判断・実装・検証を主導する通常のmain候補。現在の環境で利用可能か確認する |
 | `gpt-5.6-sol` | 利用者指定、既存の合意、または代表作業の結果から選ぶmain候補。Astraと同じ製品・権限・Gate契約を担う |
 | `gpt-5.6-terra` | 契約が固定され、局所判断と再現可能な検証で完了する作業の候補。可用性と採用理由を確認する |
-| `gpt-5.6-luna` | 完全固定済み、独立または依存完了済み、排他的scope、localで可逆、強いoracle、分担利益がある機械的leafだけの候補 |
+| `gpt-6-luna` / `max` | 原依頼・正本から目的と完了条件を読み取れ、担当境界を分けられる成果を、独立チャットで調査・局所設計・実装・検証まで担当する候補。詳細設計の事前固定や委譲用の契約再作成は不要 |
 
-この表は運用上の担当基準であり、品質や費用の優位を保証しない。Lunaへsubagent委譲するときは[codex-luna-task-split](../../codex-luna-task-split/SKILL.md)または[codex-luna-sprint](../../codex-luna-sprint/SKILL.md)とworker自身の制約を満たす。`luna_sprint_worker`のmodel／reasoningは推奨表で上書きしない。
+この表は運用上の担当基準であり、品質や費用の優位を保証しない。Lunaへ委譲するときは[codex-luna-task-split](../../codex-luna-task-split/SKILL.md)または[codex-luna-sprint](../../codex-luna-sprint/SKILL.md)の許可・担当・報告契約に従う。独立チャットは作成時に`gpt-6-luna`／`max`を明示し、custom agent設定が自動適用されるとは扱わない。互換用`luna_sprint_worker`へ自動で代替しない。
 
 進行PLAN、candidate、integration、external PLANは各fileの責務を評価する。全laneの最も高い設定を一律に複製しない。
 
 ## 3. 推論レベルを選ぶ
 
-既存の有効な設定や利用者指定を尊重する。新規PLANで指定も実績もない場合は、対応していれば`medium`を運用上の開始点にする。次の判断負荷と検証費用から必要な場合だけ調整する。
+既存の有効な設定や利用者指定を尊重する。Lunaチャット委譲は上記スキルの`max`指定を使う。それ以外の新規PLANで指定も実績もない場合は、対応していれば`medium`を運用上の開始点にする。次の判断負荷と検証費用から必要な場合だけ調整する。
 
 - `low`: 判断がほぼ固定済みで、局所変更と強いoracleにより確認できる。
 - `medium`: 通常の複数step実装で、契約・scope・停止条件が明確である。

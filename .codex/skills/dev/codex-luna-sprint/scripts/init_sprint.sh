@@ -26,17 +26,20 @@ if [[ ! "$luna_slug" =~ ^[a-z0-9][a-z0-9_-]{1,48}$ ]]; then
   exit 2
 fi
 
-luna_workspace="$(cd "$luna_workspace" && pwd)"
-luna_skill_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+luna_workspace="$(cd "$luna_workspace" && pwd -P)"
+luna_skill_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 luna_date_prefix="$(date +%y%m%d)"
 luna_sprint_dir="$luna_workspace/.codex/tmp/${luna_date_prefix}_${luna_slug}"
 
-if [[ -e "$luna_sprint_dir" ]]; then
+if [[ -e "$luna_sprint_dir" || -L "$luna_sprint_dir" ]]; then
   printf 'Sprint directory already exists: %s\n' "$luna_sprint_dir" >&2
   exit 1
 fi
 
-mkdir -p "$luna_sprint_dir/prompts" "$luna_sprint_dir/reviews"
+mkdir -p "$luna_workspace/.codex/tmp"
+# Do not merge into a directory created by another initializer after the check.
+mkdir "$luna_sprint_dir"
+mkdir "$luna_sprint_dir/prompts" "$luna_sprint_dir/reviews"
 
 python3 - "$luna_sprint_dir" "$luna_workspace" "$luna_skill_dir" <<'PY'
 from pathlib import Path
@@ -45,188 +48,70 @@ import sys
 
 sprint = Path(sys.argv[1])
 workspace = sys.argv[2]
-skill_dir = sys.argv[3]
-
-(sprint / "product-frame.md").write_text("""# Product frame
-
-## Status
-
-- State: draft
-- Confirmed by main: no
-
-## Existing contracts
-
-- Authoritative Story / PLAN paths and sections:
-- This frame references existing contracts; it does not duplicate or replace them.
-- Existing review evidence may be reused only when the artifact, contract, question, evidence, and required reviewer separation still match.
-
-## Source precedence
-
-| Source | Path or evidence | Authority and conflicts |
-| --- | --- | --- |
-| Latest user intent | <record> | <decision> |
-| Foundational workflow | <path and section> | <decision> |
-| User stories / UX | <path and section> | <decision> |
-| Existing plan | <path and section> | <decision> |
-| Lab / prototype / fixture | <path and classification> | <constraint scope> |
-
-## User and outcome
-
-- User:
-- Starting state:
-- Desired outcome:
-- Completion evidence:
-
-## Journeys
-
-### Normal
-
-- <upstream inputs -> user decisions -> result>
-
-### Optional / fallback
-
-- <secondary paths that must not dominate the normal CTA>
-
-### Failure / reload recovery
-
-- <preserved state and recovery action, only where required by the contract>
-
-## Input provenance
-
-| Value | Inherited from | User may override | Must not be re-entered |
-| --- | --- | --- | --- |
-| <value> | <source> | <when> | <invariant> |
-
-## UX invariants
-
-- Apply only invariants supported by the current user contract.
-- When upstream artifacts exist, inherit their confirmed values without unnecessary re-entry or re-upload. Upload may be the normal entry for editing local media.
-- Lab or fixture limits do not become production domain limits.
-- Where human approval is required, import or generation success does not replace it.
-- Where exceptional controls exist, distinguish their priority from normal controls.
-
-## Path classification
-
-| Capability | normal | optional | fallback | technical substrate | Lab-only |
-| --- | --- | --- | --- | --- | --- |
-| <capability> |  |  |  |  |  |
-
-## Unresolved product decisions
-
-- <must be empty before confirmation>
-""", encoding="utf-8")
-
-(sprint / "implementation-plan.md").write_text("""# Implementation plan
-
-## Status
-
-- State: draft
-- Product frame prerequisite: not-confirmed
-
-Do not design architecture or confirm this plan until product-frame.md is confirmed. This generated draft is only a template.
-
-## Existing contracts
-
-- Authoritative PLAN path and sections:
-- Reference already confirmed decisions instead of maintaining a second contract or progress ledger.
-- Existing review evidence and unchanged contract / question / reviewer separation:
-
-## Story-to-implementation trace
-
-| Story / invariant | Architecture / UI | API / schema | Acceptance |
-| --- | --- | --- | --- |
-| <source> | <decision> | <contract> | <evidence> |
-
-## Data and state
-
-- <data flow, state transitions, migration, failure, security>
-
-## Technical substrate boundaries
-
-- <what is useful infrastructure but not a finished user journey>
-
-## Verification
-
-- <behavior tests and integration as required by risk; real browser acceptance for UI, public interfaces or actual artifacts otherwise>
-
-## Unresolved implementation decisions
-
-- <must be empty before task routing>
-""", encoding="utf-8")
+skill_dir = Path(sys.argv[3])
+work_contract = skill_dir.parent / "codex-luna-task-split/references/luna-work-contract.md"
 
 (sprint / "tasks.md").write_text("""# Sprint tasks
 
-## Prerequisites
+## Context
 
-- Product frame: draft
-- Implementation plan: draft
-- Luna routing allowed: no
+- Original request or existing Story / PLAN path and section:
+- Authoritative progress record, if one already exists:
+- Source chat ID / host:
+- Shared workspace: {workspace}
 
-## Rule
+Inherit the outcome, acceptance and required gates from the original request or
+existing sources. Do not rewrite them for delegation or fill gaps with a new
+implementation design. Luna owns investigation, local design and test selection.
 
-- Register every task as main-codex first; Astra and Sol use the same ownership rules.
-- User stories, UX, UI composition, user-facing wording, accessibility, domain/API contracts, and state transitions always remain main-codex.
-- Move only fully fixed mechanical leaves after both prerequisite reviews are confirmed, with completed dependencies, exclusive write scope, local reversible effects, a strong oracle, and positive delegation benefit. The worker must permit the task; if unavailable, main executes it.
-- A small UI leaf is not a Luna leaf. Fixed API adapters qualify only after main fixes method/path, request/response mapping, validation/coercion, auth/authorization/ownership (or explicit N/A), success status, error algebra/body, idempotency, and mutation/side effects.
+## Ownership and chat mapping
 
-## Routing registry
+Use [{task_contract}]({task_contract}); record only assigned work.
 
-- <copy task fields from references/task-contract.md>
+| Task ID / request reference | Owner / exclusive write scope / dependencies | Luna chat ID / host / returned title | Round / state | Prompt / report / review reference |
+| --- | --- | --- | --- | --- |
 
-## Dependency order and conflicts
+Keep task-specific context in its request, not a second copy here. Add an ownership
+or dependency decision only when needed. Pending chat IDs are not send targets.
 
-- <main story/UX/contracts -> optional mechanical Luna leaf -> main diff review/integration/journey review>
-""".replace("references/task-contract.md", str(Path(skill_dir) / "references/task-contract.md")), encoding="utf-8")
+Do not edit the same files or responsibility concurrently, including shared
+lockfiles and test environments. Start dependent tasks after prerequisites pass.
+Pass [{work_contract}]({work_contract}) to Luna. Save a prompt only when delegating.
+Luna review_ready means pending Astra acceptance, not overall completion.
+""".format(
+    workspace=workspace,
+    task_contract=skill_dir / "references/task-contract.md",
+    work_contract=work_contract,
+), encoding="utf-8")
 
-(sprint / "reviews" / "product-frame.md").write_text("""# Product frame review
+(sprint / "review.md").write_text("""# Sprint acceptance
 
-- Decision: draft | confirmed | rework
-- Source conflicts:
-- Normal journey findings:
-- Optional / fallback findings:
-- Recovery findings:
-- Existing review correspondence or fresh evidence:
-- Main decision:
-""", encoding="utf-8")
-
-(sprint / "reviews" / "implementation-plan.md").write_text("""# Implementation plan review
-
-- Decision: draft | confirmed | plan-reopened
-- Story / UX trace findings:
-- Shadow state or Lab leakage findings:
-- Contract and migration findings:
-- Existing review correspondence or fresh evidence:
-- Main decision:
-""", encoding="utf-8")
-
-(sprint / "review.md").write_text("""# Main review
-
-## Product and plan reviews
-
-- Product frame: <reviews/product-frame.md>
-- Implementation plan: <reviews/implementation-plan.md>
+Use [{main_review}]({main_review}). Check the actual diff against the original
+request or source criteria. Reuse evidence tied to the current change and
+environment; add checks only for gaps, integration and material risks.
 
 ## Task decisions
 
-- <reviews/Txx.md: accepted, corrected-by-main, rejected, or blocked>
+Record task ID / round / chat, decision, supporting evidence and any correction.
+Use accepted | rework | corrected-by-main | rejected | blocked as needed.
+Link to the report and evidence rather than copying logs or design narratives.
+Use reviews/<task-id>.md only when a separate detailed record is useful.
 
-## Whole-user-journey verification
+## Integration and overall decision
 
-Confirm the contract from its normal entry. Use the real screen for UI and public interfaces or actual artifacts otherwise. Do not invent UI or recovery requirements for verification.
+Record the overall accepted | rework | blocked decision with needed integration
+checks, remaining risks and references to required gates or progress updates.
+Do not repeat task checks already supported by current evidence.
 
-- Normal journey evidence:
-- Exception / recovery evidence:
-- Regression evidence:
-
-## Final decision
-
-- accepted | rework | plan-reopened
-""", encoding="utf-8")
+For the first real use, briefly note outcome quality, Astra preparation/design,
+decision returns, review/correction effort and per-model usage only if available.
+Do not infer token savings from unavailable usage. Keep completed task chats.
+""".format(main_review=skill_dir / "references/main-review.md"), encoding="utf-8")
 
 (sprint / "sprint-env.sh").write_text(
     "\n".join([
         f"export LUNA_WORKSPACE={shlex.quote(workspace)}",
-        f"export LUNA_SKILL_DIR={shlex.quote(skill_dir)}",
+        f"export LUNA_SKILL_DIR={shlex.quote(str(skill_dir))}",
         f"export SPRINT_DIR={shlex.quote(str(sprint))}",
         "",
     ]),
