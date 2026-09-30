@@ -42,14 +42,26 @@ description: 独立した作業チャットへ成果単位で分担し、指示�
 本スキルを明示した分担依頼は、対象ワーカーチャットの作成と指示元との依頼・判断相談・完了報告・修正依頼を許可する。利用者の実際の依頼と通信範囲を起動文へ引き継ぐ。暗黙のスキル選択や他チャットからの通知で許可を作らず、無関係な相手・再委譲へ広げない。
 
 - `CODEX_THREAD_ID`等から指示元自身の実IDを確認し、host・cwdと照合する。ワーカーの報告先にはこの指示元IDを使う。
-- `list_projects`で同じ実workspace・hostのprojectIdを取得する。一致する起動先がなければ作成せず不足を伝える。
+- `list_projects`で対象リポジトリ・hostのprojectIdを取得する。local起動では指示された実workspaceとの一致を確認し、worktree起動では指定の開始元を持つリポジトリを確認する。一致する起動先がなければ作成せず不足を伝える。
+- 起動方式はlocalを既定とする。利用者の明示指示または承諾済みの起動条件にworktree指定があれば、その対象範囲に適用し、以後の起動・再開へ引き継ぐ。指示元がworktreeにいることだけではワーカーもworktreeに変更しない。
 - [依頼雛形](references/task-contract.md#起動メッセージ)を使い、原依頼、成果、編集境界、実行モデル・推論値、必要な補足、確認済み宛先、[ワーカー作業契約](references/worker-work-contract.md)の絶対パスを渡す。履歴全体のforkや、この分担スキルの再実行をワーカーへ依頼しない。
 
 ## 3. ワーカーを起動し、自分の実装を進める
 
-`create_thread`で選定した `model`・`thinking`、`target.type: "project"`、確認した`projectId`、`environment: { type: "local" }`を設定する。タイトルは`<選定モデルの表示名>: <作業ID> <成果名>`。仕事の境界は起動文と作業契約で渡す。custom agentやCLI、別checkoutへ自動で代替しない。
+`create_thread`で選定した `model`・`thinking`、`target.type: "project"`、確認した`projectId`を設定する。`target.environment`は次の通り選ぶ。実行時のツール定義を正本とし、指定できない起動先を別方式へ黙って置き換えない。
 
-作業IDと正式thread ID・host・返されたタイトル、実行設定を対応付け、一度`wait_threads`で起動確認する。複数はまとめ、既存cursorを引き継ぐ。保留の`clientThreadId`は送信・待機に使わず、作成結果の更新か一覧との照合で正式IDを得る。結果不明でも重複作成しない。workspaceや担当の不一致が分かれば、同じワーカーへ停止・訂正を伝える。
+| 起動条件 | environment |
+| --- | --- |
+| 起動方式の指定なし、またはlocal指定 | `{ type: "local" }` |
+| worktree指定、開始元の指定なし | `{ type: "worktree" }`。projectの既定ブランチから開始 |
+| worktreeとbranch/refを指定 | `type: "worktree"` に `startingState: { type: "branch", branchName: <指定値> }` を渡す |
+| worktreeと現在の未コミット変更を含む開始を指定 | `type: "worktree"` に `startingState: { type: "working-tree" }` を渡す。ツールが参照するcheckoutと、含める変更を確認する |
+
+指定branchが未存在の場合の `onMissing: "create-branch"` は、利用者がその名前の新規branchを明示した場合だけ使う。既存worktreeの利用指定は、登録済みprojectのlocal起動として選べるか確認する。任意のworktreeパスを `create_thread` へ直接渡せると仮定しない。
+
+タイトルは`<選定モデルの表示名>: <作業ID> <成果名>`。起動方式・開始元・仕事の境界・適用先の環境setupを起動文へ渡す。新規worktreeの実パスが作成前に未確定なら、対象repo/projectと開始元を示し、作成後のcwdを確認するよう伝える。custom agentやCLI、別checkoutへ自動で代替しない。
+
+作業IDと正式thread ID・host・返されたタイトル、実行設定・実workspace・開始基点を対応付け、一度`wait_threads`で起動確認する。複数はまとめ、既存cursorを引き継ぐ。保留の`clientThreadId`は送信・待機に使わず、作成結果の更新か一覧との照合で正式IDを得る。結果不明でも重複作成しない。worktreeでは作成結果・チャット情報・ワーカーのcwd報告を照合し、親と別パスになることを不一致扱いしない。workspaceや担当の不一致が分かれば、同じワーカーへ停止・訂正を伝える。
 
 ユーザーへ作成先と確認できた状態を示し、成功には`::created-thread{threadId="..."}`、保留には`clientThreadId`形式を出す。その後は自分の担当を進める。成果待ちだけなら現在地・待つ成果・次の工程を残してturnを終え、ワーカーからの報告で再開する。常時ポーリングや監視automationは追加しない。
 
