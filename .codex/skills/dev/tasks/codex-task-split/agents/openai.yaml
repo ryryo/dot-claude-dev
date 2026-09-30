@@ -1,0 +1,6 @@
+interface:
+  display_name: "Codex Task Split"
+  short_description: "成果と編集範囲を分担し、独立チャットの実装・検収・修正を進める"
+  default_prompt: "Use $codex-task-split to assign bounded outcomes to task chats with agreed model settings, then review, correct, or take over their results."
+policy:
+  allow_implicit_invocation: true

@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Luna Sprint"
-  short_description: "Astraが独立Lunaチャットの担当・依存・検収を継続管理"
+  short_description: "指示元が独立Lunaチャットの担当・依存・検収を継続管理"
   default_prompt: "Use $codex-luna-sprint to coordinate GPT-6 Luna max task chats with persistent ownership, dependencies, reports, and acceptance while reusing existing Story and PLAN contracts."

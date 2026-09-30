@@ -26,7 +26,7 @@ PLANの新規作成・実行責務の意味変更時に読む。推奨設定は�
 | `gpt-5.6-terra` | 契約が固定され、局所判断と再現可能な検証で完了する作業の候補。可用性と採用理由を確認する |
 | `gpt-6-luna` / `max` | 原依頼・正本から目的と完了条件を読み取れ、担当境界を分けられる成果を、独立チャットで調査・局所設計・実装・検証まで担当する候補。詳細設計の事前固定や委譲用の契約再作成は不要 |
 
-この表は運用上の担当基準であり、品質や費用の優位を保証しない。Lunaへ委譲するときは[codex-luna-task-split](../../codex-luna-task-split/SKILL.md)または[codex-luna-sprint](../../codex-luna-sprint/SKILL.md)の許可・担当・報告契約に従う。独立チャットは作成時に`gpt-6-luna`／`max`を明示し、custom agent設定が自動適用されるとは扱わない。互換用`luna_sprint_worker`へ自動で代替しない。
+この表は運用上の担当基準であり、品質や費用の優位を保証しない。Lunaへ委譲するときは[codex-task-split](../../tasks/codex-task-split/SKILL.md)または[codex-luna-sprint](../../codex-luna-sprint/SKILL.md)の許可・担当・報告契約に従う。独立チャットは作成時に`gpt-6-luna`／`max`を明示し、custom agent設定が自動適用されるとは扱わない。互換用`luna_sprint_worker`へ自動で代替しない。
 
 進行PLAN、candidate、integration、external PLANは各fileの責務を評価する。全laneの最も高い設定を一律に複製しない。
 

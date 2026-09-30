@@ -49,7 +49,8 @@ import sys
 sprint = Path(sys.argv[1])
 workspace = sys.argv[2]
 skill_dir = Path(sys.argv[3])
-work_contract = skill_dir.parent / "codex-luna-task-split/references/luna-work-contract.md"
+split_dir = skill_dir.parent / "tasks/codex-task-split"
+work_contract = split_dir / "references/worker-work-contract.md"
 
 (sprint / "tasks.md").write_text("""# Sprint tasks
 
@@ -77,10 +78,10 @@ or dependency decision only when needed. Pending chat IDs are not send targets.
 Do not edit the same files or responsibility concurrently, including shared
 lockfiles and test environments. Start dependent tasks after prerequisites pass.
 Pass [{work_contract}]({work_contract}) to Luna. Save a prompt only when delegating.
-Luna review_ready means pending Astra acceptance, not overall completion.
+Luna review_ready means pending source acceptance, not overall completion.
 """.format(
     workspace=workspace,
-    task_contract=skill_dir / "references/task-contract.md",
+    task_contract=split_dir / "references/task-contract.md",
     work_contract=work_contract,
 ), encoding="utf-8")
 
@@ -103,10 +104,10 @@ Record the overall accepted | rework | blocked decision with needed integration
 checks, remaining risks and references to required gates or progress updates.
 Do not repeat task checks already supported by current evidence.
 
-For the first real use, briefly note outcome quality, Astra preparation/design,
+For the first real use, briefly note outcome quality, source preparation/design,
 decision returns, review/correction effort and per-model usage only if available.
 Do not infer token savings from unavailable usage. Keep completed task chats.
-""".format(main_review=skill_dir / "references/main-review.md"), encoding="utf-8")
+""".format(main_review=split_dir / "references/main-review.md"), encoding="utf-8")
 
 (sprint / "sprint-env.sh").write_text(
     "\n".join([

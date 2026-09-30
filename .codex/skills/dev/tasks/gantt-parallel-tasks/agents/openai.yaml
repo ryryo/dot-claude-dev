@@ -1,0 +1,4 @@
+interface:
+  display_name: "ガントから並列タスクを開始"
+  short_description: "着手可能な作業を整理し、担当モデル・推論設定と分担を決めてチャットを起動"
+  default_prompt: "$gantt-parallel-tasks を使って、ガントから今できる並列作業、わかりやすい概要、担当モデル・推奨推論レベル、ワーカーへの分担案を提示してください。"
