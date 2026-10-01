@@ -1,0 +1,6 @@
+interface:
+  display_name: "ChatGPT GitHub Task"
+  short_description: "GitHub接続のProで相談し、軽微修正のPRとCodex向けIssueを作る"
+  default_prompt: "Use $chatgpt-github-task to consult ChatGPT Pro using connected GitHub code, deliver minor changes as a branch and PR, and turn other agreed work into issues for Codex."
+policy:
+  allow_implicit_invocation: true
