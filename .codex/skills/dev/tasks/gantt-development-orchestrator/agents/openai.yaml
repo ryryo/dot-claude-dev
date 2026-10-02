@@ -1,0 +1,4 @@
+interface:
+  display_name: "大規模ガントの継続開発運営"
+  short_description: "全scope、領域PM、成果回収・採用と次工程を一つの正本で運営"
+  default_prompt: "$gantt-development-orchestrator を使って、承認済みの全原scope、現成果、依存能力、担当体制、回収・継続方式を照合し、実行方針と不足を整理してください。開始・移行・課金は実際に承諾された範囲だけにしてください。"
