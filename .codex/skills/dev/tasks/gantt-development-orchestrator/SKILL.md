@@ -43,9 +43,9 @@ description: 明示された大規模・継続開発を、カテゴリ別オー�
 
 ## 3. 元ID一つのPMを起動する
 
-[起動手順](references/task-launch.md)で現在のowner・WIP・未回収を確認し、元ID一つにつき新規chatへ担当契約を渡す。新しい別IDは別PM chatとし、カテゴリが次の配置を選ぶ。同IDの修正・部分成果後の継続・阻害解除は同じPM chatを使う。交代は同IDの正式後継として移管する。
+[起動手順](references/task-launch.md)で現在のowner・WIP・未回収を確認し、chat作成前に[カテゴリのPM配置表](references/task-launch.md#カテゴリのpm配置表)で対象・作るもの・カテゴリの残ID数とID完了率を示す。元ID一つにつき新規chatへ担当契約を渡す。新しい別IDは別PM chatとし、カテゴリが次の配置を選ぶ。同IDの修正・部分成果後の継続・阻害解除は同じPM chatを使う。交代は同IDの正式後継として移管する。
 
-実thread・実設定・cwd/HEAD、初動の原条件対応と[開始表](references/playing-manager.md#3-原idの開始)を照合する。pendingを稼働済みにせず、結果不明は再照会して重複作成しない。適正な着手は受領ACK待ちにしない。確認は実態照合であり開始承認ではない。
+実thread・実設定・cwd/HEAD、初動の原条件対応とPM自身の[開始表](references/playing-manager.md#3-原idの開始)を照合する。pendingを稼働済みにせず、結果不明は再照会して重複作成しない。適正な着手は受領ACK待ちにしない。確認は実態照合であり開始承認ではない。
 
 ## 4. 実態から必要な調整だけ行う
 
