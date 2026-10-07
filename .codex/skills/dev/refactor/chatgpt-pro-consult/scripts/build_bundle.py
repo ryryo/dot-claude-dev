@@ -40,7 +40,13 @@ def relative_file(root: Path, raw: str) -> tuple[Path, str]:
         raise ValueError(f"non-canonical path: {name}")
     if relative.name in SECRET_NAMES or relative.name.startswith(".env."):
         raise ValueError(f"secret-like file is not allowed: {name}")
-    path = (root / Path(*relative.parts)).resolve()
+    # Inspect every declared component before resolve() hides symbolic links.
+    path = root
+    for part in relative.parts:
+        path = path / part
+        if path.is_symlink():
+            raise ValueError(f"symbolic link is not allowed: {name}")
+    path = path.resolve()
     if root not in path.parents:
         raise ValueError(f"path escapes root: {name}")
     if not path.is_file() or path.is_symlink():

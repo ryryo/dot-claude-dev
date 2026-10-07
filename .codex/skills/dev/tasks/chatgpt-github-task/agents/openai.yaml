@@ -1,6 +1,6 @@
 interface:
   display_name: "ChatGPT GitHub Task"
-  short_description: "GitHub接続のProで相談し、軽微修正のPRとCodex向けIssueを作る"
-  default_prompt: "Use $chatgpt-github-task to consult ChatGPT Pro using connected GitHub code, deliver minor changes as a branch and PR, and turn other agreed work into issues for Codex."
+  short_description: "GitHub接続のProで相談・Issue化し、許可された改修をPRにする"
+  default_prompt: "Use $chatgpt-github-task to read connected GitHub code, consult or create Codex issues, and deliver minor fixes as PRs. When the user explicitly authorizes Pro itself to make broader changes and a PR, complete that scoped work instead of defaulting to an issue. Respect consultation-only requests and do not infer write permission from skill invocation alone."
 policy:
   allow_implicit_invocation: true
