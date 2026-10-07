@@ -2,7 +2,7 @@
 
 起動する側は最新owner・依存・既成果を照合し、[共通実行条件](../../codex-task-split/references/execution-context.md)の許可・実ツール・設定で作業担当を起動する。通常モードでは今回承諾された限定成果群を渡し、複数IDを含めてよい。共通規則を起動文へ全文コピーしない。
 
-大規模モードから担当の実行・回収責任を再利用する場合は、[単体ID PM契約](../../gantt-development-orchestrator/references/playing-manager.md)が担当範囲・開始・継続・終了を定める。起動には[大規模の起動手順](../../gantt-development-orchestrator/references/task-launch.md)を使い、本書の複数ID継続を持ち込まない。通常側にはこの制限を適用しない。
+大規模モードから担当の実行・回収責任を再利用する場合は、[単体ID PM契約](../../gantt-development-orchestrator/references/playing-manager.md)が担当範囲・開始・継続・終了を定め、他chatへの通信も大規模側の送信条件に従う。起動には[大規模の起動手順](../../gantt-development-orchestrator/references/task-launch.md)を使い、本書の複数ID継続を持ち込まない。通常側にはこの制限を適用しない。
 
 ## 起動文
 

@@ -15,7 +15,8 @@ description: 明示された大規模・継続開発を、カテゴリ別オー�
 | --- | --- |
 | カテゴリオーケストラ | 本書と[scopeと開始/完了](references/scope-and-gates.md)。横断案件は[カテゴリ間調整](references/category-coordination.md)。 |
 | 単体ID PM | [単体IDの担当契約](references/playing-manager.md)を直接渡す。全体の手引書の再掲は不要。 |
-| 起動・再開 | [task-launch](references/task-launch.md)、[templates](references/templates.md)。 |
+| 起動・再開 | [task-launch](references/task-launch.md)、[templates](references/templates.md)。新規カテゴリ/PMは役割別本文・共通通信文・表の雛形を実送信文へ展開し、送信前と実起動後を照合する。同ID再開は既存契約と差分。 |
+| 停滞・範囲拡大・利用者指定の定期点検 | [実行点検](references/execution-review.md)。原残条件と実成果・反復を照合し、是正が必要な担当へ絞る。タイマーは設置依頼がある場合だけ既存カテゴリchatへ。 |
 | 既存担当の移管・任意の統合集約 | [consolidation](references/consolidation.md)。所有移管とmain集約を区別する。 |
 | スキル改訂の確認 | [review-cases](references/review-cases.md)。製品taskへの追加Gateではない。 |
 
@@ -27,7 +28,7 @@ description: 明示された大規模・継続開発を、カテゴリ別オー�
 | 単体ID PM | 元ID一つの原条件の残工程を、自分の新規chatで設計・実装・必要な通常接続・worker回収・自己検収・正当なCLI完了まで持つ。 |
 | worker | PMが切り出したowned成果の調査・局所設計・実装・試験。指示・報告・検収先はそのPM。原則未commitで共有進捗や上位契約を変更しない。 |
 
-カテゴリの管理範囲は、PMの実作業claimとは別。各元IDの実作業ownerは一意にし、管理側が全IDをclaimしたりworkerへ並行指示したりしない。局所修正・同worker修正・通常の完了・空いた試験枠への着手にカテゴリのACKを挟まない。設計・最終採否・検収を名目上workerへ移して役割別モデル指定を回避しない。
+カテゴリの管理範囲は、PMの実作業claimとは別。各元IDの実作業ownerは一意にし、管理側が全IDをclaimしたりworkerへ並行指示したりしない。局所修正・同worker修正・通常の完了・空いた試験枠への着手にカテゴリのACKを挟まない。設計・最終採否・検収を名目上workerへ移して役割別モデル指定を回避しない。カテゴリを作成したchatも上位や報告先として引き継がない。他chatへの送信は原則行わず、必要な判断・操作・待機解除等だけを[通信と回収](references/task-launch.md#通信と回収)の条件で渡す。
 
 利用者との対話を分ける場合も、要求・判断根拠を整理する補助にとどめる。実態を直接読める範囲を示し、第二指揮系統や承認階層にはしない。製品範囲・保証・権限・費用・破壊的操作など、既存権限で決められない事項だけを利用者へ返す。
 
@@ -43,7 +44,7 @@ description: 明示された大規模・継続開発を、カテゴリ別オー�
 
 ## 3. 元ID一つのPMを起動する
 
-[起動手順](references/task-launch.md)で現在のowner・WIP・未回収を確認し、chat作成前に[カテゴリのPM配置表](references/task-launch.md#カテゴリのpm配置表)で対象・作るもの・カテゴリの残ID数とID完了率を示す。元ID一つにつき新規chatへ担当契約を渡す。新しい別IDは別PM chatとし、カテゴリが次の配置を選ぶ。同IDの修正・部分成果後の継続・阻害解除は同じPM chatを使う。交代は同IDの正式後継として移管する。
+[起動手順](references/task-launch.md)で現在のowner・WIP・未回収を確認し、chat作成前に[カテゴリのPM配置表](references/task-launch.md#カテゴリのpm配置表)で対象・作るもの・カテゴリの残ID数とID完了率を示す。[役割別の起動本文](references/templates.md#起動文の組み立て)に実値を入れ、共通通信文と開始表の雛形を展開して元ID一つの新規chatへ渡す。起点への報告や関係者への連絡義務を自由作文で足さない。新しい別IDは別PM chatとし、カテゴリが次の配置を選ぶ。同IDの修正・部分成果後の継続・阻害解除は同じPM chatを使う。交代は同IDの正式後継として移管する。
 
 実thread・実設定・cwd/HEAD、初動の原条件対応とPM自身の[開始表](references/playing-manager.md#3-原idの開始)を照合する。pendingを稼働済みにせず、結果不明は再照会して重複作成しない。適正な着手は受領ACK待ちにしない。確認は実態照合であり開始承認ではない。
 
@@ -56,9 +57,11 @@ description: 明示された大規模・継続開発を、カテゴリ別オー�
 | 停滞・待機 | 必要なturn、HEAD/index/WIP、worker状態、原残条件を読み、供給・回収・CLI拒否・未決契約・担当不在を分けて処置する。 |
 | 状況照会・終了 | 問われた範囲の正本変更、実差分・試験記録を読む。結論・根拠・処置・担当・改善確認と未取得範囲を返す。 |
 
-一覧/cursorから必要箇所へ絞り、毎回の全code・全suite・全履歴再演、定期コピー、常設監視は行わない。読めない現物は確認済みにせず、稼働時間を経過時間やcommit数から推定しない。
+一覧/cursorから必要箇所へ絞り、毎回の全code・全suite・全履歴再演、定期コピー、無承認の定期監視は行わない。利用者が指定したカテゴリ内の点検は[実行点検](references/execution-review.md)に従い、起点の監視役・点検専用chat・新しい承認階層を作らない。読めない現物は確認済みにせず、稼働時間を経過時間やcommit数から推定しない。
 
 原checkが減らず部品だけ増えるなら、当該PMが不足する接続・検収・正式化へ戻る。カテゴリはその仕事を引き取って重ねず、未割当や横断供給を解く。必要能力が成立してもCLIが拒否する場合は[是正経路](references/scope-and-gates.md#5-cli不一致を閉じる是正経路)を同じ元IDの再開まで追う。
+
+PMは[工程を終える条件](references/playing-manager.md#実装検証を必要な範囲で終える)を起動文から引き継ぎ、実装/試験の追加と反復を原条件・実不具合へ対応付ける。カテゴリは条件の充足・失敗原因の絞込み・供給解除を実態から確認する。経過時間・テスト数だけで過剰実装と断定せず、必須条件を保ったまま根拠のない拡張と同じ再試行を是正する。
 
 ## 5. 供給・継続・全体完了
 
