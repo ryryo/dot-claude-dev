@@ -1,4 +1,4 @@
 interface:
   display_name: "大規模ガントのカテゴリ別運営"
-  short_description: "カテゴリ間の直接調整と単体ID PMの完遂を一つの正本で運営"
-  default_prompt: "$gantt-development-orchestrator を使って、承認済みの全原scopeをカテゴリ別オーケストラの管理範囲と元ID一つごとの新規chatのPMへ対応させ、横断依存・成果回収・同IDの完遂を整理してください。常設の全体Rootは置かず、開始・通信・移管・課金は実際に承諾された範囲だけ進めてください。"
+  short_description: "カテゴリが担当配置を調整し、専任PMが元IDを完了まで進める"
+  default_prompt: "$gantt-development-orchestrator を使い、全管理IDを単一の進捗正本で確認してください。カテゴリオーケストラ、元ID一つごとの新規chatのPM、限定ワーカーの責任を保ち、許可された範囲で進めてください。停滞時は必要な成果の受入と同じ元IDの作業再開まで確認し、起点への報告や新しい承認階層は追加しないでください。"
