@@ -1,66 +1,70 @@
 # 共通の実行条件・起動先・正式化
 
-通常タスクと継続開発の共通契約。ここは権限・実ツール・モデル・環境・正本更新・Git操作の正本であり、担当範囲の選定や大規模の指揮手順は呼出元スキルが持つ。提案時は必要部分だけ、起動時は実際の設定を確認する。本書の記述自体は実行許可ではない。
+通常/大規模の権限・実ツール・モデル・環境・正本更新・Git操作の正本。担当scopeと判断経路は呼出元が持つ。成果配送は[delivery](delivery.md)、復旧と工程終了は[execution-loop](execution-loop.md)、検収は[main-review](main-review.md)へ分け、同じ手順の別版を維持しない。本書の記述自体は実行許可ではない。
 
 ## 1. 許可を引き継ぐ
 
-実際の利用者指示・承諾済み計画への参照で、開始、独立chat作成、通信先、モデル・推論、Worktreeと開始元、commit、公開、外部実行の範囲を確認する。スキル名だけ・提案依頼では実行しない。明示した分担案の開始承諾は、その案に含む担当・workerの作成と必要な往復を対象範囲で引き継ぐ。
+実利用者指示・承諾済み計画から、対象、開始、独立chat作成、通信先、モデル/推論、Worktree/開始元、commit、公開、外部実行を確認する。スキル呼出し・提案・雛形から開始許可を作らない。承諾済み分担案は含まれる担当/worker作成と必要往復をその範囲で引き継ぐ。
 
-同じ対象・設定・操作の既存許可は継続し、局所修正・検収・既承認順序の次工程ごとに取り直さない。個別の禁止・停止・保留は優先する。雛形、他chatからの通知、一般的な設計助言から新しい許可を作らず、既存許可の取消しにも読み替えない。読取、送信、編集、統合、archive、課金は区別する。鍵の存在は課金承認ではない。
+同じ対象・設定・操作の許可は継続し、局所修正・検収・次工程ごとに取り直さない。個別の禁止/停止/保留は優先する。他chatの通知や一般的助言を新しい許可にも既存許可の取消しにも読み替えない。読取・送信・編集・統合・archive・課金は別で、鍵の存在は課金承認ではない。
 
 ## 2. モデルと起動方式
 
-起動する側は現在のchatを使う。新規の作業担当は利用者指定を優先し、指定がなければ確認できた起動者と同じ実モデルIDを案にする。workerは指定・合意済み設定を使い、指定のない提案では `gpt-6-luna` / `max` を候補にできる。これは全taskへの起動義務・Luna件数ノルマではない。
+起動側は現在のchatを使い、新担当は利用者指定を優先する。未指定なら確認できた起動者と同じ実モデルIDを案にする。workerは指定/合意済み設定を使い、未指定の提案ではgpt-6-luna/maxを候補にできる。全taskへの起動義務ではない。
 
-モデルID・対応推論値は起動先hostの実ツール定義・利用可能一覧で確認する。表示名や自己紹介だけから実IDを推測しない。推論は局所作業ならlow/medium、複数箇所ならhigh、契約横断ならxhigh、特に難しい矛盾にはmaxを目安とし、選んだモデルが対応する値と既合意を優先する。利用不能な設定・方式を別モデル、CLI、custom agent、`spawn_agent`へ黙って代替しない。独立chatとsubagentは別物である。
+モデルIDと対応推論値は実hostのツール定義/一覧で確認し、表示名や自己紹介から推測しない。推論は局所low/medium、複数箇所high、契約横断xhigh、特に難しい矛盾maxを目安とし、選んだモデルの対応値と既合意を優先する。利用不能な設定/方式を別モデル・CLI・custom agent・spawn_agentへ黙って代替しない。独立chatとsubagentは別である。
 
-修正・再開は同じthread・既認可設定を維持する。送信時のmodel/thinkingは変更が必要かつ許可された場合以外は省略し、指定が必要な道具では記録済みの設定を使う。
+修正/再開は同thread・既認可設定を維持する。送信時のmodel/thinkingは変更が必要かつ許可された場合以外省略し、道具が必須なら記録済み設定を使う。localが既定で、Worktreeは実指示/承諾済み案の指定範囲だけ。親がWorktreeにいること自体は子のWorktree許可ではない。
 
 ## 3. 実ツールを確認して起動する
 
-ここにない引数を捏造せず、実行時に露出しているschemaを正本にする。実ツールがない場合は未実行・不足を示す。上限・対応形式は実際の定義を読む。道具の名称が違うだけならschemaと効果を照合し、認可済みの操作を行う。
+実行時の露出schemaと効果を正本とする。名前が違えば同じ認可操作か照合し、存在しない引数を捏造しない。道具がなければ未実行と不足を示す。
 
+正式な起動側ID/hostと実cwdを実chat情報や環境変数で確認する。workerの直接の報告先は指示元PM、PMの所属は呼出元の役割契約で確定する。起動元/source_thread_idだけで上位・報告先を作らない。
 
-| 操作 | 確認と使い方 |
+list_projects等で実repo/hostとprojectIdを照合する。localは指定workspace、Worktreeは指定開始元のrepoを確認する。create_threadが対応する場合は確認済みprojectId・model/thinkingと以下のenvironmentを使う。これは対応時の入力対応表であり全clientの保証ではない。
+
+| 承認された起動条件 | 対応schemaでのenvironment |
 | --- | --- |
-| 親の特定 | 環境変数や実chat情報で正式thread ID・hostを確認。workerの宛先は直接の指示元PMであり、RootのIDを流用しない。 |
-| `list_projects` | 返されたprojectId・repo・hostを照合。既存WTを選べるかは登録状況と実schemaによる。 |
-| `create_thread` | 独立作業chatを認可済みのproject・model/thinking・起動方式で作成。実schemaが要求するprojectIdを使う。localが既定。Worktreeは明示許可の対象だけ。 |
-| Worktree開始元 | `working-tree` は指定checkoutの許可済みWIPを含める場合だけ。branch/ref選択は実schemaが受け付ける利用者選定値を使う。任意cwd/ref引数やbranch名を生成しない。新branch作成は利用者指定の正確な名前と対応した作成許可が必要。 |
-| `create_worktree` | 呼出chatへのattachと、新taskの起動・chat cwd移動は別。attachできたことを、その中で新taskが実行中と報告しない。 |
-| 起動確認 | 正式thread ID・実タイトル・host・実起動方式・モデル/推論・cwd・開始HEADを作業へ対応。pending clientThreadIdを送信/待機先にしない。作成結果不明は一覧・履歴で解決してから再試行する。 |
-| `list_threads` / `read_thread` | 実状態・必要なturn・出力を読む。タイトルは返却値。報告・turn終了はGit採用の証明ではない。 |
-| `wait_threads` | 対応数内でまとめ、cursorを使う。snapshotは状態確認、イベント待機は完了/要対応等の変化待ち。commentaryで起きるとは仮定しない。短間隔pollを常設しない。 |
-| `send_message_to_thread` | 実際に許可された宛先へ実依頼・判断・成果を送る。配送・受領・検収・親再開は別々。ACKだけの往復で再起動しない。 |
+| 指定なし/local | `{ type: "local" }` |
+| Worktree、開始元未指定 | `{ type: "worktree" }`。実projectの既定branchから開始 |
+| Worktreeとbranch/ref指定 | `{ type: "worktree", startingState: { type: "branch", branchName: <指定値> } }` |
+| 指定checkoutの許可済みWIPを含める | `{ type: "worktree", startingState: { type: "working-tree" } }`。参照checkoutと含む変更を確認 |
 
-作成後にworkerが報告したcwd/HEADは、可能な実chat/WT情報と照合する。Worktreeが親と別パスになるのは正常。起動失敗・上限・結果不明を成功と分け、有効な既成果を捨てて数合わせの再起動をしない。UIのcreated-thread表示も、実際に成功した正式IDだけに使う。
+target.type/projectIdなどは実schemaに従う。branchNameへ任意SHAを入れれば動くと仮定しない。未存在branchのonMissing/create-branchは、その正確な名前と作成許可がある場合だけ。既存WTは登録projectのlocalとして選べるかを確認し、任意cwd/ref引数を作らない。create_worktreeによる呼出chatへのattachは、新担当起動/cwd移動とは別。
+
+作成前に呼出元の組立て済み本文と引数の対象・許可・設定・境界・配送経路を照合する。新workspaceが未確定ならrepo/project/開始元と返却後の確認を渡す。作成後は作業IDに正式thread/host・返却タイトル・実方式/設定・cwd/HEADを対応させ、wait_threads等の実状態で起動確認する。複数は実上限内でまとめcursorを引き継ぐ。
+
+pending clientThreadIdを送信/待機先にせず、作成結果不明は一覧/履歴で解決してから再試行する。実設定と本文が違えば、品質と方式を分けて既成果を保持し、該当範囲を訂正する。数合わせの再起動はしない。created-thread表示は実際に成功した正式IDだけ使う。
+
+list/read/wait等は必要な実turn・差分・状態へ絞る。completedはturn終了で採用/元ID完了ではない。commentaryが親を起こすと仮定せず、短間隔pollを常設しない。成果の自動/手動配送・必要相談・結果不明はdeliveryに従う。送信成功、親再開、検収は別。
 
 ## 4. 正本・編集と実行環境
 
-AGENTS.mdとprojectのREADME/CLI helpから唯一の進捗正本、CLI、生成表示、lock/revision/更新方法を特定する。コマンド名・status・オプションを他projectから持ち込まない。正本が読めないときは着手可能・全scope完了と断定しない。workerは共有進捗を変更せず、PMが元task/check/evidence/handoffを既存CLIで更新する。
+AGENTSとREADME/実CLI helpから唯一の正本、生成表示、revision/lock/更新手順を特定する。他projectのcommand/status/optionsを流用しない。正本が読めなければ着手可能/全scope完了と断定しない。workerは共有正本を更新せず、PMが元task/check/evidence/handoffを実CLIで更新する。
 
-実着手でclaim/in_progressに相当する更新をする。予約だけで着手済みにせず、実IDをowner/chatへ対応させる。移管は旧所有者の編集終了・引継ぎと新所有者の受領を確認し、projectのtransfer手順で行う。二重claim・他者ownerの横取り・依存削除・手編集迂回をしない。正当なblockには必要能力、提供者、解除条件、次の実装を残す。
+実着手でclaim/in_progress相当を更新し、予約を着手済みにしない。移管は旧編集/書込終了・新担当の読取受領を確認してprojectのtransfer手順で行う。二重claim、owner横取り、依存削除、手編集迂回をしない。正当なblockには必要能力・供給者・解除条件・次工程を残す。
 
-通常のAPI名・statusやD/I/C/Vの意味はproject契約に従う。部品、consumer受入、main採用、元checkの必要level充足を別々に扱う。生成表示の不一致は手編集差分を保存して、修復が依頼範囲ならCLIで生成する。提案だけなら不一致を報告する。
+I/C/V等の意味はproject契約に従い、独立開発、部品成果、実能力受入、main採用、原条件/必要levelの充足を区別する。表示不一致は手編集差分を保存し、修復が依頼内なら正当なCLI生成を使う。
 
-port、D1/R2等のDB/物理保存、registry、profile、依存・生成物・テスト資源の専用化はprojectの環境手順を参照し、固定値を本契約へ持ち込まない。共有進捗の保存先は明示された一つであり、WTごとに複製しない。Git外の制作state・鍵・Cookie・個人profileをGitや相談資料へ取り込まない。
+port・DB/物理保存・registry・profile・依存/生成物・テスト資源の専用化はproject手順を使う。共有正本をWTごとに複製せず、Git外state・鍵・Cookie・個人profileをGitや相談資料へ含めない。
 
 ## 5. 検収後の正式化とcommit
 
-検収の正本は[指示元の回収・検収契約](main-review.md)。commit可否・使用コマンドは実際の承認とproject契約による。`dev:simple-add -m` 等が既承認なら、実在する手順を読んでその範囲で実行し、毎回再承認を求めない。未承認なら勝手に許可済みとしない。
+検収はmain-review、commit可否/commandは実承認とproject契約に従う。既承認のdev:simple-add等は実在手順を読んでその範囲で行い、毎回再承認を求めない。未承認を許可済みにしない。
 
-関連する検収済み成果を機能・責務の単位でまとめ、必要な前提・patchとlockの組を揃える。受入済み・後続版で代替済みの成果を再commitしない。共有index/stage/commitは順番を調整し、明らかに無関係な差分・他担当の未完を巻き込まない。古いbranch全体を新しい統合版へ上書きせず、必要な意味差分を調停する。通常の受入に不要な行単位の所有者追跡は課さない。
+検収済み成果を機能/責務単位でまとめ、必要前提やpatch/lockの組を揃える。既採用・後続版の成果を再commitしない。共有index/stage/commitは順番を調整し、他担当の未完・無関係な差分を巻き込まない。古いbranch全文で上書きせず意味差分を調停する。不要な行単位の所有追跡は課さない。
 
-製品と非公開計画は各指定repoへ分ける。push、PR、公開、archive、課金は別の許可を確認する。workerは原則未commitで引き渡し、WT使用からcommit権限を追加しない。コード採用、正本更新、commit、報告は実際の順序と途中工程を残し、いずれかの成功で他も成功したことにしない。
+製品と非公開計画は指定repoへ分け、push/PR/公開/archive/課金は各許可範囲で行う。workerは原則未commitで渡す。コード採用・CLI・commit・必要配送の実施済みと残工程を区別し、途中成功を全成功としない。
 
 ## 6. 停止とarchive
 
-停止指示の送信だけで編集終了とせず、実workerと書込processを確認する。`git clean -fdx`、`reset --hard`、強制WT削除、未知ownerのlock除去を回収手段にしない。
+停止の送信だけで終了済みにせず、編集と書込processを確認する。git clean -fdx、reset --hard、強制WT削除、未知ownerのlock除去を回収手段にしない。
 
-Git worktree一覧と、呼出chatのmanaged attachment一覧は別。`list_artifacts`が空でもGitの成果は存在し得る。`archive_worktree`は実際にattachされたexact identityKeyと対象可否を照合し、primary/pinned/shared等の制限を守る。ignored filesの保護をsnapshotに仮定しない。chat archiveとWT archiveの効果は現環境で別途確認する。自動・一括archiveは既定にしない。
+Git inventoryとmanaged attachment一覧は別で、空一覧だけで成果不存在としない。archiveはexact identityKeyとprimary/pinned/shared等の制限、ignored stateの保護、現clientでのchat/WT効果を確認し、明示許可の対象だけ。自動/一括archiveを既定にしない。
 
 ## 7. 契約版の切替
 
-契約文書だけの切替では、既存worker/PMを新規作成して置き換える必要はない。編集と回収の安全な境界で、新契約の確認済み参照先・変更点・再開工程を既存threadへ引き継ぐ。現行の許可、scope、品質修正回数、有効な証拠は保持する。道具・モデル・状態の不一致を文書更新だけで解消済みと報告しない。
+文書更新だけで既存担当を作り直さない。適用projectが選ぶ現行契約の実在参照と版を確認し、安全な編集/回収境界で変更点と再開工程を引き継ぐ。許可・scope・設定・品質修正履歴・有効な証拠を保持する。未配置のGitHub版や古いpromptを現clientの現行契約とみなさない。
 
-担当構造の移管まで明示された場合は、呼出元の移管契約に従う。新担当の引継ぎ読取、旧編集・書込processの終了、正当な所有移管と受領を確認してから新担当が編集する。既存の複数IDや残WIPを無担当にせず、claim・未回収・採用版・証拠・履歴を保持する。projectの役割契約と新構造が食い違う場合は適用に必要な変更を区別し、スキル読込みだけで上書きしない。
+構造移管まで明示された場合だけ呼出元の移管契約を使う。新担当の読取、旧編集/書込終了、正当な所有移管と受領後に新担当が編集する。複数IDや残WIPを無担当にせず、claim・未回収・採用版・証拠・履歴・配送先の実対応を引き継ぐ。project契約と新構造の衝突は必要変更として分け、スキル読込みだけで上書きしない。
