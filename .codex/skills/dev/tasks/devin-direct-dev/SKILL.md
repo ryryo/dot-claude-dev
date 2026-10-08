@@ -50,6 +50,8 @@ Cloudでの成果は、専用`codex/`branchへの保存とPR作成までをDevin
 
 MCPの待機には、待ち時間を60秒以内に指定したgatherを使う。CLIの長い処理は、実行ツールのsession IDを保持して出力の続きを取得する。`finished`、プロセスのexit 0、PR登録、採用、元IDの完了は、それぞれ確認する。Codexのターン終了後に自動で再開すると保証せず、依頼されていないタイマーを追加しない。
 
+開始時に、このターンで待機・回収を続けるか、利用者が許可した同チャットのheartbeatで再開するかを決める。gatherは実行中ターンの待機で、`notify_on_response`の購読は外部Codexの自動再開を実証しない。heartbeatを使う場合は[再開手順](../devin-browser-pr/references/mcp-and-resume.md#再開と通知)に従い、今回のthreadと対象セッション、ACTIVE・次回実行を照合してからターンを終える。過去の停止済み検証や別threadの設定を、今回の自動回収が有効な根拠にしない。
+
 ## レビューして結果を採用する
 
 Devinの回答とは別に、GitHubのbase/head・実際のdiff・関連コード・必要な検証・必須チェックを`gh`/`git`等で照合する。PRは現在のチャットへ添付する。保存・権限・並行処理・資源の寿命・移植等の難しい変更では、Codexのレビューに加えて、利用可能な公式の方法でDevin Reviewを行う。対象headと指摘を確認する。
