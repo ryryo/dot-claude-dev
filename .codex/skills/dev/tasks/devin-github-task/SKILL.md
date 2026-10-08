@@ -1,6 +1,6 @@
 ---
 name: devin-github-task
-description: "Codex内ブラウザ経由でDevinへGitHubのまとまった作業を委譲し、実成果のレビュー、修正依頼、問題のないPRのマージ、関連する環境提案の採用、ローカル同期まで進める。Devinへの依頼・成果採用を求められたときに使い、相談だけ・PR作成まで等の指定を優先する。"
+description: "公式Devin MCPとCodex内ブラウザでGitHubのまとまった作業を委譲し、実成果のレビュー、修正依頼、問題のないPRのマージ、関連する環境提案の採用、ローカル同期まで進める。Devinへの依頼・成果採用を求められたときに使い、相談だけ・PR作成まで等の指定を優先する。"
 ---
 
 # Devinへの委譲と成果の採用
@@ -24,7 +24,7 @@ Devinを限定作業の実装担当、Codexを依頼・レビュー・採用担�
 
 ## 2. 実行可能な依頼を送る
 
-[依頼文](references/task-prompts.md)を今回の対象・許可・受入条件で埋め、[ブラウザ手順](references/browser-workflow.md)で送信・回収する。指定セッションを優先し、同じ作業の再開・訂正は同じセッションで行う。独立した新規作業は適切な新規Devinセッションを使う。
+[依頼文](references/task-prompts.md)を今回の対象・許可・受入条件で埋める。公式MCPが接続済みなら[接続・待機・再開](references/mcp-and-resume.md)に従って状態取得・送信・回収する。未接続または利用者が画面経由を指定した場合は[ブラウザ手順](references/browser-workflow.md)を使う。PRのDevin Review・マージや環境提案の実状態の確認にはブラウザを使う。指定セッションを優先し、同じ作業の再開・訂正は同じセッションで行う。独立した新規作業は適切な新規Devinセッションを使う。
 
 OS固有の動作、実IME、GUI・デスクトップ操作、再起動や複数タブの検収が必要なら、[CloudのOS環境とComputer Use](references/cloud-os-and-desktop.md)を読み、対象OS・実行条件・操作証拠を依頼へ含める。現在のセッションのOSをDevin全体の制限と扱わず、必要なOS環境を現行UIで確認して活用する。
 
