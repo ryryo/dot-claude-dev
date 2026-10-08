@@ -14,6 +14,8 @@ gh pr comment PR_URL --body '/devin review'
 
 GitHubのPR会話・review comments・checksと、関連するDevinセッションのmessages/events/attachmentsを読む。対象head、分析が完了したか、取得できる指摘を確認する。Review画面へのリンクだけが返された場合は、全指摘を取得した、指摘がなかった、分析が完了したとは扱わない。Devinが作成したPRでは、指摘が先に作者セッションへ渡る場合もある。GitHubにコメントがないことだけで、指摘がないと判断しない。
 
+公式MCPの`tools/list`に`devin_review_manage`があれば、`get_status`で対象`pr_url`・`commit_sha`の分析完了を照合し、`get_findings`で指摘を読む。既定では組織が通知対象にしたseverityだけが返るため、全指摘を照合する際は`bug`・`security`・`flag`・`info`・`code_quality`をそれぞれ指定する。GitHubへ投稿されないflagも取得できる。既に起動済みなら状態取得から続け、同headのreviewを重複起動しない。
+
 指摘の全文や対象headをAPI/CLIで取得できない場合も、Codexのレビューは続ける。通常のコードレビューを行っただけで、Devin Reviewを実行済みと記録しない。Devin Reviewが採用条件なら、未確認の項目を記録して採用を保留する。ブラウザを開いて条件を満たしたことにしない。作業条件で必須とされていなければ、Codexのレビューと必要な検証で採否を決め、Reviewで確認できなかった範囲を明記する。
 
 指摘は実コード・契約と照合し、有効なものを同じ実装セッションへ返す。更新headが分析対象と違う場合は、修正の影響に応じて再確認する。Devin Reviewの成功や指摘ゼロだけで採用しない。
