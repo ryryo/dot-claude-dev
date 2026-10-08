@@ -1,0 +1,4 @@
+interface:
+  display_name: "CodexとDevinの対話型開発"
+  short_description: "CodexとDevinがMCP・CLIで直接対話し、調査・実装・レビュー・修正を進める"
+  default_prompt: "$devin-direct-dev を使い、Devinと直接対話しながら指定作業を進めてください。質問に答え、実際の成果をレビューし、不備は同じセッションへ修正を依頼してください。Cloudは公式MCP、手元のファイルや環境ではCLIを使い、許可された終了点まで進めてください。"

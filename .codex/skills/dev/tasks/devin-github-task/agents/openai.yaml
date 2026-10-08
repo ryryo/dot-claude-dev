@@ -1,4 +1,0 @@
-interface:
-  display_name: "Devin GitHub Task"
-  short_description: "公式MCPとCodex内ブラウザでDevinへ委譲し、レビュー・修正・PRマージと環境提案の採用まで進める"
-  default_prompt: "Use $devin-github-task to delegate the specified repository task through the connected official Devin MCP or the Codex in-app browser, review and correct the result, and use the browser for Devin Review, PR merging, and relevant setup proposals when they satisfy the task contract. Respect any consultation-only, browser-only, or PR-only limit."

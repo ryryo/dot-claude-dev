@@ -1,13 +1,13 @@
 ---
-name: devin-github-task
-description: "公式Devin MCPとCodex内ブラウザでGitHubのまとまった作業を委譲し、実成果のレビュー、修正依頼、問題のないPRのマージ、関連する環境提案の採用、ローカル同期まで進める。Devinへの依頼・成果採用を求められたときに使い、相談だけ・PR作成まで等の指定を優先する。"
+name: devin-browser-pr
+description: "DevinへのGitHub作業の委譲と成果をCodex内ブラウザで確認し、レビュー・修正依頼・PRマージ・環境提案の採用・ローカル同期まで進める。画面での確認や操作を含むDevinへの依頼・成果採用に使う。送信や回答の取得には公式Devin MCPを優先し、相談だけ・PR作成まで等の指定を守る。"
 ---
 
-# Devinへの委譲と成果の採用
+# DevinへのPR委譲と採用（ブラウザ）
 
 Devinを限定作業の実装担当、Codexを依頼・レビュー・採用担当とする。接続や相談で止めず、利用者が指定した終了点まで進める。既存の`chatgpt-github-task`の対象版・許可範囲・実成果照合を引き継ぎ、Devinでは実装から採用までを一つの作業として扱う。
 
-Codexによるブラウザ操作を使わずにMCP/CLIだけで協働する指定は、[devin-agent-task](../devin-agent-task/SKILL.md)を使う。本スキルは画面でのDevin Review・PRマージ・環境提案の採用を含む経路を扱う。
+CodexとDevinがMCP/CLIで直接対話して作業を進める場合は、[devin-direct-dev](../devin-direct-dev/SKILL.md)を使う。Devinの画面でReview・PRマージ・環境提案の採用を確認・操作する指定には、本スキルを使う。
 
 ## 自律的に進める範囲
 

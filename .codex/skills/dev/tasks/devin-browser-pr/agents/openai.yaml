@@ -1,0 +1,4 @@
+interface:
+  display_name: "DevinへのPR委譲と採用（ブラウザ）"
+  short_description: "ブラウザでDevinの成果を確認し、PRレビュー・マージ・環境提案の採用まで進める"
+  default_prompt: "$devin-browser-pr を使い、指定作業をDevinへ委譲してください。送信や回答の取得には公式MCPを優先し、Devin Review・PRマージ・環境提案の採用はブラウザで確認・操作してください。相談だけ、ブラウザのみ、PR作成まで等の指定と、既存の許可範囲を守ってください。"

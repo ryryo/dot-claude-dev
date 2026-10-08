@@ -114,8 +114,10 @@ Codexでは `.codex/skills/dev/spec-codex/` と `.codex/skills/dev/spec-codex-ru
 | --------------- | -------------------------------------------------------------------- |
 | `$spec-codex`     | `docs/PLAN/*` の schema v3 仕様書をCodex Plan Modeで作成          |
 | `$spec-codex-run` | `docs/PLAN/*` の schema v3 仕様書をCodexでGate単位に直接実行       |
-| `$devin-github-task` | 公式MCPとCodex内ブラウザでDevinへ委譲し、画面でのレビュー・PRマージ・環境提案の採用まで進める |
-| `$devin-agent-task` | ブラウザ操作なしでDevinと協働。CloudはMCP、手元のファイル・環境を直接扱う場合はCLIを使う |
+| `$devin-browser-pr` | 公式MCPとCodex内ブラウザでDevinへ委譲し、画面でのレビュー・PRマージ・環境提案の採用まで進める |
+| `$devin-direct-dev` | CodexとDevinがMCP・CLIで直接対話し、調査・実装・レビュー・修正を進める |
+
+Devin向けの2スキルは、`.codex/skills/dev/tasks/`に配置しています。ローカルの`~/.codex/skills/`には、各スキルをCodexから使うためのシンボリックリンクを置きます。
 
 ### ユーティリティ
 
