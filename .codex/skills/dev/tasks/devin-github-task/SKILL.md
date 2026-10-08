@@ -26,6 +26,8 @@ Devinを限定作業の実装担当、Codexを依頼・レビュー・採用担�
 
 [依頼文](references/task-prompts.md)を今回の対象・許可・受入条件で埋め、[ブラウザ手順](references/browser-workflow.md)で送信・回収する。指定セッションを優先し、同じ作業の再開・訂正は同じセッションで行う。独立した新規作業は適切な新規Devinセッションを使う。
 
+OS固有の動作、実IME、GUI・デスクトップ操作、再起動や複数タブの検収が必要なら、[CloudのOS環境とComputer Use](references/cloud-os-and-desktop.md)を読み、対象OS・実行条件・操作証拠を依頼へ含める。現在のセッションのOSをDevin全体の制限と扱わず、必要なOS環境を現行UIで確認して活用する。
+
 GitHub連携済みの表示だけでアクセス成功と判断しない。Devinが実際に取得したrepo・commit・契約を確認する。書込権限は本来の成果branchへのpushとPR実登録で確かめ、ダミーPRやtoken作成・権限拡大で試さない。通常の準備は公式配布・既存ランナーと固定依存を使い、VMに合わせた製品版・lockfile変更で回避させない。
 
 Devinの終了点は専用branchからのPRと証拠の返却とし、baseへの直接push・自己マージを依頼しない。採用操作はCodexが行う。実行検証が必要な改修を、軽微でないという理由だけでIssue案へ戻さない。
