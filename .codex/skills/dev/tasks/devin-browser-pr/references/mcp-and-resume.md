@@ -18,6 +18,10 @@ macOSでは [Keychainヘッダーhelper](../scripts/keychain_headers.py) を `ht
 
 ツール名と引数は実際の `tools/list` を優先する。2026-10-08の実取得では次を確認した。
 
+新規作成ツールが補助スキルの呼出しを要求する場合は、作成前にその前提を満たす。未配置なら、ローカル、MCPのresources・prompts、公式配布元を確認し、取得した原本と必要な参照資料を読んで配置する。必要なスキルが欠けていることを理由に、CLI・ブラウザ・別APIへ切り替えて同じ作成を進めない。同名の自作スキルや要約で原本の読了を代替しない。
+
+2026-10-08の`devin_session_create`は、作成前に`managing-child-sessions`の呼出しを要求した。既存Devinセッションで組込の`<builtin>/managing-child-sessions`が実際に呼び出されたことは確認したが、Codex向けの配布原本は取得できていない。Devin側の呼出しとCodex側の導入・読了は区別する。この前提が未解決の間は新規作成を行わず、取得できない資料と未実行の作業を報告する。既存セッションの読取は続けられる。
+
 - `devin_session_interact`: `get` は複数IDの読取にも対応。`get_messages` は `first`・`after` によるcursorページング。取得したメッセージの時刻と次ページの有無を確認し、履歴先頭のページを最新の待機理由として扱わない。追加指示前に必要な後続ページを `after` で取得し、最後の指示・応答を照合する。`message` は既存セッションへの追加指示。`set_tags` は全置換なので、追加操作と混同しない。
 - `devin_session_gather`: `session_ids` は `devin-` prefix付き。既定の待機300秒をそのまま使わず、`timeout_seconds` を60秒以内に指定する。時間切れは失敗や完了ではない。
 - `devin_session_search`: 必要なID・期間・ページサイズで絞る。対象以外のセッションをまとめて操作しない。
