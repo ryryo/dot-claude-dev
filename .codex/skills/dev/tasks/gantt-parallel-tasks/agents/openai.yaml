@@ -1,4 +1,4 @@
 interface:
   display_name: "ガントの限定タスクを分担・実行"
-  short_description: "限定依頼の並列作業と担当を提案し、承諾後に実装・回収・検収まで進める"
+  short_description: "限定依頼を分担し、各タスクPMとそのワーカーで実装・検収・正式化を完遂する"
   default_prompt: "$gantt-parallel-tasks を使って、今回の依頼内で着手可能な作業、順序、担当自身の実装とworkerの分担、モデル・推論設定を提案してください。"
