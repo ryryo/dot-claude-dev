@@ -7,6 +7,8 @@ description: "公式Devin MCPとCodex内ブラウザでGitHubのまとまった�
 
 Devinを限定作業の実装担当、Codexを依頼・レビュー・採用担当とする。接続や相談で止めず、利用者が指定した終了点まで進める。既存の`chatgpt-github-task`の対象版・許可範囲・実成果照合を引き継ぎ、Devinでは実装から採用までを一つの作業として扱う。
 
+Codexによるブラウザ操作を使わずにMCP/CLIだけで協働する指定は、[devin-agent-task](../devin-agent-task/SKILL.md)を使う。本スキルは画面でのDevin Review・PRマージ・環境提案の採用を含む経路を扱う。
+
 ## 自律的に進める範囲
 
 - 利用者が対象と目的を指定して「このフローで進めて」「Devinに任せ、問題なければ採用して」等と依頼した場合、Devinへの送信、必要な環境準備、専用branchでの実装・commit・push・PR作成、Codexのレビュー・修正依頼、条件を満たすPRのマージと関連環境提案の採用、結果確認まで含む。許可済み工程を毎回確認し直さない。

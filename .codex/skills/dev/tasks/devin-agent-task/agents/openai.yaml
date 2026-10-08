@@ -1,0 +1,4 @@
+interface:
+  display_name: "Devin Agent Task"
+  short_description: "ブラウザを使わず、MCPでCloudへ委譲し必要に応じCLIでローカル協働"
+  default_prompt: "$devin-agent-task を使い、ブラウザ操作なしで指定作業をDevinと進めてください。Cloudは公式MCP、手元のファイルを直接扱う場合はCLIを選び、既存の許可範囲でレビュー・修正・採用まで進めてください。"
