@@ -11,6 +11,8 @@ description: ガントから限定された成果群の分担を提案し、承�
 
 提案依頼やスキル名だけの呼出しは工程4まで。開始が承諾されていれば工程5へ進む。許可、実モデル、環境、CLI・Git操作は[共通実行条件](../codex-task-split/references/execution-context.md)に従う。通常実行のために大規模資料を読み込む必要はない。
 
+計画外の危険や本人判断が必要な事象には、[選択肢UIと完全停止](../codex-task-split/references/execution-loop.md#5-ユーザー判断の選択肢uiと完全停止)を適用する。該当タスクのPMと全ワーカーを止め、本人の明示回答まで独立工程も進めない。親やheartbeatはその停止を解除せず、通常の自律実行よりこの停止条件を優先する。
+
 ## 1. 現在地を読む
 
 AGENTSと進捗ツールのREADME・helpから唯一の正本と更新手順を確認する。実在するread-only操作で、最新revision、依頼内の元ID・body/check・必要level、状態、owner、依存理由を読む。正本読取りのためにブラウザーやserverを起動しない。
