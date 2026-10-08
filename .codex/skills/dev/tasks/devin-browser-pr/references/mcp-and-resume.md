@@ -18,9 +18,18 @@ macOSでは [Keychainヘッダーhelper](../scripts/keychain_headers.py) を `ht
 
 ツール名と引数は実際の `tools/list` を優先する。2026-10-08の実取得では次を確認した。
 
-新規作成ツールが補助スキルの呼出しを要求する場合は、作成前にその前提を満たす。未配置なら、ローカル、MCPのresources・prompts、公式配布元を確認し、取得した原本と必要な参照資料を読んで配置する。必要なスキルが欠けていることを理由に、CLI・ブラウザ・別APIへ切り替えて同じ作成を進めない。同名の自作スキルや要約で原本の読了を代替しない。
+### 組込スキルを使った新規セッション作成
 
-2026-10-08の`devin_session_create`は、作成前に`managing-child-sessions`の呼出しを要求した。既存Devinセッションで組込の`<builtin>/managing-child-sessions`が実際に呼び出されたことは確認したが、Codex向けの配布原本は取得できていない。Devin側の呼出しとCodex側の導入・読了は区別する。この前提が未解決の間は新規作成を行わず、取得できない資料と未実行の作業を報告する。既存セッションの読取は続けられる。
+2026-10-08の`devin_session_create`は、作成前に`managing-child-sessions`の呼出しを要求する。このスキルはDevin側の`<builtin>/managing-child-sessions`で呼び出せる。Codexへの原本配置を作成条件として追加せず、呼び出せるDevin側で前提を満たして作成する。
+
+1. 利用者が依頼した新規作業の件数・独立性・所有範囲を確定する。管理に使える既存Devinセッションの最新履歴と子一覧を読み、未完作業や別の委譲と混ぜない。
+2. Codexから`devin_session_interact(action="message")`で、そのDevinに`managing-child-sessions`の実際の呼出しと、指定した作業だけの作成を依頼する。親は作成・中継を担当し、製品の実装・採否判断や独自の追加委譲を行わない。対象repo・base・編集範囲・受入条件・成果物を各子のpromptへ全文で渡す。子は別VMであり、親の会話・ファイルを共有しない。
+3. 親Devinは組込スキルを呼び、必要なintegrationを確認し、`devin_session_create`を実行する。独立した作業は1件につき1セッション、依存する作業は先行成果を確認してから作成する。返却されたID/URLと作成結果をCodexへ返す。結果が不明なら親の`child_session_ids`と履歴を照合し、同じ作成を繰り返さない。
+4. Codexは返却IDで`get`・`get_messages`・`events`を実行し、対象・初期依頼・実行状態を確認する。以後の範囲内の指示はその子へ直接`message`を送る。直接操作の権限がなければ、親へ対象IDと送信本文を渡して中継し、子の受信履歴で確認する。権限があると推測して再作成しない。
+
+`skill_activated`イベントで呼出しを、作成結果と親の子一覧で実作成を、子への実読取・メッセージ受信でCodexからの対話をそれぞれ照合する。親の通知をCodexの自動再開と扱わず、親のarchiveが子にも及ぶことに注意する。組込スキルの呼出しができる場所が見つからない場合だけ、その不足を報告する。
+
+2026-10-08の実作業では、親の`skill_activated`、指定2件の作成成功、親の子一覧、Codexから両方の`get`・`get_messages`・`events`、初期prompt全文の一致を確認した。子への直接`message`も成功した。これは作成・対話経路の実証であり、製品検証やPR採用の完了を示さない。公式MCP文書も外部clientによるセッション管理を説明しているが、組込スキルのCodex向け配布は前提としていない。
 
 - `devin_session_interact`: `get` は複数IDの読取にも対応。`get_messages` は `first`・`after` によるcursorページング。取得したメッセージの時刻と次ページの有無を確認し、履歴先頭のページを最新の待機理由として扱わない。追加指示前に必要な後続ページを `after` で取得し、最後の指示・応答を照合する。`message` は既存セッションへの追加指示。`set_tags` は全置換なので、追加操作と混同しない。
 - `devin_session_gather`: `session_ids` は `devin-` prefix付き。既定の待機300秒をそのまま使わず、`timeout_seconds` を60秒以内に指定する。時間切れは失敗や完了ではない。
