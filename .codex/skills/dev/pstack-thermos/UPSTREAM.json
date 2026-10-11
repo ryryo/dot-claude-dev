@@ -1,0 +1,650 @@
+{
+  "repository": "https://github.com/cursor/plugins",
+  "commit": "12d587dfb20741cafc376c42c696c5f6e2a64487",
+  "version": "0.15.5",
+  "previous_commit": "fd878692de15a3069c21c8f429eb0b9f2fe178fa",
+  "supplemental": {
+    "repository": "https://github.com/ScriptedAlchemy/pstack-codex",
+    "commit": "c25afa251f1513b0b28cc089294d468c5e350444",
+    "skills": [
+      "automate-maintainer",
+      "automate-team",
+      "benchmark-checklist",
+      "correct",
+      "principle-explain-the-number",
+      "poteto-help"
+    ],
+    "note": "Selected additions only; native setup and agent definitions preserved.",
+    "helpers": [
+      "worktree-audit.sh (read-only safety, without session scanning)",
+      "check-plan.test.mjs",
+      "log.test.mjs"
+    ]
+  },
+  "delta_inventory": [
+    {
+      "source": "pstack/.cursor-plugin/plugin.json",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/README.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/assets/logo.png",
+      "status": "A",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/01-setup.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/02-poteto-mode.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/03-understand.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/06-verify-and-ship.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/07-overnight.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/08-principles.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/docs/guide/README.md",
+      "status": "M",
+      "classification": "host-specific packaging",
+      "action": "preserve-native-package"
+    },
+    {
+      "source": "pstack/skills/architect/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/architect/references/rationale-template.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/architect/references/runner-prompt.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/arena/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/automate-me/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/blast-radius/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/figure-it-out/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/how/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/how/references/critic-prompt.md",
+      "status": "D",
+      "classification": "host-neutral",
+      "action": "remove-obsolete-resource"
+    },
+    {
+      "source": "pstack/skills/how/references/critique-rubric.md",
+      "status": "D",
+      "classification": "host-neutral",
+      "action": "remove-obsolete-resource"
+    },
+    {
+      "source": "pstack/skills/how/references/explainer-prompt.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/how/references/explorer-prompt.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/interrogate/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/interrogate/references/code-quality-review.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/interrogate/references/lead-judgment.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/interrogate/references/reviewer-prompt.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/interrogate/references/rubric.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/make-bot-ui/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/no-comments/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/authoring-a-skill.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/autonomous-run.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/autopilot-full.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/autopilot-stack.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/babysit.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/bug-fix.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/eval.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/feature.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/hillclimb.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/investigation.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/multi-phase-plan.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/opening-a-pr.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/orchestrate.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/pause-safely.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/perf-issue.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/prototype.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/refactoring.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/runtime-forensics.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/session-pickup.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/shipping.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/trace-forensics.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/visual-parity.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/playbooks/worktree-cleanup.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/references/bugbot-triage.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/poteto-mode/scripts/check-plan.mjs",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-attack-the-premise/SKILL.md",
+      "status": "A",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-boundary-discipline/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-build-the-lever/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-encode-lessons-in-structure/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-experience-first/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-fix-root-causes/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-foundational-thinking/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-guard-the-context-window/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-laziness-protocol/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-migrate-callers-then-delete-legacy-apis/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-minimize-reader-load/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-model-the-domain/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-never-block-on-the-human/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-outcome-oriented-execution/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-prove-it-works/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-redesign-from-first-principles/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-separate-before-serializing-shared-state/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-sequence-verifiable-units/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-subtract-before-you-add/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-test-behavior-not-implementation/SKILL.md",
+      "status": "A",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/principle-type-system-discipline/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/recall/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/reflect/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/reflect/references/divergent-reviewer.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/reflect/references/judgment-reviewer.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/reflect/references/synthesizer.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/reflect/references/tooling-reviewer.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/setup-pstack/SKILL.md",
+      "status": "M",
+      "classification": "Cursor-only configuration; portable budget preference adapted",
+      "action": "preserve-native-setup"
+    },
+    {
+      "source": "pstack/skills/show-me-your-work/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/show-me-your-work/scripts/log.sh",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/swarm/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/tdd/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/teach/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/technical-writing/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/typescript-best-practices/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/typescript-best-practices/references/patterns.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/unslop/SKILL.md",
+      "status": "M",
+      "classification": "already-covered-or-adapted",
+      "action": "preserve-native-entrypoint"
+    },
+    {
+      "source": "pstack/skills/why/SKILL.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/epistemics.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/investigator-prompt.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/source-playbook.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/databricks.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/datadog.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/incident-postmortem.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/linear.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/notion.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/sentry.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/sources/slack.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    },
+    {
+      "source": "pstack/skills/why/references/synthesizer-prompt.md",
+      "status": "M",
+      "classification": "host-neutral",
+      "action": "port-with-native-runtime-translation"
+    }
+  ]
+}

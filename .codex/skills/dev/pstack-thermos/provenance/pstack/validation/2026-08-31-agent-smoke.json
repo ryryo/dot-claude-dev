@@ -1,0 +1,49 @@
+{
+  "schema": "pstack-codex-agent-smoke-v1",
+  "timestamp": "2026-08-31T11:38:44.741829+00:00",
+  "codex_version": "codex-cli 0.151.0",
+  "commit": "38090b68e0b14ef5a07d97d5a1b3a465a27550db",
+  "agents": [
+    {
+      "agent": "poteto-agent",
+      "attempts": 1,
+      "exit_code": 0,
+      "success": true,
+      "final_message": "SPAWN_OK:poteto-agent",
+      "failure": ""
+    },
+    {
+      "agent": "comment-sicko",
+      "attempts": 1,
+      "exit_code": 0,
+      "success": true,
+      "final_message": "SPAWN_OK:comment-sicko",
+      "failure": ""
+    },
+    {
+      "agent": "pstack_skeptic",
+      "attempts": 1,
+      "exit_code": 0,
+      "success": true,
+      "final_message": "SPAWN_OK:pstack_skeptic",
+      "failure": ""
+    },
+    {
+      "agent": "pstack_architect",
+      "attempts": 1,
+      "exit_code": 0,
+      "success": true,
+      "final_message": "SPAWN_OK:pstack_architect",
+      "failure": ""
+    },
+    {
+      "agent": "pstack_minimalist",
+      "attempts": 1,
+      "exit_code": 0,
+      "success": true,
+      "final_message": "SPAWN_OK:pstack_minimalist",
+      "failure": ""
+    }
+  ],
+  "passed": true
+}

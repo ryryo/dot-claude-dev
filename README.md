@@ -112,6 +112,7 @@ Codexでは `.codex/skills/dev/spec-codex/` と `.codex/skills/dev/spec-codex-ru
 
 | スキル          | 説明                                                                 |
 | --------------- | -------------------------------------------------------------------- |
+| [`$pstack-thermos`](.codex/skills/dev/pstack-thermos/README.md) | pstackで開発を進め、thermosで正しさ・保守性をレビューする。初回設定補助を同梱 |
 | `$spec-codex`     | `docs/PLAN/*` の schema v3 仕様書をCodex Plan Modeで作成          |
 | `$spec-codex-run` | `docs/PLAN/*` の schema v3 仕様書をCodexでGate単位に直接実行       |
 | `$devin-browser-pr` | 公式MCPとCodex内ブラウザでDevinへ委譲し、画面でのレビュー・PRマージ・環境提案の採用まで進める |
@@ -178,6 +179,7 @@ Devin向けの2スキルは、`.codex/skills/dev/tasks/`に配置しています
 .codex/
 └── skills/
     └── dev/
+        ├── pstack-thermos/     # 開発・二方向レビュー・初回設定の補助
         ├── spec-codex/        # Codex用 仕様書作成スキル
         ├── spec-codex-run/    # Codex用 仕様書実行スキル
         ├── shadcn/            # shadcn/ui コンポーネント管理

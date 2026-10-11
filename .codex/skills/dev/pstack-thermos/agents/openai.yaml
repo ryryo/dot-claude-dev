@@ -1,0 +1,6 @@
+interface:
+  display_name: "pstack-thermos"
+  short_description: "調査・設計・実装・検証と、正しさ・保守性の二方向レビューを進める"
+  default_prompt: "$pstack-thermos でこの作業を進め、変更をレビューして検証してください。"
+policy:
+  allow_implicit_invocation: true
