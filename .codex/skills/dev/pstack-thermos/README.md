@@ -19,7 +19,7 @@ python3 <skill-root>/scripts/setup.py check --project <project>
 python3 <skill-root>/scripts/setup.py install --project <project>
 ```
 
-補助は入口へのリンクと7担当を配置する。配置の検査と、Codexによるスキル・担当の検出および起動は別に確認する。
+補助は既存の共有入口を再利用し、7担当を配置する。入口がない場合だけリンクを追加する。共有リンクと共有先のファイルは変更しない。配置の検査と、Codexによるスキル・担当の検出および起動は別に確認する。
 
 ## 内容の場所
 

@@ -1909,8 +1909,8 @@
     }
   ],
   "code_adaptations": {
-    "scripts/setup.py": "入口の改名、assetsの7担当、所有を確認した旧配置の更新へ対応。",
-    "scripts/test_setup.py": "8管理対象と旧配置移行の振る舞いを検査。",
+    "scripts/setup.py": "入口の改名、assetsの7担当、所有を確認した旧配置の更新、既存共有入口の再利用へ対応。共有先を管理対象から外す。",
+    "scripts/test_setup.py": "管理対象の配置・旧配置移行と、共有入口の再利用・保護・重複リンクの整理・失敗時の復元を検査。",
     "scripts/validate.py": "単一スキル、参照、収録、出典、7担当の検査へ統合。",
     "scripts/pstack/poteto-mode/check-plan.mjs": "日本語の計画語彙と、移動後の計画雛形を読む相対パスへ対応。",
     "scripts/pstack/poteto-mode/check-plan.test.mjs": "日本語の雛形と必要証拠の検査、移動後の相対パスへ対応。",

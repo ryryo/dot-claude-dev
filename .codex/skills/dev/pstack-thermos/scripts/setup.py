@@ -27,8 +27,8 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def expected(root: Path) -> dict[str, dict[str, str]]:
-    entries = {LINK: {"kind": "symlink", "target": str(root)}}
+def expected(root: Path, include_skill: bool = True) -> dict[str, dict[str, str]]:
+    entries = {LINK: {"kind": "symlink", "target": str(root)}} if include_skill else {}
     for filename in AGENT_FILES:
         source = root / "assets/agents" / filename
         agent = tomllib.loads(source.read_text())
@@ -72,7 +72,8 @@ def read_receipt(destination: Path, root: Path) -> dict | None:
         desired = {key: item for key, item in desired.items() if key not in
                    (LINK, "agents/thermos-correctness.toml", "agents/thermos-quality.toml")}
         desired["skills/pstack"] = {"kind": "symlink", "target": str(source)}
-    if not isinstance(entries, dict) or set(entries) != set(desired):
+    allowed = (set(desired),) if legacy else (set(desired), set(desired) - {LINK})
+    if not isinstance(entries, dict) or set(entries) not in allowed:
         raise ValueError(f"管理対象の一覧が一致しません: {path}")
     for relative, item in entries.items():
         if not isinstance(item, dict) or item.get("kind") not in ("file", "symlink"):
@@ -86,19 +87,42 @@ def read_receipt(destination: Path, root: Path) -> dict | None:
     return {**receipt, "legacy": legacy}
 
 
-def safe_destination(destination: Path) -> None:
-    for path in (destination, destination / "skills", destination / "agents",
-                 destination / "pstack", destination / "pstack-thermos"):
+def reused_skill(destination: Path, root: Path, receipt: dict | None) -> Path | None:
+    """共有入口は参照するだけにし、補助が所有する個別入口とは区別する。"""
+    shared = destination / "skills/dev/pstack-thermos"
+    direct = destination / LINK
+    for path in (shared, direct):
+        if path == direct and receipt and LINK in receipt["entries"]:
+            continue
+        if path.is_dir() and (path / "SKILL.md").is_file():
+            if path.resolve() == root.resolve():
+                return path
+    return None
+
+
+def safe_destination(destination: Path, manage_skills: bool = True) -> None:
+    paths = (destination, destination / "agents",
+             destination / "pstack", destination / "pstack-thermos")
+    for path in paths:
         if path.is_symlink() or (path.exists() and not path.is_dir()):
             raise ValueError(f"配置先が通常のディレクトリではありません: {path}")
+    skills = destination / "skills"
+    if (manage_skills and skills.is_symlink()) or (skills.exists() and not skills.is_dir()):
+        raise ValueError(f"配置先が通常のディレクトリではありません: {skills}")
 
 
 def plan(destination: Path, root: Path, action: str) -> tuple[dict, list[dict], dict | None]:
-    safe_destination(destination)
-    desired = expected(root)
+    safe_destination(destination, manage_skills=False)
     receipt = read_receipt(destination, root)
+    shared = destination / "skills/dev/pstack-thermos"
+    if action != "uninstall" and (shared / "SKILL.md").is_file() and shared.resolve() != root.resolve():
+        raise ValueError(f"同名の共有スキルが別の配布元を参照しています: {shared}")
+    desired = expected(root, include_skill=reused_skill(destination, root, receipt) is None)
+    # Uninstall touches only recorded entries, even if the shared skill disappeared.
+    paths = dict.fromkeys(receipt["entries"] if action == "uninstall" and receipt else
+                          [*desired, *(receipt["entries"] if receipt else {})])
+    safe_destination(destination, manage_skills=any(path.startswith("skills/") for path in paths))
     rows = []
-    paths = dict.fromkeys([*desired, *(receipt["entries"] if receipt else {})])
     for relative in paths:
         new = desired.get(relative)
         path = destination / relative
@@ -111,7 +135,7 @@ def plan(destination: Path, root: Path, action: str) -> tuple[dict, list[dict], 
         elif not matches(path, old):
             state = "競合（配置後に変更あり）"
         elif new is None:
-            state = "旧配置（取り外し対象）"
+            state = "管理対象の旧入口（取り外し対象）"
         elif matches(path, new):
             state = "配置済み"
         else:
@@ -190,6 +214,7 @@ def apply(destination: Path, root: Path, action: str) -> list[dict]:
                         stream.write((root / "assets" / relative).read_bytes())
                     temp.replace(path)
             record_path.parent.mkdir(parents=True, exist_ok=True)
+            # Reused shared paths are deliberately absent from the ownership record.
             record = {"schema": SCHEMA, "source": str(root), "entries": desired}
             temp = record_path.with_suffix(".tmp")
             with temp.open("x") as stream:
@@ -245,12 +270,18 @@ def main() -> int:
         report = {"action": args.action, "destination": str(destination), "entries": rows,
                   "trust": trust_state(project), "codex_cli": bool(shutil.which("codex")),
                   "runtime_verification": "未実施。新しいチャットで7担当の検出・起動を確認してください。"}
+        receipt = read_receipt(destination, ROOT)
+        shared = reused_skill(destination, ROOT, receipt)
+        if shared:
+            report["reused_skill"] = str(shared)
         if args.json:
             print(json.dumps(report, ensure_ascii=False, indent=2))
         else:
             print(f"対象: {destination}")
             for row in rows:
                 print(f"{row['state']}: {row['path']}")
+            if shared:
+                print(f"既存のスキル入口を再利用（管理対象外）: {shared}")
             if args.action != "check":
                 print("取り外しました。" if args.action == "uninstall" else "配置を適用しました。")
             print(report["trust"])

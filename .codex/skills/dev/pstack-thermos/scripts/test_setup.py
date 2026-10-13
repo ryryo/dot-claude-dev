@@ -13,8 +13,9 @@ class SetupTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='pstack-setup-test-')
         self.base = Path(self.temp.name)
-        self.source = self.base / '日本語 配布元'
+        self.source = self.base / '日本語 配布元/skills/dev/pstack-thermos'
         shutil.copytree(setup.ROOT / 'assets/agents', self.source / 'assets/agents')
+        shutil.copy2(setup.ROOT / 'SKILL.md', self.source / 'SKILL.md')
         self.dest = self.base / '作業 プロジェクト/.codex'
 
     def tearDown(self):
@@ -220,6 +221,131 @@ class SetupTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             setup.apply(self.dest, self.source, 'update')
         self.assertTrue((self.dest / 'skills/pstack').is_symlink())
+
+    def shared_install(self):
+        shared = self.dest / 'skills/dev'
+        shared.parent.mkdir(parents=True, exist_ok=True)
+        shared.symlink_to(self.source.parent, target_is_directory=True)
+        return shared
+
+    def test_shared_skill_lifecycle_manages_only_agents(self):
+        import json
+        shared = self.shared_install()
+        original_target = shared.readlink()
+        original_skill = (self.source / 'SKILL.md').read_bytes()
+        _, rows, receipt = setup.plan(self.dest, self.source, 'check')
+        self.assertIsNone(receipt)
+        self.assertEqual(len(rows), 7)
+        self.assertFalse((self.dest / 'agents').exists())
+        setup.apply(self.dest, self.source, 'install')
+        self.assertFalse((self.dest / setup.LINK).exists())
+        record = json.loads(setup.receipt_path(self.dest).read_text())
+        self.assertNotIn(setup.LINK, record['entries'])
+        self.assertEqual(len(record['entries']), 7)
+        setup.apply(self.dest, self.source, 'install')
+        (self.dest / 'agents/thermos-quality.toml').unlink()
+        setup.apply(self.dest, self.source, 'install')
+        template = self.source / 'assets/agents/thermos-quality.toml'
+        template.write_text(template.read_text() + '\n# テンプレートの更新\n')
+        setup.apply(self.dest, self.source, 'update')
+        self.assertEqual(template.read_bytes(), (self.dest / 'agents/thermos-quality.toml').read_bytes())
+        edited = self.dest / 'agents/thermos-correctness.toml'
+        edited.write_text(edited.read_text() + '\n# 利用者の変更\n')
+        for action in ('update', 'uninstall'):
+            with self.assertRaises(ValueError):
+                setup.apply(self.dest, self.source, action)
+        shutil.copy2(self.source / 'assets/agents/thermos-correctness.toml', edited)
+        setup.apply(self.dest, self.source, 'uninstall')
+        self.assertEqual(shared.readlink(), original_target)
+        self.assertEqual((self.source / 'SKILL.md').read_bytes(), original_skill)
+        self.assertFalse((self.dest / setup.LINK).exists())
+        self.assertFalse(setup.receipt_path(self.dest).exists())
+
+    def test_preexisting_unowned_direct_link_is_reused_and_preserved(self):
+        link = self.dest / setup.LINK
+        link.parent.mkdir(parents=True)
+        link.symlink_to(self.source)
+        setup.apply(self.dest, self.source, 'install')
+        setup.apply(self.dest, self.source, 'uninstall')
+        self.assertEqual(link.resolve(), self.source.resolve())
+
+    def test_update_retires_only_owned_duplicate_link(self):
+        import json
+        setup.apply(self.dest, self.source, 'install')
+        shared = self.shared_install()
+        _, rows, _ = setup.plan(self.dest, self.source, 'check')
+        self.assertTrue((self.dest / setup.LINK).is_symlink())
+        setup.apply(self.dest, self.source, 'update')
+        self.assertFalse((self.dest / setup.LINK).is_symlink())
+        self.assertEqual(shared.resolve(), self.source.parent.resolve())
+        self.assertNotIn(setup.LINK, json.loads(setup.receipt_path(self.dest).read_text())['entries'])
+
+    def test_shared_skills_directory_is_never_written(self):
+        self.dest.mkdir(parents=True)
+        shared = self.dest / 'skills'
+        shared.symlink_to(self.source.parent)
+        before = sorted(p.relative_to(self.source.parent).as_posix() for p in self.source.parent.rglob('*'))
+        setup.apply(self.dest, self.source, 'install')
+        setup.apply(self.dest, self.source, 'update')
+        setup.apply(self.dest, self.source, 'uninstall')
+        after = sorted(p.relative_to(self.source.parent).as_posix() for p in self.source.parent.rglob('*'))
+        self.assertEqual(before, after)
+        self.assertEqual(shared.resolve(), self.source.parent.resolve())
+
+    def test_missing_shared_link_can_be_repaired_or_uninstalled(self):
+        shared = self.shared_install()
+        setup.apply(self.dest, self.source, 'install')
+        shared.unlink()
+        setup.apply(self.dest, self.source, 'update')
+        self.assertEqual((self.dest / setup.LINK).resolve(), self.source.resolve())
+        setup.apply(self.dest, self.source, 'uninstall')
+        shared = self.shared_install()
+        setup.apply(self.dest, self.source, 'install')
+        shared.unlink()
+        setup.apply(self.dest, self.source, 'uninstall')
+        self.assertFalse((self.dest / setup.LINK).is_symlink())
+
+    def test_shared_entry_from_another_source_stops_before_writes(self):
+        foreign = self.base / '別の共通スキル/pstack-thermos'
+        foreign.mkdir(parents=True)
+        (foreign / 'SKILL.md').write_text('利用者の別スキル')
+        shared = self.dest / 'skills/dev'
+        shared.parent.mkdir(parents=True)
+        shared.symlink_to(foreign.parent)
+        with self.assertRaises(ValueError):
+            setup.apply(self.dest, self.source, 'install')
+        self.assertFalse((self.dest / 'agents').exists())
+        self.assertEqual((foreign / 'SKILL.md').read_text(), '利用者の別スキル')
+
+    def test_duplicate_link_retirement_rolls_back_on_receipt_failure(self):
+        from unittest.mock import patch
+        setup.apply(self.dest, self.source, 'install')
+        shared = self.shared_install()
+        before = setup.receipt_path(self.dest).read_bytes()
+        original = Path.replace
+        def fail_receipt(path, target):
+            if Path(target) == setup.receipt_path(self.dest):
+                raise OSError('入口の整理中に管理記録を書けない試験')
+            return original(path, target)
+        with patch.object(Path, 'replace', fail_receipt):
+            with self.assertRaises(OSError):
+                setup.apply(self.dest, self.source, 'update')
+        self.assertEqual(setup.receipt_path(self.dest).read_bytes(), before)
+        self.assertEqual((self.dest / setup.LINK).resolve(), self.source.resolve())
+        self.assertEqual(shared.resolve(), self.source.parent.resolve())
+
+    def test_legacy_update_uses_existing_shared_entry(self):
+        import json
+        old_receipt = self.legacy_install()
+        shared = self.shared_install()
+        setup.apply(self.dest, self.source, 'update')
+        self.assertFalse(old_receipt.exists())
+        self.assertFalse((self.dest / 'skills/pstack').is_symlink())
+        self.assertFalse((self.dest / setup.LINK).is_symlink())
+        record = json.loads(setup.receipt_path(self.dest).read_text())
+        self.assertEqual(len(record['entries']), 7)
+        self.assertNotIn(setup.LINK, record['entries'])
+        self.assertEqual(shared.resolve(), self.source.parent.resolve())
 
 
 if __name__ == '__main__':

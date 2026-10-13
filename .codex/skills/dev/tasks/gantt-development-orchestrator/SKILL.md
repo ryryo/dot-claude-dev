@@ -16,7 +16,8 @@ description: 多数の元IDをカテゴリ別に管理し、各IDを専任PMが�
 | 担当・場面 | 責任と入口 |
 | --- | --- |
 | カテゴリの通常管理 | 本書で全管理IDを確認し、[カテゴリ実行本文](references/task-launch.md#カテゴリオーケストラ)で完遂と供給を結ぶ配置・順序を決める。新規起動も同資料を使う。 |
-| 単体ID PM | [PMの実行入口](references/playing-manager.md)で元ID全体の残工程を見通し、部分成果を次の原条件、合法完了へつなぐ。カテゴリの起動資料一式は読ませない。 |
+| 単体ID PM | [PMの実行入口](references/playing-manager.md)で元ID全体の残工程を見通す。起動入力の停止・再開手順と終了前照合、展開済みの共通工程から未完終了・再開へ進む。カテゴリの起動資料一式は読ませない。 |
+| PMの未完終了報告を受け取ったカテゴリ | [未完終了の回収](../codex-task-split/references/execution-loop.md#未完終了の回収)で報告と現在の正本を照合し、未処理と再開責任を保持する。 |
 | 供給不足・CLI拒否・完了条件の確認 | [scopeと開始・完了判定](references/scope-and-gates.md)。共有仕様や担当を変える場合は[カテゴリ間調整](references/category-coordination.md)も読む。 |
 | 停滞・反復・状況照会 | [カテゴリ内点検](references/execution-review.md)。解消すべき問題を絞り、必要な復旧手順へ進む。 |
 | カテゴリ縮小・所属変更、承認された担当交代・統合集約 | [管理責任の引継ぎと所有移管](references/consolidation.md)。所属変更だけでPMを交代させず、通常の起動や部分供給には移管を要求しない。 |

@@ -1,0 +1,4 @@
+interface:
+  display_name: "dsh web 操作"
+  short_description: "dsh webの会話・履歴・状態・設定をCLIとRPCで操作する"
+  default_prompt: "$dsh-web を使って、起動中のdsh webの対象チャットと最新の回答を確認してください。"
