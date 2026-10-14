@@ -1,22 +1,24 @@
 ---
 name: dsh-web
-description: "DeepSeek Harnessのdsh webをCLI・HTTP RPCで操作する。起動、会話の検索・状態・履歴・回答の読取、新規チャット、依頼・追記・中断、ワークスペースや設定の操作に使う。起動中のwebへの操作をheadlessの別実行と取り違えない。"
+description: "DeepSeek HarnessのWeb版・公式Desktop版の会話や設定を操作する。対象インスタンスを特定し、認証済みHTTP RPCまたはアプリ画面で読取・依頼・追記・中断を行う。既存チャットの操作をheadlessの別実行と取り違えない。"
 ---
 
-# dsh web 操作
+# DSH Web / Desktop 操作
 
-DeepSeek Harnessの既存webサーバーへ接続し、対象の会話を読み、依頼された操作を行う。通常はCLIと認証済みRPCを使う。dshの画面操作を指定された場合はその指定を優先する。
+DeepSeek Harnessの対象インスタンスへ接続し、会話を読み、依頼された操作を行う。ユーザーが利用しているWeb版・Desktop版を優先し、認証済みRPCが利用できる場合は付属ヘルパーを使う。画面操作を指定された場合はその指定を優先する。Desktopの認証経路が得られない場合はアプリ画面を使う。
 
 ## 接続を選ぶ
 
 | 目的 | 経路 |
 | --- | --- |
 | 起動中のdsh webの会話を読む・操作する | 同じwebのHTTP RPC。付属の `scripts/dsh_web.py` を使う |
+| 公式Desktop版の会話を読む・操作する | [Desktopの接続と管理](references/desktop.md)を読む。同じHostの認証済みRPC、またはアプリ画面 |
+| Desktop版を起動する・プラグインを管理する | アプリの起動・プラグイン画面。CLIで管理する場合は同梱CLIと `desktop` profile |
 | webを立ち上げる | `dsh web --help` で現行オプションを確認し、既存プロセスとポートを確認して起動する |
 | webとは別に単発実行する | `dsh headless`。既存webの操作として使わない |
 | 独立した組込ランタイムを扱う | `dsh sdk` のstdio JSON-RPC。既存webへ接続するコマンドではない |
 
-初回の接続・起動・401の解消には[接続と認証](references/connection.md)を読む。RPCはweb内部の型付きインターフェースであり、公開REST APIとしての互換性を前提にしない。バージョンが違う、引数が拒否される、未記載の操作を行う場合は、インストール済みパッケージの `typert.host.js` と型定義を確認する。
+Web版の初回接続・起動・401の解消には[接続と認証](references/connection.md)を読む。以下のRPC操作は対象Hostへの認証済み接続がある場合に使う。RPCは内部の型付きインターフェースであり、公開REST APIとしての互換性を前提にしない。バージョンが違う、引数が拒否される、未記載の操作を行う場合は、対象ランタイムの `typert.host.js` と型定義を確認する。
 
 ## 会話を読む
 
@@ -42,4 +44,4 @@ DeepSeek Harnessの既存webサーバーへ接続し、対象の会話を読み�
 
 ワークスペース、ファイル、設定、モデル、質問への回答、端末、job、添付の操作は[読取と操作](references/operations.md)の対応表から、該当するインストール済みcontrollerを調べる。非streamのRPCは `call METHOD --args-file FILE` で実行できる。generated descriptorのwire引数名を保ち、すべてを `request` に包まない。
 
-最終報告には対象チャットのcredentialを含まないURLと、取得・受理・実行・完了のうち確認できた状態を示す。操作記録にはID、cwd、receipt、必要なcursorを残し、起動tokenやcookieは残さない。
+最終報告には対象チャットのcredentialを含まないURL（Desktopでリンクが得られない場合はタイトル・ID・cwd）と、取得・受理・実行・完了のうち確認できた状態を示す。操作記録にはID、cwd、receipt、必要なcursorを残し、起動tokenやcookieは残さない。
