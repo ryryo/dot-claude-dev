@@ -12,6 +12,8 @@
 
 ## 対象と接続経路
 
+WSLからWindows版へ接続するときは[Windows Desktop / WSL](windows-desktop-wsl.md)を先に確認する。Windows側のPythonと既存RPCヘルパーを使う経路を調べてから、画面操作の必要性を判断する。
+
 アプリのバージョン、起動プロセス、Hostのlisten、使用する `DSH_HOME` を確認する。アプリが閉じていれば通常のアプリ起動を使い、接続用の `dsh web` を別に立ち上げない。Desktop profileをCLIでbootしない。
 
 DesktopはWebと同じ会話APIを使うが、画面は `dsh-app://app/` で、アプリがHostの起動URLをcookieに交換してHTTP・WebSocketへ認証を付ける。内部IPCはアプリ所有の起動・認証経路であり、外部エージェント用の公開操作APIではない。

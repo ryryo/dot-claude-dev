@@ -140,6 +140,21 @@ python3 "$DSH_SKILL/scripts/dsh_web.py" --base "$DSH_BASE" \
 
 設定の書込みはnamespaceのschema・現在値・revisionを読む。redactedなsecret値をplaceholderのままreplaceしない。conflictは再読取して意図した変更を再評価する。
 
+## 実行権限と新規セッションの既定値
+
+利用者の継続許可は[SKILL.md](../SKILL.md#この利用者の実行設定)で確認する。既定値の変更と、作成済みセッションへの適用は別操作。どちらも対象Hostの認証済みRPCで行い、profileファイルやセッションJSONを直接書き換えない。
+
+| RPC | args | 用途 |
+| --- | --- | --- |
+| `permissionPresets/catalog` | `{}` | selectableな値と `defaultPreset` を確認 |
+| `settings/describe` | `{}` | `namespaces` 内の `ns: "permission"` のschema・value・revisionを取得 |
+| `settings/update` | `{"ns":"permission","patch":{"defaultPreset":"danger-full-access"},"expectedRevision":REVISION}` | 指定Host/profileの今後の新規セッションに適用。既に同値なら不要 |
+| `commands/execute` | `{"agentId":"SESSION_ID","line":"/permission danger-full-access","submittedAttachments":[]}` | 実在する対象セッションの権限を変更。既に同値なら不要 |
+
+更新後は設定を再読し、対象セッションの完全projectionで `permissions.currentValue === "danger-full-access"` を確認してから実装依頼を送る。既存モデル・推論・保留指示を維持し、質問への明示回答や実再開の記録は別途行う。権限設定の成功だけで実コマンドや製品検収の成功にしない。
+
+0.2.0-rc.2のWindows Desktop同梱 `dsh-permission-presets`、`dsh-commands`、`dsh-api-settings-controller` のREADME・generated descriptor・UI実装で照合した。`commands/execute` は `agentId` / `line` / `submittedAttachments` を直接渡し、`request` に包まない。`settings/update` は新規セッションの既定値を保存し、既存セッションの値を自動変更しない。
+
 ## live stream
 
 `session/follow`、`session/control`、`workspace/follow`、job、端末のfollowは `BASE/api/remote.mux` のWebSocket carrierを使う。`call` は非stream RPC専用で、streamをHTTP POSTで購読しない。
