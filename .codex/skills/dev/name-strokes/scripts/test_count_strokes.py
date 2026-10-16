@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import os
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -176,6 +177,58 @@ class StrokeTests(unittest.TestCase):
         result=json.loads(p.stdout)[0]
         self.assertEqual(result['total'],8)
         self.assertEqual(result['fortune']['status'],'data_not_configured')
+
+    def test_cli_uses_current_home_with_unset_or_empty_xdg(self):
+        home = Path(self.tmp.name)/'別 PC のホーム'
+        env = os.environ.copy()
+        env['HOME'] = str(home)
+        env.pop('NAME_STROKES_DATA',None)
+        expected = home/'カスタム データ/name-strokes/shamei_uranai_1-120.json'
+        for xdg in (None, '', str(home/'カスタム データ')):
+            with self.subTest(xdg=xdg):
+                if xdg is None:
+                    env.pop('XDG_DATA_HOME',None)
+                else:
+                    env['XDG_DATA_HOME'] = xdg
+                p = subprocess.run([sys.executable,str(ROOT/'scripts/count_strokes.py'),'は','--json'],capture_output=True,text=True,env=env)
+                self.assertEqual(p.returncode,0,p.stderr)
+                result=json.loads(p.stdout)[0]
+                self.assertEqual(result['total'],3)
+                self.assertEqual(result['breakdown'][0]['basis'],'japanese_data')
+                self.assertEqual(result['fortune']['status'],'data_not_configured')
+                path = expected if xdg else home/'.local/share/name-strokes/shamei_uranai_1-120.json'
+                self.assertEqual(Path(result['fortune']['data_path']),path.resolve())
+
+    def test_cli_explicit_unicode_space_path_overrides_environment(self):
+        pth = Path(self.tmp.name)/'mnt/c/Users/Windows User/占い 資料/鑑定 原文.json'
+        pth.parent.mkdir(parents=True)
+        shutil.copyfile(self.fixture,pth)
+        env = os.environ.copy()
+        env['NAME_STROKES_DATA'] = str(Path(self.tmp.name)/'missing.json')
+        p = subprocess.run([sys.executable,str(ROOT/'scripts/count_strokes.py'),'一','--json','--data',str(pth)],capture_output=True,text=True,env=env)
+        self.assertEqual(p.returncode,0,p.stderr)
+        result=json.loads(p.stdout)[0]
+        self.assertEqual(result['total'],1)
+        self.assertEqual(Path(result['fortune']['data_path']),pth.resolve())
+        self.assertEqual(result['fortune']['result_content'],'SYNTHETIC PRIMARY 1\n')
+
+    def test_public_skill_relocated_with_separate_home_and_private_data(self):
+        skill = Path(self.tmp.name)/'clone 配置先/name-strokes'
+        shutil.copytree(ROOT,skill,ignore=shutil.ignore_patterns('__pycache__'))
+        home = Path(self.tmp.name)/'別の利用者'
+        private = home/'.local/share/name-strokes/shamei_uranai_1-120.json'
+        private.parent.mkdir(parents=True)
+        shutil.copyfile(self.fixture,private)
+        env = os.environ.copy()
+        env['HOME'] = str(home)
+        env.pop('NAME_STROKES_DATA',None)
+        env.pop('XDG_DATA_HOME',None)
+        p = subprocess.run([sys.executable,str(skill/'scripts/count_strokes.py'),'ガント','--json'],capture_output=True,text=True,env=env,cwd=home)
+        self.assertEqual(p.returncode,0,p.stderr)
+        result=json.loads(p.stdout)[0]
+        self.assertEqual(result['total'],8)
+        self.assertEqual(Path(result['fortune']['data_path']),private.resolve())
+        self.assertEqual(result['fortune']['result_content'],'SYNTHETIC PRIMARY 8\n')
 
     def test_cli_rejects_invalid_override(self):
         p = subprocess.run([sys.executable,str(ROOT/'scripts/count_strokes.py'),'一','--override','一=-1'],capture_output=True,text=True)

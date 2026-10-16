@@ -20,7 +20,7 @@ def resolve_data_path(explicit=None):
     value = explicit or os.environ.get('NAME_STROKES_DATA')
     if value:
         return Path(value).expanduser().resolve()
-    base = Path(os.environ.get('XDG_DATA_HOME', str(Path.home()/'.local/share')))
+    base = Path(os.environ.get('XDG_DATA_HOME') or Path.home()/'.local/share')
     return (base/'name-strokes/shamei_uranai_1-120.json').expanduser().resolve()
 
 # Explicit handwriting conventions, not individually observed website values.

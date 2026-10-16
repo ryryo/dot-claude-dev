@@ -57,7 +57,7 @@
 
 ### ローカル鑑定ファイルの設定
 
-参照先の優先順は `--data FILE`、環境変数 `NAME_STROKES_DATA`、既定ファイル。既定は `$XDG_DATA_HOME/name-strokes/shamei_uranai_1-120.json`。XDG未設定時は `~/.local/share/name-strokes/shamei_uranai_1-120.json`。校正候補は同じフォルダーの `校正候補.csv` を別途読む。
+参照先の優先順は `--data FILE`、環境変数 `NAME_STROKES_DATA`、既定ファイル。既定は `$XDG_DATA_HOME/name-strokes/shamei_uranai_1-120.json`。XDG未設定または空文字の場合は `~/.local/share/name-strokes/shamei_uranai_1-120.json`。ホームは実行ユーザーのものを使い、Macのユーザー名や `/Users/...` には固定しない。校正候補は同じフォルダーの `校正候補.csv` を別途読む。
 
 ファイルがなくても公開cloneで文字計数は可能。鑑定欄は `data_not_configured`。壊れたデータは `data_error`、部分データで番号が存在しなければ `result_not_available` とし、本文を捏造しない。原文監査はローカルファイルに対して `audit_corpus.py --data FILE` を実行する。
 
@@ -68,6 +68,27 @@ JSONの最小形は次のような架空データ。これはスキーマ説明�
 ```
 
 `.gitignore` は `local/`、`private/`、原文JSON名、校正候補CSV名、私的出典ファイル名を除外する。原文を含む出力を別名でリポジトリへ保存して公開しない。公開テストは一時ディレクトリに作る架空の最小fixtureだけを用い、実原文の有無に依存しない。
+
+### Mac / WSL / Linuxでの利用
+
+Python **3.9以上**の標準ライブラリだけを使う。公開cloneに含まれるスキルフォルダー全体があれば、鑑定原文なしでも計数できる。pipインストールや実行時のネット接続は不要。以下のclone先は例なので、実際の配置先に合わせる。
+
+```bash
+SKILL_DIR="$HOME/dev/dot-claude-dev/.codex/skills/dev/name-strokes"
+python3 --version
+python3 "$SKILL_DIR/scripts/count_strokes.py" 'ガント' --json
+```
+
+MacとWSL/Linuxの推奨原文配置先は、いずれも `~/.local/share/name-strokes/shamei_uranai_1-120.json`（XDG未設定時）。公開コード・公開画数データはcloneで取得し、利用権のある原文・校正資料は各PCのGit管理外へ別途コピーする。原文が配置されれば同じコマンドでその番号の鑑定も参照できる。
+
+WSLではLinux側の `python3` を使う。Windows側のファイルを直接読む場合は、ドライブがマウントされている実際の `/mnt/c/...` パスを `--data` に指定する。Windowsユーザー名やファイル名は置き換え、空白・日本語を含むパス全体を引用符で囲む。
+
+```bash
+python3 "$SKILL_DIR/scripts/count_strokes.py" 'ガント' --json \
+  --data "/mnt/c/Users/<Windowsユーザー>/Documents/占い 資料/鑑定 原文.json"
+```
+
+`C:\\Users\\...` を自動変換する機能はない。2026-10-16、Mac上のPython 3.12.10と3.14.2で各24テストが成功。別ホーム、データ未配置、日本語・空白を含む `--data`、別配置先からの起動を確認した。WSL実機、Windowsマウントの存在・権限は未確認。最低版3.9は使用構文・APIの要件で、3.9自体の実行確認はしていない。
 
 ## 表記の扱い
 

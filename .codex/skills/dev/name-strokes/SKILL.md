@@ -17,15 +17,15 @@ description: 社名・屋号・サービス名の候補を発音、意味、用�
 
 ## CLI
 
-`<skill-dir>` はこのSKILL.mdのある実際のフォルダーに置き換える。
+Python **3.9以上**、標準ライブラリのみ。pip依存や実行時の通信はない。Mac／WSL／Linuxで同じCLIを使う。`<skill-dir>` はこのSKILL.mdのある実際のフォルダーに置き換える。
 
 ```bash
-python3 <skill-dir>/scripts/count_strokes.py '候補名A' '候補名B'
-python3 <skill-dir>/scripts/count_strokes.py 'ｶﾞ＋Ａ' '一🧪一' --json
-python3 <skill-dir>/scripts/count_strokes.py 'は' --profile site-inspired
-python3 <skill-dir>/scripts/count_strokes.py '株式会社候補名' --strip-corporate
-python3 <skill-dir>/scripts/count_strokes.py '一🧪一' --override '🧪=5'
-python3 <skill-dir>/scripts/count_strokes.py '候補名' --data /path/outside/repository/fortune.json
+python3 "<skill-dir>/scripts/count_strokes.py" '候補名A' '候補名B'
+python3 "<skill-dir>/scripts/count_strokes.py" 'ｶﾞ＋Ａ' '一🧪一' --json
+python3 "<skill-dir>/scripts/count_strokes.py" 'は' --profile site-inspired
+python3 "<skill-dir>/scripts/count_strokes.py" '株式会社候補名' --strip-corporate
+python3 "<skill-dir>/scripts/count_strokes.py" '一🧪一' --override '🧪=5'
+python3 "<skill-dir>/scripts/count_strokes.py" '候補名' --data "/path/outside/repository/fortune.json"
 ```
 
 - 日本語データ未収録の漢字まで調べるためにUnihanを使う場合だけ `--han-fallback unihan` を明示する。日本語字体と異なる可能性を表示し、根拠付きの補完として扱う。
@@ -36,6 +36,8 @@ python3 <skill-dir>/scripts/count_strokes.py '候補名' --data /path/outside/re
 - データ未設定の公開cloneでも計数は動く。鑑定は `data_not_configured` と説明し、本文・印を生成しない。
 - `--strict` は未知文字があっても全候補の内訳を出力し、終了コード2を返す。既定では未知文字があってもプログラム全体を落とさない。
 - 日本語・英字・数字の表記差は正規化するが、漢字の新旧字体・CJK互換漢字は一律に統合しない。原表記と変換履歴を残す。
+
+別PCではスキルフォルダー全体（公開assetsを含む）を配置し、非公開の鑑定原文をGit管理外へ別途コピーする。Mac／WSLの配置・実行例は [ローカル設定とWSL利用](references/counting-policy.md#mac--wsl--linuxでの利用) を読む。WSLではLinux側のPythonを使い、Windows側ファイルには引用符付きの `/mnt/c/...` パスを渡す。WSL実機では未検証。
 
 ## 鑑定原文
 
