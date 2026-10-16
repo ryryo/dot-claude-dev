@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub 先行実装リサーチ"
+  short_description: "定番OSSと実績ある作者の低スター実装を探し、新規開発に活かす"
+  default_prompt: "$github-implementation-research を使って、新規開発で参考になる GitHub の先行実装を定番と作者起点の両方から調べてください。"
