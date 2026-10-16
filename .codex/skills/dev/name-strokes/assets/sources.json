@@ -1,0 +1,46 @@
+{
+  "unihan": {
+    "version": "17.0.0",
+    "archive_url": "https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip",
+    "archive_sha256": "f7a48b2b545acfaa77b2d607ae28747404ce02baefee16396c5d2d7a8ef34b5e",
+    "license": "Unicode-3.0",
+    "license_url": "https://www.unicode.org/license.txt",
+    "license_local": "../references/UNICODE-LICENSE.txt",
+    "fields": [
+      "kTotalStrokes",
+      "kAlternateTotalStrokes"
+    ],
+    "selection": "--han-fallback unihan を明示した場合のみ。日本語データと実測値の後で補完。J指定があれば優先。",
+    "retrieved_at": "2026-10-16",
+    "default": false
+  },
+  "observations": {
+    "csv": "../references/社名占い_実測.csv",
+    "complete_observations": 98,
+    "interrupted": 1
+  },
+  "kanjivg": {
+    "commit": "70a0b7ae0c18ceb5cb358274b029cce0234a43bc",
+    "url": "https://codeload.github.com/KanjiVG/kanjivg/zip/70a0b7ae0c18ceb5cb358274b029cce0234a43bc",
+    "archive_sha256": "d6a17d77902b863d7524e24d11c44ae628c5d5ba4f09cb3af90c1190bf78bcca",
+    "bytes": 24094874,
+    "license": "CC-BY-SA-3.0",
+    "project_url": "https://kanjivg.tagaini.net/",
+    "copyright": "Ulrich Apel and contributors",
+    "license_local": "../references/KANJIVG-COPYING.txt",
+    "derived_data_license": "CC-BY-SA-3.0",
+    "characters": 6984,
+    "default": true
+  },
+  "local_fortune_data": {
+    "included_in_git": false,
+    "default_file": "$XDG_DATA_HOME/name-strokes/shamei_uranai_1-120.json (default ~/.local/share/name-strokes/)",
+    "selection_priority": [
+      "--data FILE",
+      "NAME_STROKES_DATA",
+      "XDG_DATA_HOME/default"
+    ],
+    "schema": "results[]: target_strokes, result: result_num/result_mark/result_content/result_follow",
+    "policy": "原文・校正資料は利用者のローカルファイル。公開cloneには含めない。未設定でも計数は動作する。"
+  }
+}

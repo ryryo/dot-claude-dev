@@ -1,0 +1,4 @@
+interface:
+  display_name: "命名と画数"
+  short_description: "社名・サービス名の画数を根拠付きで比較し、発音や意味も含めて候補を検討"
+  default_prompt: "$name-strokes を使って、サービス名の候補を意味・発音・画数から比較してください。"

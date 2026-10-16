@@ -1,0 +1,9 @@
+# User-owned fortune texts and proofreading material are local-only.
+/local/
+/private/
+**/shamei_uranai_1-120.json
+**/*校正候補*.csv
+**/*校正資料*
+**/source-provenance.json
+__pycache__/
+*.pyc

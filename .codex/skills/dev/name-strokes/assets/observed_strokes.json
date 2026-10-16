@@ -1,0 +1,236 @@
+{
+  "characters": {
+    "一": {
+      "strokes": 1,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 1"
+    },
+    "十": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 2"
+    },
+    "龍": {
+      "strokes": 16,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 3"
+    },
+    "あ": {
+      "strokes": 3,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 23"
+    },
+    "ぁ": {
+      "strokes": 3,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 24"
+    },
+    "ア": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 25"
+    },
+    "ァ": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 26"
+    },
+    "か": {
+      "strokes": 3,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 28"
+    },
+    "が": {
+      "strokes": 5,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 29"
+    },
+    "カ": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 31"
+    },
+    "ガ": {
+      "strokes": 4,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 32"
+    },
+    "は": {
+      "strokes": 4,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 34"
+    },
+    "ぱ": {
+      "strokes": 5,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 35"
+    },
+    "A": {
+      "strokes": 3,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 38"
+    },
+    "a": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 39"
+    },
+    "0": {
+      "strokes": 1,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 46"
+    },
+    "1": {
+      "strokes": 1,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 47"
+    },
+    "2": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 48"
+    },
+    "3": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 49"
+    },
+    "4": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 50"
+    },
+    "5": {
+      "strokes": 3,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 51"
+    },
+    "6": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 52"
+    },
+    "7": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 53"
+    },
+    "8": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 54"
+    },
+    "9": {
+      "strokes": 2,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 55"
+    },
+    "吉": {
+      "strokes": 6,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 81"
+    },
+    "国": {
+      "strokes": 8,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 82"
+    },
+    "國": {
+      "strokes": 11,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 83"
+    },
+    "高": {
+      "strokes": 10,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 84"
+    },
+    "髙": {
+      "strokes": 11,
+      "basis": "observed",
+      "source": "Mac Chrome 2026-10-16 CSV ID 85"
+    },
+    "&": {
+      "strokes": 2,
+      "basis": "observed_difference",
+      "source": "Mac Chrome 2026-10-16 CSV ID 63",
+      "note": "一一=2画との差分で観測"
+    },
+    "-": {
+      "strokes": 1,
+      "basis": "observed_difference",
+      "source": "Mac Chrome 2026-10-16 CSV ID 64",
+      "note": "一一=2画との差分で観測"
+    },
+    "ー": {
+      "strokes": 1,
+      "basis": "observed_difference",
+      "source": "Mac Chrome 2026-10-16 CSV ID 66",
+      "note": "一一=2画との差分で観測"
+    },
+    "・": {
+      "strokes": 1,
+      "basis": "observed_difference",
+      "source": "Mac Chrome 2026-10-16 CSV ID 67",
+      "note": "一一=2画との差分で観測"
+    },
+    ".": {
+      "strokes": 1,
+      "basis": "observed_difference",
+      "source": "Mac Chrome 2026-10-16 CSV ID 74",
+      "note": "一一=2画との差分で観測"
+    },
+    "々": {
+      "strokes": 3,
+      "basis": "observed_difference",
+      "source": "Mac Chrome 2026-10-16 CSV ID 96",
+      "note": "一一=2画との差分で観測"
+    },
+    "二": {
+      "strokes": 2,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=2"
+    },
+    "三": {
+      "strokes": 3,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=3"
+    },
+    "木": {
+      "strokes": 4,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=4"
+    },
+    "本": {
+      "strokes": 5,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=5"
+    },
+    "光": {
+      "strokes": 6,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=6"
+    },
+    "良": {
+      "strokes": 7,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=7"
+    },
+    "林": {
+      "strokes": 8,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=8"
+    },
+    "泉": {
+      "strokes": 9,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=9"
+    },
+    "原": {
+      "strokes": 10,
+      "basis": "provided_fixture",
+      "source": "ユーザー提供JSON target_strokes=10"
+    }
+  },
+  "policy": "単字実測または差分を優先。ユーザー提供単字結果は別属性"
+}

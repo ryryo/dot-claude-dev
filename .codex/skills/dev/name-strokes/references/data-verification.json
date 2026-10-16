@@ -1,0 +1,28 @@
+{
+  "source": "user_provided_original",
+  "bytes": 315456,
+  "sha256": "6b004c1e0c96d55563ff62a4923551fd95fd1b3ea905ce384fa783ed776c8ed9",
+  "expected_sha256": "6b004c1e0c96d55563ff62a4923551fd95fd1b3ea905ce384fa783ed776c8ed9",
+  "entry_count": 120,
+  "missing": [],
+  "duplicate_strokes": [],
+  "duplicate_json_keys": [],
+  "result_mismatch": [],
+  "fixture_count_mismatch": [],
+  "empty_primary_text": [],
+  "empty_follow_count": 60,
+  "empty_follow_only_good_marks": true,
+  "mark_counts": {
+    "◎": 34,
+    "×": 49,
+    "○": 26,
+    "△": 11
+  },
+  "digit_normalized_primary_template_count": 60,
+  "browser_observed_totals_compared": 25,
+  "browser_content_fingerprint_mismatch_ids": [],
+  "browser_rating_mismatch_ids": [],
+  "text_modified": false,
+  "website_refetched": false,
+  "ok": true
+}
