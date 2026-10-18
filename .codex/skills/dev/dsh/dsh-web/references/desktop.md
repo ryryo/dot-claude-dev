@@ -23,6 +23,7 @@ DesktopはWebと同じ会話APIを使うが、画面は `dsh-app://app/` で、�
 | 利用できる経路 | 操作 |
 | --- | --- |
 | 対象Desktop Hostの有効な起動URLが、明示された非公開ファイル・環境変数などで利用可能 | [Web共通の認証手順](connection.md)でcookieを交換し、同じHostに `dsh_web.py` で接続。まず読取で対象を確認する |
+| 同じDesktopの既存renderer操作経路が利用可能 | そのrendererの認証済みtransportで正規RPCを使う。WSLでは[Desktop接続の再確認](windows-desktop-wsl.md#desktop接続の再確認)を参照する |
 | アプリの認証情報を外部から利用する経路がない | 利用可能なアプリ操作ツールで画面を読み、対象チャットの選択・送信・結果確認を行う |
 
 同梱CLIは起動中アプリへの接続コマンドではない。`headless --session-id` や独立SDK実行を既存Desktopチャットの操作に代用しない。認証のための秘密鍵・cookieの抽出や偽造、保護の無効化を行わない。`dsh-app://app/` はHTTPヘルパーのbaseに使えない。利用可能な認証経路と画面操作ツールがどちらもなければ、その不足を報告する。

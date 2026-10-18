@@ -40,6 +40,17 @@ DesktopにWSLのrepoが `\\wsl.localhost\<distribution>\home\<user>\<repo>` と�
 
 対象Desktopの既存renderer操作経路が利用できる場合は、そのアプリの認証済みtransportで同じRPCを呼ぶこともできる。token/cookieを外へ取り出さない。接続のためにDesktopの終了・再起動が必要なら、稼働中の会話へ影響するため、まず状態と今回の操作範囲を確認する。利用者が指定した既存Desktopを、別Webの起動やprofileの直接書換えで代用しない。
 
+## Desktop接続の再確認
+
+この環境では、利用者が完全終了を確認した後、**同じWindows Desktopをloopback限定の一時CDP付きで起動し、同じrendererの認証済みtransportを使う経路が実際に成功した**。画面操作工具の失敗後にも、会話読取・依頼受理・実WSLコマンド成功まで確認している。この成功経路を、画面操作工具の初期化失敗だけで見落とさない。
+
+1. 対象Desktopのプロセス・Hostのlistenと、標準 `mcp__node_repl_wsl__js` に残る既存の接続bindingを確認する。以前使った `dshRpc` 等が残っていれば再利用し、対象workspace/sessionの読取で現在も有効か確認する。名前やportは過去の例なので固定しない。
+2. 一時CDPが現在も利用できる場合は、同じDesktopの `dsh-app://app/` rendererへ接続し、その版のアプリ内transportと正規RPC/catalogを確認する。token/cookieを外へ取り出さず、まずprojectionと履歴を読み、queue・質問・停止理由と今回の許可を照合してから送信する。受理と実着手は別に回収する。
+3. Hostだけがlistenし、一時CDPも既存bindingもなければ、アプリは起動中だがこの操作経路は未接続である。通常起動やChromeの起動で一時CDP・bindingが復元されるとは扱わない。明示供給された現在の起動URLによるRPCと、利用可能なアプリ画面操作を確認する。
+4. 接続入口を戻すための終了・再起動は、今回の許可と稼働中の会話への影響を確認して扱う。過去の再起動承諾を今回へ流用しない。許可済みの完全終了後に同じ実行ファイルを一時 `--remote-debugging-address=127.0.0.1 --remote-debugging-port=<確認した空きport>` 付きで起動する場合も、同じprofile/保存先を維持し、恒久設定を変更しない。再接続だけで停止中の担当や完了goalを再開しない。
+
+Windows画面操作の `failed to launch codex app-server ... os error 193` はその工具の起動エラーであり、DSH Host故障の証拠ではない。HostへのHTTP 401、一時CDP不在、実WSLコマンドの権限エラーはそれぞれ別の段階として記録する。過去に成功したこと、現在の接続成功、担当への送信、実開発開始を混同しない。
+
 ## DSH内の開発コマンドをWSLで実行する
 
 この節は、Windows Desktopが `\\wsl.localhost\DISTRIBUTION\...` または `\\wsl$\DISTRIBUTION\...` のプロジェクトを扱う場合に使う。WindowsのプロジェクトやmacOS/LinuxのDSHへ一律適用しない。Desktopへの接続方法と、依頼先が開発コマンドを実行する環境は別である。
