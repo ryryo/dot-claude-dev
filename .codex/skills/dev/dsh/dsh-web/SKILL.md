@@ -24,7 +24,7 @@ DeepSeek Harnessの対象インスタンスへ接続し、会話を読み、依�
 | webとは別に単発実行する | `dsh headless`。既存webの操作として使わない |
 | 独立した組込ランタイムを扱う | `dsh sdk` のstdio JSON-RPC。既存webへ接続するコマンドではない |
 
-WSLからWindowsのDesktop版を操作する場合は、先に[WSLからWindows Desktopへ接続する](references/windows-desktop-wsl.md)を読む。Windows側のPythonから同じRPCヘルパーを実行できる。WSLのloopbackへの接続失敗や画面操作ツールの初期化失敗だけで、CLI経路がないと判断しない。
+WSLからWindowsのDesktop版を操作する場合は、先に[WSLからWindows Desktopへ接続する](references/windows-desktop-wsl.md)を読む。接続が失われた場合は同資料の[Desktop接続の再確認](references/windows-desktop-wsl.md#desktop接続の再確認)から既存rendererと認証済みRPCの可否を確認する。Windows側のPythonから同じRPCヘルパーを実行できる。WSLのloopbackへの接続失敗や画面操作ツールの初期化失敗だけで、CLI経路がないと判断しない。
 
 Windows DesktopからWSL内のプロジェクトへ新規スレッドを作成・再開する場合は、同資料の[WSLでの作業開始](references/windows-desktop-wsl.md#dsh内の開発コマンドをwslで実行する)も適用する。最初の依頼へ同梱ヘルパーの実パス・distribution・Linux作業場所と開始確認を含め、WSLでの実行成功を確認してから開発を始める。これはこのスキル経由の起動手順であり、Desktopの標準シェルを変更する設定ではない。
 
