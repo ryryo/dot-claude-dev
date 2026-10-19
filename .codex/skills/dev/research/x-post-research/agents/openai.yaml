@@ -1,0 +1,4 @@
+interface:
+  display_name: "X 投稿リサーチ"
+  short_description: "captcha を避けて X の投稿を検索し、公式発表と利用者の観測を分けて集める"
+  default_prompt: "$x-post-research を使って、X 上の関連投稿を検索し、公式の発表と利用者の観測を分けて整理してください。"
