@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instabox 基本活用"
+  short_description: "公式資料を確認してLinux作業機の作成・接続・検証・再利用を進める"
+  default_prompt: "$instabox を使って、今回の開発・検証に合う作業機と接続方法を選び、必要な作業と結果回収を進めてください。"
