@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instabox 開発パターン実験"
+  short_description: "タスクに合う司令役と実行場所を仮選定し、開発・切断・復旧を小さく検証する"
+  default_prompt: "$instabox-dev-experiment を使って、この検証タスクに合う開発パターンを仮案として選び、小さく実験して適否と未確認事項を報告してください。"
