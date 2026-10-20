@@ -15,6 +15,7 @@ if [ $# -lt 1 ]; then
 fi
 
 if [ -n "${X_SEARCH_FIXTURE:-}" ]; then
+  [ -f "$X_SEARCH_FIXTURE" ] || { echo "fixture が見つからない: $X_SEARCH_FIXTURE" >&2; exit 64; }
   body=$(cat "$X_SEARCH_FIXTURE")
   code=200
 else
