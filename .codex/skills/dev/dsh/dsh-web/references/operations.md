@@ -142,7 +142,7 @@ python3 "$DSH_SKILL/scripts/dsh_web.py" --base "$DSH_BASE" \
 
 ## 実行権限と新規セッションの既定値
 
-利用者の継続許可は[SKILL.md](../SKILL.md#この利用者の実行設定)で確認する。既定値の変更と、作成済みセッションへの適用は別操作。どちらも対象Hostの認証済みRPCで行い、profileファイルやセッションJSONを直接書き換えない。
+利用者の継続許可は[SKILL.md](../SKILL.md)で確認する。既定値の変更と、作成済みセッションへの適用は別操作。どちらも対象Hostの認証済みRPCで行い、profileファイルやセッションJSONを直接書き換えない。
 
 | RPC | args | 用途 |
 | --- | --- | --- |
@@ -161,4 +161,4 @@ python3 "$DSH_SKILL/scripts/dsh_web.py" --base "$DSH_BASE" \
 
 streamが必要になったらインストール済み `dsh-client-connection` のREADME・ `lib/types/rpc*.d.ts` と、該当controllerのgenerated clientを読み、公式のRemoteConnection/muxを使う。同じ認証cookie・Originを維持する。session followのopening baselineとcursor、再接続時のgap修復、assistant-streamのattempt/revision/indexを扱う。自作の「seqが増えたら本文をappendする」簡易streamで置換や再接続を失わない。
 
-通常の会話読取・進捗確認は付属helperのsnapshotで行える。長期監視や定期起動は別途依頼された場合に設定する。
+通常の会話読取・進捗確認は付属helperのsnapshotで行える。実装委譲後のタイマー監視と補正は[SKILL.mdの定期監視](../SKILL.md#実装依頼後の定期監視)に従う。それ以外の長期監視や定期起動は、別途依頼された場合に設定する。
