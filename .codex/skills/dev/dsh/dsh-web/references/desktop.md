@@ -2,13 +2,21 @@
 
 公式Electron版が対象。コミュニティ版は起動方式・profile・認証が異なる場合があるため、その配布元の資料を確認する。
 
+## Desktop MCPを優先する
+
+公式0.2.1-rc.3の対応環境では、登録済み `dsh_desktop` MCPで同じ既存Hostを操作する。[Desktop MCPスキル](desktop-mcp/SKILL.md)を読み、`dsh_status` で `runtime: existing-desktop` と対応版を確認する。会話・プロジェクト管理、添付、質問/承認回答、予定実行、会話を開く・分割する操作は専用ツールを使う。書込の不明応答は同じrequestIdで照合し、別の経路から二重実行しない。
+
+ツールが利用できなければ、同スキルから導入手順とMCP登録を確認する。同梱bridge CLIも同じHost・台帳を使える。公式アプリ同梱の管理CLIとは別物。接続のためにアプリのcookie・起動秘密・モデル資格情報を抽出せず、モデル・承認ポリシー・sandboxの設定も変更しない。
+
+今回のMCPはmacOS/Linux向けでWindowsは未対応。以下の認証済みRPC・画面経路は、MCPが利用できない環境・対応外操作・利用者が画面操作を指定した場合に参照する。接続断や未確定の書込をRPCへの切替で再送しない。
+
 ## 最初に読む公式資料
 
 - [Desktop README](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md)：構成、Terminal command、Closing the window and quitting、Installation ownership。
 - [同梱CLI](https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md#bundled-command-runtime)：CLIとDesktop profileの管理。
 - [Web Plugin Manager](https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/client/ui-plugin-manager/README.md)：アプリ内のプラグイン管理。
 
-2026-10-13に公式資料とインストール済みmacOSアプリ `0.2.0-rc.2` の同梱コード・CLI helpを確認した。Desktopへの外部RPC接続・送信は未検証。公開masterと実物に違いがあれば、対象アプリの実装を優先する。
+以下の従来経路は2026-10-13に公式資料とインストール済みmacOSアプリ `0.2.0-rc.2` の同梱コード・CLI helpを確認したもの。MCPについては2026-10-24に公式Desktop `0.2.1-rc.3`で実機検証済み（詳細は[検証記録](../../../../../../../dsh-plugins/docs/desktop-mcp.md)）。公開masterと実物に違いがあれば、対象アプリの実装を優先する。
 
 ## 対象と接続経路
 

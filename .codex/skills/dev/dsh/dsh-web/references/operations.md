@@ -2,6 +2,8 @@
 
 以下は0.2.0-rc.2の契約。`args` はRPC envelopeの `payload.args` に入る。helperの接続オプションは[接続と認証](connection.md)を参照する。
 
+Desktopの日常操作は[Desktop MCPスキル](desktop-mcp/SKILL.md)を優先する。この資料はWeb/RPC経路やMCPが提供しない操作を、対象版の公開APIと照合して扱うための参照資料。
+
 ## 会話の検索・状態
 
 ```sh
@@ -142,7 +144,7 @@ python3 "$DSH_SKILL/scripts/dsh_web.py" --base "$DSH_BASE" \
 
 ## 実行権限と新規セッションの既定値
 
-利用者の継続許可は[SKILL.md](../SKILL.md)で確認する。既定値の変更と、作成済みセッションへの適用は別操作。どちらも対象Hostの認証済みRPCで行い、profileファイルやセッションJSONを直接書き換えない。
+権限変更自体が元依頼または現在も有効な利用者の明示指示に含まれる場合だけ使う。スキルの利用や会話作成は、権限拡張・既定値変更への許可ではない。Desktop MCPはこれらを維持し、変更APIを公開しない。以下の `danger-full-access` はその値を指定された場合の例。既定値の変更と、作成済みセッションへの適用は別操作。どちらも対象Hostの認証済みRPCで行い、profileファイルやセッションJSONを直接書き換えない。
 
 | RPC | args | 用途 |
 | --- | --- | --- |
@@ -151,7 +153,7 @@ python3 "$DSH_SKILL/scripts/dsh_web.py" --base "$DSH_BASE" \
 | `settings/update` | `{"ns":"permission","patch":{"defaultPreset":"danger-full-access"},"expectedRevision":REVISION}` | 指定Host/profileの今後の新規セッションに適用。既に同値なら不要 |
 | `commands/execute` | `{"agentId":"SESSION_ID","line":"/permission danger-full-access","submittedAttachments":[]}` | 実在する対象セッションの権限を変更。既に同値なら不要 |
 
-更新後は設定を再読し、対象セッションの完全projectionで `permissions.currentValue === "danger-full-access"` を確認してから実装依頼を送る。既存モデル・推論・保留指示を維持し、質問への明示回答や実再開の記録は別途行う。権限設定の成功だけで実コマンドや製品検収の成功にしない。
+更新後は設定を再読し、対象セッションの完全projectionで `permissions.currentValue` が依頼された値と一致することを確認する。既存モデル・推論・保留指示を維持し、質問への明示回答や実再開の記録は別途行う。権限設定の成功だけで実コマンドや製品検収の成功にしない。
 
 0.2.0-rc.2のWindows Desktop同梱 `dsh-permission-presets`、`dsh-commands`、`dsh-api-settings-controller` のREADME・generated descriptor・UI実装で照合した。`commands/execute` は `agentId` / `line` / `submittedAttachments` を直接渡し、`request` に包まない。`settings/update` は新規セッションの既定値を保存し、既存セッションの値を自動変更しない。
 

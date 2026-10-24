@@ -1,15 +1,13 @@
 ---
 name: dsh-web
-description: "DeepSeek HarnessのWeb版・公式Desktop版の会話や設定を操作する。対象インスタンスを特定し、認証済みHTTP RPCまたはアプリ画面で読取・依頼・追記・中断を行う。既存チャットの操作をheadlessの別実行と取り違えない。"
+description: "DeepSeek HarnessのWeb版・公式Desktop版の会話を読む・操作する。Desktopはdsh_desktop MCPを優先し、Webは同じHostの認証済みHTTP RPCを使う。既存チャットをheadlessの別実行へ置き換えない。"
 ---
 
 # DSH Web / Desktop 操作
 
-DeepSeek Harnessの対象インスタンスへ接続し、会話を読み、依頼された操作を行う。Web版・Desktop版の明示や既存チャットの指定がなければ、公式Desktop版を既定にする。明示された接続先や既存チャットの継続はその指定を優先する。認証済みRPCが利用できる場合は付属ヘルパーを使い、Desktopの認証経路が得られない場合はアプリ画面を使う。画面操作を指定された場合はその指定を優先する。
+DeepSeek Harnessの対象インスタンスへ接続し、会話を読み、依頼された操作を行う。Web版・Desktop版の明示や既存チャットの指定がなければ、公式Desktop版を既定にする。明示された接続先や既存チャットの継続はその指定を優先する。Desktopは登録済み `dsh_desktop` MCP、Webは付属RPCヘルパーを優先する。画面操作を指定された場合はその指定を優先する。
 
-作成・実行するDSHセッションは `danger-full-access` を使い、対象Host/profileの新規セッションの既定値も同じにする。この継続許可について再確認しない。後の明示的な制限・停止は優先する。
-
-作成・再開前に実カタログと設定を読み、[実行権限と新規セッションの既定値](references/operations.md#実行権限と新規セッションの既定値)の正規RPCで適用する。既存セッションには個別適用が必要なので、送信前に `permissions.currentValue` を確認する。OSファイル権限や認証保護は変更せず、作業範囲・公開・課金等の許可は元依頼に従う。
+DesktopのMCPはモデル・既定モデル・承認ポリシー・sandbox設定を維持する。接続や送信の前提として `danger-full-access` や新規セッションの既定値を適用しない。権限・設定の変更自体を依頼された場合だけ、元依頼と対象版の公開APIに沿って別途扱う。RPCでの変更手順は[実行権限と新規セッションの既定値](references/operations.md#実行権限と新規セッションの既定値)を参照する。
 
 ## 接続を選ぶ
 
@@ -18,19 +16,27 @@ DeepSeek Harnessの対象インスタンスへ接続し、会話を読み、依�
 | 目的 | 経路 |
 | --- | --- |
 | 起動中のdsh webの会話を読む・操作する | 同じwebのHTTP RPC。付属の `scripts/dsh_web.py` を使う |
-| 公式Desktop版の会話を読む・操作する | [Desktopの接続と管理](references/desktop.md)を読む。同じHostの認証済みRPC、またはアプリ画面 |
+| 公式Desktop版の会話を読む・操作する | `dsh_desktop` MCPを優先。[Desktop MCPスキル](references/desktop-mcp/SKILL.md)を読む。接続・未対応操作は[Desktopの接続と管理](references/desktop.md) |
 | Desktop版を起動する・プラグインを管理する | アプリの起動・プラグイン画面。CLIで管理する場合は同梱CLIと `desktop` profile |
 | webを立ち上げる | `dsh web --help` で現行オプションを確認し、既存プロセスとポートを確認して起動する |
 | webとは別に単発実行する | `dsh headless`。既存webの操作として使わない |
 | 独立した組込ランタイムを扱う | `dsh sdk` のstdio JSON-RPC。既存webへ接続するコマンドではない |
 
-WSLからWindowsのDesktop版を操作する場合は、先に[WSLからWindows Desktopへ接続する](references/windows-desktop-wsl.md)を読む。接続が失われた場合は同資料の[Desktop接続の再確認](references/windows-desktop-wsl.md#desktop接続の再確認)から既存rendererと認証済みRPCの可否を確認する。Windows側のPythonから同じRPCヘルパーを実行できる。WSLのloopbackへの接続失敗や画面操作ツールの初期化失敗だけで、CLI経路がないと判断しない。
+今回のDesktop MCPは公式0.2.1-rc.3のmacOS/Linux向けで、Windowsは未対応。WSLからWindowsのDesktop版を操作する場合は、先に[WSLからWindows Desktopへ接続する](references/windows-desktop-wsl.md)を読む。接続が失われた場合は同資料の[Desktop接続の再確認](references/windows-desktop-wsl.md#desktop接続の再確認)から既存rendererと認証済みRPCの可否を確認する。Windows側のPythonから同じRPCヘルパーを実行できる。WSLのloopbackへの接続失敗や画面操作ツールの初期化失敗だけで、CLI経路がないと判断しない。
 
 Windows DesktopからWSL内のプロジェクトへ新規スレッドを作成・再開する場合は、同資料の[WSLでの作業開始](references/windows-desktop-wsl.md#dsh内の開発コマンドをwslで実行する)も適用する。最初の依頼へ同梱ヘルパーの実パス・distribution・Linux作業場所と開始確認を含め、WSLでの実行成功を確認してから開発を始める。これはこのスキル経由の起動手順であり、Desktopの標準シェルを変更する設定ではない。
 
 Web版の初回接続・起動・401の解消には[接続と認証](references/connection.md)を読む。以下のRPC操作は対象Hostへの認証済み接続がある場合に使う。RPCは内部の型付きインターフェースであり、公開REST APIとしての互換性を前提にしない。バージョンが違う、引数が拒否される、未記載の操作を行う場合は、対象ランタイムの `typert.host.js` と型定義を確認する。
 
-## 会話を読む
+## DesktopをMCPで操作する
+
+`dsh_desktop` のツールを見つけ、まず `dsh_status` で `runtime: existing-desktop` と対応版を確認する。以降は[Desktop MCPスキル](references/desktop-mcp/SKILL.md)を使う。同スキルと実装・導入手順の正本はdsh-pluginsリポジトリで管理し、ここにはリンクで組み込む。
+
+会話の特定・履歴・プロジェクト指定作成・追送・管理・添付・質問/承認回答・予定実行・会話表示/分割は専用MCPツールを使う。新規会話は元依頼・cwdから対応するプロジェクトを選び、`dsh_list_workspaces` のpathを照合して `workspaceId` を指定する。既存会話の続きは同じsessionIdへ送る。`requestId` を持つ書込では事前にUUIDを保存し、受理後は待機して対象操作の完了を確認する。応答不明は同じIDで照合し、新IDの再送やRPC/画面からの同じ書込で迂回しない。
+
+MCPツールが未接続なら[Desktopの接続と管理](references/desktop.md)で導入・登録を確認する。同梱bridge CLIが利用できれば同じHost・台帳へ接続できる。対応外・利用不能の操作はその不足を確認してから、依頼された範囲の認証済みRPCまたは画面操作を検討する。別Hostへの切替、権限変更、別DSHプロセスの起動を接続の代用にしない。
+
+## Web / RPC経路で会話を読む
 
 1. `list` または `search` で会話ID・タイトル・cwdを特定する。既存会話の確認のために `session/create` を呼ばない。
 2. `status SESSION_ID` で実行状態と完全なprojectionを取得する。会話一覧のcached projectionを現在の状態と混同しない。
@@ -39,7 +45,7 @@ Web版の初回接続・起動・401の解消には[接続と認証](references/
 
 具体的なコマンド、履歴の構造、状態の読み方は[読取と操作](references/operations.md)を読む。付属ヘルパーの読取は保存済みイベントのsnapshotであり、生成途中の文字は含まない。live streamが必要な場合は同資料のRemote muxの経路を使う。
 
-## 依頼・追記・中断
+## Web / RPC経路の依頼・追記・中断
 
 - 新規チャットは、プロジェクト名を省略されても、通常は作業対象に対応するDSHのプロジェクト（ワークスペース）内へ作成する。対象は元依頼、現在の作業ディレクトリ、リポジトリの文脈から判断し、DSHの登録先と実際のcwdを照合する。複数候補があり特定できない場合だけ確認する。無関係なプロジェクトや「未分類」を既定にせず、既存の対応先があれば再利用する。
 - RPCで新規作成する場合は `new` でcwdを指定し、IDを受け取って `prompt` する。cwdの指定だけでプロジェクトへの所属も設定されたとみなさず、[workspaceの操作](references/operations.md#設定workspace端末job添付)または対象プロジェクトの画面から所属を設定・確認する。既存チャットの続きなら、その履歴と未処理の指示を読んでから同じIDへ送る。履歴を引き継ぐforkは新規の空会話と区別する。
@@ -53,7 +59,7 @@ Web版の初回接続・起動・401の解消には[接続と認証](references/
 
 ## 複数セッション作成後の標準配置
 
-複数セッションを作成した後は、追加の指定がなければ今回作成した ID を作成順に dsh-docking-layout で横並びに表示する。[セッション配置スキル](references/session-layout/SKILL.md)の付属スクリプトと表示確認手順を使う。配置対象として指定された既存会話も ID で渡せる。対象外の実行中会話を自動追加せず、既存配置と内部比率を保ち、再実行でタブや分割を重複させない。
+複数セッションを作成した後は、追加の指定がなければ今回作成した ID を作成順に dsh-docking-layout で横並びに表示する。Desktopでは `dsh_list_desktop_windows` で対象clientIdを確認し、`dsh_arrange_sessions` の完了応答と画面を確認する。Webでは[セッション配置スキル](references/session-layout/SKILL.md)の付属スクリプトと表示確認手順を使う。配置対象として指定された既存会話も ID で渡せる。対象外の実行中会話を自動追加せず、既存配置と内部比率を保ち、再実行でタブや分割を重複させない。
 
 これはセッション作成成功後の表示手順であり、Host の起動・認証・権限設定をやり直さない。配置のためにモデル・権限・sandbox を変更しない。今回は配置不要などの利用者指定や、適用先 AGENTS.md のリポジトリ固有の上書きは優先する。スキルとスクリプトの正本は dsh-plugins リポジトリで管理し、ここにはリンクで組み込む。
 
@@ -69,6 +75,6 @@ Web版の初回接続・起動・401の解消には[接続と認証](references/
 
 ## その他の操作
 
-ワークスペース、ファイル、設定、モデル、質問への回答、端末、job、添付の操作は[読取と操作](references/operations.md)の対応表から、該当するインストール済みcontrollerを調べる。非streamのRPCは `call METHOD --args-file FILE` で実行できる。generated descriptorのwire引数名を保ち、すべてを `request` に包まない。
+Desktopの日常操作はMCPを優先する。WebまたはMCPが提供しない操作では、[読取と操作](references/operations.md)の対応表から該当するインストール済みcontrollerを調べる。設定・モデル・権限の変更や端末操作はその操作自体が依頼された場合に扱う。非streamのRPCは `call METHOD --args-file FILE` で実行できる。generated descriptorのwire引数名を保ち、すべてを `request` に包まない。
 
 最終報告には対象チャットのcredentialを含まないURL（Desktopでリンクが得られない場合はタイトル・ID・cwd）と、取得・受理・実行・完了のうち確認できた状態を示す。操作記録にはID、cwd、receipt、必要なcursorを残し、起動tokenやcookieは残さない。
