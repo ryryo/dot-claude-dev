@@ -1,6 +1,6 @@
 ---
 name: dsh-web
-description: "DeepSeek HarnessのWeb版・公式Desktop版の会話を読む・操作する。Desktopはdsh_desktop MCPを優先し、Webは同じHostの認証済みHTTP RPCを使う。既存チャットをheadlessの別実行へ置き換えない。"
+description: "DeepSeek HarnessのWeb版・公式Desktop版・DesktopのRemote接続先の会話を読む・操作する。操作先Hostを照合し、ローカルDesktopはMCP、リモートHostはそのHostの認証済み経路を使う。"
 ---
 
 # DSH Web / Desktop 操作
@@ -11,12 +11,15 @@ DesktopのMCPはモデル・既定モデル・承認ポリシー・sandbox設定
 
 ## 接続を選ぶ
 
+DesktopでRemote接続先を表示している場合は、先に[Remote Hostの接続と操作](references/remote-host.md)を読む。表示しているClientと会話を所有するHostを区別し、Mac側MCPの接続成功だけでLinux母艦へ接続したと扱わない。Remoteが選択されていることを理由に、そのHostとは別のwebを新規起動しない。
+
 指定のない依頼はDesktopの経路から始める。ヘルパーの既定baseはWeb版の3080なので、DesktopへRPC接続するときは確認済みの同じDesktop Hostを明示する。接続できないことを理由にWeb版や別実行へ切り替えない。
 
 | 目的 | 経路 |
 | --- | --- |
 | 起動中のdsh webの会話を読む・操作する | 同じwebのHTTP RPC。付属の `scripts/dsh_web.py` を使う |
 | 公式Desktop版の会話を読む・操作する | `dsh_desktop` MCPを優先。[Desktop MCPスキル](references/desktop-mcp/SKILL.md)を読む。接続・未対応操作は[Desktopの接続と管理](references/desktop.md) |
+| Desktopに表示中のLinux等のRemote Hostを読む・操作する | Host名・workspace path・session IDと操作経路の接続先を照合。[Remote Host](references/remote-host.md)に従い同じ既存Hostへ接続する |
 | Desktop版を起動する・プラグインを管理する | アプリの起動・プラグイン画面。CLIで管理する場合は同梱CLIと `desktop` profile |
 | webを立ち上げる | `dsh web --help` で現行オプションを確認し、既存プロセスとポートを確認して起動する |
 | webとは別に単発実行する | `dsh headless`。既存webの操作として使わない |
@@ -30,7 +33,11 @@ Web版の初回接続・起動・401の解消には[接続と認証](references/
 
 ## DesktopをMCPで操作する
 
+以下は操作先がローカルDesktop Hostと確認できた場合の経路。Remote表示中は上記のHost選定を先に行う。
+
 `dsh_desktop` のツールを見つけ、まず `dsh_status` で `runtime: existing-desktop` と対応版を確認する。以降は[Desktop MCPスキル](references/desktop-mcp/SKILL.md)を使う。同スキルと実装・導入手順の正本はdsh-pluginsリポジトリで管理し、ここにはリンクで組み込む。
+
+このスキルを共有symlink経由で使う場合、プロジェクト→dot-claude-dev→隣接dsh-pluginsの参照全体を確認する。`references/desktop-mcp`と`references/session-layout`はdsh-pluginsへのsymlinkで、前段の`dev`リンクだけが存在しても導入完了ではない。参照が解決しなければ正本の不足を整備し、本文をコピーして別管理にしない。
 
 会話の特定・履歴・プロジェクト指定作成・追送・管理・添付・質問/承認回答・予定実行・会話表示/分割は専用MCPツールを使う。新規会話は元依頼・cwdから対応するプロジェクトを選び、`dsh_list_workspaces` のpathを照合して `workspaceId` を指定する。既存会話の続きは同じsessionIdへ送る。`requestId` を持つ書込では事前にUUIDを保存し、受理後は待機して対象操作の完了を確認する。応答不明は同じIDで照合し、新IDの再送やRPC/画面からの同じ書込で迂回しない。
 

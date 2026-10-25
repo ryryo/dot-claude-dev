@@ -1,4 +1,4 @@
 interface:
   display_name: "DSH Web / Desktop 操作"
-  short_description: "DSHの会話を操作する。DesktopはMCP、Webは認証済みRPCを優先"
+  short_description: "DSHの操作先Hostを照合し、Desktop・Web・Remoteの会話を読む・操作する"
   default_prompt: "$dsh-web を使って、利用中のDSHのWeb版または公式アプリ版の対象チャットと最新の回答を確認してください。"

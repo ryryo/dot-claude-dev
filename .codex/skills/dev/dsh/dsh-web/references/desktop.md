@@ -4,6 +4,8 @@
 
 ## Desktop MCPを優先する
 
+Remoteで別Hostを表示しているときは、先に[Remote Hostの接続と操作](remote-host.md)を使う。以下のMCPはローカルDesktop Hostの経路であり、Remote画面の選択先へ自動追従する前提を置かない。
+
 公式0.2.1-rc.3の対応環境では、登録済み `dsh_desktop` MCPで同じ既存Hostを操作する。[Desktop MCPスキル](desktop-mcp/SKILL.md)を読み、`dsh_status` で `runtime: existing-desktop` と対応版を確認する。会話・プロジェクト管理、添付、質問/承認回答、予定実行、会話を開く・分割する操作は専用ツールを使う。書込の不明応答は同じrequestIdで照合し、別の経路から二重実行しない。
 
 ツールが利用できなければ、同スキルから導入手順とMCP登録を確認する。同梱bridge CLIも同じHost・台帳を使える。公式アプリ同梱の管理CLIとは別物。接続のためにアプリのcookie・起動秘密・モデル資格情報を抽出せず、モデル・承認ポリシー・sandboxの設定も変更しない。

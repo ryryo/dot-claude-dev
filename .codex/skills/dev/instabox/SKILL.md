@@ -7,7 +7,7 @@ description: "Instabox の Linux 作業機を作成・接続し、CLI ジョブ�
 
 Instabox を、手元の Codex / DSH から開発・検証を進めるための Linux 作業機として使う。手元で指示・レビューし、必要なコマンドやサーバーをリモートで動かす構成を基本候補にする。用途に応じてブラウザ付きデスクトップも選ぶ。
 
-ローカル司令・クラウド内の開発継続・外部での仕事と復旧の管理から、検証タスクに合う仮案を選んで実験する場合は [Instabox 開発パターン実験](../instabox-dev-experiment/SKILL.md) を使う。この skill は接続・基本運用を担当する。
+Instaboxを開発母艦にし、手元のCodex／DSH Desktopから同じLinux上で開発する構築・日常運用は [Instabox 開発母艦](../instabox-dev-experiment/SKILL.md) を使う。このskillは作業機の作成・接続・基本CLI・再利用を担当する。
 
 ## 公式資料を入口にする
 
@@ -26,7 +26,7 @@ Instabox を、手元の Codex / DSH から開発・検証を進めるための 
 | 現在の上限、費用、変更履歴 | [Limits](https://instabox.sh/docs/limits)、[Pricing](https://instabox.sh/pricing)、[Changelog](https://instabox.sh/changelog) とアカウントの実表示 |
 
 - 料金、無料枠、台数・容量、テンプレート、既定タイムアウト、SDK シグネチャをこの skill に転記して固定しない。利用中 CLI / SDK の版とサーバーの対応機能も照合する。
-- HTML が `instabox needs JavaScript` だけなら本文を読めていない。利用可能なブラウザで描画後のページを読む。ページの `Copy page as Markdown` も使える。取得できなければ未確認と伝え、記憶だけで変更操作を組み立てない。
+- HTMLがJavaScriptの案内だけなら、公式の [llms.txt](https://instabox.sh/llms.txt) と各URL末尾の`.md`を使う。Web取得ツールで読めなければ通常のHTTP取得も試し、本文を確認する。描画と`Copy page as Markdown`も選べる。取得できなければ未確認と伝える。
 - 公式が配布するエージェント用スキルも、現行資料から必要なものを確認する。内容をここへ複製せず、導入処理が CLI やローカルのスキル設定も変更するか確認する。
 
 ## 作業の進め方
@@ -47,6 +47,22 @@ instabox ls --json
 instabox templates --json
 instabox usage --json
 ```
+
+## 公式CLIでできることを先に使う
+
+以下は2026-10-25に公式資料とCLI `a41fa974`のhelpで確認した経路。古いCLIで見つからなければ`version`・公式の`update`・該当`--help`を照合する。全コマンドの再実装や独自wrapperを前提にしない。
+
+| 用途 | 経路と使い分け |
+| --- | --- |
+| 短い実行・JSON診断 | `exec MACHINE --cwd DIR --json -- PROGRAM ARGS...`。stdout・stderr・exitCode・timedOut・truncatedを確認する |
+| 長いbuild/test | `exec --background MACHINE --cwd DIR --json -- PROGRAM ARGS...`でjobIdを保存し、`jobs logs`／`jobs wait --timeout 30s`で回収。通信結果不明なら`jobs ls`で照合してから次を決める |
+| ファイル転送 | `cp LOCAL MACHINE:PATH`／`cp MACHINE:PATH LOCAL`、ディレクトリは`-r`。現行pushはGit配下のtrackedのみが既定、`--all`で未追跡も含む。古い版の32 MiB制限を現行の制限としない |
+| 非公開プレビュー | `port-forward MACHINE LOCAL:REMOTE`。既定でローカル127.0.0.1へ転送し、公開用の`port publish`と使い分ける |
+| 新規作成時の初期化 | `create --setup-file ./bootstrap.sh`。script失敗時にもmachineが残るので、同じmachineを診断して再作成を重ねない |
+| 自動休止からの再開 | `wake MACHINE`。人が休止／停止したmachineはそのまま。明示した再開には`resume`／`start` |
+| SSHツール・アプリ | `ssh-config MACHINE`でgateway用Host block、`ssh-cert MACHINE`で短期証明書を更新する。既存のTailscale aliasへ盲目的に追記しない |
+
+転送サイズ・setup時間・プラン制限は現行helpと実表示を読む。`run`は既定でmachineを削除する単発作業用なので、保持する開発母艦には`create`／既存machineの`exec`を使う。`restart`はメモリとprocessを失う復旧、`fork`はhomeの資格情報も複製し得るため、通常の再接続の代用にしない。
 
 ## 接続と Web / GUI 確認
 
