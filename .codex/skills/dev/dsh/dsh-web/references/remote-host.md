@@ -9,7 +9,7 @@
 3. Remote Host自身の既存webに正規アクセスできる場合は、そのLinux上で同梱`dsh_web.py`を使う。同じHostのRPCであり、手元のDesktopをWeb版へ置き換える操作ではない。画面操作を指定された場合はDesktopのRemote画面を使う。
 4. 読取でHostのworkspace／cwd・session IDを照合してから書き込む。MCPへの送信が結果不明なら、RPCへ切り替えて同じ指示を新IDで送らない。
 
-母艦の起動・SSH・serviceの準備は[Instabox開発母艦](../../../instabox-dev-experiment/SKILL.md)。非InstaboxでもこのHost選定と同じRPC契約を使える。
+母艦の起動・SSH・serviceの準備は[Instabox開発母艦](../../../instabox/instabox-dev-experiment/SKILL.md)。非InstaboxでもこのHost選定と同じRPC契約を使える。
 
 ## 母艦上の認証済みRPC
 
@@ -55,10 +55,22 @@ provider statusにアカウント情報が含まれる場合、必要なsignedIn
 
 モデル設定を依頼された場合は、対象Hostの実カタログと`settings/describe`でnamespace・revisionを読み、公開APIで更新して再読取する。必要なら公開のモデル定義だけを渡し、Macの認証・Fast設定・権限をまとめてコピーしない。接続・読取の依頼だけで既定モデルを変えない。
 
+OpenCode Goはモデルproviderとして直接使えるため、GoのためだけにOpenCode CLIや無料モデルbridgeを追加しない。まず標準providerとカタログを使う。`models`の明示は一覧を置き換え、provider全体の`baseURL`はAPI形式の違うモデルにも適用されるため、単一モデルの診断設定を常用設定へ残さない。今回のSDKでは`api` overrideを加えるとsession header処理を外す。routeの実不具合がある場合だけ[現行Go専用endpoint](https://opencode.ai/v2/docs/console/go/#endpoints)と照合する。401が残る場合は、[Console移行後の旧キー失効の案内](https://github.com/anomalyco/opencode/issues/54833)も確認し、同じキーで無条件に再送しない。新キー登録後はoverrideなしの標準経路でDeepSeek／MiniMax両形式の応答を確認できた。
+
+RemoteだけFast一覧が失敗する場合、母艦上の`codexSpeed/snapshot`とRemoteの固定allowlistを比較する。Hostが対応tierを返しても、Remote pluginがそのendpointを通すとは限らない。0.5.18では同endpointが未許可。[再現可能な互換patchと導入・切戻し](../../../../../../../dsh-plugins/docs/codex-speed.md#desktopのremote-hostで使う場合)を参照し、認証済み経路の単発読取だけを追加する。無制限のnamespace転送や速度値の強制設定で補わない。
+
 ## 切断からの復帰
 
 母艦の休止／稼働→既存DSH service→Remote HostのOnline→Desktopの選択先・認証→workspace／sessionの順に確認する。Linuxのserviceが稼働していれば、Client側の再接続中表示だけで再インストール・VM再起動を行わない。
 
+母艦が稼働中でも古いRemote表示が再接続中のままなら、未送信入力と対象sessionを確認し、Exit→Remote→Onlineの同じHost→既存workspaceを選択し直す経路を使える。2026-10-25の追加試験では、再ログイン・service再起動なしで同じ会話のツール履歴と回答へ復帰できた。切断後にローカルHostへ戻ったModels画面を、母艦の設定画面と混同しない。資格情報の入力前にRemote modeのHost名と対象providerを確認する。
+
 今回の復帰時には、Desktop側Remoteのローカル認証無効を確認し、正規Sign out→同じGitHubで再ログイン→既存Host選択で復旧した。これは該当エラー時の実例で、すべての切断への必須手順ではない。モデル認証や稼働中の会話を診断のために消さない。復帰後は同じsessionを読み、停止中の仕事を無条件で再投入しない。
+
+## Codexからの実行とDesktopでの確認
+
+Codexは対象workspace／sessionへ依頼を送り、receiptで受理を照合し、同じsessionのstatus／readと実ファイルを回収する。対象Hostを選んだDesktopでは、RPCから送った同じ会話が通常の会話として表示される。完了後に詳細が畳まれている場合、所要時間→作業概要を展開すると、コマンド・読取・編集の詳細を確認できる。独立したCLIの出力をこの会話の履歴として扱わない。
+
+運用確認には専用repoとlocal bare remoteを使い、入力の読取→小さな生成物→実行検証→最終回答を一往復する。モデル名の表示だけで推論成功にしない。providerの選択や使用はprofile既定の保存も伴うため、既存の既定値を記録し、試験の送信・終了後に既定を再読取して、試験会話の選択を維持したまま正規settings APIで元へ戻す。本人が途中で変更した値は上書きしない。選択直後だけの復元で終了とせず、他の会話・モデル・権限は変更しない。
 
 確認基準：2026-10-25、DSH 0.2.1-rc.3／ds-harness-remote 0.5.18／Linux web profileとMac Desktop。[Remote実装と導入](https://github.com/liguobao/ds-harness-remote/blob/v0.5.18/docs/installation.md)、[Desktop MCP実装](../../../../../../../dsh-plugins/packages/dsh-desktop-mcp/src/host.ts)を参照。別版では利用中の実装・型で照合する。

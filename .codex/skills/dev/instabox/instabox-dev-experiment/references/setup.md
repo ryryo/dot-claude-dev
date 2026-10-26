@@ -80,7 +80,7 @@ unitは実際のHOMEと固定NodeのbinをPATHへ入れ、`dsh --profile web --n
 
 RemoteのHost操作許可は母艦側へ、手元Macは接続Clientとして設定する。DSHモデル認証はCodex CLI認証と別に確認し、元のモデル・権限を維持する。モデルがcatalogに不足する場合は正規settings APIとrevisionを使い、認証を含まない必要なモデル定義だけを設定する。今回のモデル／effortを無条件の新規環境既定値にしない。
 
-会話・workspaceの作成や表示確認は[dsh-web](../../dsh/dsh-web/SKILL.md)を使う。新しい空会話や実promptの送信を、接続診断の必須条件にしない。
+会話・workspaceの作成や表示確認は[dsh-web](../../../dsh/dsh-web/SKILL.md)を使う。新しい空会話や実promptの送信を、接続診断の必須条件にしない。
 
 ## Codex Desktopと追加端末
 

@@ -65,7 +65,7 @@ instabox port-forward spool-dev 16006:16006
 | execは通るが通常SSHが失敗 | guestのsshd、Tailscale、SSH alias・鍵・host key。gateway経由の`instabox ssh`も使える |
 | gatewayの短期証明書が期限切れ | `instabox ssh-cert MACHINE`。Tailscaleの通常SSHの鍵とは別 |
 | SSHは通るがDSHが見えない | 指定service・profile・listenとRemoteのHost状態。既存DSHの再起動前に稼働中会話を確認 |
-| Desktopだけ再接続中 | [Remote Host](../../dsh/dsh-web/references/remote-host.md)でClient認証・Host選択・workspaceを確認 |
+| Desktopだけ再接続中 | [Remote Host](../../../dsh/dsh-web/references/remote-host.md)でClient認証・Host選択・workspaceを確認 |
 | Codex CLIはログイン済み、DSHモデルは未認証 | DSH側のprovider認証を確認。CLI認証ファイルをコピーしない |
 | skill入口は開くが子参照が欠ける | [共有symlinkの確認](setup.md#共有symlinkを末端まで確認する)。dot-claude-devと隣接依存を両方見る |
 

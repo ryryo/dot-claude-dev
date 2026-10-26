@@ -1,0 +1,4 @@
+interface:
+  display_name: "Instabox 作業時間の接続維持"
+  short_description: "専用チャットを一件作り、決めた時間だけ母艦への軽い定期送信を続ける"
+  default_prompt: "$instabox-work-session を使って、新しい専用チャットを一件作り、spool-devへの軽い定期送信を2時間だけ維持してください。"

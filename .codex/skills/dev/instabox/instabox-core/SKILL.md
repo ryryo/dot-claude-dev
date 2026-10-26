@@ -1,13 +1,15 @@
 ---
-name: instabox
+name: instabox-core
 description: "Instabox の Linux 作業機を作成・接続し、CLI ジョブ、ビルド・テスト、クリーン導入検証、Web UI 確認、スナップショットによる再利用を行う。Instabox の活用相談や基本運用に使う。"
 ---
 
-# Instabox 基本活用
+# Instabox 基本操作
 
 Instabox を、手元の Codex / DSH から開発・検証を進めるための Linux 作業機として使う。手元で指示・レビューし、必要なコマンドやサーバーをリモートで動かす構成を基本候補にする。用途に応じてブラウザ付きデスクトップも選ぶ。
 
 Instaboxを開発母艦にし、手元のCodex／DSH Desktopから同じLinux上で開発する構築・日常運用は [Instabox 開発母艦](../instabox-dev-experiment/SKILL.md) を使う。このskillは作業機の作成・接続・基本CLI・再利用を担当する。
+
+本人が確定した数時間だけ母艦への軽い定期送信を維持する場合は[期限付き作業セッション](../instabox-work-session/SKILL.md)。専用チャット一件と期限付きheartbeatで扱い、通常の構築・状態確認から自動的に起動しない。
 
 ## 公式資料を入口にする
 

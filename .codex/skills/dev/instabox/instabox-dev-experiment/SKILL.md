@@ -11,7 +11,7 @@ description: "Instaboxを開発母艦にし、手元のCodexとDSH Desktopから
 
 元依頼と既存の非公開構築資料から、対象machine、SSH alias、リポジトリのroot、DSH service／profileを特定する。Spool環境では隣接するspool-internalの`docs/OPERATIONS/linux-development-host.md`が実値と構築記録の正本。日常操作のためにVMやDSHを作り直さない。
 
-1. `instabox version`、`get MACHINE --json`で版と状態を確認する。CLI未導入・認証・作成・停止の基本は[instabox](../instabox/SKILL.md)を使う。
+1. `instabox version`、`get MACHINE --json`で版と状態を確認する。CLI未導入・認証・作成・停止の基本は[instabox-core](../instabox-core/SKILL.md)を使う。
 2. 自動休止からの作業再開には`instabox wake MACHINE`を使う。手動休止／停止の再開を依頼された場合は`resume`／`start`。復帰後は既存プロセスとjobを照合する。
 3. 短い診断・コマンドは`instabox exec --json`、切断後も追跡する有限のbuild/testは`exec --background`と`jobs`。コードの編集・Git・検証は母艦で行う。
 4. Codexは登録済みのSSHプロジェクト、DSH DesktopはRemoteで対象Linux Hostとworkspaceを選ぶ。接続済みの表示だけで実行cwdを判定せず、Linuxのpathを照合する。
@@ -29,7 +29,9 @@ description: "Instaboxを開発母艦にし、手元のCodexとDSH Desktopから
 | Gitと共有設定 | 同じ親へ作業repoとdot-claude-dev、そのスキルが参照するdsh-plugins等を置く。リンク元から末端まで確認する |
 | ブラウザー確認 | `instabox port-forward`で必要なloopback portを手元へ転送する。公開URLが必要な依頼だけ`port publish`を使う |
 
-DSHの会話・モデル・接続先の操作には[dsh-web](../dsh/dsh-web/SKILL.md)、Remote表示中のHost選定には[Remote Host](../dsh/dsh-web/references/remote-host.md)を使う。Mac側のDesktop MCPが表示先のLinuxへ自動で切り替わるとは扱わない。
+DSHの会話・モデル・接続先の操作には[dsh-web](../../dsh/dsh-web/SKILL.md)、Remote表示中のHost選定には[Remote Host](../../dsh/dsh-web/references/remote-host.md)を使う。Mac側のDesktop MCPが表示先のLinuxへ自動で切り替わるとは扱わない。
+
+作業時間が確定し、その間だけ軽い定期送信を維持する依頼には[instabox-work-session](../instabox-work-session/SKILL.md)を使う。無期限のkeepaliveや、休止・復帰の反復を構築時に追加しない。
 
 ## 構築・変更の検収
 
