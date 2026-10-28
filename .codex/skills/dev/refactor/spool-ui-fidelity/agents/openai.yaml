@@ -1,4 +1,0 @@
-interface:
-  display_name: "Spool新旧UIの比較・改修"
-  short_description: "旧Flowを基準に通常表示と操作を比較し機能衝突の解消方針を確認する"
-  default_prompt: "$spool-ui-fidelity を使い、指定ノードの新旧UIと操作を比較し、機能の衝突があれば解消案と推奨方針を提示してください。"
