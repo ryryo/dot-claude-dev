@@ -1,0 +1,4 @@
+interface:
+  display_name: "理解しやすい日本語"
+  short_description: "説明してから短くする手順とyomiyasuの最新版で日本語を整える"
+  default_prompt: "$explain-ja を使って、主体・動作・条件・理由を追える、理解しやすい日本語にしてください。"
