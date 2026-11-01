@@ -1,3 +1,3 @@
 interface:
-  display_name: "Chatworkの返信・下書き・送信"
-  short_description: "Chatworkで返信先を設定し、本文の下書き入力と依頼された送信を行う"
+  display_name: "Chatworkの文面・返信・送信"
+  short_description: "本人の過去文例を参照して文面を作り、返信の下書き入力と依頼された送信を行う"
