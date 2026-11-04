@@ -1,0 +1,6 @@
+interface:
+  display_name: "先行実装を読んで再利用"
+  short_description: "元コードを実装時に読み直し、使える処理を再利用・改変する"
+  default_prompt: "$reuse-reference-code を使って、参考となる先行実装のコードを改めて全文読み、使える部分を再利用して実装してください。"
+policy:
+  allow_implicit_invocation: true

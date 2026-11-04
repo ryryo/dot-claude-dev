@@ -117,6 +117,7 @@ Codexでは `.codex/skills/dev/spec-codex/` と `.codex/skills/dev/spec-codex-ru
 | `$spec-codex-run` | `docs/PLAN/*` の schema v3 仕様書をCodexでGate単位に直接実行       |
 | `$devin-browser-pr` | 公式MCPとCodex内ブラウザでDevinへ委譲し、画面でのレビュー・PRマージ・環境提案の採用まで進める |
 | `$devin-direct-dev` | CodexとDevinがMCP・CLIで直接対話し、調査・実装・レビュー・修正を進める |
+| [`$reuse-reference-code`](.codex/skills/dev/tasks/reuse-reference-code/SKILL.md) | 先行実装の元コードを実装時に読み直し、使える処理を再利用・改変する |
 
 Devin向けの2スキルは、`.codex/skills/dev/tasks/`に配置しています。ローカルの`~/.codex/skills/`には、各スキルをCodexから使うためのシンボリックリンクを置きます。
 
